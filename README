@@ -1,12 +1,12 @@
 README
 
 
-1. What is MindTouch Dream?
+1. What is MindTouch DReAM?
 2. System Requirements
 3. Additional Resources
 
 
-Thank you for your interest in MindTouch Dream.
+Thank you for your interest in MindTouch DReAM.
 
 ______________________________________________________________________________
 
@@ -39,26 +39,26 @@ M:  ,N;  ;N, ;W, ;N,  .Kl  'KKO0ON'  xN00: .xX0KK:   oNXXxKd  .kN0KK, .Kc   kk
 ______________________________________________________________________________
 
 
-1. What is MindTouch Dream?
+1. What is MindTouch DReAM?
    ------------------------
 
-MindTouch Dream is a REST-based distributed application framework
-developed in Mono/.NET. With Dream, a Web service is similar to an
+MindTouch DReAM is a REST-based distributed application framework
+developed in Mono/.NET. With DReAM, a Web service is similar to an
 object, and features interact through standard HTTP verbs. This design
 allows the developer to assume an "idealized" world where everything a
 service comes into contact with is accessed through Web requests. The
-Dream service library addresses common problems, and the Dream runtime
+DReAM service library addresses common problems, and the DReAM runtime
 orchestrates all interactions without requiring a Web server to be
 pre-installed on a target machine.
 
-MindTouch Dream manages all the complex aspects of interactive web
+MindTouch DReAM manages all the complex aspects of interactive web
 services, such as providing storage locations, database connections,
 event notifications, automatic data conversion from XML to JSON and
 short-circuit communication for co-hosted services. The platform enables
 developers to create enterprise-ready service architectures with
 exceptional speed and ease.
 
-With Dream, developers can create innovative services without worrying
+With DReAM, developers can create innovative services without worrying
 about the underlying infrastructure. Moreover, developers can use his or
 her programming language of choice and still leverage an open-source
 platform for creating rich, interactive Web services that can generate
@@ -75,12 +75,12 @@ built on the premise that everything is remote.
 2. System Requirements
    -------------------
 
-  * Microsoft Visual Studio 2005 with .Net 2.0
-  * Novell Mono v1.2.2 or later
+  * Microsoft Visual Studio 2008 with .Net 3.5 or later
+  * Novell Mono v2.4 or later
 
 
 3. Additional Resources
    --------------------
 
   * Documentation
-        http://wiki.developer.mindtouch.com
+        http://developer.mindtouch.com/dream
