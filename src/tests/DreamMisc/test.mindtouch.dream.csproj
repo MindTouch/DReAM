@@ -1,0 +1,169 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2E8FBF2E-AB73-43D9-B384-45DAD40597AF}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MindTouch.Dream.Test</RootNamespace>
+    <AssemblyName>test.mindtouch.dream</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;DEBUG_DREAM</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
+    <NoWarn>1911,0618,0067</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1911,0618,0067</NoWarn>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Signed Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\bin\</OutputPath>
+    <DefineConstants>TRACE;SIGNED</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>1</WarningLevel>
+    <NoWarn>1911,0618,0067</NoWarn>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Autofac, Version=1.4.3.536, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\redist\Autofac.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\redist\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Moq, Version=4.0.812.4, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\redist\Moq.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework, Version=2.2.4.0, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\redist\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ArrayUtilTests.cs" />
+    <Compile Include="AutoMockPlugTests.cs" />
+    <Compile Include="BlockingQueueTests.cs" />
+    <Compile Include="ChunkedArrayTests.cs" />
+    <Compile Include="ChunkedMemoryStreamTest.cs" />
+    <Compile Include="ContainerTests.cs" />
+    <Compile Include="Collections\LockFreeItemConsumerQueueTests.cs" />
+    <Compile Include="Collections\LockFreeQueueTests.cs" />
+    <Compile Include="Collections\LockFreeStackTests.cs" />
+    <Compile Include="Collections\WorkStealingDequeTests.cs" />
+    <Compile Include="CookieTests.cs" />
+    <Compile Include="DreamFeatureTests.cs" />
+    <Compile Include="DreamHeadersTests.cs" />
+    <Compile Include="ExpiringDictionaryTests.cs" />
+    <Compile Include="CoroutineTests.cs" />
+    <Compile Include="CultureUtilTests.cs" />
+    <Compile Include="DreamContextTests.cs" />
+    <Compile Include="DreamHostTest.cs" />
+    <Compile Include="DreamMessageTests.cs" />
+    <Compile Include="DreamMiscTest.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="ExpiringHashSetTests.cs" />
+    <Compile Include="InMemoryKeyValueCacheTests.cs" />
+    <Compile Include="LockTests.cs" />
+    <Compile Include="MockDataCatalogTests.cs" />
+    <Compile Include="MockPlugTests.cs" />
+    <Compile Include="MysqlDocStoreManagerTests.cs" />
+    <Compile Include="PlugTests.cs" />
+    <Compile Include="PubSubTests.cs" />
+    <Compile Include="ResultTest.cs" />
+    <Compile Include="SampleService.cs" />
+    <Compile Include="Service2ServiceTests.cs" />
+    <Compile Include="ServiceExceptionMapTests.cs" />
+    <Compile Include="ServiceInheritanceTests.cs" />
+    <Compile Include="ServiceTests.cs" />
+    <Compile Include="StreamUtilTests.cs" />
+    <Compile Include="StringUtilTests.cs" />
+    <Compile Include="SysUtilTests.cs" />
+    <Compile Include="TaskTests.cs" />
+    <Compile Include="TaskTimerTests.cs" />
+    <Compile Include="Threading\MonitorSemaphoreTests.cs" />
+    <Compile Include="Threading\ThreadPoolTests.cs" />
+    <Compile Include="TimesTests.cs" />
+    <Compile Include="TransactionalQueue\MultiFileQueueStreamTests.cs" />
+    <Compile Include="TransactionalQueue\TransactionalQueueTests.cs" />
+    <Compile Include="TransactionalQueue\QueueStreamValueTests.cs" />
+    <Compile Include="TransactionalQueue\SingleFileQueueStreamTests.cs" />
+    <Compile Include="TransactionalQueue\XDocQueueItemSerializerTests.cs" />
+    <Compile Include="TransactionalQueue\XDocQueueTests.cs" />
+    <Compile Include="TrimmingStringReaderTests.cs" />
+    <Compile Include="TrimmingTextReaderTests.cs" />
+    <Compile Include="XDoc-Test.cs" />
+    <Compile Include="XDocAutofacContainerConfiguratorTests.cs" />
+    <Compile Include="XDocDiffTests.cs" />
+    <Compile Include="XUri-Test.cs" />
+    <Compile Include="XUriMapTests.cs" />
+    <Compile Include="XUriChildMapTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\mindtouch.core\mindtouch.core.csproj">
+      <Project>{CAAE6609-8532-4CCA-ABD5-186C43F77687}</Project>
+      <Name>mindtouch.core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\mindtouch.dream.test\mindtouch.dream.test.csproj">
+      <Project>{C4CC19EB-8149-4F39-A6E6-753886309CF6}</Project>
+      <Name>mindtouch.dream.test</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\mindtouch.dream\mindtouch.dream.csproj">
+      <Project>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</Project>
+      <Name>mindtouch.dream</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>copy "$(SolutionDir)redist\*.*" "$(TargetDir)"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

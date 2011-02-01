@@ -1,0 +1,147 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{CAAE6609-8532-4CCA-ABD5-186C43F77687}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MindTouch.Dream</RootNamespace>
+    <AssemblyName>mindtouch.core</AssemblyName>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;DEBUG_DREAM</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1911,1591</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DocumentationFile>..\bin\mindtouch.core.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1911,0618,1591</NoWarn>
+    <DocumentationFile>..\bin\mindtouch.core.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Signed Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE;SIGNED</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>1911,0618,1591,1699</NoWarn>
+    <DocumentationFile>..\bin\mindtouch.core.xml</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Documentation|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>1911</NoWarn>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <DocumentationFile>..\bin\mindtouch.core.xml</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Autofac, Version=1.4.3.536, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\redist\Autofac.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=b32731d11ce58905">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\redist\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.configuration" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Routing">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AmazonS3\AmazonS3Client.cs" />
+    <Compile Include="AmazonS3\AmazonS3DataInfo.cs" />
+    <Compile Include="AmazonS3\S3PlugEx.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="DreamApplicationConfiguration.cs" />
+    <Compile Include="DreamApplicationConfigurationBuilder.cs" />
+    <Compile Include="DreamCoreUtil.cs" />
+    <Compile Include="DreamHost.cs" />
+    <Compile Include="dreampipe.cs" />
+    <Compile Include="DreamHostService.cs" />
+    <Compile Include="feature.cs" />
+    <Compile Include="DreamApplication.cs" />
+    <Compile Include="http\DreamRouteHandler.cs" />
+    <Compile Include="http\RoutedHttpHandler.cs" />
+    <Compile Include="http\httphandler.cs" />
+    <Compile Include="http\httptransport.cs" />
+    <Compile Include="ioformatter.cs" />
+    <Compile Include="serviceactivator.cs" />
+    <Compile Include="AmazonS3\AmazonS3ClientConfig.cs" />
+    <Compile Include="AmazonS3\AmazonS3FileHandle.cs" />
+    <Compile Include="services\atomservice.cs" />
+    <Compile Include="AmazonS3\IAmazonS3Client.cs" />
+    <Compile Include="services\S3StorageService.cs" />
+    <Compile Include="services\directoryservice.cs" />
+    <Compile Include="services\EmailService.cs" />
+    <Compile Include="services\MountService.cs" />
+    <Compile Include="services\QueueService.cs" />
+    <Compile Include="services\RedirectService.cs" />
+    <Compile Include="services\StorageService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mindtouch.dream\mindtouch.dream.csproj">
+      <Project>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</Project>
+      <Name>mindtouch.dream</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\host\error.xslt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\favicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\host\status.xslt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="resources\host\services.xslt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>

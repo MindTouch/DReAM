@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<params>
+  <param>
+    <name>
+      pageid
+    </name>
+    <default>
+      home
+    </default>
+  </param>
+  <param>
+    <name>
+      fileid
+    </name>
+    <default>
+      0
+    </default>
+  </param>
+  <param>
+    <name>
+      filename
+    </name>
+    <default>
+      {filename}
+    </default>
+  </param>
+  <param>
+    <name>
+      email
+    </name>
+    <default>
+      {email}
+    </default>
+  </param>
+  <param>
+    <name>
+      userid
+    </name>
+    <default>
+      current
+    </default>
+  </param>
+  <param>
+    <name>
+      tag
+    </name>
+    <default>
+      {tag}
+    </default>
+  </param>
+  <param>
+    <name>
+      POST:pages/{pageid}/guests
+    </name>
+    <default>
+      &lt;guestList&gt;
+        &lt;guest&gt;
+          &lt;email&gt;email1@company.com&lt;/email&gt;
+          &lt;expires&gt;12/31/9999 11:59:59 PM&lt;/expires&gt;
+        &lt;/guest&gt;
+      &lt;/guestList&gt;
+    </default>
+  </param> 
+  <param>
+    <name>
+      PUT:pages/{pageid}/security
+    </name>
+    <default>
+        &lt;security&gt;
+          &lt;permissions.page&gt;
+          &lt;restriction&gt;Public&lt;/restriction&gt;
+          &lt;/permissions.page&gt;
+          &lt;grants&gt;
+          &lt;grant&gt;
+          &lt;permissions&gt;
+          &lt;role&gt;Guest&lt;/role&gt;
+          &lt;/permissions&gt;
+          &lt;user id=&quot;1&quot;&gt;&lt;/user&gt;
+          &lt;/grant&gt;
+          &lt;grant&gt;
+          &lt;group id=&quot;1&quot;&gt;&lt;/group&gt;
+          &lt;permissions&gt;
+          &lt;role&gt;Guest&lt;/role&gt;
+          &lt;/permissions&gt;
+          &lt;/grant&gt;
+          &lt;/grants&gt;
+        &lt;/security&gt;
+    </default>
+  </param>
+  <param>
+    <name>
+      PUT:pages/{pageid}/guests
+    </name>
+    <default>
+      &lt;guestList&gt;
+        &lt;guest&gt;
+          &lt;email&gt;email1@company.com&lt;/email&gt;
+          &lt;expires&gt;12/31/9999 11:59:59 PM&lt;/expires&gt;
+        &lt;/guest&gt;
+      &lt;/guestList&gt;
+    </default>
+  </param>
+  <param>
+    <name>
+      PUT:pages/{pageid}/guests/{email}
+    </name>
+    <default>
+        &lt;guest&gt;
+          &lt;email&gt;email1@company.com&lt;/email&gt;
+          &lt;expires&gt;12/31/9999 11:59:59 PM&lt;/expires&gt;
+        &lt;/guest&gt;
+    </default> 
+  </param>
+  <param>
+    <name>
+      POST:users/{userid}/allowed
+    </name>
+    <default>
+      &lt;pages&gt;
+      &lt;page id="1251"/&gt;
+      &lt;page id="1253"/&gt;
+      &lt;/pages&gt;
+    </default>
+  </param>
+</params>
+

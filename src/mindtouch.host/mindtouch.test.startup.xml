@@ -1,0 +1,18 @@
+﻿<script>
+  
+  <!-- Redirect test -->
+  <action verb="POST" path="/host/services">
+    <config>
+      <path>google</path>
+      <sid>http://services.mindtouch.com/dream/stable/2007/03/proxy</sid>
+      <redirect>http://www.google.com</redirect>
+    </config>
+  </action>
+  <action verb="POST" path="/host/services">
+    <config>
+      <path>cnn</path>
+      <sid>http://services.mindtouch.com/dream/stable/2007/03/proxy</sid>
+      <redirect>http://www.cnn.com</redirect>
+    </config>
+  </action>
+</script>
