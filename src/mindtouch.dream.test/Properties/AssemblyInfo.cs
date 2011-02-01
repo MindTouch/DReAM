@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -53,10 +53,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.0.0.17637")]
-[assembly: AssemblyFileVersion("2.0.0.17637")]
-[assembly: SvnRevision(17637)]
+// [assembly: AssemblyVersion("2.2.0.24968")]
+[assembly: AssemblyVersion("2.2.0.24968")]
+[assembly: AssemblyFileVersion("2.2.0.24968")]
+[assembly: SvnRevision(24968)]
 [assembly: SvnBranch("trunk")]
 
 #if SIGNED
