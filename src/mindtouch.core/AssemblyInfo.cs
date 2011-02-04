@@ -55,8 +55,9 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 [assembly: AssemblyVersion("2.2.0.24968")]
 [assembly: AssemblyFileVersion("2.2.0.24968")]
-[assembly: SvnRevision(24968)]
-[assembly: SvnBranch("trunk")]
+[assembly: GitBranch("master")]
+[assembly: GitRevision("770942d8ebf3368d3278691b58a31ce5ed4b0b24")]
+[assembly: GitUri("https://github.com/sdether/DReAM")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
