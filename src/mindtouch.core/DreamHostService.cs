@@ -312,6 +312,18 @@ namespace MindTouch.Dream {
                 if(svnBranch != null) {
                     result.Elem("SvnBranch", svnBranch.Branch);
                 }
+                var gitRevision = assembly.GetAttribute<GitRevisionAttribute>();
+                if(gitRevision != null) {
+                    result.Elem("GitRevision", gitRevision.Revision);
+                }
+                var gitBranch = assembly.GetAttribute<GitBranchAttribute>();
+                if(gitBranch != null) {
+                    result.Elem("GitBranch", gitBranch.Branch);
+                }
+                var gitUri = assembly.GetAttribute<GitUriAttribute>();
+                if(gitUri != null) {
+                    result.Elem("GitBranch", gitUri.Uri);
+                }
                 result.End();
             }
             response.Return(DreamMessage.Ok(result));
