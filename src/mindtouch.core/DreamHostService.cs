@@ -322,7 +322,7 @@ namespace MindTouch.Dream {
                 }
                 var gitUri = assembly.GetAttribute<GitUriAttribute>();
                 if(gitUri != null) {
-                    result.Elem("GitBranch", gitUri.Uri);
+                    result.Elem("GitUri", gitUri.Uri);
                 }
                 result.End();
             }
