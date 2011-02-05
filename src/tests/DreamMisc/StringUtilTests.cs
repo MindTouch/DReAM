@@ -105,7 +105,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentException), ExpectedMessage = "length of string replacements must be even\r\nParameter name: replacements")]
+        [ExpectedException(typeof(ArgumentException))]
         public void ReplaceAll_with_uneven_substitutions() {
             string before = "This is a string to replace stuff in.";
             string after = before.ReplaceAll(
