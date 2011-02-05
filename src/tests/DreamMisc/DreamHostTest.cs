@@ -248,6 +248,9 @@ namespace MindTouch.Dream.Test {
         [Test]
         [ExpectedException(typeof(DreamResponseException))]
         public void BadHostRequest() {
+			
+			// TODO (steveb): test fails under Mono 2.8.2
+			
             Plug plug = Plug.New("http://nowhere/foo");
             plug.Get();
         }
@@ -269,6 +272,9 @@ namespace MindTouch.Dream.Test {
      
         [Test]
         public void Hitting_connect_limit_returns_service_unavailable() {
+			
+			// TODO (steveb): test fails under Mono 2.8.2
+			
             int connectLimit = 5;
             using(var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config").Elem("connect-limit", connectLimit))) {
                 var mockService = MockService.CreateMockService(hostInfo);

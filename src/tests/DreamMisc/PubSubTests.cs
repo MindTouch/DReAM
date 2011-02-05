@@ -1885,6 +1885,9 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Repeated_dispatch_failure_kicks_subscription_set() {
+			
+			// TODO (steveb): test fails under Mono 2.8.2
+			
             var sub1Uri = new XUri("http://sub1/foo");
             var sub1Mock = MockPlug.Register(sub1Uri);
             sub1Mock.Expect().Verb("POST").Response(DreamMessage.BadRequest("nobody home"));
