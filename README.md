@@ -7,8 +7,6 @@ Welcome to MindTouch DReAM.
 2. System Requirements
 3. Additional Resources
 
-	______________________________________________________________________________
-	
 	
 	                          .;ok0KXXXXX0dl,
 	                       .:xkd:,..  ..';okKKx,
@@ -35,7 +33,6 @@ Welcome to MindTouch DReAM.
 	M:  ,N;  ;N, ;W, ;N,  .Kl .0d. .kN' ,Nc    kO. .lX; .Xo..cNd  kO.  ;; .Kc   kk
 	M:  ,N;  ;N, ;W, ;N,  .Kl  'KKO0ON'  xN00: .xX0KK:   oNXXxKd  .kN0KK, .Kc   kk
 	
-	______________________________________________________________________________
 
 
 1. What is MindTouch DReAM?
@@ -60,24 +57,24 @@ With DReAM, developers can create innovative services without worrying
 about the underlying infrastructure. Moreover, developers can use his or
 her programming language of choice and still leverage an open-source
 platform for creating rich, interactive Web services that can generate
-and combine data from multiple sources. With MindTouch Dream, developers
+and combine data from multiple sources. With MindTouch DReAM, developers
 can create interactive REST-based Web services for any platform,
 including Linux, Mac OS and the entire Microsoft platform, as well as
 virtually any device, from server to desktop to mobile device. MindTouch
-Dream is not new technology. What's new is the ease with which
+DReAM is not new technology. What's new is the ease with which
 developers can now develop and distribute compelling Web services,
-because "behavior" is now mobile, not just data. MindTouch Dream is
+because "behavior" is now mobile, not just data. MindTouch DReAM is
 built on the premise that everything is remote.
 
 
 2. System Requirements
 ----------------------
 * To run
-** Microsoft Visual Studio 2008 with .Net 3.5 or later
-** Novell Mono v2.4 or later
+	* Microsoft Visual Studio 2008 with .Net 3.5 or later
+	* Novell Mono v2.4 or later
 * To build
-** Microsoft Visual Studio 2008 with .Net 3.5 or later
-** Novell Mono v2.8.2 or later
+	* Microsoft Visual Studio 2008 with .Net 3.5 or later
+	* Novell Mono v2.8.2 or later
 
 
 3. Additional Resources
