@@ -475,10 +475,12 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void TestXUriFromUriConstruction() {
             string[] evilSegments = new string[] {
-            "Iñtërnâtiônàlizætiøn",
-            "A%4b",
-            "A^B",
-        };
+
+                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extender characteres)
+                "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
+                "A%4b",
+                "A^B",
+            };
             foreach(string evil in evilSegments) {
                 Uri original = new Uri("http://foo/" + evil);
                 Uri fromDecoded = new Uri(original.ToString());
