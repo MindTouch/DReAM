@@ -20,3 +20,4 @@ App_Data/
 src/test-results/*.xml
 src/*/test-results/*.xml
 src/*/*/test-results/*.xml
+*.test-cache
