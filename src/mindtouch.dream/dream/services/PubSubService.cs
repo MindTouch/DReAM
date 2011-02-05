@@ -152,7 +152,6 @@ namespace MindTouch.Dream.Services {
         protected Yield RemoveSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             string id = context.GetParam("id");
             _dispatcher.RemoveSet(id);
-            XUri featureUri = Self.At("subscribers").Uri.AsPublicUri();
             DreamMessage msg = DreamMessage.Ok();
             response.Return(msg);
             yield break;
