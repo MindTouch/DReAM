@@ -47,5 +47,5 @@ built on the premise that everything is remote.
 
 3. Additional Resources
 -----------------------
-* Documentation: http://developer.mindtouch.com/DReAM
-* Forums: http://forums.developer.mindtouch.com/forumdisplay.php?f=13
+* [Documentation](http://developer.mindtouch.com/DReAM)
+* [Forums](http://forums.developer.mindtouch.com/forumdisplay.php?f=13)
