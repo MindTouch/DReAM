@@ -14,3 +14,6 @@ _ReSharper.*/
 *.user
 *.log
 App_Data/
+*.userprefs
+*.pidb
+*.resources
