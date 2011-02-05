@@ -740,7 +740,6 @@ namespace MindTouch.Dream {
 
         [DreamFeature("GET:status/aliases", "Show system aliases")]
         private Yield GetStatusAliases(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            DateTime now = DateTime.UtcNow;
             XDoc result = new XDoc("aliases");
 
             // host/aliases
@@ -837,7 +836,6 @@ namespace MindTouch.Dream {
 
         [DreamFeature("GET:status/features", "Show system features")]
         private Yield GetStatusFeatures(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            DateTime now = DateTime.UtcNow;
             XDoc result;
             lock(_features) {
                 result = _features.ListAll();
@@ -1360,8 +1358,10 @@ namespace MindTouch.Dream {
                     if(context.CacheKeyAndTimeout != null) {
                         IDreamService service = feature.Service;
 
-                        // convert message to byte array before cloning
-                        byte[] bytes = result.Value.ToBytes();
+                        // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal 
+                        //                representation to a byte array, which is better for cloning.
+                        result.Value.ToBytes();
+                        
                         DreamMessage reply = result.Value.Clone();
                         Dictionary<object, DreamMessage> cache;
                         lock(_responseCache) {
