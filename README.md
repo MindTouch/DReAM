@@ -4,38 +4,6 @@ MindTouch DReAM
 Welcome to MindTouch DReAM.
 
 1. What is MindTouch DReAM?
-2. System Requirements
-3. Additional Resources
-
-	
-	                          .;ok0KXXXXX0dl,
-	                       .:xkd:,..  ..';okKKx,
-	                     .l0o.    ....       ,kW0:
-	                    .0x.  .cxkOOO0K0d,     ,0WO.
-	                   .0d  .xOl.     .,dXKl.   .xMX,
-	                   oK. ;Kl           .oNX,    xMX'
-	                   Ox .Kc              .ON,   .OM0.
-	                   0k c0                'N0.   ,NMo
-	                   dN':k            ,cldkNN,    xMX.
-	                   .K0,x'           dMO:,..     lMMc
-	                    .OXd:           .XO.   ,oxOXX0d'
-	                      :0Kd;.         oWk.  :WK:'.
-	                        .:dOK0kxxxkOOKNXc   kN,
-	                            'oOOxl;'..      ,Nk
-	                               .cdkOkxddddddkNW,
-	                                    .,:cloooool'
-	
-	                                 .   .                                 .
-	                                ;X' ;X'                               .Kc
-	l;coo,.coo'  .l. .l,coo;   .:olcoN' ;Wxlc   ,looc.  .l.   ;,   ,lolc. .Kd:ooc.
-	MO,.oWk'.oX' ;W, ;Wk'.:Nc .0k..'ON' ;Nc..  x0,..oX, ,N;   Od  x0,..c; .K0;.,Kd
-	M:  ,W;  ;N, ;W, ;W;  .Kl ;W;   :N' ;N'   .Nl   .Kd ,N;   Od .Xl      .Kl   kk
-	M:  ,N;  ;N, ;W, ;N,  .Kl .0d. .kN' ,Nc    kO. .lX; .Xo..cNd  kO.  ;; .Kc   kk
-	M:  ,N;  ;N, ;W, ;N,  .Kl  'KKO0ON'  xN00: .xX0KK:   oNXXxKd  .kN0KK, .Kc   kk
-	
-
-
-1. What is MindTouch DReAM?
 ---------------------------
 MindTouch DReAM is a REST-based distributed application framework
 developed in Mono/.NET. With DReAM, a Web service is similar to an
@@ -74,7 +42,7 @@ built on the premise that everything is remote.
 	* Novell Mono v2.4 or later
 * To build
 	* Microsoft Visual Studio 2008 with .Net 3.5 or later
-	* Novell Mono v2.8.2 or later
+	* Novell Mono v2.8 or later
 
 
 3. Additional Resources
