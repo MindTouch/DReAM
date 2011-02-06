@@ -1852,7 +1852,7 @@ namespace MindTouch.Xml {
                 return this;
             }
 
-            // TODO (steveb): allow renaming of attribute nodes
+            // TODO (steveb): allow renaming of attribute nodes (see http://youtrack.developer.mindtouch.com/issue/MT-9661)
 
             XmlNode current = CurrentNode;
             XmlElement node = current.OwnerDocument.CreateElement(name);

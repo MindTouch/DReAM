@@ -84,7 +84,7 @@ namespace MindTouch.Dream {
         Fragment
     }
 
-    // TODO (steveb): XUriTemplate/XUriPattern
+    // TODO (steveb): implement XUriTemplate/XUriPattern (see http://youtrack.developer.mindtouch.com/issue/MT-9660)
     // {scheme}://{host}/{path-param};[{segment-param}]/[{optional-path-param};{segment-param}}]//{segment-list}?query-arg={query-param}&[optional-query-arg={query-param}]
 
     /// <summary>
