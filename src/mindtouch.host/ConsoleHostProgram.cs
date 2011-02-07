@@ -105,6 +105,9 @@ namespace MindTouch.Dream {
                         DebugUtil.SetCollectionInterval(TimeSpan.FromSeconds(interval));
                     }
                     break;
+                case "auth":
+                    config.Elem("authentication-shemes", value);
+                    break;
                 default:
                     WriteError(key, "unknown setting");
                     return 1;
@@ -282,6 +285,8 @@ namespace MindTouch.Dream {
             Console.WriteLine("    connect-limit <int>     maximum # of simultaneous connections (negative: set to max threads - #, default: 0)");
             Console.WriteLine("    collect-interval <int>  interval in seconds for forcing garbage collection (off by default)");
             Console.WriteLine("    guid <guid>             set GUID for host");
+            Console.WriteLine("    auth <auth-schemes>     Comma separated list of authentication mechanisms used to access this service (None by default)");
+            Console.WriteLine("                            See System.Net.AuthenticationSchemes for available values.");
         }
     }
 }
