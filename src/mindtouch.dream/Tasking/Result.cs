@@ -579,8 +579,6 @@ namespace MindTouch.Tasking {
 #endif
         public AResult Block() {
 
-            // TODO (steveb): check if we can use Monitor instead of AutoResetEvent
-
             // block until result is available
             if(!HasFinished) {
                 var monitor = new MonitorSemaphore();
