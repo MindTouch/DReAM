@@ -96,7 +96,7 @@ namespace MindTouch.Dream {
             string appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
             int limit = config["connect-limit"].AsInt ?? 0;
             int httpPort = config["http-port"].AsInt ?? DEFAULT_PORT;
-            AuthenticationSchemes authenticationScheme = AuthenticationSchemes.None;
+            AuthenticationSchemes authenticationScheme = AuthenticationSchemes.Anonymous;
             string authShemes = config["authentication-shemes"].AsText;
             if (!String.IsNullOrEmpty (authShemes)) {
                 try {
