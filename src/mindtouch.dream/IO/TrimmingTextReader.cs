@@ -226,6 +226,56 @@ namespace MindTouch.IO {
             return ch;
         }
 
+        public override string ReadToEnd() {
+        
+            // NOTE (steveb): Mono 2.8.2 does not implement TextReader.ReadToEnd() properly (see https://bugzilla.novell.com/show_bug.cgi?id=655934);
+            //                once fixed, this code can be removed.
+        
+            var result = new StringBuilder();
+            for(var c = Read(); c >= 0; c = Read()) {
+                result.Append((char)c);
+            }
+            return result.ToString();
+        }
+        
+        public override string ReadLine() {
+        
+            // NOTE (steveb): Mono 2.8.2 does not implement TextReader.ReadLine() properly (see https://bugzilla.novell.com/show_bug.cgi?id=655934);
+            //                once fixed, this code can be removed.
+        
+            StringBuilder result = null;
+            for(var c = Read(); c >= 0; c = Read()) {
+        
+                // lazy initialize string buffer so we can detect the case where we had already reached the end of the reader
+                result = result ?? new StringBuilder();
+        
+                // check simple character line ending
+                if(c == '\r') {
+                    if(Peek() == '\n') {
+                        Read();
+                    }
+                    break;
+                } else if(c == '\n') {
+                    break;
+                } else {
+                    result.Append((char)c);
+
+                    // check if buffered sequence matches Environment.NewLine
+                    if(result.Length >= Environment.NewLine.Length) {
+                        var match = true;
+                        for(int resultIndex = result.Length - 1, newlineIndex = Environment.NewLine.Length - 1; newlineIndex >= 0 && match; --resultIndex, --newlineIndex) {
+                            match = (result[resultIndex] == Environment.NewLine[newlineIndex]);
+                        }
+                        if(match) {
+                            result.Remove(result.Length - Environment.NewLine.Length, Environment.NewLine.Length);
+                            break;
+                        }
+                    }
+                }
+            }
+            return (result != null) ? result.ToString() : null;
+        }
+
         private int CopyStringBuffer(char[] buffer, int index, int count) {
             var lengthOfBuffer = _buffer.Length;
             if(_endOfStream) {

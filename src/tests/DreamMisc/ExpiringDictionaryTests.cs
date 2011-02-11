@@ -298,7 +298,7 @@ namespace MindTouch.Dream.Test {
             set.Set(k, v, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[k];
-            Assert.AreEqual(ttl.WithoutMilliseconds(), entry.TTL.WithoutMilliseconds());
+            AssertEx.AreEqual(ttl, entry.TTL);
             Assert.AreEqual(expireTime, entry.When);
         }
 

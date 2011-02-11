@@ -144,7 +144,6 @@ namespace MindTouch.Dream.Http {
 
         private void RequestHandler(IAsyncResult ar) {
             HttpListenerContext httpContext = null;
-            object key = new object();
             Action<string> activity = null;
             HttpListener listener = (HttpListener)ar.AsyncState;
 

@@ -55,7 +55,7 @@ namespace MindTouch.Xml.Test {
                     .Value("Cool")
                 .End()
                 .Start("span")
-                    .Value("Ceçi est \"une\" idée")
+                    .Value("Ce\u00e7i est \"une\" id\u00e9e")
                 .End()
                 .Start("struct")
                     .Start("name").Value("John").End()
@@ -65,7 +65,7 @@ namespace MindTouch.Xml.Test {
 
         [Test]
         public void XmlSerialization1() {
-            Test("xml serialization", _doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World</bold>!<br /><bold>Cool</bold><span>Ceçi est \"une\" idée</span><struct><name>John</name><last>Doe</last></struct></doc>");
+            Test("xml serialization", _doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World</bold>!<br /><bold>Cool</bold><span>Ce\u00e7i est \"une\" id\u00e9e</span><struct><name>John</name><last>Doe</last></struct></doc>");
         }
 
         [Test]
@@ -147,19 +147,19 @@ namespace MindTouch.Xml.Test {
         [Test]
         public void XmlAdd1() {
             _doc.Add(new XDoc("subdoc").Start("tag").Value("value").End());
-            Test("xml add doc", _doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World</bold>!<br /><bold>Cool</bold><span>Ceçi est \"une\" idée</span><struct><name>John</name><last>Doe</last></struct><subdoc><tag>value</tag></subdoc></doc>");
+            Test("xml add doc", _doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World</bold>!<br /><bold>Cool</bold><span>Ce\u00e7i est \"une\" id\u00e9e</span><struct><name>John</name><last>Doe</last></struct><subdoc><tag>value</tag></subdoc></doc>");
         }
 
         [Test]
         public void XmlAdd2() {
             _doc["bold"].Start("italic").Value(1).End().Start("underline").Value(2).End();
-            Test("xml add elements", _doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World<italic>1</italic><underline>2</underline></bold>!<br /><bold>Cool</bold><span>Ceçi est \"une\" idée</span><struct><name>John</name><last>Doe</last></struct></doc>");
+            Test("xml add elements", _doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World<italic>1</italic><underline>2</underline></bold>!<br /><bold>Cool</bold><span>Ce\u00e7i est \"une\" id\u00e9e</span><struct><name>John</name><last>Doe</last></struct></doc>");
         }
 
         [Test]
         public void XmlClone1() {
             XDoc doc = _doc.Clone();
-            Test("xml serialization", doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World</bold>!<br /><bold>Cool</bold><span>Ceçi est \"une\" idée</span><struct><name>John</name><last>Doe</last></struct></doc>");
+            Test("xml serialization", doc.ToString(), "<doc source=\"http://www.mindtouch.com\">Hello <bold style=\"blinking\">World</bold>!<br /><bold>Cool</bold><span>Ce\u00e7i est \"une\" id\u00e9e</span><struct><name>John</name><last>Doe</last></struct></doc>");
         }
 
         [Test]
