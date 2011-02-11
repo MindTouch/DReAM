@@ -82,9 +82,10 @@ namespace MindTouch.Dream.Http {
         private string _sourceInternal;
         private string _sourceExternal;
         private string _serverSignature;
+        private AuthenticationSchemes _authenticationSheme;
 
         //--- Constructors ---
-        public HttpTransport(IDreamEnvironment env, XUri uri) {
+        public HttpTransport(IDreamEnvironment env, XUri uri, AuthenticationSchemes authenticationSheme){
             if(env == null) {
                 throw new ArgumentNullException("env");
             }
@@ -96,6 +97,7 @@ namespace MindTouch.Dream.Http {
             _minSimilarity = _uri.MaxSimilarity;
             _sourceInternal = _uri + " (internal)";
             _sourceExternal = _uri.ToString();
+            _authenticationSheme = authenticationSheme;
         }
 
         //--- Properties ---
@@ -109,12 +111,13 @@ namespace MindTouch.Dream.Http {
         }
 
         //--- Methods ---
-        public void Startup() {
+        public void Startup(){
             _log.InfoMethodCall("Startup", _uri);
 
             // create listener and make it listen to the uri
             _listener = new HttpListener();
             _listener.IgnoreWriteExceptions = true;
+            _listener.AuthenticationSchemes = _authenticationSheme;
             _listener.Prefixes.Add(_uri.ToString());
             try {
                 _listener.Start();
