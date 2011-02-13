@@ -410,9 +410,7 @@ namespace MindTouch.Dream.Http {
 
             if(!string.IsNullOrEmpty(httpResponse.ContentType)) {
                 contentType = new MimeType(httpResponse.ContentType);
-                activity("pre new BufferedStream");
-                stream = new BufferedStream(httpResponse.GetResponseStream());
-                activity("post new BufferedStream");
+                stream = httpResponse.GetResponseStream();
             } else {
 
                 // TODO (arnec): If we get a response with a stream, but no content-type, we're currently dropping the stream. Might want to revisit that.
