@@ -241,7 +241,7 @@ namespace MindTouch.Dream {
         private static DreamMessage PostProcess(string verb, XUri uri, XUri normalizedUri, DreamHeaders headers, DreamCookieJar cookies, DreamMessage message) {
 
             // check if we received cookies
-            if(message.IsSuccessful && message.HasCookies) {
+            if(message.HasCookies) {
                 DreamContext context = DreamContext.CurrentOrNull;
 
                 // add matching cookies to service or to global cookie jar
