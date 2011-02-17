@@ -3,6 +3,10 @@ MindTouch DReAM
 
 Welcome to MindTouch DReAM.
 
+Notes on Contributing to Dream
+---------------------------
+If you have a new feature for Dream, please work against master, however, if you have a patch you'd like to see in the next point release, please base your work on the release branch (currently 2.2)
+
 1. What is MindTouch DReAM?
 ---------------------------
 MindTouch DReAM is a REST-based distributed application framework
