@@ -55,8 +55,8 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 [assembly: AssemblyVersion("2.2.0.24968")]
 [assembly: AssemblyFileVersion("2.2.0.24968")]
-[assembly: GitBranch("master")]
-[assembly: GitRevision("770942d8ebf3368d3278691b58a31ce5ed4b0b24")]
+[assembly: GitBranch("2.2")]
+[assembly: GitRevision("b68cc64669f9dfd3f4126de9e5579028a92d90af")]
 [assembly: GitUri("https://github.com/sdether/DReAM")]
 
 //
