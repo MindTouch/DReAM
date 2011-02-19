@@ -1168,8 +1168,7 @@ namespace MindTouch.Dream {
                                 }
 
                                 // loop over all header values
-                                for(int i = values.Length - 1; i >= 0; --i) {
-** loop goes in reverse order!
+                                for(int i = 0; i < values.Length; ++i) {
                                     foreach(string value in values[i].Split(' ')) {
                                         string host = value;
                                         if((host.Length > 0) && (host[host.Length - 1] == ',')) {
@@ -1188,8 +1187,7 @@ namespace MindTouch.Dream {
                                 }
                             } else {
                                 Entry last = null;
-                                for(int i = values.Length - 1; i >= 0; --i) {
-** loop goes in reverse order!
+                                for(int i = 0; i < values.Length; ++i) {
                                     if(last != null) {
                                         last.Next = new Entry(values[i], null);
                                         last = last.Next;
