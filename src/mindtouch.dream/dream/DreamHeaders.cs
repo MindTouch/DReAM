@@ -22,9 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Globalization;
-using System.Net;
-using System.Text;
 using MindTouch.Web;
 
 namespace MindTouch.Dream {
@@ -690,7 +687,7 @@ namespace MindTouch.Dream {
                 if(value != null) {
 
                     // NOTE: certain version of IE appends a "; size=x" to this header
-                    value = value.Split(new char[] { ';' })[0];
+                    value = value.Split(new[] { ';' })[0];
 
                     DateTime result;
                     if(DateTimeUtil.TryParseInvariant(value, out result)) {
@@ -1161,8 +1158,18 @@ namespace MindTouch.Dream {
 
                                 // NOTE (steveb): 'X-Forwarded-Host', 'X-Forwarded-For' may contain one or more entries, but NameValueCollection doesn't seem to care :(
 
-                                Entry entry = null;
+                                // initialize 'last' to be the last entry added (if any) for the current header key
+                                Entry last;
+                                _headers.TryGetValue(key, out last);
+                                if(last != null) {
+                                    while(last.Next != null) {
+                                        last = last.Next;
+                                    }
+                                }
+
+                                // loop over all header values
                                 for(int i = values.Length - 1; i >= 0; --i) {
+** loop goes in reverse order!
                                     foreach(string value in values[i].Split(' ')) {
                                         string host = value;
                                         if((host.Length > 0) && (host[host.Length - 1] == ',')) {
@@ -1170,17 +1177,26 @@ namespace MindTouch.Dream {
                                         }
                                         host = host.Trim();
                                         if(!string.IsNullOrEmpty(host)) {
-                                            entry = new Entry(host, entry);
+                                            if(last != null) {
+                                                last.Next = new Entry(host, null);
+                                                last = last.Next;
+                                            } else {
+                                                _headers[key] = last = new Entry(host, null);
+                                            }
                                         }
                                     }
                                 }
-                                _headers[key] = entry;
                             } else {
-                                Entry entry = null;
+                                Entry last = null;
                                 for(int i = values.Length - 1; i >= 0; --i) {
-                                    entry = new Entry(values[i], entry);
+** loop goes in reverse order!
+                                    if(last != null) {
+                                        last.Next = new Entry(values[i], null);
+                                        last = last.Next;
+                                    } else {
+                                        _headers[key] = last = new Entry(values[i], null);
+                                    }
                                 }
-                                _headers[key] = entry;
                             }
                         }
                     }
