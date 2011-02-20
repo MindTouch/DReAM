@@ -336,6 +336,11 @@ namespace MindTouch.Dream {
         /// </summary>
         public const string METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
+        /// <summary>
+        /// 'Front-End-Https' Application-specific Header.
+        /// </summary>
+        public const string FRONT_END_HTTPS = "Front-End-Https";
+
         //___ Apache mod_proxy headers ___
 
         /// <summary>
@@ -1012,6 +1017,14 @@ namespace MindTouch.Dream {
         public string MethodOverride {
             get { return this[METHOD_OVERRIDE]; }
             set { this[METHOD_OVERRIDE] = value; }
+        }
+
+        /// <summary>
+        /// 'Front-End-Https' Header.
+        /// </summary>
+        public string FrontEndHttps {
+            get { return this[FRONT_END_HTTPS]; }
+            set { this[FRONT_END_HTTPS] = value; }
         }
 
         /// <summary>

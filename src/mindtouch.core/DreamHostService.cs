@@ -1242,7 +1242,15 @@ namespace MindTouch.Dream {
                             // request used an override, append path of public-uri
                             serverPath = string.Join("/", _publicUri.Segments);
                         }
-                        string scheme = uri.GetParam(DreamInParam.SCHEME, transport.Scheme);
+
+                        // set the uri scheme based-on the incoming scheme and the override header
+                        string scheme = transport.Scheme;
+                        if("On".EqualsInvariantIgnoreCase(request.Headers.FrontEndHttps ?? "")) {
+                            scheme = Scheme.HTTPS;
+                        }
+                        scheme = uri.GetParam(DreamInParam.SCHEME, scheme);
+
+                        // set the host port
                         string hostPort = proxyOverride ?? request.Headers.Host ?? uri.HostPort;
                         publicUri = new XUri(string.Format("{0}://{1}", scheme, hostPort)).AtPath(serverPath);
                     }
