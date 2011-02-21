@@ -174,11 +174,10 @@ namespace MindTouch.Dream.Test.Text {
             }
         }
 
-        [Test]
+        [Test, Ignore("for some reason, CharDet estimates EUC-JP to be the worst fit. :(")]
         public void Detect_encoding_for_XML_file_with_EUC_JP() {
 
             // BUGBUGBUG (steveb): for some reason, CharDet estimates EUC-JP to be the worst fit. :(
-            Assert.Ignore("for some reason, CharDet estimates EUC-JP to be the worst fit. :(");
 
             const string resource = "xml-euc-jp.txt";
             using(var stream = GetResourceStream(resource)) {
