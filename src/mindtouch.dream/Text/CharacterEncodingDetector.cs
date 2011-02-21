@@ -27,7 +27,7 @@ namespace MindTouch.Text {
     public class CharacterEncodingDetector : IEncodingDetector {
 
         //--- Constants ---
-        private const int BUFFER_SIZE = 5000;
+        private const int BUFFER_SIZE = 1024;
 
         //--- Methods ---
         public Encoding Detect(Stream stream) {
