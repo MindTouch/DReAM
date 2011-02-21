@@ -23,7 +23,7 @@ using System.IO;
 using System.Text;
 
 namespace MindTouch.Text {
-    internal class BOMEncodingDetector : IEncodingDetector {
+    public class BOMEncodingDetector : IEncodingDetector {
 
         //--- Methods ---
         public Encoding Detect(Stream stream) {

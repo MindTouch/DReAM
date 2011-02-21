@@ -76,6 +76,7 @@ namespace MindTouch.Text.CharDet.Verifiers {
             States[2] = ((int)(((  ((int)(((  ((int)((( EStart) << 4) | (EStart)))  ) << 8) | (((int)(((EStart) << 4) | ( EStart))) ))) ) << 16) | (  ((int)(((  ((int)(((EError) << 4) | (EError))) ) << 8) | (   ((int)(((EItsMe) << 4) | (EItsMe))) )))))) ;
             CharSet =  "Shift_JIS";
             StFactor =  6;
+            Priority = 3;
         }
 
         //--- Methods ---

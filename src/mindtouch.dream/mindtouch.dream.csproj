@@ -151,11 +151,10 @@
     <Compile Include="system\Empty.cs" />
     <Compile Include="system\SysUtil.cs" />
     <Compile Include="Text\BOMEncodingDetector.cs" />
-    <Compile Include="Text\CharDetEncodingDetector.cs" />
+    <Compile Include="Text\CharacterEncodingDetector.cs" />
     <Compile Include="Text\CharDet\EUCSampler.cs" />
-    <Compile Include="Text\CharDet\ICharsetDetectionObserver.cs" />
-    <Compile Include="Text\CharDet\ICharsetDetector.cs" />
     <Compile Include="Text\CharDet\Detector.cs" />
+    <Compile Include="Text\HtmlMetaEncodingDetector.cs" />
     <Compile Include="Text\CharDet\Statistics\AStatistics.cs" />
     <Compile Include="Text\CharDet\Statistics\StatisticsBig5.cs" />
     <Compile Include="Text\CharDet\Statistics\StatisticsEUCJP.cs" />
@@ -178,6 +177,7 @@
     <Compile Include="Text\CharDet\Verifiers\VerifierUCS2BE.cs" />
     <Compile Include="Text\CharDet\Verifiers\VerifierUCS2LE.cs" />
     <Compile Include="Text\CharDet\Verifiers\VerifierUTF8.cs" />
+    <Compile Include="Text\EncodingEx.cs" />
     <Compile Include="Text\IEncodingDetector.cs" />
     <Compile Include="Threading\DispatchQueueEx.cs" />
     <Compile Include="Threading\DispatchThreadScheduler.cs" />

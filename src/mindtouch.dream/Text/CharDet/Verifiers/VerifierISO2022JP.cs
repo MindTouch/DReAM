@@ -79,6 +79,7 @@ namespace MindTouch.Text.CharDet.Verifiers {
             States[5] = ((int)(((  ((int)(((  ((int)((( EError) << 4) | (EError)))  ) << 8) | (((int)(((EItsMe) << 4) | ( EItsMe))) ))) ) << 16) | (  ((int)(((  ((int)(((EError) << 4) | (EError))) ) << 8) | (   ((int)(((EError) << 4) | (EError))) )))))) ;
             CharSet =  "ISO-2022-JP";
             StFactor =  8;
+            Priority = 5;
         }
 
         //--- Methods ---

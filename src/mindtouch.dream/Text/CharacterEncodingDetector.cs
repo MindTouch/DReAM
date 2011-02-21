@@ -19,16 +19,27 @@
  * limitations under the License.
  */
 
-using System;
 using System.IO;
 using System.Text;
+using MindTouch.Text.CharDet;
 
 namespace MindTouch.Text {
-    internal class CharDetEncodingDetector : IEncodingDetector {
+    public class CharacterEncodingDetector : IEncodingDetector {
+
+        //--- Constants ---
+        private const int BUFFER_SIZE = 5000;
 
         //--- Methods ---
         public Encoding Detect(Stream stream) {
-            throw new NotImplementedException();
+            long position = stream.Position;
+            var buffer = new byte[BUFFER_SIZE];
+            int read = stream.Read(buffer, 0, buffer.Length);
+            stream.Position = position;
+
+            var detector = new Detector(Language.ALL);
+            detector.HandleData(buffer, read);
+            detector.DataEnd();
+            return detector.Result;
         }
     }
 }

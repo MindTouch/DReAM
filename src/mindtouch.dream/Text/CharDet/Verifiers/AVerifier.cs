@@ -45,6 +45,7 @@ namespace MindTouch.Text.CharDet.Verifiers {
         public int StFactor { get; protected set; }
         public int[] Cclass { get; protected set; }
         public int[] States { get; protected set; }
+        public int Priority { get; protected set; }
 
         //--- Abstract Methods ---
         public abstract bool isUCS2();
