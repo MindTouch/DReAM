@@ -129,27 +129,27 @@ namespace MindTouch.Text {
         }
 
         //--- Extension Methods ---
-        public static string GetCanonicalName(this Encoding encoding) {
+        internal static string GetCanonicalName(this Encoding encoding) {
             return _encodingMeta[encoding.CodePage].CanonicalName;
         }
 
-        public static bool IsAsciiSuperset(this Encoding encoding) {
+        internal static bool IsAsciiSuperset(this Encoding encoding) {
             return _encodingMeta[encoding.CodePage].AsciiSuperset;
         }
 
-        public static bool IsObscure(this Encoding encoding) {
+        internal static bool IsObscure(this Encoding encoding) {
             return _encodingMeta[encoding.CodePage].IsObscure;
         }
 
-        public static bool IsShouldNot(this Encoding encoding) {
+        internal static bool IsShouldNot(this Encoding encoding) {
             return _encodingMeta[encoding.CodePage].IsShouldNot;
         }
 
-        public static bool IsRegistered(this Encoding encoding) {
+        internal static bool IsRegistered(this Encoding encoding) {
             return !GetCanonicalName(encoding).StartsWithInvariant("x-");
         }
 
-        public static Encoding GetActualHtmlEncoding(this Encoding encoding) {
+        internal static Encoding GetActualHtmlEncoding(this Encoding encoding) {
             return _encodingMeta[encoding.CodePage].ActualHtmlEncoding.Encoding;
         }
 
