@@ -450,7 +450,7 @@ namespace MindTouch.Dream {
             if(contentLength != -1) {
                 this.Headers.ContentLength = contentLength;
             }
-            this.Headers.ContentType = contentType ?? MimeType.BINARY;
+            this.Headers.ContentType = contentType ?? MimeType.DefaultMimeType;
 
             // set stream
             _stream = stream ?? Stream.Null;
@@ -471,7 +471,7 @@ namespace MindTouch.Dream {
             this.Status = status;
             this.Headers = new DreamHeaders(headers);
             this.Headers.ContentLength = bytes.LongLength;
-            this.Headers.ContentType = contentType ?? MimeType.BINARY;
+            this.Headers.ContentType = contentType ?? MimeType.DefaultMimeType;
 
             // set bytes
             _bytes = bytes;
@@ -512,7 +512,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Message Content Mime-Type.
         /// </summary>
-        public MimeType ContentType { get { return Headers.ContentType ?? MimeType.BINARY; } }
+        public MimeType ContentType { get { return Headers.ContentType ?? MimeType.DefaultMimeType; } }
 
         /// <summary>
         /// Message contains cookies.
