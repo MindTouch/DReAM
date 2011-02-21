@@ -27,6 +27,7 @@ using System.Text;
 using System.Threading;
 
 using MindTouch.Tasking;
+using MindTouch.Text;
 
 namespace MindTouch.IO {
     using Yield = IEnumerator<IYield>;
@@ -523,6 +524,12 @@ namespace MindTouch.IO {
                 result.Throw
             );
             return result;
+        }
+
+        public static Encoding DetectEncoding(this Stream stream) {
+            return new BOMEncodingDetector().Detect(stream)
+                // TODO (steveb): add <meta> tag detector here
+                ?? new CharacterEncodingDetector().Detect(stream);
         }
 
         //--- Class Methods ---
