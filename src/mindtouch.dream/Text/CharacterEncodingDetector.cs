@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.IO;
 using System.Text;
 using MindTouch.Text.CharDet;
@@ -27,18 +28,43 @@ namespace MindTouch.Text {
     public class CharacterEncodingDetector : IEncodingDetector {
 
         //--- Constants ---
+        private const int DEFAULT_MAX_SAMPLE_SIZE = 1024;
         private const int BUFFER_SIZE = 1024;
+
+        //--- Fields ---
+        private readonly int _maxSampleSize;
+
+        //--- Constructors ---
+        public CharacterEncodingDetector() : this(DEFAULT_MAX_SAMPLE_SIZE) { }
+
+        public CharacterEncodingDetector(int maxSampleSize) {
+            _maxSampleSize = maxSampleSize;
+        }
 
         //--- Methods ---
         public Encoding Detect(Stream stream) {
-            long position = stream.Position;
             var buffer = new byte[BUFFER_SIZE];
-            int read = stream.Read(buffer, 0, buffer.Length);
-            stream.Position = position;
-
             var detector = new Detector(Language.ALL);
-            detector.HandleData(buffer, read);
+            long position = stream.Position;
+
+            // process stream until we have a result or have exhausted the sample size
+            var remainingSampleSize = _maxSampleSize;
+            while((remainingSampleSize > 0) && (detector.Result == null)) {
+                int read = stream.Read(buffer, 0, Math.Min(remainingSampleSize, buffer.Length));
+
+                // check if we reached the end of the stream
+                if(read == 0) {
+                    break;
+                }
+                remainingSampleSize -= read;
+
+                // feed sample to character encoding detector
+                detector.HandleData(buffer, read);
+            }
             detector.DataEnd();
+
+            // restore stream position and return the detector's result
+            stream.Position = position;
             return detector.Result;
         }
     }
