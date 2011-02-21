@@ -747,6 +747,7 @@ namespace MindTouch.Dream {
         private readonly string _subType;
         private readonly Dictionary<string, string> _parameters;
         private string _text;
+        private Encoding _encoding;
 
         //--- Constructors ---
 
@@ -845,14 +846,17 @@ namespace MindTouch.Dream {
         /// </summary>
         public Encoding CharSet {
             get {
-                string charset = GetParameter(PARAM_CHARSET);
-                if(charset != null) {
-                    return Encoding.GetEncoding(charset.Trim('"'));
+                if(_encoding == null) {
+                    string charset = GetParameter(PARAM_CHARSET);
+                    if(charset != null) {
+                        _encoding = Encoding.GetEncoding(charset.Trim('"'));
+                    } else if(MainType.EqualsInvariant("text")) {
+                        _encoding = Encoding.ASCII;
+                    } else {
+                        _encoding = Encoding.UTF8;                        
+                    }
                 }
-                if(MainType.EqualsInvariant("text")) {
-                    return Encoding.ASCII;
-                }
-                return Encoding.UTF8;
+                return _encoding;
             }
         }
 
