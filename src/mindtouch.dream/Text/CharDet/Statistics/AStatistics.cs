@@ -33,7 +33,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 namespace MindTouch.Text.CharDet.Statistics {
-    public abstract class AStatistics {
+    internal abstract class AStatistics {
 
         //--- Properties ---
         public float[] FirstByteFreq { get; protected set; }

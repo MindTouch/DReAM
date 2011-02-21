@@ -33,7 +33,7 @@
  * ***** END LICENSE BLOCK ***** */
 
 namespace MindTouch.Text.CharDet.Verifiers {
-    public abstract class AVerifier {
+    internal abstract class AVerifier {
 
         //--- Constants ---
         public const byte EStart = 0;
