@@ -882,8 +882,7 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsDocument() is obsolete. Use ToDocument() instead.")]
         public XDoc AsDocument() {
-            MakeDocument();
-            return _doc;
+            return ToDocument();
         }
 
         /// <summary>
@@ -891,8 +890,7 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsStream() is obsolete. Use ToStream() instead.")]
         public Stream AsStream() {
-            MakeStream();
-            return _stream;
+            return ToStream();
         }
 
         /// <summary>
@@ -900,8 +898,7 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsBytes() is obsolete. Use ToBytes() instead.")]
         public byte[] AsBytes() {
-            MakeBytes();
-            return _bytes;
+            return ToBytes();
         }
 
         /// <summary>
@@ -909,7 +906,7 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsText() is obsolete. Use ToText() instead.")]
         public string AsText() {
-            return ContentType.CharSet.GetString(AsBytes());
+            return ToText();
         }
 
         /// <summary>
@@ -918,7 +915,7 @@ namespace MindTouch.Dream {
         /// <returns></returns>
         [Obsolete("AsTextReader() is obsolete. Use ToTextReader() instead.")]
         public TextReader AsTextReader() {
-            return new StreamReader(AsStream(), ContentType.CharSet);
+            return ToTextReader();
         }
         #endregion
     }
