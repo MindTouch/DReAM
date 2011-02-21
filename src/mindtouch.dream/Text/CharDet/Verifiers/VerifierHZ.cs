@@ -79,6 +79,7 @@ namespace MindTouch.Text.CharDet.Verifiers {
             States[5] = ((int)(((  ((int)(((  ((int)((( EStart) << 4) | (EStart)))  ) << 8) | (((int)(((EStart) << 4) | ( EStart))) ))) ) << 16) | (  ((int)(((  ((int)(((EStart) << 4) | (EStart))) ) << 8) | (   ((int)(((EItsMe) << 4) | (     4))) )))))) ;
             CharSet =  "HZ-GB-2312";
             StFactor =  6;
+            Priority = 3;
         }
 
         //--- Methods ---

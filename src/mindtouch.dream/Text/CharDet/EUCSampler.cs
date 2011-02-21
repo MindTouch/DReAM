@@ -35,7 +35,7 @@
 using System;
 
 namespace MindTouch.Text.CharDet {
-    public class EUCSampler {
+    internal class EUCSampler {
 
         //--- Constants ---
         private const int mThreshold = 200;

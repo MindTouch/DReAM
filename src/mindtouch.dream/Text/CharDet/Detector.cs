@@ -32,66 +32,189 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
+ * MindTouch Dream - a distributed REST framework 
+ * Copyright (C) 2006-2009 MindTouch, Inc.
+ * www.mindtouch.com  oss@mindtouch.com
+ *
+ * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * please review the licensing section.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using System;
+using System.Text;
 using MindTouch.Text.CharDet.Statistics;
 using MindTouch.Text.CharDet.Verifiers;
 
 namespace MindTouch.Text.CharDet {
-    public class Detector : ICharsetDetector {
+    public enum Language {
+        ALL = 0,
+        JAPANESE = 1,
+        CHINESE = 2,
+        SIMPLIFIED_CHINESE = 3,
+        TRADITIONAL_CHINESE = 4,
+        KOREAN = 5
+    }
+
+    public class Detector {
 
         //--- Constants ---
-        public const int ALL = 0;
-        public const int CHINESE = 2;
-        public const int JAPANESE = 1;
-        public const int SIMPLIFIED_CHINESE = 3;
-        public const int TRADITIONAL_CHINESE = 4;
-        public const int KOREAN = 5;
-        private const int MAX_VERIFIERS = 16;
         private const int EIDXSFT4BITS = 3;
         private const int ESFTMSK4BITS = 7;
         private const int EBITSFT4BITS = 2;
         private const int EUNITMSK4BITS = 0x0000000F;
 
         //--- Fields ---
-        protected int mClassItems;
-        protected bool mClassRunSampler;
-        protected bool mDone;
-        protected int[] mItemIdx = new int[MAX_VERIFIERS];
-        protected int mItems;
-        protected bool mRunSampler;
-        protected EUCSampler mSampler = new EUCSampler();
-        protected byte[] mState = new byte[MAX_VERIFIERS];
-        protected AStatistics[] mStatisticsData;
-        protected AVerifier[] mVerifier;
-        private ICharsetDetectionObserver mObserver;
+        private int _items;
+        private byte[] _state;
+        private AStatistics[] _statisticsData;
+        private AVerifier[] _verifier;
+        private EUCSampler _sampler;
 
         //--- Constructors ---
-        protected Detector() : this(ALL) { }
+        public Detector() : this(Language.ALL) { }
 
-        protected Detector(int langFlag) {
-            initVerifiers(langFlag);
+        public Detector(Language language) {
+            InitVerifiers(language);
             Reset();
         }
 
+        //--- Properties ---
+        public Encoding Result { get; private set; }
+
         //--- Methods ---
         public void Reset() {
-            mRunSampler = mClassRunSampler;
-            mDone = false;
-            mItems = mClassItems;
-
-            for(int i = 0; i < mItems; i++) {
-                mState[i] = 0;
-                mItemIdx[i] = i;
+            Result = null;
+            _items = _verifier.Length;
+            _state = new byte[_items];
+            if(_statisticsData != null) {
+                _sampler = new EUCSampler();
+                _sampler.Reset();
             }
-
-            mSampler.Reset();
         }
 
-        protected void initVerifiers(int currVerSet) {
-            mVerifier = null;
-            mStatisticsData = null;
+        public void HandleData(byte[] buffer, int length) {
+            int i;
+            for(i = 0; i < length; i++) {
+                byte b = buffer[i];
+                int j;
+                for(j = 0; j < _items; ) {
+                    byte st = getNextState(_verifier[j], b, _state[j]);
+                    if(st == AVerifier.EItsMe) {
+
+                        //System.out.println( "EItsMe(0x" + Integer.toHexString(0xFF&b) +") =>"+ _verifier[j].CharSet);
+                        Report(_verifier[j]);
+                        return;
+                    }
+                    if(st == AVerifier.EError) {
+                        _items--;
+                        if(j < _items) {
+                            _verifier[j] = _verifier[_items];
+                            _verifier[_items] = null;
+                            _statisticsData[j] = _statisticsData[_items];
+                            _statisticsData[_items] = null;
+                            _state[j] = _state[_items];
+                        } else {
+                            _verifier[_items] = null;
+                            _statisticsData[_items] = null;                            
+                        }
+                    } else {
+                        _state[j++] = st;
+                    }
+                }
+                if(_items <= 1) {
+                    if(1 == _items) {
+                        Report(_verifier[0]);
+                    }
+                    return;
+                }
+            } // End of for( i=0; i < length ...
+            if(_sampler != null) {
+                _sampler.Sample(buffer, length);
+                if(_sampler.EnoughData()) {
+                    UseSamplerGuess();
+                }
+            }
+        }
+
+        public void DataEnd() {
+            if(Result != null) {
+                return;
+            }
+            if(_items == 1) {
+                Report(_verifier[0]);
+            } else {
+                if(_sampler != null) {
+                    UseSamplerGuess();
+                }
+                if(Result == null) {
+                    int bestIndex = -1;
+                    int bestPriority = 0;
+                    int bestCount = 0;
+                    for(int i = 0; i < _items; ++i) {
+                        if(_verifier[i].Priority > bestPriority) {
+                            bestCount = 1;
+                            bestPriority = _verifier[i].Priority;
+                            bestIndex = i;
+                        } else if(_verifier[i].Priority == bestPriority) {
+                            ++bestCount;
+                        }
+                    }
+                    if(bestCount == 1) {
+                        Report(_verifier[bestIndex]);
+                    }
+                }
+            }
+        }
+
+        private void UseSamplerGuess() {
+            _sampler.CalFreq();
+            int bestIdx = -1;
+            float bestScore = float.MaxValue;
+            for(int j = 0; j < _items; j++) {
+                if(null != _statisticsData[j]) {
+                    float score = _sampler.GetScore(_statisticsData[j].FirstByteFreq, _statisticsData[j].FirstByteWeight, _statisticsData[j].SecondByteFreq, _statisticsData[j].SecondByteWeight);
+                    if(bestScore > score) {
+                        bestScore = score;
+                        bestIdx = j;
+                    }
+                }
+            }
+            if(bestIdx >= 0) {
+                Report(_verifier[bestIdx]);
+            }
+        }
+
+        private static byte getNextState(AVerifier v, byte b, byte s) {
+            return (byte)(0xFF & (((v.States[(((s * v.StFactor + (((v.Cclass[((b & 0xFF) >> EIDXSFT4BITS)]) >> ((b & ESFTMSK4BITS) << EBITSFT4BITS)) & EUNITMSK4BITS)) & 0xFF) >> EIDXSFT4BITS)]) >> ((((s * v.StFactor + (((v.Cclass[((b & 0xFF) >> EIDXSFT4BITS)]) >> ((b & ESFTMSK4BITS) << EBITSFT4BITS)) & EUNITMSK4BITS)) & 0xFF) & ESFTMSK4BITS) << EBITSFT4BITS)) & EUNITMSK4BITS));
+        }
+
+        private void Report(AVerifier verifier) {
+            try {
+                Result = Encoding.GetEncoding(verifier.CharSet);
+            } catch(ArgumentException) {
+                Result = null;
+            }
+        }
+
+        private void InitVerifiers(Language currVerSet) {
+            _verifier = null;
+            _statisticsData = null;
             switch(currVerSet) {
-            case TRADITIONAL_CHINESE:
-                mVerifier = new AVerifier[] {
+            case Language.TRADITIONAL_CHINESE:
+                _verifier = new AVerifier[] {
                                                new VerifierUTF8(), 
                                                new VerifierBIG5(), 
                                                new VerifierISO2022CN(), 
@@ -100,7 +223,7 @@ namespace MindTouch.Text.CharDet {
                                                new VerifierUCS2BE(), 
                                                new VerifierUCS2LE()
                                            };
-                mStatisticsData = new AStatistics[] {
+                _statisticsData = new AStatistics[] {
                                                         null, 
                                                         new StatisticsBig5(), 
                                                         null, 
@@ -110,8 +233,8 @@ namespace MindTouch.Text.CharDet {
                                                         null
                                                     };
                 break;
-            case KOREAN:
-                mVerifier = new AVerifier[] {
+            case Language.KOREAN:
+                _verifier = new AVerifier[] {
                                                new VerifierUTF8(), 
                                                new VerifierEUCKR(), 
                                                new VerifierISO2022KR(), 
@@ -120,8 +243,8 @@ namespace MindTouch.Text.CharDet {
                                                new VerifierUCS2LE()
                                            };
                 break;
-            case SIMPLIFIED_CHINESE:
-                mVerifier = new AVerifier[] {
+            case Language.SIMPLIFIED_CHINESE:
+                _verifier = new AVerifier[] {
                                                new VerifierUTF8(), 
                                                new VerifierGB2312(), 
                                                new VerifierGB18030(), 
@@ -132,8 +255,8 @@ namespace MindTouch.Text.CharDet {
                                                new VerifierUCS2LE()
                                            };
                 break;
-            case JAPANESE:
-                mVerifier = new AVerifier[] {
+            case Language.JAPANESE:
+                _verifier = new AVerifier[] {
                                                new VerifierUTF8(), 
                                                new VerifierSJIS(), 
                                                new VerifierEUCJP(), 
@@ -143,8 +266,8 @@ namespace MindTouch.Text.CharDet {
                                                new VerifierUCS2LE()
                                            };
                 break;
-            case CHINESE:
-                mVerifier = new AVerifier[] {
+            case Language.CHINESE:
+                _verifier = new AVerifier[] {
                                                new VerifierUTF8(), 
                                                new VerifierGB2312(), 
                                                new VerifierGB18030(), 
@@ -156,7 +279,7 @@ namespace MindTouch.Text.CharDet {
                                                new VerifierUCS2BE(), 
                                                new VerifierUCS2LE()
                                            };
-                mStatisticsData = new AStatistics[] {
+                _statisticsData = new AStatistics[] {
                                                         null, 
                                                         new StatisticsGB2312(), 
                                                         null, 
@@ -169,9 +292,9 @@ namespace MindTouch.Text.CharDet {
                                                         null
                                                     };
                 break;
-            case ALL:
+            case Language.ALL:
             default:
-                mVerifier = new AVerifier[] {
+                _verifier = new AVerifier[] {
                                                new VerifierUTF8(), 
                                                new VerifierSJIS(), 
                                                new VerifierEUCJP(),
@@ -188,7 +311,7 @@ namespace MindTouch.Text.CharDet {
                                                new VerifierUCS2BE(), 
                                                new VerifierUCS2LE()
                                            };
-                mStatisticsData = new AStatistics[] {
+                _statisticsData = new AStatistics[] {
                                                         null, 
                                                         null, 
                                                         new StatisticsEUCJP(), 
@@ -207,182 +330,6 @@ namespace MindTouch.Text.CharDet {
                                                     };
                 break;
             }
-            mClassRunSampler = (mStatisticsData != null);
-            mClassItems = mVerifier.Length;
-        }
-
-        public void Report(string charset) {
-            if(mObserver != null) {
-                mObserver.Notify(charset);
-            }
-        }
-
-        public bool HandleData(byte[] aBuf, int len) {
-            int i;
-
-            for(i = 0; i < len; i++) {
-                byte b = aBuf[i];
-
-                int j;
-                for(j = 0; j < mItems;) {
-                    byte st = getNextState(mVerifier[mItemIdx[j]], b, mState[j]);
-                    //if (st != 0)
-                    //System.out.println( "state(0x" + Integer.toHexString(0xFF&b) +") =>"+ Integer.toHexString(st&0xFF)+ " " + mVerifier[mItemIdx[j]].CharSet);
-
-                    if(st == AVerifier.EItsMe) {
-                        //System.out.println( "EItsMe(0x" + Integer.toHexString(0xFF&b) +") =>"+ mVerifier[mItemIdx[j]].CharSet);
-
-                        Report(mVerifier[mItemIdx[j]].CharSet);
-                        mDone = true;
-                        return mDone;
-                    }
-                    if(st == AVerifier.EError) {
-                        //System.out.println( "eNotMe(0x" + Integer.toHexString(0xFF&b) +") =>"+ mVerifier[mItemIdx[j]].CharSet);
-                        mItems--;
-                        if(j < mItems) {
-                            mItemIdx[j] = mItemIdx[mItems];
-                            mState[j] = mState[mItems];
-                        }
-                    } else {
-                        mState[j++] = st;
-                    }
-                }
-
-                if(mItems <= 1) {
-                    if(1 == mItems) {
-                        Report(mVerifier[mItemIdx[0]].CharSet);
-                    }
-                    mDone = true;
-                    return mDone;
-                }
-
-                int nonUCS2Num = 0;
-                int nonUCS2Idx = 0;
-
-                for(j = 0; j < mItems; j++) {
-                    if((!(mVerifier[mItemIdx[j]].isUCS2())) && (!(mVerifier[mItemIdx[j]].isUCS2()))) {
-                        nonUCS2Num++;
-                        nonUCS2Idx = j;
-                    }
-                }
-
-                if(1 == nonUCS2Num) {
-                    Report(mVerifier[mItemIdx[nonUCS2Idx]].CharSet);
-                    mDone = true;
-                    return mDone;
-                }
-            } // End of for( i=0; i < len ...
-
-            if(mRunSampler) {
-                Sample(aBuf, len);
-            }
-
-            return mDone;
-        }
-
-        public void DataEnd() {
-            if(mDone) {
-                return;
-            }
-            if(mItems == 2) {
-                if(mVerifier[mItemIdx[0]].CharSet == "GB18030") {
-                    Report(mVerifier[mItemIdx[1]].CharSet);
-                    mDone = true;
-                } else if(mVerifier[mItemIdx[1]].CharSet == "GB18030") {
-                    Report(mVerifier[mItemIdx[0]].CharSet);
-                    mDone = true;
-                }
-            }
-            if(mRunSampler) {
-                Sample(null, 0, true);
-            }
-        }
-
-        public void Sample(byte[] aBuf, int aLen) {
-            Sample(aBuf, aLen, false);
-        }
-
-        public void Sample(byte[] aBuf, int aLen, bool aLastChance) {
-            int possibleCandidateNum = 0;
-            int j;
-            int eucNum = 0;
-            for(j = 0; j < mItems; j++) {
-                if(null != mStatisticsData[mItemIdx[j]]) {
-                    eucNum++;
-                }
-                if((!mVerifier[mItemIdx[j]].isUCS2()) && (mVerifier[mItemIdx[j]].CharSet != "GB18030")) {
-                    possibleCandidateNum++;
-                }
-            }
-            mRunSampler = (eucNum > 1);
-            if(mRunSampler) {
-                mRunSampler = mSampler.Sample(aBuf, aLen);
-                if(((aLastChance && mSampler.GetSomeData()) || mSampler.EnoughData()) && (eucNum == possibleCandidateNum)) {
-                    mSampler.CalFreq();
-
-                    int bestIdx = -1;
-                    int eucCnt = 0;
-                    float bestScore = 0.0f;
-                    for(j = 0; j < mItems; j++) {
-                        if((null != mStatisticsData[mItemIdx[j]]) && (mVerifier[mItemIdx[j]].CharSet != "Big5")) {
-                            float score = mSampler.GetScore(mStatisticsData[mItemIdx[j]].FirstByteFreq, mStatisticsData[mItemIdx[j]].FirstByteWeight, mStatisticsData[mItemIdx[j]].SecondByteFreq, mStatisticsData[mItemIdx[j]].SecondByteWeight);
-                            //System.out.println("FequencyScore("+mVerifier[mItemIdx[j]].CharSet+")= "+ score);
-                            if((0 == eucCnt++) || (bestScore > score)) {
-                                bestScore = score;
-                                bestIdx = j;
-                            } // if(( 0 == eucCnt++) || (bestScore > score )) 
-                        } // if(null != ...)
-                    } // for
-                    if(bestIdx >= 0) {
-                        Report(mVerifier[mItemIdx[bestIdx]].CharSet);
-                        mDone = true;
-                    }
-                } // if (eucNum == possibleCandidateNum)
-            } // if(mRunSampler)
-        }
-
-        public string[] GetProbableCharsets() {
-            if(mItems <= 0) {
-                var nomatch = new string[1];
-                nomatch[0] = "nomatch";
-                return nomatch;
-            }
-            var ret = new string[mItems];
-            for(int i = 0; i < mItems; i++) {
-                ret[i] = mVerifier[mItemIdx[i]].CharSet;
-            }
-            return ret;
-        }
-
-        public static byte getNextState(AVerifier v, byte b, byte s) {
-            return (byte)(0xFF & (((v.States[(((s * v.StFactor + (((v.Cclass[((b & 0xFF) >> EIDXSFT4BITS)]) >> ((b & ESFTMSK4BITS) << EBITSFT4BITS)) & EUNITMSK4BITS)) & 0xFF) >> EIDXSFT4BITS)]) >> ((((s * v.StFactor + (((v.Cclass[((b & 0xFF) >> EIDXSFT4BITS)]) >> ((b & ESFTMSK4BITS) << EBITSFT4BITS)) & EUNITMSK4BITS)) & 0xFF) & ESFTMSK4BITS) << EBITSFT4BITS)) & EUNITMSK4BITS));
-        }
-
-        public void Init(ICharsetDetectionObserver aObserver) {
-            mObserver = aObserver;
-            return;
-        }
-
-        public bool DoIt(byte[] buffer, int aLen, bool oDontFeedMe) {
-            if(buffer == null || oDontFeedMe) {
-                return false;
-            }
-            HandleData(buffer, aLen);
-            return mDone;
-        }
-
-        public void Done() {
-            DataEnd();
-            return;
-        }
-
-        public bool IsAscii(byte[] aBuf, int aLen) {
-            for(int i = 0; i < aLen; i++) {
-                if((0x0080 & aBuf[i]) != 0) {
-                    return false;
-                }
-            }
-            return true;
         }
     }
 }

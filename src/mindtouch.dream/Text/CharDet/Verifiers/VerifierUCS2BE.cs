@@ -80,6 +80,7 @@ namespace MindTouch.Text.CharDet.Verifiers {
             States[6] = ((int)(((  ((int)(((  ((int)((( EStart) << 4) | (EStart)))  ) << 8) | (((int)(((EError) << 4) | ( EError))) ))) ) << 16) | (  ((int)(((  ((int)(((     6) << 4) | (     6))) ) << 8) | (   ((int)(((     6) << 4) | (     6))) )))))) ;
             CharSet =  "UTF-16BE";
             StFactor =  6;
+            Priority = 10;
         }
 
         //--- Methods ---
