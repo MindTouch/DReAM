@@ -96,7 +96,7 @@ namespace MindTouch.Dream.Test {
                 var fileBytes = File.ReadAllBytes(tempFile);
                 Assert.AreEqual(0, ArrayUtil.Compare(bytes, fileBytes));
             } finally {
-                File.Decrypt(tempFile);
+                File.Delete(tempFile);
             }
         }
 

@@ -501,7 +501,7 @@ namespace MindTouch.Dream.Test {
         public void TestXUriFromUriConstruction() {
             string[] evilSegments = new string[] {
 
-                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extender characteres)
+                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
                 "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
                 "A%4b",
                 "A^B",

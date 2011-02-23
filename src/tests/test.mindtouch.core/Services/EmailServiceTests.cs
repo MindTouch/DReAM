@@ -54,6 +54,9 @@ namespace MindTouch.Core.Test.Services {
             }
         }
 
+        //--- Constants ---
+        private const string DEFAULT_HOST = "defaulthost";
+
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
 
@@ -76,7 +79,10 @@ namespace MindTouch.Core.Test.Services {
                 _hostInfo, 
                 "sid://mindtouch.com/2009/01/dream/email", 
                 "email", 
-                new XDoc("config").Elem("apikey", "servicekey"));
+                new XDoc("config")
+                    .Elem("apikey", "servicekey")
+                    .Elem("smtp-host", DEFAULT_HOST)
+            );
             _plug = _emailService.WithInternalKey().AtLocalHost;
         }
 
@@ -102,7 +108,7 @@ namespace MindTouch.Core.Test.Services {
             _log.Debug("sending message");
             var response = _plug.At("message").Post(email, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
-            Assert.AreEqual("localhost", _smtpClientFactory.Settings.Host);
+            Assert.AreEqual(DEFAULT_HOST, _smtpClientFactory.Settings.Host);
             Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
             Assert.AreEqual("to@bar.com", _smtpClientFactory.Client.Message.To.First().ToString());
             Assert.AreEqual("subject", _smtpClientFactory.Client.Message.Subject);
@@ -128,6 +134,28 @@ namespace MindTouch.Core.Test.Services {
             Assert.AreEqual("customhost", _smtpClientFactory.Settings.Host);
             Assert.AreEqual(42, _smtpClientFactory.Settings.Port);
             Assert.IsNotNull(_smtpClientFactory.Client.Message);
+        }
+
+        [Test]
+        public void Omitting_host_in_custom_settings_but_providing_apikey_inherits_default_settings() {
+            var apikey = StringUtil.CreateAlphaNumericKey(6);
+            var settings = new XDoc("config")
+                .Elem("apikey", apikey);
+            var response = _plug.At("configuration", "custom").Put(settings);
+            Assert.IsTrue(response.IsSuccessful);
+            var email = new XDoc("email")
+                .Attr("configuration", "custom")
+                .Elem("to", "to@bar.com")
+                .Elem("from", "from@bar.com")
+                .Elem("subject", "subject")
+                .Elem("body", "body");
+            _log.Debug("sending message");
+            var settingsPlug = Plug.New(_plug.Uri).With("apikey", apikey);
+            response = settingsPlug.At("message").Post(email, new Result<DreamMessage>()).Wait();
+            Assert.IsTrue(response.IsSuccessful);
+            Assert.AreEqual(DEFAULT_HOST, _smtpClientFactory.Settings.Host);
+            Assert.IsNotNull(_smtpClientFactory.Client.Message);
+            Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
         }
 
         [Test]
