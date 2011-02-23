@@ -105,26 +105,40 @@ namespace MindTouch.Dream.Services {
 
         [DreamFeature("PUT:configuration/{configuration}", "Set smtp settings for a named configuration")]
         internal Yield ConfigureSmtp(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            string configuration = context.GetParam("configuration");
-            XDoc settingsDoc = request.ToDocument();
+            var configuration = context.GetParam("configuration");
+            var settingsDoc = request.ToDocument();
             _log.DebugFormat("configuring settings for configuration '{0}'", configuration);
             var host = settingsDoc["smtp-host"].AsText;
-            if(string.IsNullOrEmpty(host)) {
-                response.Return(DreamMessage.BadRequest("must specify an smtp-host"));
+            var apikey = settingsDoc["apikey"].AsText;
+            if(string.IsNullOrEmpty(host) && string.IsNullOrEmpty(apikey)) {
+                response.Return(DreamMessage.BadRequest("must specify either new smtp config with a host or specify an apikey"));
                 yield break;
             }
             _log.DebugFormat("Smtp Host: {0}", host);
-            var settings = new SmtpSettings {
-                Host = host,
-                AuthUser = settingsDoc["smtp-auth-user"].AsText,
-                AuthPassword = settingsDoc["smtp-auth-password"].AsText,
-                Apikey = settingsDoc["apikey"].AsText,
+            SmtpSettings settings;
+            if(string.IsNullOrEmpty(host)) {
+                settings = new SmtpSettings() {
+                    Host = _defaultSettings.Host,
+                    Apikey = apikey,
+                    AuthPassword = _defaultSettings.AuthPassword,
+                    AuthUser = _defaultSettings.AuthUser,
+                    EnableSsl = _defaultSettings.EnableSsl,
+                    Port = _defaultSettings.Port,
+                };
+            } else {
+                _log.DebugFormat("Smtp Host: {0}", host);
+                settings = new SmtpSettings {
+                    Host = host,
+                    AuthUser = settingsDoc["smtp-auth-user"].AsText,
+                    AuthPassword = settingsDoc["smtp-auth-password"].AsText,
+                    Apikey = apikey,
 
-                // Note (arnec): ssl requires mono 2.0 and likely root certificate import via 'mozroots --import --ask-remove --machine'
-                EnableSsl = settingsDoc["use-ssl"].AsBool ?? false
-            };
-            if(settingsDoc["smtp-port"].AsInt.HasValue) {
-                settings.Port = settingsDoc["smtp-port"].AsInt.Value;
+                    // Note (arnec): ssl requires mono 2.0 and likely root certificate import via 'mozroots --import --ask-remove --machine'
+                    EnableSsl = settingsDoc["use-ssl"].AsBool ?? false
+                };
+                if(settingsDoc["smtp-port"].AsInt.HasValue) {
+                    settings.Port = settingsDoc["smtp-port"].AsInt.Value;
+                }
             }
             lock(_smtpSettings) {
                 _smtpSettings[configuration] = settings;
@@ -340,8 +354,7 @@ namespace MindTouch.Dream.Services {
             _client = client;
         }
 
-        //--- Methods ---
-
+        //--- ISmtpClient Members ---
         void ISmtpClient.Send(MailMessage message) {
             _client.Send(message);
         }

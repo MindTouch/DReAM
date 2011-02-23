@@ -25,6 +25,7 @@ using System.Text;
 using MindTouch.Text.CharDet;
 
 namespace MindTouch.Text {
+
     /// <summary>
     /// Text encoding detector using stream sampling to detect character encoding.
     /// </summary>

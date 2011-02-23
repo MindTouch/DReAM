@@ -144,6 +144,8 @@ namespace MindTouch.IO {
                 throw new ObjectDisposedException("reader has already been closed or disposed");
             }
 
+            // TODO (steveb): by .Net spec, this should also detect Environment.NewLine sequence
+
             // loop over string until we find a newline character
             for(int current = _position; current < _length; ++current) {
                 char ch = _text[current];

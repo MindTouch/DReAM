@@ -1178,9 +1178,7 @@ namespace MindTouch.Dream {
                                 Entry last;
                                 _headers.TryGetValue(key, out last);
                                 if(last != null) {
-                                    while(last.Next != null) {
-                                        last = last.Next;
-                                    }
+                                    last = last.Last;
                                 }
 
                                 // loop over all header values
@@ -1244,6 +1242,7 @@ namespace MindTouch.Dream {
                         if(_headers.TryGetValue(header.Key, out existing)) {
                             existing = existing.Last;
                         }
+
                         // add new entries
                         if(existing == null) {
                             existing = new Entry(header.Value);

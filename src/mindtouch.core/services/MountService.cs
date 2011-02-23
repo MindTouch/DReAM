@@ -120,7 +120,6 @@ namespace MindTouch.Dream.Services {
         //--- Methods ---
         protected override Yield Start(XDoc config, Result result) {
             yield return Coroutine.Invoke(base.Start, config, new Result());
-            System.Collections.IDictionary d = Environment.GetEnvironmentVariables();
             _path = Environment.ExpandEnvironmentVariables(config["mount"].Contents);
             if(!Path.IsPathRooted(_path)) {
                 throw new ArgumentException(string.Format("storage path is not absolute: {0}", _path));
