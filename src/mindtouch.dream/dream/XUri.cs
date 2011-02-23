@@ -29,6 +29,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using System.IO;
 
 namespace MindTouch.Dream {
 
@@ -378,7 +379,7 @@ namespace MindTouch.Dream {
         /// <param name="text">Input text.</param>
         /// <returns>Decoded text.</returns>
         public static string Decode(string text) {
-            string result = HttpUtility.UrlDecode(text);
+            string result = XUri.UrlDecode(text);
             return result;
         }
 
@@ -816,6 +817,110 @@ namespace MindTouch.Dream {
         private static bool HaveSamePort(XUri left, XUri right, bool strict) {
             return (left.Port == right.Port) || (!strict && left.UsesDefaultPort && right.UsesDefaultPort);
         }
+
+        #region UrlDecode from Mono
+        // This code comes from https://github.com/mono/mono/blob/bb9a8d9550f4b59e6e31ed39314f720115d1f8a8/mcs/class/System.Web/System.Web/HttpUtility.cs
+        // This is being copied here to achieve consistent decoding between Mono versions as well as .Net and is used by XUri.Decode
+
+        private static string UrlDecode(string str) {
+            return UrlDecode(str, Encoding.UTF8);
+        }
+
+        private static char[] GetChars(MemoryStream b, Encoding e) {
+            return e.GetChars(b.GetBuffer(), 0, (int)b.Length);
+        }
+
+        private static string UrlDecode(string s, Encoding e) {
+            if(null == s)
+                return null;
+
+            if(s.IndexOf('%') == -1 && s.IndexOf('+') == -1)
+                return s;
+
+            if(e == null)
+                e = Encoding.UTF8;
+
+            StringBuilder output = new StringBuilder();
+            long len = s.Length;
+            MemoryStream bytes = new MemoryStream();
+            int xchar;
+
+            for(int i = 0; i < len; i++) {
+                if(s[i] == '%' && i + 2 < len && s[i + 1] != '%') {
+                    if(s[i + 1] == 'u' && i + 5 < len) {
+                        if(bytes.Length > 0) {
+                            output.Append(GetChars(bytes, e));
+                            bytes.SetLength(0);
+                        }
+
+                        xchar = GetChar(s, i + 2, 4);
+                        if(xchar != -1) {
+                            output.Append((char)xchar);
+                            i += 5;
+                        } else {
+                            output.Append('%');
+                        }
+                    } else if((xchar = GetChar(s, i + 1, 2)) != -1) {
+                        bytes.WriteByte((byte)xchar);
+                        i += 2;
+                    } else {
+                        output.Append('%');
+                    }
+                    continue;
+                }
+
+                if(bytes.Length > 0) {
+                    output.Append(GetChars(bytes, e));
+                    bytes.SetLength(0);
+                }
+
+                if(s[i] == '+') {
+                    output.Append(' ');
+                } else {
+                    output.Append(s[i]);
+                }
+            }
+
+            if(bytes.Length > 0) {
+                output.Append(GetChars(bytes, e));
+            }
+
+            bytes = null;
+            return output.ToString();
+        }
+
+        private static int GetInt(byte b) {
+            char c = (char)b;
+            if(c >= '0' && c <= '9')
+                return c - '0';
+
+            if(c >= 'a' && c <= 'f')
+                return c - 'a' + 10;
+
+            if(c >= 'A' && c <= 'F')
+                return c - 'A' + 10;
+
+            return -1;
+        }
+
+        private static int GetChar(string str, int offset, int length) {
+            int val = 0;
+            int end = length + offset;
+            for(int i = offset; i < end; i++) {
+                char c = str[i];
+                if(c > 127)
+                    return -1;
+
+                int current = GetInt((byte)c);
+                if(current == -1)
+                    return -1;
+                val = (val << 4) + current;
+            }
+
+            return val;
+        }
+
+        #endregion
 
         //--- Fields ---
 
