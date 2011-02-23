@@ -55,10 +55,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.2.0.24968")]
-[assembly: AssemblyFileVersion("2.2.0.24968")]
+[assembly: AssemblyVersion("2.2.1.24969")]
+[assembly: AssemblyFileVersion("2.2.1.24969")]
 [assembly: GitBranch("2.2")]
-[assembly: GitRevision("b68cc64669f9dfd3f4126de9e5579028a92d90af")]
+[assembly: GitRevision("ba03c6789e50951a7ad0341e6ccec8b18aad6930")]
 [assembly: GitUri("https://github.com/sdether/DReAM")]
 
 //
