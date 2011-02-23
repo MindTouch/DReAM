@@ -200,7 +200,7 @@ namespace MindTouch.Text {
                     default:
                         continue;
                     }
-                    goto case CharSetStates.CHARSET_DOUBLE_QUOTED;
+                    //goto case CharSetStates.CHARSET_DOUBLE_QUOTED;
                 case CharSetStates.CHARSET_DOUBLE_QUOTED:
                     switch(c) {
                     case '\"':
@@ -209,7 +209,7 @@ namespace MindTouch.Text {
                     default:
                         continue;
                     }
-                    goto case CharSetStates.CHARSET_UNQUOTED;
+                    //goto case CharSetStates.CHARSET_UNQUOTED;
                 case CharSetStates.CHARSET_UNQUOTED:
                     switch(c) {
                     case '\t':
@@ -223,7 +223,7 @@ namespace MindTouch.Text {
                     default:
                         continue;
                     }
-                    break;
+                    //break;
                 }
             }
             charsetloop_done:
@@ -296,7 +296,7 @@ namespace MindTouch.Text {
                     this.characterEncoding = actual;
                 }
                 return true;
-            } catch(ArgumentException e) {
+            } catch(ArgumentException) {
                 _log.Warn("Unsupported character encoding name: \u201C" + encodingName + "\u201D. Will continue sniffing.");
             }
             return false;

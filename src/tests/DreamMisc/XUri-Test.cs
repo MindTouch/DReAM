@@ -473,12 +473,39 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Can_parse_square_brackets_in_query() {
+            Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"));
+        }
+
+        [Test]
+        public void Can_parse_square_brackets_in_segment() {
+            Assert.IsNotNull(XUri.TryParse("http://host/foo/[123]/bar"));
+        }
+
+        [Test]
+        public void Can_parse_square_brackets_in_fragment() {
+            Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"));
+        }
+
+        [Test]
+        public void Square_brackets_in_parsed_query_are_encoded_on_render() {
+            Assert.AreEqual("http://host/foo?bar%5b123%5d=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
+        }
+
+        [Test]
+        public void Cannot_parse_uri_with_curly_brackest_in_query() {
+            Assert.IsNull(XUri.TryParse("http://host/foo?bar{123}=abc"));
+        }
+
+        [Test]
         public void TestXUriFromUriConstruction() {
             string[] evilSegments = new string[] {
-            "Iñtërnâtiônàlizætiøn",
-            "A%4b",
-            "A^B",
-        };
+
+                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extender characteres)
+                "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
+                "A%4b",
+                "A^B",
+            };
             foreach(string evil in evilSegments) {
                 Uri original = new Uri("http://foo/" + evil);
                 Uri fromDecoded = new Uri(original.ToString());
