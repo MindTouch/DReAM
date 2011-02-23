@@ -23,9 +23,18 @@ using System.IO;
 using System.Text;
 
 namespace MindTouch.Text {
+    /// <summary>
+    /// Text encoding detector implementation checking for a stream byte-order marker (BOM).
+    /// </summary>
     public class BOMEncodingDetector : IEncodingDetector {
 
         //--- Methods ---
+
+        /// <summary>
+        /// Detect the encoding for a given stream.
+        /// </summary>
+        /// <param name="stream">Stream to examine</param>
+        /// <returns>Detected encoding or null.</returns>
         public Encoding Detect(Stream stream) {
             long position = stream.Position;
             int bytecode = stream.ReadByte();
