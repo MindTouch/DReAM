@@ -22,13 +22,29 @@ using System;
 using NUnit.Framework;
 
 namespace MindTouch.Dream.Test {
+
+    /// <summary>
+    /// Helper methods for Nunit assertions.
+    /// </summary>
     public static class AssertEx {
 
         //--- Class Methods ---
+
+        /// <summary>
+        /// Compare two timespans with a minor degree of millisecond fuzzyness.
+        /// </summary>
+        /// <param name="expected">Expected timespan</param>
+        /// <param name="actual">Actual timespan</param>
         public static void AreEqual(TimeSpan expected, TimeSpan actual) {
             AreEqual(expected, actual, null);
         }
 
+        /// <summary>
+        /// Compare two timespans with a minor degree of millisecond fuzzyness.
+        /// </summary>
+        /// <param name="expected">Expected timespan</param>
+        /// <param name="actual">Actual timespan</param>
+        /// <param name="message">Error message to display should the assertion fail.</param>
         public static void AreEqual(TimeSpan expected, TimeSpan actual, string message) {
 
             // NOTE (steveb): on Mono, TimeSpan's are not precise enough to use Equal

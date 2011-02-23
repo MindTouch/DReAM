@@ -115,6 +115,7 @@
     <Compile Include="SysUtilTests.cs" />
     <Compile Include="TaskTests.cs" />
     <Compile Include="TaskTimerTests.cs" />
+    <Compile Include="Text\EncodingDetectorTest.cs" />
     <Compile Include="Threading\MonitorSemaphoreTests.cs" />
     <Compile Include="Threading\ThreadPoolTests.cs" />
     <Compile Include="TimesTests.cs" />
@@ -149,6 +150,22 @@
       <Project>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</Project>
       <Name>mindtouch.dream</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\html-bom-utf16be.txt" />
+    <EmbeddedResource Include="Resources\html-bom-utf16le.txt" />
+    <EmbeddedResource Include="Resources\html-bom-utf8.txt" />
+    <EmbeddedResource Include="Resources\xml-big5.txt" />
+    <EmbeddedResource Include="Resources\xml-gb2312.txt" />
+    <EmbeddedResource Include="Resources\xml-utf8-chinese.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\xml-euc-jp.txt" />
+    <EmbeddedResource Include="Resources\xml-iso-2022-jp.txt" />
+    <EmbeddedResource Include="Resources\xml-little-endian-jp.txt" />
+    <EmbeddedResource Include="Resources\xml-shift-jis.txt" />
+    <EmbeddedResource Include="Resources\xml-utf-16-jp.txt" />
+    <EmbeddedResource Include="Resources\xml-utf-8-jp.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

@@ -248,23 +248,59 @@ namespace MindTouch.Dream.Services {
         }
     }
 
+    /// <summary>
+    /// Settings container for clients created with <see cref="ISmtpClientFactory"/>.
+    /// </summary>
     public class SmtpSettings {
 
         //--- Fields ---
+
+        /// <summary>
+        /// Smtp Host
+        /// </summary>
         public string Host;
+
+        /// <summary>
+        /// Optional Smtp Port;
+        /// </summary>
         public int? Port;
+
+        /// <summary>
+        /// Optional Authentication User
+        /// </summary>
         public string AuthUser;
+
+        /// <summary>
+        /// Optional Authentication Password
+        /// </summary>
         public string AuthPassword;
+
+        /// <summary>
+        /// Try to use secure connection?
+        /// </summary>
         public bool EnableSsl;
+
+        /// <summary>
+        /// Apikey that will be provided to authorize the use of these settings.
+        /// </summary>
         public string Apikey;
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ISmtpClientFactory"/>
+    /// </summary>
     public class SmtpClientFactory : ISmtpClientFactory {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
 
         //--- Methods ---
+
+        /// <summary>
+        /// Create a new <see cref="ISmtpClient"/>.
+        /// </summary>
+        /// <param name="settings">Client settings.</param>
+        /// <returns>New <see cref="ISmtpClient"/> instance</returns>
         public ISmtpClient CreateClient(SmtpSettings settings) {
             var client = new SmtpClient {
                 Host = settings.Host,
@@ -284,31 +320,57 @@ namespace MindTouch.Dream.Services {
         }
     }
 
+    /// <summary>
+    /// Factory for creating <see cref="ISmtpClient"/> instances.
+    /// </summary>
     public interface ISmtpClientFactory {
 
         //--- Methods ---
+
+        /// <summary>
+        /// Create a new <see cref="ISmtpClient"/>.
+        /// </summary>
+        /// <param name="settings">Client settings.</param>
+        /// <returns>New <see cref="ISmtpClient"/> instance</returns>
         ISmtpClient CreateClient(SmtpSettings settings);
     }
 
+    /// <summary>
+    /// Implemenation of <see cref="ISmtpClient"/> wrapping the standard <see cref="SmtpClient"/>.
+    /// </summary>
     public class SmtpClientWrapper : ISmtpClient {
 
         //--- Fields ---
         private readonly SmtpClient _client;
 
         //--- Constructors ---
+        
+        /// <summary>
+        /// Create a new <see cref="SmtpClient"/> wrapper.
+        /// </summary>
+        /// <param name="client"></param>
         public SmtpClientWrapper(SmtpClient client) {
             _client = client;
         }
 
         //--- Methods ---
-        public void Send(MailMessage message) {
+
+        void ISmtpClient.Send(MailMessage message) {
             _client.Send(message);
         }
     }
 
+    /// <summary>
+    /// Simple Smtp client interface
+    /// </summary>
     public interface ISmtpClient {
 
         //--- Methods ---
+
+        /// <summary>
+        /// Send a mail message.
+        /// </summary>
+        /// <param name="message">Message to send.</param>
         void Send(MailMessage message);
     }
 

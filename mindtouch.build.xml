@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
-  <assemblies major="2" minor="2" release="0" revision="25001">
+  <assemblies major="2" minor="2" release="1" revision="25002">
     <assembly name="mindtouch.dream" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.dream\AssemblyInfo.cs" remap="true" />
     <assembly name="mindtouch.dream.test" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.dream.test\Properties\AssemblyInfo.cs" remap="true" />
     <assembly name="mindtouch.core" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.core\AssemblyInfo.cs" />
