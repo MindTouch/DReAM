@@ -80,6 +80,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssertEx.cs" />
     <Compile Include="DreamHostInfo.cs" />
     <Compile Include="DreamMessageEx.cs" />
     <Compile Include="DreamServiceInfo.cs" />

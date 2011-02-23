@@ -180,9 +180,8 @@ namespace MindTouch.Dream.Test {
             var items = from x in set select x;
             Assert.AreEqual(n, items.Count());
             for(var i = 1; i <= n; i++) {
-// ReSharper disable AccessToModifiedClosure
-                Assert.IsTrue((from x in set where x.Value == i && x.TTL == TimeSpan.FromSeconds(i) select x).Any());
-// ReSharper restore AccessToModifiedClosure
+                var j = i;
+                Assert.IsTrue((from x in set where x.Value == j && x.TTL == TimeSpan.FromSeconds(i) select x).Any());
             }
         }
 
