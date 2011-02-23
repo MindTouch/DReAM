@@ -59,7 +59,7 @@ using MindTouch.Text.CharDet.Statistics;
 using MindTouch.Text.CharDet.Verifiers;
 
 namespace MindTouch.Text.CharDet {
-    public enum Language {
+    internal enum Language {
         ALL = 0,
         JAPANESE = 1,
         CHINESE = 2,
@@ -68,7 +68,7 @@ namespace MindTouch.Text.CharDet {
         KOREAN = 5
     }
 
-    public class Detector {
+    internal class Detector {
 
         //--- Constants ---
         private const int EIDXSFT4BITS = 3;

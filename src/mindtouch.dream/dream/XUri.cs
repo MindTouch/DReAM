@@ -1154,6 +1154,9 @@ namespace MindTouch.Dream {
         /// </summary>
         public bool HasFragment { get { return Fragment != null; } }
 
+        /// <summary>
+        /// True if the instance is set to double-encode path segments.
+        /// </summary>
         public bool UsesSegmentDoubleEncoding { get { return _doubleEncode; } }
 
 

@@ -25,6 +25,9 @@ using System.Text;
 using MindTouch.Text.CharDet;
 
 namespace MindTouch.Text {
+    /// <summary>
+    /// Text encoding detector using stream sampling to detect character encoding.
+    /// </summary>
     public class CharacterEncodingDetector : IEncodingDetector {
 
         //--- Constants ---
@@ -35,13 +38,27 @@ namespace MindTouch.Text {
         private readonly int _maxSampleSize;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
         public CharacterEncodingDetector() : this(DEFAULT_MAX_SAMPLE_SIZE) { }
 
+        /// <summary>
+        /// Create a new instance.
+        /// </summary>
+        /// <param name="maxSampleSize">Maximum number of bytes to examine.</param>
         public CharacterEncodingDetector(int maxSampleSize) {
             _maxSampleSize = maxSampleSize;
         }
 
         //--- Methods ---
+
+        /// <summary>
+        /// Detect the encoding for a given stream.
+        /// </summary>
+        /// <param name="stream">Stream to examine</param>
+        /// <returns>Detected encoding or null.</returns>
         public Encoding Detect(Stream stream) {
             var buffer = new byte[BUFFER_SIZE];
             var detector = new Detector(Language.ALL);

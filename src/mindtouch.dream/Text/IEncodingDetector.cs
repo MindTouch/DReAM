@@ -23,9 +23,19 @@ using System.IO;
 using System.Text;
 
 namespace MindTouch.Text {
-    internal interface IEncodingDetector {
+
+    /// <summary>
+    /// Text encoding detector
+    /// </summary>
+    public interface IEncodingDetector {
         
         //--- Methods ---
+
+        /// <summary>
+        /// Detect the encoding for a given stream.
+        /// </summary>
+        /// <param name="stream">Stream to examine</param>
+        /// <returns>Detected encoding or null.</returns>
         Encoding Detect(Stream stream);
     }
 }

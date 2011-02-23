@@ -226,6 +226,10 @@ namespace MindTouch.IO {
             return ch;
         }
 
+        /// <summary>
+        /// Reads all characters from the current position to the end of the TextReader and returns them as one string.
+        /// </summary>
+        /// <returns>A string containing all characters from the current position to the end of the TextReader.</returns>
         public override string ReadToEnd() {
         
             // NOTE (steveb): Mono 2.8.2 does not implement TextReader.ReadToEnd() properly (see https://bugzilla.novell.com/show_bug.cgi?id=655934);
@@ -238,6 +242,10 @@ namespace MindTouch.IO {
             return result.ToString();
         }
         
+        /// <summary>
+        /// Reads a line of characters from the current stream and returns the data as a string.
+        /// </summary>
+        /// <returns>The next line from the input stream, or null if all characters have been read.</returns>
         public override string ReadLine() {
         
             // NOTE (steveb): Mono 2.8.2 does not implement TextReader.ReadLine() properly (see https://bugzilla.novell.com/show_bug.cgi?id=655934);
