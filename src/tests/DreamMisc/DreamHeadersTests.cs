@@ -72,7 +72,7 @@ namespace MindTouch.Dream.Test {
             collections.Add("X-Forwarded-For", "f, g, h");
             var headers = new DreamHeaders(collections);
             var values = headers.ForwardedFor;
-            Assert.AreEqual(new[] { "a", "b", "c", "d", "e", "f", "g", "h" }, values);
+            Assert.AreEqual(new []{ "a", "b", "c", "d", "e", "f", "g", "h" }, values);
         }
     }
 }

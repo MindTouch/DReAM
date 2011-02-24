@@ -1175,7 +1175,9 @@ namespace MindTouch.Dream {
                                 Entry last;
                                 _headers.TryGetValue(key, out last);
                                 if(last != null) {
-                                    last = last.Last;
+                                    while(last.Next != null) {
+                                        last = last.Next;
+                                    }
                                 }
 
                                 // loop over all header values
