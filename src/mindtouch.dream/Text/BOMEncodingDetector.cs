@@ -23,6 +23,7 @@ using System.IO;
 using System.Text;
 
 namespace MindTouch.Text {
+
     /// <summary>
     /// Text encoding detector implementation checking for a stream byte-order marker (BOM).
     /// </summary>

@@ -83,10 +83,9 @@ namespace MindTouch.Dream.Test {
             File.Delete("test.test");
         }
 
-        [Ignore("don't have an embedded resource to run the test against")]
         [Test]
         public void ResourceUri() {
-            Plug p = Plug.New("resource://mindtouch.dream/MindTouch.Dream.dtds.xhtml1-strict.dtd");
+            Plug p = Plug.New("resource://test.mindtouch.dream/MindTouch.Dream.Test.Resources.resource-test.txt");
             string text = p.Get().ToText();
             Assert.AreNotEqual(string.Empty, text, "resource was empty");
         }

@@ -353,8 +353,7 @@ namespace MindTouch.Dream.Services {
             _client = client;
         }
 
-        //--- Methods ---
-
+        //--- ISmtpClient Members ---
         void ISmtpClient.Send(MailMessage message) {
             _client.Send(message);
         }

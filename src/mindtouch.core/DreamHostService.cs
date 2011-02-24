@@ -1378,7 +1378,7 @@ namespace MindTouch.Dream {
                     if(context.CacheKeyAndTimeout != null) {
                         IDreamService service = feature.Service;
 
-                        // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal 
+                        // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal
                         //                representation to a byte array, which is better for cloning.
                         result.Value.ToBytes();
                         
