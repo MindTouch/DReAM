@@ -45,7 +45,7 @@
     <NoWarn>1911,0618</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\redist\log4net.dll</HintPath>
     </Reference>
@@ -64,22 +64,22 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\mindtouch.dream\mindtouch.dream.csproj">
-      <Project>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</Project>
-      <Name>mindtouch.dream</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\mindtouch.core\mindtouch.core.csproj">
-      <Project>{CAAE6609-8532-4CCA-ABD5-186C43F77687}</Project>
-      <Name>mindtouch.core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="mindtouch.env.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="mindtouch.test.startup.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\mindtouch.core\mindtouch.core.csproj">
+      <Project>{CAAE6609-8532-4CCA-ABD5-186C43F77687}</Project>
+      <Name>mindtouch.core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\mindtouch.dream\mindtouch.dream.csproj">
+      <Project>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</Project>
+      <Name>mindtouch.dream</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

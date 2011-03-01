@@ -42,7 +42,6 @@ namespace MindTouch.Dream.Storage.Test {
         //--- Fields ---
         private DreamHostInfo _hostInfo;
         private Mock<IAmazonS3Client> _s3ClientMock;
-        private AmazonS3ClientProxy _clientProxy;
         private MockServiceInfo _mockService;
         private string _storageRoot;
         private string _rootPath;

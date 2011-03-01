@@ -53,8 +53,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("2.2.1.24969")]
-[assembly: AssemblyFileVersion("2.2.1.24969")]
+[assembly: AssemblyVersion("2.2.1.0")]
+[assembly: AssemblyFileVersion("2.2.1.0")]
 [assembly: GitBranch("2.2")]
-[assembly: GitRevision("ba03c6789e50951a7ad0341e6ccec8b18aad6930")]
+[assembly: GitRevision("HEAD")]
 [assembly: GitUri("https://github.com/sdether/DReAM")]
