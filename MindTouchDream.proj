@@ -2,16 +2,16 @@
     <PropertyGroup>
         <Configuration>Signed Release</Configuration>
         <Platform >AnyCPU</Platform>
-        <MindTouchKey Condition=" '$(MindTouchKey)' == '' ">build\mindtouch.dream.public.snk</MindTouchKey>
+        <MindTouchKey Condition=" '$(MindTouchKey)' == '' ">build/mindtouch.dream.public.snk</MindTouchKey>
         <ConfigurationFilename Condition=" '$(ConfigurationFilename)' == '' ">mindtouch.build.xml</ConfigurationFilename>
         <IgnoreModified Condition=" '$(IgnoreModified)' == '' ">false</IgnoreModified>
-        <SolutionDir>$(MSBuildProjectDirectory)\src</SolutionDir>
+        <SolutionDir>$(MSBuildProjectDirectory)/src</SolutionDir>
         <SolutionExt>.sln</SolutionExt>
         <SolutionFileName>MindTouchDream.sln</SolutionFileName>
         <SolutionName>MindTouchDream</SolutionName>
-        <SolutionPath>$(MSBuildProjectDirectory)\src\MindTouchDream.sln</SolutionPath>
-        <BinDir>$(SolutionDir)\bin</BinDir>
-        <DistDir>$(MSBuildProjectDirectory)\dist</DistDir>
+        <SolutionPath>$(MSBuildProjectDirectory)/src/MindTouchDream.sln</SolutionPath>
+        <BinDir>$(SolutionDir)/bin</BinDir>
+        <DistDir>$(MSBuildProjectDirectory)/dist</DistDir>
         <Files>
             mindtouch.core.dll;
             mindtouch.core.xml;
@@ -53,7 +53,7 @@
     </Target>
     <Target Name="PreBuild">
         <Message Text="Pre Build" />
-        <Copy SourceFiles="$(MindTouchKey)" DestinationFiles="$(SolutionDir)\mindtouch.snk"/>
+        <Copy SourceFiles="$(MindTouchKey)" DestinationFiles="$(SolutionDir)/mindtouch.snk"/>
         <PreBuild SolutionDir="$(SolutionDir)" ConfigurationFilename="$(ConfigurationFilename)" IgnoreModified="$(IgnoreModified)"/>
     </Target>
     <Target Name="UpdateVersion">
@@ -75,7 +75,7 @@
     </Target>
     <Target Name="Dream" Outputs="@(DreamBuildOutput)">
         <Message Text="Building DReAM" />
-        <MSBuild Targets="Rebuild" Projects="src\MindTouchDream.sln" Properties="Configuration=Signed Release; Platform=Any CPU; BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" ToolsVersion="$(ProjectToolsVersion)" UnloadProjectsOnCompletion="$(UnloadProjectsOnCompletion)" UseResultsCache="$(UseResultsCache)">
+        <MSBuild Targets="Rebuild" Projects="src/MindTouchDream.sln" Properties="Configuration=Signed Release; Platform=Any CPU; BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" ToolsVersion="$(ProjectToolsVersion)" UnloadProjectsOnCompletion="$(UnloadProjectsOnCompletion)" UseResultsCache="$(UseResultsCache)">
             <Output TaskParameter="TargetOutputs" ItemName="DreamBuildOutput" />
         </MSBuild>
         <Message Text="Done building DReAM" />
