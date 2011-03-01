@@ -181,7 +181,7 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual(n, items.Count());
             for(var i = 1; i <= n; i++) {
                 var j = i;
-                Assert.IsTrue((from x in set where x.Value == j && x.TTL == TimeSpan.FromSeconds(i) select x).Any());
+                Assert.IsTrue((from x in set where x.Value == j && x.TTL == TimeSpan.FromSeconds(j) select x).Any());
             }
         }
 
