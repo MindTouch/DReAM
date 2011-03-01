@@ -20,6 +20,7 @@
  */
 
 using System;
+using System.Text;
 using MindTouch.Web;
 using NUnit.Framework;
 
@@ -513,6 +514,38 @@ namespace MindTouch.Dream.Test {
                 XUri uri2 = new XUri(fromDecoded);
                 // just making sure they actually parse
             }
+        }
+
+        [Test]
+        public void Decode_extended_chars1() {
+            const string before = "F\u00F4\u00F6";
+            const string after = "F\u00F4\u00F6";
+            var decoded = XUri.Decode(before);
+            Assert.AreEqual(after, decoded);
+        }
+
+        [Test]
+        public void Decode_extended_chars2() {
+            const string before = "F%20\u00F4%20\u00F6";
+            const string after = "F \u00F4 \u00F6";
+            var decoded = XUri.Decode(before);
+            Assert.AreEqual(after, decoded);
+        }
+
+        [Test]
+        public void Decode_extended_chars3() {
+            const string before = "+F\u00F4\u00F6";
+            const string after = " F\u00F4\u00F6";
+            var decoded = XUri.Decode(before);
+            Assert.AreEqual(after, decoded);
+        }
+
+        [Test]
+        public void Decode_extended_chars4() {
+            const string before = "f%7Bb\u00FCb";
+            const string after = "f{b\u00FCb";
+            var decoded = XUri.Decode(before);
+            Assert.AreEqual(after, decoded);
         }
 
         [Test]
