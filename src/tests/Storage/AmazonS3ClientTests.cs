@@ -88,7 +88,7 @@ namespace MindTouch.Dream.Storage.Test {
             try {
                 _client.PutFile("foo/bar/", Helper.CreateFileHandle(data, null));
                 Assert.Fail("didn't throw");
-            } catch(InvalidOperationException e) { }
+            } catch(InvalidOperationException) { }
         }
 
         [Test]

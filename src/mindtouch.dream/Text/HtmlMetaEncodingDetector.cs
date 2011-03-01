@@ -858,7 +858,10 @@ namespace MindTouch.Text {
                     }
                 }
                 stateloop_continue:
+
+                // Note (arnec): the below exist so that stateloop_continue has a place to land and there is no warning about an unused variable
                 var x = 0;
+                x++;
             }
             stateloop_end:
             stateSave = state;
