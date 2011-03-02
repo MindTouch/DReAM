@@ -4,8 +4,10 @@ MindTouch DReAM
 Welcome to MindTouch DReAM.
 
 Notes on Contributing to DReAM
----------------------------
-If you have a new feature for Dream, please work against master, however, if you have a patch you'd like to see in the next point release, please base your work on the release branch (currently 2.2)
+------------------------------
+If you have a new feature for DReAM, please work against master, however, 
+if you have a patch you'd like to see in the next point release, please 
+base your work on the release branch (currently 2.2).
 
 1. What is MindTouch DReAM?
 ---------------------------
