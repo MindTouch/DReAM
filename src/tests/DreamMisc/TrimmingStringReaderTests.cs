@@ -29,30 +29,34 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Nothing_to_trim() {
-            TextReader reader = new TrimmingStringReader("this is plain text");
-            string result = reader.ReadToEnd();
-            Assert.AreEqual("this is plain text", result);
+            using(TextReader reader = new TrimmingStringReader("this is plain text")) {
+                string result = reader.ReadToEnd();
+                Assert.AreEqual("this is plain text", result);
+            }
         }
 
         [Test]
         public void Trim_from_the_beginning() {
-            TextReader reader = new TrimmingStringReader("   this is plain text");
-            string result = reader.ReadToEnd();
-            Assert.AreEqual("this is plain text", result);
+            using(TextReader reader = new TrimmingStringReader("   this is plain text")) {
+                string result = reader.ReadToEnd();
+                Assert.AreEqual("this is plain text", result);
+            }
         }
 
         [Test]
         public void Trim_from_the_end() {
-            TextReader reader = new TrimmingStringReader("this is plain text   ");
-            string result = reader.ReadToEnd();
-            Assert.AreEqual("this is plain text", result);
+            using(TextReader reader = new TrimmingStringReader("this is plain text   ")) {
+                string result = reader.ReadToEnd();
+                Assert.AreEqual("this is plain text", result);
+            }
         }
 
         [Test]
         public void Trim_both_the_beginning_and_end() {
-            TextReader reader = new TrimmingStringReader("   this is plain text   ");
-            string result = reader.ReadToEnd();
-            Assert.AreEqual("this is plain text", result);
+            using(TextReader reader = new TrimmingStringReader("   this is plain text   ")) {
+                string result = reader.ReadToEnd();
+                Assert.AreEqual("this is plain text", result);
+            }
         }
     }
 }
