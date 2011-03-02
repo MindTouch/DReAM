@@ -88,5 +88,5 @@ using System.Runtime.InteropServices;
 //
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile(@"..\mindtouch.snk")]
+[assembly: AssemblyKeyFile(@"../mindtouch.snk")]
 #endif

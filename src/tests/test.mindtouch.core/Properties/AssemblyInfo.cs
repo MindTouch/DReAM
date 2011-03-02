@@ -38,5 +38,5 @@ using System.Runtime.InteropServices;
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile(@"..\..\mindtouch.snk")]
+[assembly: AssemblyKeyFile(@"../../mindtouch.snk")]
 #endif

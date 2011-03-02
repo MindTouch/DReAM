@@ -75,7 +75,7 @@
     </Target>
     <Target Name="Dream" Outputs="@(DreamBuildOutput)">
         <Message Text="Building DReAM" />
-        <MSBuild Targets="Rebuild" Projects="src/MindTouchDream.sln" Properties="Configuration=Signed Release; Platform=Any CPU; BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" ToolsVersion="$(ProjectToolsVersion)" UnloadProjectsOnCompletion="$(UnloadProjectsOnCompletion)" UseResultsCache="$(UseResultsCache)">
+        <MSBuild Targets="Rebuild" Projects="src/MindTouchDream.sln" Properties="Configuration=Signed Release; Platform=Any CPU; BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" ToolsVersion="$(ProjectToolsVersion)">
             <Output TaskParameter="TargetOutputs" ItemName="DreamBuildOutput" />
         </MSBuild>
         <Message Text="Done building DReAM" />
