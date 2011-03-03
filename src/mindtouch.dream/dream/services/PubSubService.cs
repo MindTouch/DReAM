@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -33,7 +33,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Publication and Subscription Service", "Copyright (c) 2006-2009 MindTouch, Inc.",
+    [DreamService("MindTouch Publication and Subscription Service", "Copyright (c) 2006-2011 MindTouch, Inc.",
         SID = new string[] { "sid://mindtouch.com/dream/2008/10/pubsub" }
     )]
     internal class PubSubService : DreamService {
