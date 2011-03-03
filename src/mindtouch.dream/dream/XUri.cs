@@ -379,7 +379,7 @@ namespace MindTouch.Dream {
         /// <param name="text">Input text.</param>
         /// <returns>Decoded text.</returns>
         public static string Decode(string text) {
-            string result = XUri.UrlDecode(text);
+            string result = UrlDecode(text);
             return result;
         }
 

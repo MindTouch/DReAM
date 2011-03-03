@@ -47,7 +47,6 @@ namespace MindTouch.Dream.Storage.Test {
 
         [TestFixtureSetUp]
         public void Init() {
-            var root = "rootpath";
             var config = new XDoc("config");
             var builder = new ContainerBuilder();
             builder.Register((c, p) => {
