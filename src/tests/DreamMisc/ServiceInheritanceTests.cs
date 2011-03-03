@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -67,7 +67,7 @@ namespace MindTouch.Dream.Test {
 
     }
 
-    [DreamService("MindTouch Test Parent ", "Copyright (c) 2006-2009 MindTouch, Inc.",
+    [DreamService("MindTouch Test Parent ", "Copyright (c) 2006-2011 MindTouch, Inc.",
         SID = new string[] { "http://services.mindtouch.com/dream/test/2008/11/inheritance/parent" }
     )]
     public class InheritanceParent : DreamService {
@@ -98,7 +98,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("MindTouch Test Parent ", "Copyright (c) 2006-2009 MindTouch, Inc.",
+    [DreamService("MindTouch Test Parent ", "Copyright (c) 2006-2011 MindTouch, Inc.",
        SID = new string[] { "http://services.mindtouch.com/dream/test/2008/11/inheritance/parent" }
     )]
     public class InheritanceChild : InheritanceParent { }
