@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -349,7 +349,7 @@ namespace MindTouch.Tools {
         }
 
         private static void PrintUsage() {
-            Console.WriteLine("MindTouch Blueprints, Copyright (c) 2006-2009 MindTouch, Inc.");
+            Console.WriteLine("MindTouch Blueprints, Copyright (c) 2006-2011 MindTouch, Inc.");
             Console.WriteLine("USAGE: mindtouch.blueprints.exe <arg1> ... <argN>");
             Console.WriteLine("    -url=<url>              url for publishing to a wiki");
             Console.WriteLine("    -login=<login>          login for publishing to a wiki");

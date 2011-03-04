@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
@@ -34,7 +35,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2009 MindTouch, Inc.",
+    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2011 MindTouch, Inc.",
         Info = "http://developer.mindtouch.com/Dream/Services/EmailService",
         SID = new[] { "sid://mindtouch.com/2009/01/dream/email" }
     )]
@@ -59,25 +60,25 @@ namespace MindTouch.Dream.Services {
         //--- Features ---
         [DreamFeature("POST:message", "Send an email")]
         internal Yield SendEmail(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            XDoc mailDoc = request.ToDocument();
-            MailMessage mailMsg = new MailMessage();
+            var mailDoc = request.ToDocument();
+            var mailMsg = new MailMessage();
             foreach(XDoc to in mailDoc["to"]) {
                 var email = to.AsText;
                 if(string.IsNullOrEmpty(email)) {
                     continue;
                 }
                 _log.DebugFormat("Adding TO address '{0}'", email);
-                mailMsg.To.Add(new MailAddress(email));
+                mailMsg.To.Add(GetEmailAddress(email));
             }
             if(mailMsg.To.Count == 0) {
                 throw new DreamBadRequestException("message does not contains any TO email addresses");
             }
             var from = mailDoc["from"].AsText;
             _log.DebugFormat("from address: {0}", from);
-            mailMsg.From = new MailAddress(from);
+            mailMsg.From = GetEmailAddress(from);
             mailMsg.Subject = mailDoc["subject"].AsText;
             string plaintextBody = null;
-            foreach(XDoc body in mailDoc["body"]) {
+            foreach(var body in mailDoc["body"]) {
                 AlternateView view;
                 if(body["@html"].AsBool ?? false) {
                     _log.Debug("adding html body");
@@ -92,7 +93,7 @@ namespace MindTouch.Dream.Services {
                 _log.Debug("adding plain text body");
                 mailMsg.Body = plaintextBody;
             }
-            foreach(XDoc header in mailDoc["headers/header"]) {
+            foreach(var header in mailDoc["headers/header"]) {
                 var name = header["name"].AsText;
                 var value = header["value"].AsText;
                 _log.DebugFormat("adding header '{0}': {1}", name, value);
@@ -101,6 +102,14 @@ namespace MindTouch.Dream.Services {
             GetClient(mailDoc["@configuration"].AsText).Send(mailMsg);
             response.Return(DreamMessage.Ok());
             yield break;
+        }
+
+        private MailAddress GetEmailAddress(string addressString) {
+            var address = new MailAddress(addressString);
+            if(string.IsNullOrEmpty(address.DisplayName)) {
+                address = new MailAddress(addressString, addressString);
+            }
+            return address;
         }
 
         [DreamFeature("PUT:configuration/{configuration}", "Set smtp settings for a named configuration")]
