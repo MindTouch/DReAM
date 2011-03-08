@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -192,12 +192,13 @@ namespace MindTouch.Xml {
         }
 
         private static XDoc FromHtml(TextReader reader) {
-            Sgml.SgmlReader sgmlReader = new Sgml.SgmlReader(XDoc.XmlNameTable);
-            sgmlReader.Dtd = _dtd;
-            sgmlReader.DocType = "HTML";
-            sgmlReader.WhitespaceHandling = WhitespaceHandling.All;
-            sgmlReader.CaseFolding = Sgml.CaseFolding.ToLower;
-            sgmlReader.InputStream = reader;
+            Sgml.SgmlReader sgmlReader = new Sgml.SgmlReader(XDoc.XmlNameTable) {
+                Dtd = _dtd,
+                DocType = "HTML",
+                WhitespaceHandling = WhitespaceHandling.All,
+                CaseFolding = Sgml.CaseFolding.ToLower,
+                InputStream = reader
+            };
             try {
                 XmlDocument doc = XDoc.NewXmlDocument();
                 doc.Load(sgmlReader);
@@ -220,7 +221,7 @@ namespace MindTouch.Xml {
     public static class XDocUtil {
 
         //--- Class Fields ---
-        private static Regex _xmlDateTimeRex = new Regex(@"^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{2}):(\d{2})(\.(\d{2,7}))?Z$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _xmlDateTimeRex = new Regex(@"^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{2}):(\d{2})(\.(\d{2,7}))?Z$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         //--- Class Methods ---
 
@@ -250,7 +251,7 @@ namespace MindTouch.Xml {
 
             // check if text is in date format
             DateTime date;
-            if(XDocUtil.TryParseXmlDateTime(text, out date)) {
+            if(TryParseXmlDateTime(text, out date)) {
 
                 // convert text to RFC1123 formatted date
                 text = date.ToUniversalTime().ToString("R");
@@ -345,20 +346,20 @@ namespace MindTouch.Xml {
             value = value.Replace("\r\n ", "");
 
             // split lines
-            string[] lines = value.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines = value.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             // process each line
             foreach(string line in lines) {
-                if(StringUtil.StartsWithInvariant(line, "BEGIN:")) {
+                if(line.StartsWithInvariant("BEGIN:")) {
                     result.Start(line.Substring(6).ToLowerInvariant());
-                } else if(StringUtil.StartsWithInvariant(line, "END:")) {
+                } else if(line.StartsWithInvariant("END:")) {
                     result.End();
                 } else {
-                    string[] pair = line.Split(new char[] { ':' }, 2);
+                    string[] pair = line.Split(new[] { ':' }, 2);
                     string[] attrs = pair[0].Split(';');
                     result.Start(attrs[0].ToLowerInvariant());
                     for(int i = 1; i < attrs.Length; ++i) {
-                        string[] attr = attrs[i].Split(new char[] { '=' }, 2);
+                        string[] attr = attrs[i].Split(new[] { '=' }, 2);
                         result.Attr(attr[0].ToLowerInvariant(), (attr.Length > 1) ? DecodeVersitString(attr[1]) : string.Empty);
                     }
                     if(pair.Length > 1) {
@@ -621,7 +622,7 @@ namespace MindTouch.Xml {
         public static XDoc FromXSpan(XDoc xspan) {
             XDoc xml = new XDoc(xspan["@class"].Contents);
             foreach(XDoc attr in xspan["@*"]) {
-                if(StringUtil.StartsWithInvariant(attr.Name, "xml:"))
+                if(attr.Name.StartsWithInvariant("xml:"))
                     xml.Attr(attr.Name.Substring("xml:".Length), attr.Contents);
             }
             string value = xspan["text()"].Contents;

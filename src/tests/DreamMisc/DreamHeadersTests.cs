@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -31,7 +31,7 @@ namespace MindTouch.Dream.Test {
             collections.Add("Cookie", "__utma=134392366.2030730348.1275932450.1276553042.1276556836.19; __utmz=134392366.1276207881.9.3.utmcsr=developer.mindtouch.com|utmccn=(referral)|utmcmd=referral|utmcct=/User:arnec/bugs; _mkto_trk=id:954-WGP-507&token:_mch-mindtouch.com-1270756717014-83706; WRUID=0; __kti=1274382964652");
             collections.Add("Cookie", "http%3A%2F%2Fwww.mindtouch.com%2F");
             collections.Add("Cookie", "; __ktv=2f4-f02d-634b-51e2128b724d7c2; __qca=P0-2102347259-1274460371553; PHPSESSID=307e779182909ab37932b4dffe77c40a; __utmc=134392366; __kts=1274382964673,http%3A%2F%2Fwww.mindtouch.com%2F,; __ktt=631f-d0a2-648e-e0b128b724d7c2; authtoken=\"1_634121336269193470_4254e33b49bc1ee0a72c5716200e296b\"; __utmb=134392366.6.10.1276556836");
-            Assert.AreEqual(3,collections.GetValues("Cookie").Length);
+            Assert.AreEqual(3, collections.GetValues("Cookie").Length);
             var headers = new DreamHeaders(collections);
             var cookies = headers.Cookies;
             Assert.AreEqual(13, cookies.Count);
@@ -61,6 +61,18 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual("1_634121336269193470_4254e33b49bc1ee0a72c5716200e296b", cookies[11].Value);
             Assert.AreEqual("__utmb", cookies[12].Name);
             Assert.AreEqual("134392366.6.10.1276556836", cookies[12].Value);
+        }
+
+        [Test]
+        public void Preserve_order_of_hosts_in_forwarded_for_header() {
+            // X-Forwarded-For
+            var collections = new NameValueCollection();
+            collections.Add("X-Forwarded-For", "a, b, c");
+            collections.Add("X-Forwarded-For", "d, e");
+            collections.Add("X-Forwarded-For", "f, g, h");
+            var headers = new DreamHeaders(collections);
+            var values = headers.ForwardedFor;
+            Assert.AreEqual(new []{ "a", "b", "c", "d", "e", "f", "g", "h" }, values);
         }
     }
 }

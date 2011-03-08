@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -53,14 +53,13 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("2.2.0.25000")]
-[assembly: AssemblyVersion("2.2.0.25000")]
-[assembly: AssemblyFileVersion("2.2.0.25000")]
+[assembly: AssemblyVersion("2.3.0.0")]
+[assembly: AssemblyFileVersion("2.3.0.0")]
 [assembly: GitBranch("master")]
-[assembly: GitRevision("6d3d360ae3ef49802044e9a946a936f98d0ec07c")]
+[assembly: GitRevision("HEAD")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile(@"..\mindtouch.snk")]
+[assembly: AssemblyKeyFile(@"../mindtouch.snk")]
 #endif

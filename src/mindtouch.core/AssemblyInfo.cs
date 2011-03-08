@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MindTouch, Inc.")]
 [assembly: AssemblyProduct("MindTouch Dream Core")]
-[assembly: AssemblyCopyright("Copyright (c) 2006-2009 MindTouch, Inc.")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2011 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -53,10 +53,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.2.0.25000")]
-[assembly: AssemblyFileVersion("2.2.0.25000")]
+[assembly: AssemblyVersion("2.3.0.0")]
+[assembly: AssemblyFileVersion("2.3.0.0")]
 [assembly: GitBranch("master")]
-[assembly: GitRevision("6d3d360ae3ef49802044e9a946a936f98d0ec07c")]
+[assembly: GitRevision("HEAD")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 //
@@ -86,7 +86,7 @@ using System.Runtime.InteropServices;
 //
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile(@"..\mindtouch.snk")]
+[assembly: AssemblyKeyFile(@"../mindtouch.snk")]
 [assembly: InternalsVisibleTo("test.mindtouch.core, PublicKey=0024000004800000940000000602000000240000525341310004000001000100c59c584b5a2a3c335322d6cc44f0855889b5f16de611ab96788b1ae38f061514542ef69091168b01161968191345f509072c7f11c48710869ae14770c99e83dbe14b981aab3ba7306203f86bca0cebe91fe174c525095b31b0387211653b1b569d01d7c9ed889d460b915a91442705655498be9da4cd15e4af1811851e3dbbd7")]
 #else
 //[assembly: InternalsVisibleTo("test.mindtouch.core")]

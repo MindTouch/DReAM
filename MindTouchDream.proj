@@ -1,0 +1,83 @@
+﻿<Project DefaultTargets="Build" ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <Configuration>Signed Release</Configuration>
+        <Platform >AnyCPU</Platform>
+        <MindTouchKey Condition=" '$(MindTouchKey)' == '' ">build/mindtouch.dream.public.snk</MindTouchKey>
+        <ConfigurationFilename Condition=" '$(ConfigurationFilename)' == '' ">mindtouch.build.xml</ConfigurationFilename>
+        <IgnoreModified Condition=" '$(IgnoreModified)' == '' ">false</IgnoreModified>
+        <SolutionDir>$(MSBuildProjectDirectory)/src</SolutionDir>
+        <SolutionExt>.sln</SolutionExt>
+        <SolutionFileName>MindTouchDream.sln</SolutionFileName>
+        <SolutionName>MindTouchDream</SolutionName>
+        <SolutionPath>$(MSBuildProjectDirectory)/src/MindTouchDream.sln</SolutionPath>
+        <BinDir>$(SolutionDir)/bin</BinDir>
+        <DistDir>$(MSBuildProjectDirectory)/dist</DistDir>
+        <Files>
+            mindtouch.core.dll;
+            mindtouch.core.xml;
+            mindtouch.dream.dll;
+            mindtouch.dream.xml;
+            mindtouch.dream.test.dll;
+            mindtouch.dream.test.xml;
+            mindtouch.host.service.exe;
+            mindtouch.host.exe;
+            mindtouch.host.exe.config;
+            Autofac.dll;
+            log4net.dll;
+            nunit.framework.dll;
+            SgmlReaderDll.dll
+        </Files>
+    </PropertyGroup>
+    <UsingTask TaskName="MindTouch.Build.Tasks.PreBuild"
+               AssemblyFile="build/mindtouch.build.tasks.dll" />
+    <UsingTask TaskName="MindTouch.Build.Tasks.PostBuild"
+               AssemblyFile="build/mindtouch.build.tasks.dll" />
+    <UsingTask TaskName="MindTouch.Build.Tasks.UpdateVersion"
+                   AssemblyFile="build/mindtouch.build.tasks.dll" />
+    <Target Name="Build">
+        <CallTarget Targets="PreBuild"/>
+        <CallTarget Targets="Dream"/>
+        <CallTarget Targets="PostBuild"/>
+    </Target>
+    <Target Name="PostBuild">
+        <Message Text="Post Build" />
+        <PostBuild SolutionDir="$(SolutionDir)" ConfigurationFilename="$(ConfigurationFilename)" IgnoreModified="$(IgnoreModified)"/>
+        <MakeDir Directories="$(DistDir)"/>
+        <CombinePath BasePath="$(BinDir)" Paths="$(Files)">
+            <Output TaskParameter="CombinedPaths" PropertyName="SourceFiles"/>
+        </CombinePath>
+        <CombinePath BasePath="$(DistDir)" Paths="$(Files)">
+            <Output TaskParameter="CombinedPaths" PropertyName="DestFiles"/>
+        </CombinePath>
+        <Copy SourceFiles="$(SourceFiles)" DestinationFiles="$(DestFiles)"/>
+    </Target>
+    <Target Name="PreBuild">
+        <Message Text="Pre Build" />
+        <Copy SourceFiles="$(MindTouchKey)" DestinationFiles="$(SolutionDir)/mindtouch.snk"/>
+        <PreBuild SolutionDir="$(SolutionDir)" ConfigurationFilename="$(ConfigurationFilename)" IgnoreModified="$(IgnoreModified)"/>
+    </Target>
+    <Target Name="UpdateVersion">
+        <Message Text="Updating Version" />
+        <UpdateVersion SolutionDir="$(SolutionDir)" ConfigurationFilename="$(ConfigurationFilename)" Version="$(Version)" IgnoreModified="$(IgnoreModified)"/>
+    </Target>
+    <Target Name="Env">
+        <CombinePath BasePath="$(DistDir)" Paths="$(Files)">
+            <Output TaskParameter="CombinedPaths" PropertyName="DistFiles"/>
+        </CombinePath>
+        <Message Text="DistFiles: $(DistFiles)"/>
+        <Message Text="Configuration: $(Configuration)"/>
+        <Message Text="MindTouchKey: $(MindTouchKey)"/>
+        <Message Text="SolutionDir: $(SolutionDir)"/>
+        <Message Text="SolutionExt: $(SolutionExt)"/>
+        <Message Text="SolutionFileName: $(SolutionFileName)"/>
+        <Message Text="SolutionName: $(SolutionName)"/>
+        <Message Text="SolutionPath: $(SolutionPath)"/>
+    </Target>
+    <Target Name="Dream" Outputs="@(DreamBuildOutput)">
+        <Message Text="Building DReAM" />
+        <MSBuild Targets="Rebuild" Projects="src/MindTouchDream.sln" Properties="Configuration=Signed Release; Platform=Any CPU; BuildingSolutionFile=true; SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" ToolsVersion="$(ProjectToolsVersion)">
+            <Output TaskParameter="TargetOutputs" ItemName="DreamBuildOutput" />
+        </MSBuild>
+        <Message Text="Done building DReAM" />
+    </Target>
+</Project>

@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -241,7 +241,7 @@ namespace MindTouch.Dream {
         private static DreamMessage PostProcess(string verb, XUri uri, XUri normalizedUri, DreamHeaders headers, DreamCookieJar cookies, DreamMessage message) {
 
             // check if we received cookies
-            if(message.IsSuccessful && message.HasCookies) {
+            if(message.HasCookies) {
                 DreamContext context = DreamContext.CurrentOrNull;
 
                 // add matching cookies to service or to global cookie jar
