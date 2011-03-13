@@ -487,7 +487,6 @@ namespace MindTouch.Data {
         private IDbCommand CreateExecutableCommand(IDbConnection connection) {
             IDbCommand command = _factory.CreateQuery(_command.CommandText);
             try {
-                command.CommandTimeout = _command.CommandTimeout;
                 command.CommandType = _command.CommandType;
                 command.Connection = connection;
                 foreach(IDataParameter parameter in _command.Parameters) {
