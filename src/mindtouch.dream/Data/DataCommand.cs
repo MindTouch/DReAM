@@ -618,7 +618,7 @@ namespace MindTouch.Data {
         private void QueryFinished(IDbCommand command) {
             _stopWatch.Stop();
             if(_stopWatch.Elapsed > SLOW_SQL) {
-                _log.WarnFormat("SLOW SQL ({0:0.000}s): {1}", _stopWatch.Elapsed.TotalSeconds, command.CommandText);
+                _log.WarnFormat("SLOW SQL ({0:0.000}s, database: {2}): {1}", _stopWatch.Elapsed.TotalSeconds, command.CommandText, command.Connection.Database);
             }
             _catalog.FireQueryFinished(this);
         }
