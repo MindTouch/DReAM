@@ -1381,7 +1381,7 @@ namespace MindTouch.Dream {
                         // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal
                         //                representation to a byte array, which is better for cloning.
                         result.Value.ToBytes();
-                        
+
                         DreamMessage reply = result.Value.Clone();
                         Dictionary<object, DreamMessage> cache;
                         lock(_responseCache) {
@@ -1693,15 +1693,25 @@ namespace MindTouch.Dream {
         }
 
         private void StopService(XUri uri) {
-            _log.TraceMethodCall("StopService", uri);
+            string path = uri.Path.ToLowerInvariant();
 
             // remove service from services table
             ServiceEntry service;
             lock(_services) {
-                string path = uri.Path.ToLowerInvariant();
                 if(_services.TryGetValue(path, out service)) {
                     _services.Remove(path);
                 }
+            }
+            if(_log.IsDebugEnabled) {
+                string sid = "<UNKNOWN>";
+                string type = "<UNKNOWN>";
+                if(service != null) {
+                    sid = service.SID.ToString();
+                    if(service.Service != null) {
+                        type = service.Service.GetType().ToString();
+                    }
+                }
+                _log.DebugMethodCall("stop", path, sid, type);
             }
 
             // deactivate service
