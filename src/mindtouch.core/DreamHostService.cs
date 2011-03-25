@@ -228,16 +228,18 @@ namespace MindTouch.Dream {
         //--- Fields ---
         private readonly IContainer _container;
         private readonly Dictionary<IDreamService, IContainer> _serviceContainers = new Dictionary<IDreamService, IContainer>();
+        private readonly XUriMap<XUri> _aliases = new XUriMap<XUri>();
+        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
+        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
+        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
+        private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         private IServiceActivator _serviceActivator;
         private DreamFeatureStage[] _defaultPrologues;
         private DreamFeatureStage[] _defaultEpilogues;
         private Guid _id;
         private bool _running;
-        private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         private DreamFeatureDirectory _features = new DreamFeatureDirectory();
-        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
-        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private Dictionary<string, XDoc> _blueprints;
         private string _storageType;
         private XDoc _storageConfig;
@@ -245,13 +247,11 @@ namespace MindTouch.Dream {
         private Plug _storage;
         private ManualResetEvent _shutdown;
         private XUri _localMachineUri;
-        private XUriMap<XUri> _aliases = new XUriMap<XUri>();
         private XUri _publicUri;
         private readonly DateTime _created = DateTime.UtcNow;
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
-        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
         private long _responseCacheHits;
         private long _responseCacheMisses;
         private Plug _hostpubsub;
@@ -259,6 +259,7 @@ namespace MindTouch.Dream {
         private int _reentrancyLimit;
         private string _rootRedirect;
         private string _debugMode;
+        private bool _memorizeAliases;
 
         //--- Constructors ---
         public DreamHostService() : this(null) { }
@@ -969,7 +970,7 @@ namespace MindTouch.Dream {
             _features = new DreamFeatureDirectory();
             _services.Clear();
             _responseCache.Clear();
-            _aliases = new XUriMap<XUri>();
+            _aliases.Clear();
 
             // mark host as not running
             Plug.RemoveEndpoint(this);
@@ -1004,6 +1005,7 @@ namespace MindTouch.Dream {
                 _shutdown = new ManualResetEvent(false);
                 _rootRedirect = config["root-redirect"].AsText;
                 _debugMode = config["debug"].AsText.IfNullOrEmpty("false").ToLowerInvariant();
+                _memorizeAliases = config["memorize-aliases"].AsBool ?? true;
 
                 // add default prologues/epilogues
                 _defaultPrologues = new[] { 
@@ -1345,9 +1347,11 @@ namespace MindTouch.Dream {
                 }
 
                 // add uri to aliases list
-                lock(_aliases) {
-                    _aliases[transport] = transport;
-                    _aliases[publicUri] = publicUri;
+                if(_memorizeAliases) {
+                    lock(_aliases) {
+                        _aliases[transport] = transport;
+                        _aliases[publicUri] = publicUri;
+                    }
                 }
 
                 // create context

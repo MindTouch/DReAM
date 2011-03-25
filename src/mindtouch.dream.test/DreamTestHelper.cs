@@ -98,7 +98,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
         /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
         /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService<T>(DreamHostInfo hostInfo, string pathPrefix, XDoc extraConfig) where T : IDreamService {
+        public static DreamServiceInfo CreateService<T>(this DreamHostInfo hostInfo, string pathPrefix, XDoc extraConfig) where T : IDreamService {
             return CreateService(hostInfo, typeof(T), pathPrefix, extraConfig);
         }
 
@@ -109,7 +109,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
         /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
         /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService<T>(DreamHostInfo hostInfo, string pathPrefix) where T : IDreamService {
+        public static DreamServiceInfo CreateService<T>(this DreamHostInfo hostInfo, string pathPrefix) where T : IDreamService {
             return CreateService(hostInfo, typeof(T), pathPrefix);
         }
 
@@ -121,7 +121,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
         /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
         /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, Type serviceType, string pathPrefix, XDoc extraConfig) {
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, Type serviceType, string pathPrefix, XDoc extraConfig) {
             string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
             XDoc config = new XDoc("config")
                 .Elem("class", serviceType.FullName)
@@ -142,7 +142,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
         /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
         /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, string sid, string pathPrefix, XDoc extraConfig) {
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, string sid, string pathPrefix, XDoc extraConfig) {
             string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
             XDoc config = new XDoc("config")
                 .Elem("sid", sid)
@@ -162,7 +162,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="serviceType">Type of the <see cref="IDreamService"/> to create.</param>
         /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
         /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, Type serviceType, string pathPrefix) {
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, Type serviceType, string pathPrefix) {
             string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
             XDoc config = new XDoc("config")
                 .Elem("class", serviceType.FullName)
@@ -176,7 +176,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
         /// <param name="config">Configuration to use for service instantiation.</param>
         /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, XDoc config) {
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, XDoc config) {
             string path = config["path"].AsText;
             DreamMessage result = hostInfo.Host.Self.At("services").Post(config, new Result<DreamMessage>()).Wait();
             if(!result.IsSuccessful) {
