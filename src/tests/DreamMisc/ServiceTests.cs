@@ -189,6 +189,17 @@ namespace MindTouch.Dream.Test {
             response = parent.At("createchild").GetAsync().Wait();
             Assert.IsFalse(response.IsSuccessful, response.ToText());
         }
+
+        [Test]
+        public void Child_that_fails_first_time_around_can_still_be_created() {
+            XDoc config = new XDoc("config")
+                 .Elem("path", "empty")
+                 .Elem("sid", "sid://mindtouch.com/TestParentService");
+            var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
+            Plug parent = serviceInfo.WithPrivateKey().AtLocalHost;
+            var response = parent.At("createandretychild").GetAsync().Wait();
+            Assert.IsTrue(response.IsSuccessful, response.ToText());
+        }
     }
 
     [DreamService("TestParentService", "Copyright (c) 2008 MindTouch, Inc.",
@@ -218,6 +229,27 @@ namespace MindTouch.Dream.Test {
             response.Return(DreamMessage.Ok());
             yield break;
         }
+
+        [DreamFeature("*:createandretychild", "test")]
+        public Yield CreateStartChildWithRetry(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            Result<Plug> r;
+            _log.Debug("first create attempt");
+            yield return r = CreateService(
+                "retrychild",
+                "sid://mindtouch.com/TestBadStartService",
+                new XDoc("config").Elem("throw", true),
+                new Result<Plug>()).Catch();
+            _log.DebugFormat("first attempt result: {0}", r.Exception.Message);
+            _log.Debug("second create attempt");
+            yield return CreateService(
+                "retrychild",
+                "sid://mindtouch.com/TestBadStartService",
+                new XDoc("config").Elem("throw", context.GetParam("throw", "false")),
+                new Result<Plug>());
+            response.Return(DreamMessage.Ok());
+            yield break;
+        }
+
 
         [DreamFeature("*:createbadchild", "test")]
         public Yield CreateBadChild(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
