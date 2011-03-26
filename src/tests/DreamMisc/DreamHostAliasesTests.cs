@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Linq;
 using log4net;
 using MindTouch.Tasking;
+using MindTouch.Xml;
 using NUnit.Framework;
 
 namespace MindTouch.Dream.Test {
@@ -31,39 +32,115 @@ namespace MindTouch.Dream.Test {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
+        private DreamHostInfo _hostAliasMemorize;
+        private DreamHostInfo _hostNoAliasMemorize;
+        private MockServiceInfo _service;
+        private XUri _external;
+        //private XUri _ext2;
+        private int _externalCalled;
+        //private int _ext2called;
+        private List<string> _calledPaths;
+
+        [TestFixtureTearDown]
+        public void TearDown() {
+            if(_hostAliasMemorize != null) {
+                _hostAliasMemorize.Dispose();
+            }
+            if(_hostNoAliasMemorize != null) {
+                _hostNoAliasMemorize.Dispose();
+            }
+        }
 
         [Test]
-        public void Can_remember_incoming_uri_for_local_resolution_at_request_time() {
-            var host = DreamTestHelper.CreateRandomPortHost();
-            var service = MockService.CreateMockService(host);
-            var paths = new List<string>();
-            service.Service.CatchAllCallback = (context, request, result) => {
-                paths.Add(context.GetSuffixes(UriPathFormat.Original).First());
-                var call = context.GetParam("call");
+        public void Incoming_uri_does_not_get_memorized_all_by_itself() {
+            SetupService(true);
+            _service.AtLocalHost.With(DreamInParam.URI, "http://somehost").With("call", _external.At("externalCallback").ToString()).At("external").Get();
+            Assert.AreEqual(new[] { "external" }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(2, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        [Test]
+        public void Can_inject_alias_via_DreamUriIn_param_for_current_request() {
+            SetupService(true);
+            _service.AtLocalHost.With(DreamInParam.URI, _external.WithoutPathQueryFragment().WithoutTrailingSlash().ToString()).With("call", _external.At("externalCallback").ToString()).At("external").Get();
+            Assert.AreEqual(new[] { "external", "externalCallback" }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(1, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        [Test]
+        public void Can_inject_alias_via_dream_transport_header_for_current_request() {
+            SetupService(true);
+            _service.AtLocalHost.WithHeader(DreamHeaders.DREAM_TRANSPORT, _external.WithoutPathQueryFragment().WithoutTrailingSlash().ToString()).With("call", _external.At("externalCallback").ToString()).At("external").Get();
+            Assert.AreEqual(new[] { "external", "externalCallback" }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(1, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        [Test]
+        public void Can_inject_alias_via_DreamUriIn_param_for_future_requests() {
+            SetupService(true);
+            _service.AtLocalHost.With(DreamInParam.URI, _external.WithoutPathQueryFragment().WithoutTrailingSlash().ToString()).At("external").Get();
+            _service.AtLocalHost.With("call", _external.At("externalCallback").ToString()).At("externalAgain").Get();
+            Assert.AreEqual(new[] { "external", "externalAgain", "externalCallback" }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(1, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        [Test]
+        public void Can_inject_alias_via_dream_transport_header_for_future_requests() {
+            SetupService(true);
+            _service.AtLocalHost.WithHeader(DreamHeaders.DREAM_TRANSPORT, _external.WithoutPathQueryFragment().WithoutTrailingSlash().ToString()).At("external").Get();
+            _service.AtLocalHost.With("call", _external.At("externalCallback").ToString()).At("externalAgain").Get();
+            Assert.AreEqual(new[] { "external", "externalAgain", "externalCallback" }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(1, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        [Test]
+        public void Can_disable_alias_injection_via_DreamUriIn_param() {
+            SetupService(false);
+            _service.AtLocalHost.With(DreamInParam.URI, _external.WithoutPathQueryFragment().WithoutTrailingSlash().ToString()).With("call", _external.At("externalCallback").ToString()).At("external").Get();
+            Assert.AreEqual(new[] { "external", }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(2, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        [Test]
+        public void Can_disable_alias_injection_via_dream_transport_header() {
+            SetupService(false);
+            _service.AtLocalHost.WithHeader(DreamHeaders.DREAM_TRANSPORT, _external.WithoutPathQueryFragment().WithoutTrailingSlash().ToString()).With("call", _external.At("externalCallback").ToString()).At("external").Get();
+            Assert.AreEqual(new[] { "external", }, _calledPaths.ToArray(), "the wrong paths were called on the mock service");
+            Assert.AreEqual(2, _externalCalled, "external endpoint was not called the expected number of time");
+        }
+
+        private void SetupService(bool memorizeAliases) {
+            DreamHostInfo host;
+            if(memorizeAliases) {
+                host = _hostAliasMemorize = DreamTestHelper.CreateRandomPortHost();
+            } else {
+                host = _hostNoAliasMemorize = DreamTestHelper.CreateRandomPortHost(new XDoc("config").Elem("memorize-aliases", false));
+            }
+            _service = MockService.CreateMockService(host);
+            _calledPaths = new List<string>();
+            _service.Service.CatchAllCallback = (context, request, result) => {
+                _calledPaths.Add(context.GetSuffixes(UriPathFormat.Original).First());
+                var call = context.GetParam("call", null);
                 if(!string.IsNullOrEmpty(call)) {
                     Plug.New(call).Get();
                 }
                 result.Return(DreamMessage.Ok());
             };
-            var ext1 = new XUri("http://external1/").WithPort(service.AtLocalHost.Uri.Port).AtPath(service.AtLocalHost.Uri.Path);
-            var ext2 = new XUri("http://external2/").WithPort(service.AtLocalHost.Uri.Port).AtPath(service.AtLocalHost.Uri.Path);
-            var ext1called = 0;
-            MockPlug.Register(ext1, (plug, verb, uri, request, response) => {
-                ext1called++;
+            _external = new XUri("http://external1/").WithPort(_service.AtLocalHost.Uri.Port).At(_service.AtLocalHost.Uri.Segments);
+            //_ext2 = new XUri("http://external2/").WithPort(_service.AtLocalHost.Uri.Port).At(_service.AtLocalHost.Uri.Segments);
+            _externalCalled = 0;
+            MockPlug.Register(_external, (plug, verb, uri, request, response) => {
+                _externalCalled++;
                 response.Return(DreamMessage.Ok());
-            });
-            var ext2called = 0;
-            MockPlug.Register(ext2, (plug, verb, uri, request, response) => {
-                ext2called++;
-                response.Return(DreamMessage.Ok());
-            });
-            Plug.New(ext1).Get();
-            Plug.New(ext2).Get();
-            service.AtLocalHost.With(DreamInParam.URI, ext1.WithoutPathQueryFragment().ToString()).With("call", ext1.At("ext1callback").ToString()).At("ext1").Get();
-            service.AtLocalHost.With(DreamInParam.URI, ext1.WithoutPathQueryFragment().ToString()).With("call", ext2.At("ext2callback").ToString()).At("ext2").Get();
-            Assert.AreEqual(new[] { "ext1", "ext1callback", "ext2" }, paths.ToArray());
-            Assert.AreEqual(1, ext1called);
-            Assert.AreEqual(2, ext2called);
+            }, 100);
+            //_ext2called = 0;
+            //MockPlug.Register(_ext2, (plug, verb, uri, request, response) => {
+            //    _ext2called++;
+            //    response.Return(DreamMessage.Ok());
+            //}, 100);
+            Plug.New(_external).Get();
+            //Plug.New(_ext2).Get();
+            //return _calledPaths;
         }
     }
 }

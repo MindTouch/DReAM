@@ -30,6 +30,7 @@ using MindTouch.Tasking;
 using MindTouch.Xml;
 
 namespace MindTouch.Dream.Test {
+
     /// <summary>
     /// Provides a mocking framework for intercepting <see cref="Plug"/> calls.
     /// </summary>
@@ -52,6 +53,37 @@ namespace MindTouch.Dream.Test {
     /// </remarks>
     public class MockPlug : IMockPlug {
 
+        //--- Types ---
+        public interface IMockInvokee {
+
+            //--- Methods ---
+            void Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response);
+
+            //--- Properties ---
+            int EndPointScore { get; }
+            XUri Uri { get; }
+        }
+
+        public class MockInvokee : IMockInvokee {
+            private readonly XUri _uri;
+            private readonly MockInvokeDelegate _callback;
+            private readonly int _endpointScore;
+
+            public MockInvokee(XUri uri, MockInvokeDelegate callback, int endpointScore) {
+                _uri = uri;
+                _callback = callback;
+                _endpointScore = endpointScore;
+            }
+
+            public void Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
+                _callback(plug, verb, uri, request, response);
+            }
+
+            public int EndPointScore { get { return _endpointScore; } }
+            public XUri Uri { get { return _uri; } }
+        }
+
+
         //--- Delegates ---
 
         /// <summary>
@@ -65,7 +97,7 @@ namespace MindTouch.Dream.Test {
         public delegate void MockInvokeDelegate(Dream.Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response);
 
         //--- Class Fields ---
-        private static Dictionary<string, List<MockPlug>> _mocks = new Dictionary<string, List<MockPlug>>();
+        private static readonly Dictionary<string, List<MockPlug>> _mocks = new Dictionary<string, List<MockPlug>>();
         private static readonly ILog _log = LogUtils.CreateLog();
         private static int _setupcounter = 0;
 
@@ -84,7 +116,16 @@ namespace MindTouch.Dream.Test {
         /// <param name="uri">Base Uri to intercept.</param>
         /// <param name="mock">Interception callback.</param>
         public static void Register(XUri uri, MockInvokeDelegate mock) {
-            MockEndpoint.Instance.Register(uri, mock);
+            Register(uri, mock, int.MaxValue);
+        }
+
+        /// <summary>
+        /// Register a callback to intercept any calls to a uri and its child paths.
+        /// </summary>
+        /// <param name="uri">Base Uri to intercept.</param>
+        /// <param name="mock">Interception callback.</param>
+        public static void Register(XUri uri, MockInvokeDelegate mock, int endpointScore) {
+            MockEndpoint.Instance.Register(new MockInvokee(uri, mock, endpointScore));
         }
 
         /// <summary>
@@ -107,7 +148,21 @@ namespace MindTouch.Dream.Test {
         /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
         public static IMockPlug Setup(XUri baseUri) {
             _setupcounter++;
-            return Setup(baseUri, "Setup#" + _setupcounter);
+            return Setup(baseUri, "Setup#" + _setupcounter, int.MaxValue);
+        }
+
+        /// <summary>
+        /// Setup a new <see cref="MockPlug"/> interceptor candidate for a uri and its child paths.
+        /// </summary>
+        /// <remarks>
+        /// This mechanism has not been completed and is only a WIP.
+        /// Must further configure ordered <see cref="IMockInvokeExpectationParameter"/> parameters to make validation possible.
+        /// </remarks>
+        /// <param name="baseUri">Base Uri to intercept.</param>
+        /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
+        public static IMockPlug Setup(XUri baseUri, int endPointScore) {
+            _setupcounter++;
+            return Setup(baseUri, "Setup#" + _setupcounter, endPointScore);
         }
 
         /// <summary>
@@ -121,12 +176,26 @@ namespace MindTouch.Dream.Test {
         /// <param name="name">Debug name for setup</param>
         /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
         public static IMockPlug Setup(XUri baseUri, string name) {
+            return Setup(baseUri, name, int.MaxValue);
+        }
+
+        /// <summary>
+        /// Setup a new <see cref="MockPlug"/> interceptor candidate for a uri and its child paths.
+        /// </summary>
+        /// <remarks>
+        /// This mechanism has not been completed and is only a WIP.
+        /// Must further configure ordered <see cref="IMockInvokeExpectationParameter"/> parameters to make validation possible.
+        /// </remarks>
+        /// <param name="baseUri">Base Uri to intercept.</param>
+        /// <param name="name">Debug name for setup</param>
+        /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
+        public static IMockPlug Setup(XUri baseUri, string name, int endPointScore) {
             List<MockPlug> mocks;
             var key = baseUri.SchemeHostPortPath;
             lock(_mocks) {
                 if(!_mocks.TryGetValue(key, out mocks)) {
                     mocks = new List<MockPlug>();
-                    MockEndpoint.Instance.Register(baseUri, (plug, verb, uri, request, response) => {
+                    MockInvokeDelegate callback = (plug, verb, uri, request, response) => {
                         _log.DebugFormat("checking setups for match on {0}:{1}", verb, uri);
                         MockPlug bestMatch = null;
                         var matchScore = 0;
@@ -144,7 +213,8 @@ namespace MindTouch.Dream.Test {
                             _log.DebugFormat("[{0}] matched", bestMatch.Name);
                             response.Return(bestMatch.Invoke(verb, uri, request));
                         }
-                    });
+                    };
+                    MockEndpoint.Instance.Register(new MockInvokee(baseUri, callback, endPointScore));
                     MockEndpoint.Instance.AllDeregistered += Instance_AllDeregistered;
                     _mocks.Add(key, mocks);
                 }
@@ -210,12 +280,12 @@ namespace MindTouch.Dream.Test {
         }
 
         //--- Fields ---
-        
+
         /// <summary>
         /// Name for the Mock Plug for debug logging purposes.
         /// </summary>
         public readonly string Name;
-        
+
         private readonly AutoResetEvent _called = new AutoResetEvent(false);
         private readonly List<Tuplet<string, Predicate<string>>> _queryMatchers = new List<Tuplet<string, Predicate<string>>>();
         private readonly List<Tuplet<string, Predicate<string>>> _headerMatchers = new List<Tuplet<string, Predicate<string>>>();
@@ -448,7 +518,7 @@ namespace MindTouch.Dream.Test {
     /// <summary>
     /// Provides and Arrange/Act/Assert mocking framework for intercepting and handling <see cref="Plug"/> invocations.
     /// </summary>
-    public class AutoMockPlug : IDisposable {
+    public class AutoMockPlug : MockPlug.IMockInvokee, IDisposable {
 
         //--- Delegates ---
 
@@ -479,7 +549,7 @@ namespace MindTouch.Dream.Test {
         //--- Constructors ---
         internal AutoMockPlug(XUri baseUri) {
             _baseUri = baseUri;
-            MockEndpoint.Instance.Register(_baseUri, Invoke);
+            MockEndpoint.Instance.Register(this);
         }
 
         //--- Properties ---
@@ -515,6 +585,9 @@ namespace MindTouch.Dream.Test {
         public ExcessInterception[] ExcessInterceptions {
             get { return _excess.ToArray(); }
         }
+
+        int MockPlug.IMockInvokee.EndPointScore { get { return int.MaxValue; } }
+        XUri MockPlug.IMockInvokee.Uri { get { return _baseUri; } }
 
         //--- Methods ---
 
@@ -637,7 +710,7 @@ namespace MindTouch.Dream.Test {
             _failure += string.Format(format, args) + "\r\n";
         }
 
-        private void Invoke(Dream.Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
+        void MockPlug.IMockInvokee.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
             lock(this) {
                 if(_failed) {
                     _log.DebugFormat("we've already failed, no point checking more expectations");

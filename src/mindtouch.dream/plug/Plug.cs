@@ -56,6 +56,7 @@ namespace MindTouch.Dream {
         /// </summary>
         public const ushort DEFAULT_MAX_AUTO_REDIRECTS = 50;
 
+        public const int BASE_ENDPOINT_SCORE = int.MaxValue / 2;
         /// <summary>
         /// Default timeout of 60 seconds for <see cref="Plug"/> invocations.
         /// </summary>
