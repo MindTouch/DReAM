@@ -70,7 +70,6 @@ namespace MindTouch.Dream.Test.Mock {
         }
 
         public IEnumerator<IYield> Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
-            MockPlug.MockInvokeDelegate callback;
             var match = GetBestMatch(uri);
             yield return Async.Fork(() => match.Invoke(plug, verb, uri, request.Clone(), response), new Result(TimeSpan.MaxValue));
         }

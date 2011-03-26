@@ -234,6 +234,8 @@ namespace MindTouch.Dream {
         private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
+        private readonly DateTime _created = DateTime.UtcNow;
         private IServiceActivator _serviceActivator;
         private DreamFeatureStage[] _defaultPrologues;
         private DreamFeatureStage[] _defaultEpilogues;
@@ -248,14 +250,12 @@ namespace MindTouch.Dream {
         private ManualResetEvent _shutdown;
         private XUri _localMachineUri;
         private XUri _publicUri;
-        private readonly DateTime _created = DateTime.UtcNow;
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
         private long _responseCacheHits;
         private long _responseCacheMisses;
         private Plug _hostpubsub;
-        private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
         private int _reentrancyLimit;
         private string _rootRedirect;
         private string _debugMode;

@@ -54,7 +54,7 @@ namespace MindTouch.Dream.Test {
     public class MockPlug : IMockPlug {
 
         //--- Types ---
-        public interface IMockInvokee {
+        internal interface IMockInvokee {
 
             //--- Methods ---
             void Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response);
@@ -64,23 +64,28 @@ namespace MindTouch.Dream.Test {
             XUri Uri { get; }
         }
 
-        public class MockInvokee : IMockInvokee {
+        internal class MockInvokee : IMockInvokee {
+
+            //--- Fields ---
             private readonly XUri _uri;
             private readonly MockInvokeDelegate _callback;
             private readonly int _endpointScore;
 
+            //--- Constructors ---
             public MockInvokee(XUri uri, MockInvokeDelegate callback, int endpointScore) {
                 _uri = uri;
                 _callback = callback;
                 _endpointScore = endpointScore;
             }
 
+            //--- Properties ---
+            public int EndPointScore { get { return _endpointScore; } }
+            public XUri Uri { get { return _uri; } }
+
+            //--- Methods ---
             public void Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
                 _callback(plug, verb, uri, request, response);
             }
-
-            public int EndPointScore { get { return _endpointScore; } }
-            public XUri Uri { get { return _uri; } }
         }
 
 
@@ -124,6 +129,7 @@ namespace MindTouch.Dream.Test {
         /// </summary>
         /// <param name="uri">Base Uri to intercept.</param>
         /// <param name="mock">Interception callback.</param>
+        /// <param name="endpointScore">The score to return to <see cref="IPlugEndpoint.GetScoreWithNormalizedUri"/> for this uri.</param>
         public static void Register(XUri uri, MockInvokeDelegate mock, int endpointScore) {
             MockEndpoint.Instance.Register(new MockInvokee(uri, mock, endpointScore));
         }
@@ -157,8 +163,10 @@ namespace MindTouch.Dream.Test {
         /// <remarks>
         /// This mechanism has not been completed and is only a WIP.
         /// Must further configure ordered <see cref="IMockInvokeExpectationParameter"/> parameters to make validation possible.
+        /// Note: endPointScore is only set on the first set for a specific baseUri. Subsequent values are ignored.
         /// </remarks>
         /// <param name="baseUri">Base Uri to intercept.</param>
+        /// <param name="endPointScore">The score to return to <see cref="IPlugEndpoint.GetScoreWithNormalizedUri"/> for this uri.</param>
         /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
         public static IMockPlug Setup(XUri baseUri, int endPointScore) {
             _setupcounter++;
@@ -185,9 +193,11 @@ namespace MindTouch.Dream.Test {
         /// <remarks>
         /// This mechanism has not been completed and is only a WIP.
         /// Must further configure ordered <see cref="IMockInvokeExpectationParameter"/> parameters to make validation possible.
+        /// Note: endPointScore is only set on the first set for a specific baseUri. Subsequent values are ignored.
         /// </remarks>
         /// <param name="baseUri">Base Uri to intercept.</param>
         /// <param name="name">Debug name for setup</param>
+        /// <param name="endPointScore">The score to return to <see cref="IPlugEndpoint.GetScoreWithNormalizedUri"/> for this uri.</param>
         /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
         public static IMockPlug Setup(XUri baseUri, string name, int endPointScore) {
             List<MockPlug> mocks;
