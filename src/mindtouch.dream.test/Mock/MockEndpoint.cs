@@ -20,6 +20,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
 using MindTouch.Tasking;
 using MindTouch.Xml;
 
@@ -81,7 +82,11 @@ namespace MindTouch.Dream.Test.Mock {
             lock(_registry) {
                 callback = _registry[match.Item1];
             }
-            yield return Async.Fork(() => callback(plug, verb, uri, request.Clone(), response), new Result(TimeSpan.MaxValue));
+            yield return Async.Fork(() => callback(plug, verb, uri, SafeClone(request), response), new Result(TimeSpan.MaxValue));
+        }
+
+        private DreamMessage SafeClone(DreamMessage request) {
+            return request.IsCloneable ? request.Clone() : new DreamMessage(request.Status,request.Headers,request.ContentType,request.ToBytes());
         }
 
         public void Register(XUri uri, MockPlug.MockInvokeDelegate invokeDelegate) {

@@ -20,6 +20,7 @@
  */
 
 using System;
+using System.IO;
 using System.Threading;
 using log4net;
 using MindTouch.Dream.Test.Mock;
@@ -583,6 +584,21 @@ namespace MindTouch.Dream.Test {
             var msg = Plug.New("http://mock/foo/").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(msg.IsSuccessful, msg.ToDocument().ToPrettyString());
             Assert.AreEqual(success, msg.ToDocument());
+        }
+
+        [Test]
+        public void Can_mock_a_request_with_a_stream_request() {
+            var tmp = Path.GetTempFileName();
+            var payload = "blahblah";
+            File.WriteAllText(tmp, payload);
+            var message = DreamMessage.FromFile(tmp);
+            var uri = new XUri("http://mock/post/stream");
+            MockPlug.Setup(uri).Verb("POST")
+                .WithMessage(m => m.ToText() == payload)
+                .ExpectAtLeastOneCall();
+            var response = Plug.New(uri).Post(message, new Result<DreamMessage>()).Wait();
+            response.AssertSuccess();
+            MockPlug.VerifyAll(1.Seconds());
         }
     }
 }

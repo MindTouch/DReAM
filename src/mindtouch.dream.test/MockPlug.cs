@@ -105,6 +105,33 @@ namespace MindTouch.Dream.Test {
         /// </remarks>
         /// <param name="baseUri">Base Uri to intercept.</param>
         /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
+        public static IMockPlug Setup(string baseUri) {
+            return Setup(new XUri(baseUri));
+        }
+
+        /// <summary>
+        /// Setup a new <see cref="MockPlug"/> interceptor candidate for a uri and its child paths.
+        /// </summary>
+        /// <remarks>
+        /// This mechanism has not been completed and is only a WIP.
+        /// Must further configure ordered <see cref="IMockInvokeExpectationParameter"/> parameters to make validation possible.
+        /// </remarks>
+        /// <param name="baseUri">Base Uri to intercept.</param>
+        /// <param name="name">Debug name for setup</param>
+        /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
+        public static IMockPlug Setup(string baseUri, string name) {
+            return Setup(new XUri(baseUri), name);
+        }
+
+        /// <summary>
+        /// Setup a new <see cref="MockPlug"/> interceptor candidate for a uri and its child paths.
+        /// </summary>
+        /// <remarks>
+        /// This mechanism has not been completed and is only a WIP.
+        /// Must further configure ordered <see cref="IMockInvokeExpectationParameter"/> parameters to make validation possible.
+        /// </remarks>
+        /// <param name="baseUri">Base Uri to intercept.</param>
+        /// <returns>A new interceptor instance that may intercept the uri, depending on its additional matching parameters.</returns>
         public static IMockPlug Setup(XUri baseUri) {
             _setupcounter++;
             return Setup(baseUri, "Setup#" + _setupcounter);
@@ -210,12 +237,12 @@ namespace MindTouch.Dream.Test {
         }
 
         //--- Fields ---
-        
+
         /// <summary>
         /// Name for the Mock Plug for debug logging purposes.
         /// </summary>
         public readonly string Name;
-        
+
         private readonly AutoResetEvent _called = new AutoResetEvent(false);
         private readonly List<Tuplet<string, Predicate<string>>> _queryMatchers = new List<Tuplet<string, Predicate<string>>>();
         private readonly List<Tuplet<string, Predicate<string>>> _headerMatchers = new List<Tuplet<string, Predicate<string>>>();
