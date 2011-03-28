@@ -51,10 +51,10 @@ namespace MindTouch.Dream {
         //--- Class Methods ---
         private static XUri MakeUri(IPAddress address, int port) {
             switch(address.AddressFamily) {
-                case System.Net.Sockets.AddressFamily.InterNetwork:
-                    return new XUri(String.Format("http://{0}:{1}/", address, port));
-                case System.Net.Sockets.AddressFamily.InterNetworkV6:
-                    return new XUri(String.Format("http://[{0}]:{1}/", address, port));
+            case System.Net.Sockets.AddressFamily.InterNetwork:
+                return new XUri(String.Format("http://{0}:{1}/", address, port));
+            case System.Net.Sockets.AddressFamily.InterNetworkV6:
+                return new XUri(String.Format("http://[{0}]:{1}/", address, port));
             }
             return null;
         }
@@ -98,12 +98,11 @@ namespace MindTouch.Dream {
             int httpPort = config["http-port"].AsInt ?? DEFAULT_PORT;
             AuthenticationSchemes authenticationScheme = AuthenticationSchemes.Anonymous;
             string authShemes = config["authentication-shemes"].AsText;
-            if (!String.IsNullOrEmpty (authShemes)) {
+            if(!String.IsNullOrEmpty(authShemes)) {
                 try {
-                    authenticationScheme = (AuthenticationSchemes)Enum.Parse(typeof(AuthenticationSchemes), authShemes,true);
-                }
-                catch(Exception e){
-                    _log.Warn(String.Format("invalid authetication scheme specified :{0}",authShemes),e);
+                    authenticationScheme = (AuthenticationSchemes)Enum.Parse(typeof(AuthenticationSchemes), authShemes, true);
+                } catch(Exception e) {
+                    _log.Warn(String.Format("invalid authetication scheme specified :{0}", authShemes), e);
                 }
             }
             // read ip-addresses
@@ -155,6 +154,10 @@ namespace MindTouch.Dream {
                 serviceConfig.Elem("connect-limit", limit);
                 serviceConfig.Elem("guid", config["guid"].AsText);
                 serviceConfig.AddAll(config["components"]);
+                var memorize = config["memorize-aliases"];
+                if(memorize.IsEmpty) {
+                    serviceConfig.Elem("memorize-aliases", memorize.AsBool);
+                }
                 _env.Initialize(serviceConfig);
 
                 // initialize host plug
@@ -180,7 +183,7 @@ namespace MindTouch.Dream {
                 }
 
                 // add acccess-points
-                AddListener(new XUri(String.Format("http://{0}:{1}/", "localhost", httpPort)),authenticationScheme);
+                AddListener(new XUri(String.Format("http://{0}:{1}/", "localhost", httpPort)), authenticationScheme);
 
                 // check if user prescribed a set of IP addresses to use
                 if(addresses != null) {
@@ -188,7 +191,7 @@ namespace MindTouch.Dream {
                     // listen to custom addresses (don't use the supplied port info, we expect that to be part of the address)
                     foreach(string address in addresses) {
                         if(!StringUtil.EqualsInvariantIgnoreCase(address, "localhost")) {
-                            AddListener(new XUri(String.Format("http://{0}/", address)),authenticationScheme);
+                            AddListener(new XUri(String.Format("http://{0}/", address)), authenticationScheme);
                         }
                     }
                 } else {
@@ -197,10 +200,10 @@ namespace MindTouch.Dream {
                     foreach(IPAddress address in Dns.GetHostAddresses(Dns.GetHostName())) {
                         XUri uri = MakeUri(address, httpPort);
                         if(uri != null) {
-                            AddListener(uri,authenticationScheme);
+                            AddListener(uri, authenticationScheme);
                             try {
                                 foreach(string alias in Dns.GetHostEntry(address).Aliases) {
-                                    AddListener(new XUri(String.Format("http://{0}:{1}/", alias, httpPort)),authenticationScheme);
+                                    AddListener(new XUri(String.Format("http://{0}:{1}/", alias, httpPort)), authenticationScheme);
                                 }
                             } catch { }
                         }
@@ -365,15 +368,15 @@ namespace MindTouch.Dream {
 
         private void AddListener(XUri uri, AuthenticationSchemes authenticationSheme) {
             switch(uri.Scheme.ToLowerInvariant()) {
-                case Scheme.HTTP:
-                case Scheme.HTTPS: {
-                        HttpTransport transport = new Http.HttpTransport(_env, uri, authenticationSheme);
-                        transport.Startup();
-                        _transports.Add(transport);
-                    }
-                    break;
-                default:
-                    throw new ArgumentException("unsupported scheme: " + uri.Scheme);
+            case Scheme.HTTP:
+            case Scheme.HTTPS: {
+                    HttpTransport transport = new Http.HttpTransport(_env, uri, authenticationSheme);
+                    transport.Startup();
+                    _transports.Add(transport);
+                }
+                break;
+            default:
+                throw new ArgumentException("unsupported scheme: " + uri.Scheme);
             }
         }
 

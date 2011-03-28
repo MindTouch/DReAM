@@ -32,6 +32,7 @@ namespace MindTouch.Dream.Test.Mock {
 
         // Note (arnec): This is a field, not constant so that access triggers the static constructor
         public readonly static string DEFAULT = "mock://mock";
+        private static readonly MockPlug.IMockInvokee DefaultInvokee = new MockPlug.MockInvokee(null, (p, v, u, r, response) => response.Return(DreamMessage.Ok(new XDoc("empty"))), int.MaxValue);
 
         //--- Class Constructors ---
         static MockEndpoint() {
@@ -39,59 +40,48 @@ namespace MindTouch.Dream.Test.Mock {
         }
 
         //--- Fields ---
-        private readonly Dictionary<XUri, MockPlug.MockInvokeDelegate> _registry = new Dictionary<XUri, MockPlug.MockInvokeDelegate>();
-        private readonly XUriMap<XUri> _map = new XUriMap<XUri>();
+        private readonly Dictionary<XUri, MockPlug.IMockInvokee> _registry = new Dictionary<XUri, MockPlug.IMockInvokee>();
+        private readonly XUriMap<MockPlug.IMockInvokee> _map = new XUriMap<MockPlug.IMockInvokee>();
 
         //--- Events ---
         public event EventHandler AllDeregistered;
 
         //--- Constructors ---
         private MockEndpoint() { }
+
         //--- Methods ---
         public int GetScoreWithNormalizedUri(XUri uri, out XUri normalized) {
-            Tuplet<XUri, int> match = GetBestMatch(uri);
+            var match = GetBestMatch(uri);
             normalized = uri;
-            return match.Item2;
+            return match == null ? 0 : match.EndPointScore;
         }
 
-        private Tuplet<XUri, int> GetBestMatch(XUri uri) {
-            int result;
-            XUri prefix;
+        private MockPlug.IMockInvokee GetBestMatch(XUri uri) {
+            MockPlug.IMockInvokee invokee;
 
             // using _registry as our guard for both _map and _registry, since they are always modified in sync
             lock(_registry) {
-                _map.TryGetValue(uri, out prefix, out result);
+                int result;
+                _map.TryGetValue(uri, out invokee, out result);
             }
-            if(prefix != null) {
-
-                // always plus the score on a match, so that the mock gets first preference
-                result = int.MaxValue;
-            } else if(uri.SchemeHostPort.EqualsInvariant(DEFAULT)) {
-                result = int.MaxValue;
+            if(invokee != null) {
+                return invokee;
             }
-            return new Tuplet<XUri, int>(prefix, result);
+            return uri.SchemeHostPort.EqualsInvariant(DEFAULT) ? DefaultInvokee : null;
         }
 
         public IEnumerator<IYield> Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
-            MockPlug.MockInvokeDelegate callback;
             var match = GetBestMatch(uri);
-            if(match.Item1 == null) {
-                response.Return(DreamMessage.Ok(new XDoc("empty")));
-                yield break;
-            }
-            lock(_registry) {
-                callback = _registry[match.Item1];
-            }
-            yield return Async.Fork(() => callback(plug, verb, uri, MemorizeAndClone(request), response), new Result(TimeSpan.MaxValue));
+            yield return Async.Fork(() => match.Invoke(plug, verb, uri,  MemorizeAndClone(request), response), new Result(TimeSpan.MaxValue));
         }
 
-        public void Register(XUri uri, MockPlug.MockInvokeDelegate invokeDelegate) {
+        public void Register(MockPlug.IMockInvokee invokee) {
             lock(_registry) {
-                if(_registry.ContainsKey(uri)) {
+                if(_registry.ContainsKey(invokee.Uri)) {
                     throw new ArgumentException("the uri already has a mock registered");
                 }
-                _registry.Add(uri, invokeDelegate);
-                _map.Add(uri, uri);
+                _registry.Add(invokee.Uri, invokee);
+                _map.Add(invokee.Uri, invokee);
             }
         }
 
