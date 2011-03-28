@@ -261,6 +261,37 @@ namespace MindTouch.Dream.Test {
             var response = _hostinfo.LocalHost.At("host", "status", "timers").With("apikey", _hostinfo.ApiKey).GetAsync().Wait();
             Assert.IsTrue(response.IsSuccessful);
         }
+
+        [Test]
+        public void RequestMessage_via_plug_is_closed_at_end_of_request() {
+            var recipient = _hostinfo.CreateMockService();
+            DreamMessage captured = null;
+            recipient.Service.CatchAllCallback = (context, request, response) => {
+                captured = request;
+                response.Return(DreamMessage.Ok());
+            };
+            var requestMsg = DreamMessage.Ok(MimeType.TEXT, "foo");
+            recipient.AtLocalHost.Post(requestMsg);
+            Assert.IsNotNull(captured,"did not capture a message in mock service");
+            Assert.IsTrue(captured.IsClosed,"captured message was not closed");
+            Assert.IsTrue(requestMsg.IsClosed,"sent message is not closed");
+        }
+
+        [Test]
+        public void RequestMessage_via_http_is_closed_at_end_of_request() {
+            var recipient = _hostinfo.CreateMockService();
+            DreamMessage captured = null;
+            recipient.Service.CatchAllCallback = (context, request, response) => {
+                captured = request;
+                response.Return(DreamMessage.Ok());
+            };
+            var requestMsg = DreamMessage.Ok(MimeType.TEXT, "foo");
+            var recipientUri = recipient.AtLocalHost.Uri.WithScheme("ext-http");
+            Plug.New(recipientUri).Post(requestMsg);
+            Assert.IsNotNull(captured, "did not capture a message in mock service");
+            Assert.IsTrue(captured.IsClosed, "captured message was not closed");
+            Assert.IsTrue(requestMsg.IsClosed, "sent message is not closed");
+        }
     }
 
     [TestFixture]
