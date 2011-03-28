@@ -596,9 +596,6 @@ namespace MindTouch.Dream.Test {
             get { return _excess.ToArray(); }
         }
 
-        int MockPlug.IMockInvokee.EndPointScore { get { return int.MaxValue; } }
-        XUri MockPlug.IMockInvokee.Uri { get { return _baseUri; } }
-
         //--- Methods ---
 
         /// <summary>
@@ -713,13 +710,24 @@ namespace MindTouch.Dream.Test {
             return true;
         }
 
+        /// <summary>
+        /// Deregister this instance from uri interception.
+        /// </summary>
+        public void Dispose() {
+            MockEndpoint.Instance.Deregister(_baseUri);
+        }
+
         private void AddFailure(string format, params object[] args) {
             if(_failure == null) {
                 _failure = string.Format("Expectations were unmet:\r\n");
             }
             _failure += string.Format(format, args) + "\r\n";
         }
-*** mark as member with it's own section
+
+        //--- MockPlug.IMockInvokee members ---
+        int MockPlug.IMockInvokee.EndPointScore { get { return int.MaxValue; } }
+        XUri MockPlug.IMockInvokee.Uri { get { return _baseUri; } }
+
         void MockPlug.IMockInvokee.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
             lock(this) {
                 if(_failed) {
@@ -757,12 +765,6 @@ namespace MindTouch.Dream.Test {
             }
         }
 
-        /// <summary>
-        /// Deregister this instance from uri interception.
-        /// </summary>
-        public void Dispose() {
-            MockEndpoint.Instance.Deregister(_baseUri);
-        }
     }
 
     /// <summary>
