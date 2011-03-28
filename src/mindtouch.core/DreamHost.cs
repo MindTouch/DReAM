@@ -155,7 +155,7 @@ namespace MindTouch.Dream {
                 serviceConfig.Elem("guid", config["guid"].AsText);
                 serviceConfig.AddAll(config["components"]);
                 var memorize = config["memorize-aliases"];
-                if(memorize.IsEmpty) {
+                if(!memorize.IsEmpty) {
                     serviceConfig.Elem("memorize-aliases", memorize.AsBool);
                 }
                 _env.Initialize(serviceConfig);
