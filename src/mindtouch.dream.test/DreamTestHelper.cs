@@ -36,61 +36,7 @@ namespace MindTouch.Dream.Test {
         private static readonly ILog _log = LogUtils.CreateLog();
         private static int _port = 1024;
         
-        //--- Static Methods ---
-
-        /// <summary>
-        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
-        /// </summary>
-        /// <param name="config">Additional configuration for the host.</param>
-        /// <param name="container">IoC Container to use.</param>
-        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
-            var port = GetPort();
-            var path = "/";
-            if(!config["uri.public"].IsEmpty) {
-                path = config["uri.public"].AsText;
-            }
-            var localhost = string.Format("http://localhost:{0}{1}", port, path);
-            UpdateElement(config, "http-port", port.ToString());
-            UpdateElement(config, "uri.public", localhost);
-            var apikey = config["apikey"].Contents;
-            if(string.IsNullOrEmpty(apikey)) {
-                apikey = StringUtil.CreateAlphaNumericKey(32); //generate a random api key
-                config.Elem("apikey", apikey);
-            }
-            _log.DebugFormat("api key: {0}", apikey);
-            _log.DebugFormat("port:    {0}", port);
-            var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
-            host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
-            return new DreamHostInfo(Plug.New(localhost), host, apikey);
-        }
-
-        private static int GetPort() {
-            var port = Interlocked.Increment(ref _port);
-            if(port > 30000) {
-                Interlocked.CompareExchange(ref _port, 1024, port);
-                return GetPort();
-            }
-            return port;
-        }
-
-        /// <summary>
-        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
-        /// </summary>
-        /// <param name="config">Additional configuration for the host.</param>
-        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost(XDoc config) {
-            return CreateRandomPortHost(config, null);
-        }
-
-        /// <summary>
-        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
-        /// </summary>
-        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost() {
-            return CreateRandomPortHost(new XDoc("config"));
-        }
-
+        //--- Extension Methods ---
         /// <summary>
         /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
         /// </summary>
@@ -190,6 +136,61 @@ namespace MindTouch.Dream.Test {
             }
             return new DreamServiceInfo(hostInfo, path, result.ToDocument());
 
+        }
+
+        //--- Class Methods ---
+
+        /// <summary>
+        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
+        /// </summary>
+        /// <param name="config">Additional configuration for the host.</param>
+        /// <param name="container">IoC Container to use.</param>
+        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
+        public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
+            var port = GetPort();
+            var path = "/";
+            if(!config["uri.public"].IsEmpty) {
+                path = config["uri.public"].AsText;
+            }
+            var localhost = string.Format("http://localhost:{0}{1}", port, path);
+            UpdateElement(config, "http-port", port.ToString());
+            UpdateElement(config, "uri.public", localhost);
+            var apikey = config["apikey"].Contents;
+            if(string.IsNullOrEmpty(apikey)) {
+                apikey = StringUtil.CreateAlphaNumericKey(32); //generate a random api key
+                config.Elem("apikey", apikey);
+            }
+            _log.DebugFormat("api key: {0}", apikey);
+            _log.DebugFormat("port:    {0}", port);
+            var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
+            host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
+            return new DreamHostInfo(Plug.New(localhost), host, apikey);
+        }
+
+        private static int GetPort() {
+            var port = Interlocked.Increment(ref _port);
+            if(port > 30000) {
+                Interlocked.CompareExchange(ref _port, 1024, port);
+                return GetPort();
+            }
+            return port;
+        }
+
+        /// <summary>
+        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
+        /// </summary>
+        /// <param name="config">Additional configuration for the host.</param>
+        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
+        public static DreamHostInfo CreateRandomPortHost(XDoc config) {
+            return CreateRandomPortHost(config, null);
+        }
+
+        /// <summary>
+        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
+        /// </summary>
+        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
+        public static DreamHostInfo CreateRandomPortHost() {
+            return CreateRandomPortHost(new XDoc("config"));
         }
 
         private static void UpdateElement(XDoc config, string element, string value) {

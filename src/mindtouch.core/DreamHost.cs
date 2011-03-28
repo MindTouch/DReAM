@@ -153,8 +153,11 @@ namespace MindTouch.Dream {
                 serviceConfig.Elem("uri.public", publicUri);
                 serviceConfig.Elem("connect-limit", limit);
                 serviceConfig.Elem("guid", config["guid"].AsText);
-                serviceConfig.Elem("memorize-aliases", config["memorize-aliases"].AsBool ?? true);
                 serviceConfig.AddAll(config["components"]);
+                var memorize = config["memorize-aliases"];
+                if(memorize.IsEmpty) {
+                    serviceConfig.Elem("memorize-aliases", memorize.AsBool);
+                }
                 _env.Initialize(serviceConfig);
 
                 // initialize host plug
