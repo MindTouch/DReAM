@@ -82,11 +82,7 @@ namespace MindTouch.Dream.Test.Mock {
             lock(_registry) {
                 callback = _registry[match.Item1];
             }
-            yield return Async.Fork(() => callback(plug, verb, uri, SafeClone(request), response), new Result(TimeSpan.MaxValue));
-        }
-
-        private DreamMessage SafeClone(DreamMessage request) {
-            return request.IsCloneable ? request.Clone() : new DreamMessage(request.Status,request.Headers,request.ContentType,request.ToBytes());
+            yield return Async.Fork(() => callback(plug, verb, uri, MemorizeAndClone(request), response), new Result(TimeSpan.MaxValue));
         }
 
         public void Register(XUri uri, MockPlug.MockInvokeDelegate invokeDelegate) {
@@ -118,6 +114,10 @@ namespace MindTouch.Dream.Test.Mock {
                 }
                 AllDeregistered = null;
             }
+        }
+
+        private DreamMessage MemorizeAndClone(DreamMessage request) {
+            return request.IsCloneable ? request.Clone() : new DreamMessage(request.Status,request.Headers,request.ContentType,request.ToBytes());
         }
     }
 }

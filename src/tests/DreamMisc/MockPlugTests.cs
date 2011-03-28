@@ -587,7 +587,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_mock_a_request_with_a_stream_request() {
+        public void Can_mock_a_request_with_a_stream_body() {
             var tmp = Path.GetTempFileName();
             var payload = "blahblah";
             File.WriteAllText(tmp, payload);
