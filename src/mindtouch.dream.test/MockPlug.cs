@@ -719,7 +719,7 @@ namespace MindTouch.Dream.Test {
             }
             _failure += string.Format(format, args) + "\r\n";
         }
-
+*** mark as member with it's own section
         void MockPlug.IMockInvokee.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
             lock(this) {
                 if(_failed) {

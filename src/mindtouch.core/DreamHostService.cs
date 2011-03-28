@@ -1902,7 +1902,7 @@ namespace MindTouch.Dream {
             } else {
                 normalized = null;
             }
-            return result > 0 ? result + Plug.BASE_ENDPOINT_SCORE : 0;
+            return (result > 0) ? result + Plug.BASE_ENDPOINT_SCORE : 0;
         }
 
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {

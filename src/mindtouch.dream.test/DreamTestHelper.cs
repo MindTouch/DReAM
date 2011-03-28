@@ -35,6 +35,7 @@ namespace MindTouch.Dream.Test {
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
         private static int _port = 1024;
+        
         //--- Static Methods ---
 
         /// <summary>
