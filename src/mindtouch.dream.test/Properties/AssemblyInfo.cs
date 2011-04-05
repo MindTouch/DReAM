@@ -57,7 +57,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyFileVersion("2.2.1.0")]
 [assembly: GitBranch("2.2")]
 [assembly: GitRevision("HEAD")]
-[assembly: GitUri("https://github.com/sdether/DReAM")]
+[assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
