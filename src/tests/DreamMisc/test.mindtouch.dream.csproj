@@ -89,6 +89,7 @@
     <Compile Include="CookieTests.cs" />
     <Compile Include="DreamFeatureTests.cs" />
     <Compile Include="DreamHeadersTests.cs" />
+    <Compile Include="DreamHostAliasesTests.cs" />
     <Compile Include="ExpiringDictionaryTests.cs" />
     <Compile Include="CoroutineTests.cs" />
     <Compile Include="CultureUtilTests.cs" />

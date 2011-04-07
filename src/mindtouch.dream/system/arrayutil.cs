@@ -146,7 +146,7 @@ namespace System {
         /// <param name="dictionary">The dictionary to operate on</param>
         /// <param name="key">Key to try to retrieve a value for</param>
         /// <param name="default">Default value to return should the key not exist</param>
-        /// <returns>Either the value for the given key, or the <see cref="@default"/></returns>
+        /// <returns>Either the value for the given key, or the default</returns>
         public static TValue TryGetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue @default) {
             TValue value;
             return dictionary.TryGetValue(key, out value) ? value : @default;
