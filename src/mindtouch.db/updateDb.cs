@@ -26,7 +26,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace MindTouch.Data.UpdateDb {
+using MindTouch.Data;
+
+namespace MindTouch.Data.Db {
 
     internal class UpdateMethod : IComparable<UpdateMethod> {
         //--- Fields ---

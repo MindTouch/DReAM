@@ -28,7 +28,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace MindTouch.Data {
+namespace MindTouch.Data.Db {
     public class VersionInfo {
 
         //--- Class Fields ---

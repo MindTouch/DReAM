@@ -27,7 +27,7 @@
  */
 using System;
 
-namespace MindTouch.Data {
+namespace MindTouch.Data.Db {
     public class CliArgException : Exception {
         public CliArgException(string message) : base(message) { }
     }
