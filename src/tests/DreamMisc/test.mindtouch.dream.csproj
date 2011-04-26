@@ -104,6 +104,7 @@
     <Compile Include="MockDataCatalogTests.cs" />
     <Compile Include="MockPlugTests.cs" />
     <Compile Include="MysqlDocStoreManagerTests.cs" />
+    <Compile Include="NumericTests.cs" />
     <Compile Include="PlugTests.cs" />
     <Compile Include="PubSubTests.cs" />
     <Compile Include="ResultTest.cs" />
