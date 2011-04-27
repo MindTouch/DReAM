@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using log4net;
 
@@ -49,6 +50,30 @@ namespace MindTouch.Dream.Test {
         public void DeinitTest() {
             System.GC.Collect();
             _hostinfo.Dispose();
+        }
+
+        [Test]
+        public void DreamTestHelper_will_retry_host_creation_10_times() {
+            _log.DebugFormat("---- starting up a bunch of listeners  -----");
+            var port = _hostinfo.LocalHost.Uri.Port;
+            var listeners = new List<HttpListener>();
+            for(var i = 1; i < 12; i++) {
+                var listener = new HttpListener();
+                listener.IgnoreWriteExceptions = true;
+                var prefix = string.Format("http://localhost:{0}/", port + i);
+                _log.DebugFormat("---- starting listener on {0}", prefix);
+                listener.Prefixes.Add(prefix);
+                listener.Start();
+                listeners.Add(listener);
+            }
+            try {
+                _log.DebugFormat("---- trying to create a host  -----");
+                DreamTestHelper.CreateRandomPortHost();
+                Assert.Fail("didn't throw");
+            } catch(InvalidOperationException) { }
+            _log.DebugFormat("---- trying to create a host again  -----");
+            var host3 = DreamTestHelper.CreateRandomPortHost();
+            host3.Dispose();
         }
 
         [Test]
@@ -269,9 +294,9 @@ namespace MindTouch.Dream.Test {
             };
             var requestMsg = DreamMessage.Ok(MimeType.TEXT, "foo");
             recipient.AtLocalHost.Post(requestMsg);
-            Assert.IsNotNull(captured,"did not capture a message in mock service");
-            Assert.IsTrue(captured.IsClosed,"captured message was not closed");
-            Assert.IsTrue(requestMsg.IsClosed,"sent message is not closed");
+            Assert.IsNotNull(captured, "did not capture a message in mock service");
+            Assert.IsTrue(captured.IsClosed, "captured message was not closed");
+            Assert.IsTrue(requestMsg.IsClosed, "sent message is not closed");
         }
 
         [Test]
@@ -297,7 +322,7 @@ namespace MindTouch.Dream.Test {
         // Note (arnec): these tests are separated from the above, since they require their own Dream host
 
         private static readonly ILog _log = LogUtils.CreateLog();
-     
+
         [Test]
         public void Hitting_connect_limit_returns_service_unavailable() {
             int connectLimit = 5;
