@@ -177,12 +177,12 @@ namespace MindTouch.Dream.Test {
         /// <param name="container">IoC Container to use.</param>
         /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
         public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
-            for(var i = 1; i <= 10; i++) {
-                var port = GetPort();
-                var path = "/";
+                 var path = "/";
                 if(!config["uri.public"].IsEmpty) {
                     path = config["uri.public"].AsText;
                 }
+           for(var i = 1; i <= 10; i++) {
+                var port = GetPort();
                 var localhost = string.Format("http://localhost:{0}{1}", port, path);
                 UpdateElement(config, "http-port", port.ToString());
                 UpdateElement(config, "uri.public", localhost);
@@ -193,6 +193,7 @@ namespace MindTouch.Dream.Test {
                 }
                 _log.DebugFormat("api key: {0}", apikey);
                 _log.DebugFormat("port:    {0}", port);
+                _log.DebugFormat("config:\r\n{0}", config.ToPrettyString());
                 try {
                     var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
                     host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
