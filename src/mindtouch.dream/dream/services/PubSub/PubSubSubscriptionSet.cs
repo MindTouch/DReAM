@@ -108,11 +108,9 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Create a new subscription set from a subscription set document.
         /// </summary>
         /// <param name="setDoc">Set Xml document.</param>
-        public PubSubSubscriptionSet(XDoc setDoc)
-            : this(setDoc, StringUtil.CreateAlphaNumericKey(8), StringUtil.CreateAlphaNumericKey(8)) {
-        }
-
-        private PubSubSubscriptionSet(XDoc setDoc, string location, string accessKey) {
+        /// <param name="location">location id.</param>
+        /// <param name="accessKey">secret key for accessing the set.</param>
+        public PubSubSubscriptionSet(XDoc setDoc, string location, string accessKey) {
             try {
                 // Note: not using AsUri to avoid automatic local:// translation
                 Owner = new XUri(setDoc["uri.owner"].AsText);
@@ -175,14 +173,16 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Derive a new set using a newer subscription set document.
         /// </summary>
         /// <param name="doc"></param>
+        /// <param name="accessKey">Optional new access key</param>
         /// <returns></returns>
-        public PubSubSubscriptionSet Derive(XDoc doc) {
-            long? version = doc["@version"].AsLong;
+        public PubSubSubscriptionSet Derive(XDoc doc, string accessKey) {
+            accessKey = accessKey ?? AccessKey;
+            var version = doc["@version"].AsLong;
             if(version.HasValue && Version.HasValue && version.Value <= Version.Value) {
                 _log.DebugFormat("Supplied version is not newer than current: {0} <= {1}", version.Value, Version);
                 return this;
             }
-            return new PubSubSubscriptionSet(doc, Location, AccessKey);
+            return new PubSubSubscriptionSet(doc, Location, accessKey);
         }
     }
 }

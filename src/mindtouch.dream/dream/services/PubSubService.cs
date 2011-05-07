@@ -66,13 +66,15 @@ namespace MindTouch.Dream.Services {
         [DreamFeature("POST:subscribers", "Intialize a set of subscriptions")]
         internal Yield CreateSubscriptionSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc subscriptionSet = request.ToDocument();
-            Tuplet<PubSubSubscriptionSet, bool> set = _dispatcher.RegisterSet(subscriptionSet);
+            var location = request.Headers["set-location-key"] ?? StringUtil.CreateAlphaNumericKey(8);
+            var accessKey = request.Headers["set-access-key"] ?? StringUtil.CreateAlphaNumericKey(8);
+            Tuplet<PubSubSubscriptionSet, bool> set = _dispatcher.RegisterSet(location, subscriptionSet, accessKey);
             XUri locationUri = Self.At("subscribers", set.Item1.Location).Uri.AsPublicUri();
             DreamMessage msg = null;
             if(set.Item2) {
 
                 // existing subs cause a Conflict with ContentLocation of the sub
-                msg = DreamMessage.Conflict("The specified owner already has a registered subscription set");
+                msg = DreamMessage.Conflict("The specified owner or location already has a registered subscription set");
                 msg.Headers.ContentLocation = locationUri;
             } else {
 
@@ -117,14 +119,16 @@ namespace MindTouch.Dream.Services {
         [DreamFeature("POST:subscribers/{id}", "Replace subscription set (should only be used for chaining)")]
         [DreamFeature("PUT:subscribers/{id}", "Replace subscription set")]
         protected Yield ReplaceSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            DreamMessage responseMsg = null;
             try {
-                string setId = context.GetParam("id");
-                _log.DebugFormat("Updating set {0}", setId);
+                var setId = context.GetParam("id");
                 if(!string.IsNullOrEmpty(request.Headers.DreamEventId)) {
                     _log.DebugFormat("'{0}' update is event: {1} - {2}", setId, request.Headers.DreamEventChannel, request.Headers.DreamEventId);
                 }
-                XDoc subscriptionDocument = request.ToDocument();
-                PubSubSubscriptionSet set = _dispatcher.ReplaceSet(setId, subscriptionDocument);
+                var subscriptionDocument = request.ToDocument();
+                var accessKey = request.Headers["set-access-key"];
+                var set = _dispatcher.ReplaceSet(setId, subscriptionDocument, accessKey);
+                _log.DebugFormat("Trying to update set {0}", setId);
                 if(set != null) {
                     long? version = subscriptionDocument["@version"].AsLong;
                     if(version.HasValue && version.Value <= set.Version) {
@@ -136,15 +140,16 @@ namespace MindTouch.Dream.Services {
                         } else {
                             _log.DebugFormat("Updating set '{0}'", setId);
                         }
-                        response.Return(DreamMessage.Ok());
+                        responseMsg = DreamMessage.Ok();
                     }
                 } else {
                     _log.DebugFormat("no such set: {0}", setId);
-                    response.Return(DreamMessage.NotFound("There is no subscription set at this location"));
+                    responseMsg = DreamMessage.NotFound("There is no subscription set at this location");
                 }
             } catch(ArgumentException e) {
-                response.Return(DreamMessage.Forbidden(e.Message));
+                responseMsg = DreamMessage.Forbidden(e.Message);
             }
+            response.Return(responseMsg);
             yield break;
         }
 
@@ -171,10 +176,10 @@ namespace MindTouch.Dream.Services {
 
             // initialize dispatcher
             _dispatcher = container.Resolve<IPubSubDispatcher>(TypedParameter.From(new DispatcherConfig {
-                ServiceUri = Self, 
+                ServiceUri = Self,
                 ServiceAccessCookie = DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri),
                 ServiceCookies = Cookies,
-                ServiceConfig = config                                                                                          
+                ServiceConfig = config
             }));
 
             // check for upstream chaining
@@ -206,7 +211,7 @@ namespace MindTouch.Dream.Services {
                                 .Add(DreamCookie.NewSetCookie("access-key", accessKey, location).AsSetCookieDocument)
                                 .Start("recipient").Elem("uri", upstreamResult.Value.Headers.Location).End()
                                 .End();
-                            _dispatcher.RegisterSet(subscribeToChanges);
+                            _dispatcher.RegisterSet(StringUtil.CreateAlphaNumericKey(8), subscribeToChanges, StringUtil.CreateAlphaNumericKey(8));
                             break;
                         }
                         _log.WarnFormat("unable to subscribe to upstream pubsub (attempt {0}): {1}", retry, upstreamResult.Value.Status);
@@ -231,7 +236,7 @@ namespace MindTouch.Dream.Services {
                         yield return downstreamResult = Plug.New(downstream.AsUri).Get(new Result<DreamMessage>(TimeSpan.MaxValue));
                         if(downstreamResult.Value.IsSuccessful) {
                             XDoc downstreamSet = downstreamResult.Value.ToDocument();
-                            Tuplet<PubSubSubscriptionSet, bool> set = _dispatcher.RegisterSet(downstreamSet);
+                            Tuplet<PubSubSubscriptionSet, bool> set = _dispatcher.RegisterSet(StringUtil.CreateAlphaNumericKey(8), downstreamSet, StringUtil.CreateAlphaNumericKey(8));
                             XUri locationUri = Self.At("subscribers", set.Item1.Location).Uri;
                             XUri featureUri = Self.At("subscribers").Uri;
                             _log.DebugFormat("downstream chain to {0} registered {1}", downstream, set.Item1.Location);
@@ -272,17 +277,17 @@ namespace MindTouch.Dream.Services {
 
         public override DreamAccess DetermineAccess(DreamContext context, DreamMessage request) {
             if(context.Feature.Signature.StartsWith("subscribers/")) {
-                string id = context.GetParam("id", null);
-                PubSubSubscriptionSet set = _dispatcher[id];
+                var id = context.GetParam("id", null);
+                var set = _dispatcher[id];
                 if(set != null) {
-                    string accessKey = context.GetParam("access-key", null);
+                    var accessKey = context.GetParam("access-key", null);
                     if(string.IsNullOrEmpty(accessKey)) {
-                        DreamCookie cookie = DreamCookie.GetCookie(request.Cookies, "access-key");
+                        var cookie = DreamCookie.GetCookie(request.Cookies, "access-key");
                         if(cookie != null) {
                             accessKey = cookie.Value;
                         }
                     }
-                    if(StringUtil.EqualsInvariant(set.AccessKey, accessKey)) {
+                    if(set.AccessKey.EqualsInvariant(accessKey)) {
                         return DreamAccess.Private;
                     }
                     _log.DebugFormat("no matching access-key in query or cookie for location '{0}'", id);

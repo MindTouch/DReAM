@@ -141,16 +141,18 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <summary>
         /// Register a subscription set
         /// </summary>
+        /// <param name="location">location id.</param>
         /// <param name="setDoc">Xml formatted subscription set.</param>
+        /// <param name="accessKey">secret key for accessing the set.</param>
         /// <returns>Tuple of subscription set and <see langword="True"/> if the set was newly created, or <see langword="False"/> if the set existed (does not update the set).</returns>
-        public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(XDoc setDoc) {
-            PubSubSubscriptionSet set = new PubSubSubscriptionSet(setDoc);
-            foreach(DreamCookie cookie in set.Cookies) {
+        public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(string location, XDoc setDoc, string accessKey) {
+            var set = new PubSubSubscriptionSet(setDoc, location, accessKey);
+            foreach(var cookie in set.Cookies) {
                 _cookieJar.Update(cookie, null);
             }
             lock(_subscriptionsByOwner) {
                 PubSubSubscriptionSet existing;
-                if(_subscriptionsByOwner.TryGetValue(set.Owner, out existing)) {
+                if(_subscriptionsByOwner.TryGetValue(set.Owner, out existing) || _subscriptionByLocation.TryGetValue(set.Location, out existing)) {
                     return new Tuplet<PubSubSubscriptionSet, bool>(existing, true);
                 }
                 _subscriptionByLocation.Add(set.Location, set);
@@ -377,14 +379,15 @@ namespace MindTouch.Dream.Services.PubSub {
         /// </summary>
         /// <param name="location">Set resource location uri postfix.</param>
         /// <param name="setDoc">New set document.</param>
+        /// <param name="accessKey"></param>
         /// <returns>Updated set.</returns>
-        public PubSubSubscriptionSet ReplaceSet(string location, XDoc setDoc) {
+        public PubSubSubscriptionSet ReplaceSet(string location, XDoc setDoc, string accessKey) {
             lock(_subscriptionsByOwner) {
                 PubSubSubscriptionSet oldSet;
                 if(!_subscriptionByLocation.TryGetValue(location, out oldSet)) {
                     return null;
                 }
-                PubSubSubscriptionSet set = oldSet.Derive(setDoc);
+                PubSubSubscriptionSet set = oldSet.Derive(setDoc, accessKey);
                 if(set == oldSet) {
                     return oldSet;
                 }
