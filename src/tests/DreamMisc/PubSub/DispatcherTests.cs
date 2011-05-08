@@ -531,9 +531,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 mockCalled++;
                 // ReSharper disable AccessToModifiedClosure
                 _log.DebugFormat("mock called {0} times (fail={1}): {2}", mockCalled, fail, uri);
-                // ReSharper restore AccessToModifiedClosure
                 resetEvent.Set();
-                // ReSharper disable AccessToModifiedClosure
                 response.Return(fail ? DreamMessage.InternalError() : DreamMessage.Ok());
                 // ReSharper restore AccessToModifiedClosure
             });
@@ -549,7 +547,8 @@ namespace MindTouch.Dream.Test.PubSub {
                     setResetEvent.Set();
                 }
             };
-            string location = dispatcher.RegisterSet("abc",
+            var location = dispatcher.RegisterSet(
+                "abc",
                 new XDoc("subscription-set")
                     .Attr("max-failures", 1)
                     .Elem("uri.owner", "http:///owner1")
@@ -557,7 +556,9 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Attr("id", "1")
                     .Elem("channel", "channel:///foo/*")
                     .Start("recipient").Elem("uri", testUri.At("foo")).End()
-                    .End(), "def").Item1.Location;
+                    .End(), 
+                "def"
+                ).Item1.Location;
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
             Assert.IsNotNull(dispatcher[location]);
 
@@ -591,64 +592,66 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Dispatch_based_on_recipients() {
-            int workers;
-            int io;
-            ThreadPool.GetAvailableThreads(out workers, out io);
-            _log.DebugFormat("threadpool threads: {0}/{1}", workers, io);
-            string proxyRecipient1 = "mailto:///userA@foo.com";
-            string proxyRecipient2 = "mailto:///userC@foo.com";
-            XDoc msg = new XDoc("foo");
-            DispatcherEvent ev = new DispatcherEvent(
-                msg,
-                new XUri("channel:///foo/bar"),
-                new XUri("http://foobar.com/some/page"))
+            var proxyRecipient1 = "mailto:///userA@foo.com";
+            var proxyRecipient2 = "mailto:///userC@foo.com";
+            var msg = new XDoc("foo");
+            var ev = new DispatcherEvent(
+                    msg,
+                    new XUri("channel:///foo/bar"),
+                    new XUri("http://foobar.com/some/page")
+                )
                 .WithRecipient(false,
                     new DispatcherRecipient(new XUri(proxyRecipient1)),
                     new DispatcherRecipient(new XUri("mailto:///userB@foo.com")),
-                    new DispatcherRecipient(new XUri(proxyRecipient2)));
-            Dictionary<XUri, DreamMessage> dispatches = new Dictionary<XUri, DreamMessage>();
-            XUri testUri = new XUri("http:///").At(StringUtil.CreateAlphaNumericKey(4));
-            AutoResetEvent resetEvent = new AutoResetEvent(false);
+                    new DispatcherRecipient(new XUri(proxyRecipient2)
+                )
+            );
+            var dispatches = new Dictionary<XUri, DreamMessage>();
+            var testUri = new XUri("http:///").At(StringUtil.CreateAlphaNumericKey(4));
+            var dispatchHappened = new AutoResetEvent(false);
             MockPlug.Register(testUri, delegate(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
                 dispatches.Add(plug.Uri, request);
-                resetEvent.Set();
+                dispatchHappened.Set();
                 response.Return(DreamMessage.Ok());
             });
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
-            AutoResetEvent setResetEvent = new AutoResetEvent(false);
+            var owner = Plug.New("mock:///pubsub");
+            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
+            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
+            var combinedSetUpdated = new AutoResetEvent(false);
             dispatcher.CombinedSetUpdated += delegate {
                 _log.DebugFormat("set updated");
-                setResetEvent.Set();
+                combinedSetUpdated.Set();
             };
 
-            XUri proxy = testUri.At("proxy");
+            var proxy = testUri.At("proxy");
             _log.DebugFormat("registering set");
-            dispatcher.RegisterSet("abc",
+            dispatcher.RegisterSet(
+                "abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
-                    .Attr("id", "1")
-                    .Elem("channel", "channel:///foo/*")
-                    .Elem("uri.proxy", proxy)
-                    .Start("recipient").Elem("uri", proxyRecipient1).End()
-                    .Start("recipient").Elem("uri", proxyRecipient2).End()
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/*")
+                        .Elem("uri.proxy", proxy)
+                        .Start("recipient").Elem("uri", proxyRecipient1).End()
+                        .Start("recipient").Elem("uri", proxyRecipient2).End()
                     .End()
                     .Start("subscription")
-                    .Attr("id", "2")
-                    .Elem("channel", "channel:///foo/*")
-                    .Start("recipient").Elem("uri", testUri.At("sub2")).End()
-                    .End(), "def");
+                        .Attr("id", "2")
+                        .Elem("channel", "channel:///foo/*")
+                        .Start("recipient").Elem("uri", testUri.At("sub2")).End()
+                    .End(), 
+                "def"
+            );
 
             //Set updates happen asynchronously, so give it a chance
             _log.DebugFormat("giving registration a chance to manifest");
-            Assert.IsTrue(setResetEvent.WaitOne(10000, false));
+            Assert.IsTrue(combinedSetUpdated.WaitOne(10000, false));
             _log.DebugFormat("dispatching event");
             dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
-            Assert.IsTrue(resetEvent.WaitOne(1000, false));
+            Assert.IsTrue(dispatchHappened.WaitOne(1000, false));
             Thread.Sleep(200);
             Assert.AreEqual(1, dispatches.Count);
             Assert.IsTrue(dispatches.ContainsKey(proxy));

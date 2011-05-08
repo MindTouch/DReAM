@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.Tasking;
@@ -63,7 +64,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <remarks>
         /// Should not be modified by subclass.
         /// </remarks>
-        protected Dictionary<DispatcherRecipient, List<XUri>> _destinationsByRecipient = new Dictionary<DispatcherRecipient, List<XUri>>();
+        protected Dictionary<DispatcherRecipient, List<PubSubSubscription>> _subscriptionsByRecipient = new Dictionary<DispatcherRecipient, List<PubSubSubscription>>();
 
         // NOTE (arnec): always lock _channelMap when accessing either _channelMap or _resourceMap
 
@@ -212,21 +213,21 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         private Yield Dispatch_Helper(DispatcherEvent dispatchEvent, Result result) {
-            Dictionary<XUri, List<DispatcherRecipient>> listeningEndpoints = null;
+            Dictionary<XUri, List<PubSubSubscription>> listeningSets = null;
             if(dispatchEvent.Recipients != null && dispatchEvent.Recipients.Length > 0) {
-                yield return Coroutine.Invoke(GetListenersForRecipients, dispatchEvent, new Result<Dictionary<XUri, List<DispatcherRecipient>>>()).Set(v => listeningEndpoints = v);
+                yield return Coroutine.Invoke(GetListenersForRecipients, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSets = v);
             } else {
-                yield return Coroutine.Invoke(GetListenersByChannelResourceMatch, dispatchEvent, new Result<Dictionary<XUri, List<DispatcherRecipient>>>()).Set(v => listeningEndpoints = v);
+                yield return Coroutine.Invoke(GetListenersByChannelResourceMatch, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSets = v);
             }
-            if(listeningEndpoints.Count == 0) {
+            if(listeningSets.Count == 0) {
                 _log.DebugFormat("event '{0}' for resource '{1}' has no endpoints to dispatch to", dispatchEvent.Id, dispatchEvent.Resource);
             } else {
-                _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningEndpoints.Count);
+                _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningSets.Count);
             }
-            foreach(KeyValuePair<XUri, List<DispatcherRecipient>> destination in listeningEndpoints) {
+            foreach(KeyValuePair<XUri, List<PubSubSubscription>> destination in listeningSets) {
                 var uri = destination.Key;
                 DispatcherEvent subEvent = null;
-                yield return Coroutine.Invoke(DetermineRecipients, dispatchEvent, destination.Value.ToArray(), new Result<DispatcherEvent>()).Set(v => subEvent = v);
+                yield return Coroutine.Invoke(DetermineRecipients, dispatchEvent, destination.Value, new Result<DispatcherEvent>()).Set(v => subEvent = v);
                 if(subEvent == null) {
                     _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
                     continue;
@@ -247,7 +248,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <param name="ev">Event to be dispatched.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield GetListenersByChannelResourceMatch(DispatcherEvent ev, Result<Dictionary<XUri, List<DispatcherRecipient>>> result) {
+        protected virtual Yield GetListenersByChannelResourceMatch(DispatcherEvent ev, Result<Dictionary<XUri, List<PubSubSubscription>>> result) {
 
             // dispatch to all subscriptions that listen for this event and its contents
             _log.Debug("trying dispatch based on channel matches");
@@ -258,18 +259,14 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 listeningSubs = _channelMap.GetMatches(ev.Channel, listeningSubs);
             }
-            var listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
-            foreach(PubSubSubscription sub in listeningSubs) {
-                List<DispatcherRecipient> recipients;
-                if(!listeners.TryGetValue(sub.Destination, out recipients)) {
-                    recipients = new List<DispatcherRecipient>();
-                    listeners.Add(sub.Destination, recipients);
+            var listeners = new Dictionary<XUri, List<PubSubSubscription>>();
+            foreach(var sub in listeningSubs) {
+                List<PubSubSubscription> subs;
+                if(!listeners.TryGetValue(sub.Destination, out subs)) {
+                    subs = new List<PubSubSubscription>();
+                    listeners.Add(sub.Destination, subs);
                 }
-                foreach(DispatcherRecipient recipient in sub.Recipients) {
-                    if(!recipients.Contains(recipient)) {
-                        recipients.Add(recipient);
-                    }
-                }
+                subs.Add(sub);
             }
             result.Return(listeners);
             yield break;
@@ -281,24 +278,24 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <param name="ev">Event to be dispatched.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield GetListenersForRecipients(DispatcherEvent ev, Result<Dictionary<XUri, List<DispatcherRecipient>>> result) {
+        protected virtual Yield GetListenersForRecipients(DispatcherEvent ev, Result<Dictionary<XUri, List<PubSubSubscription>>> result) {
 
             //if the event has recipients attached, do subscription lookup by recipients
             _log.Debug("trying dispatch based on event recipient list event");
-            lock(_destinationsByRecipient) {
-                var listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
-                foreach(DispatcherRecipient recipient in ev.Recipients) {
-                    List<XUri> destinations;
-                    if(_destinationsByRecipient.TryGetValue(recipient, out destinations)) {
-                        foreach(XUri destination in destinations) {
-                            List<DispatcherRecipient> recipients;
-                            if(!listeners.TryGetValue(destination, out recipients)) {
-                                recipients = new List<DispatcherRecipient>();
-                                listeners.Add(destination, recipients);
-                            }
-                            if(!recipients.Contains(recipient)) {
-                                recipients.Add(recipient);
-                            }
+            lock(_subscriptionsByRecipient) {
+                var listeners = new Dictionary<XUri, List<PubSubSubscription>>();
+                foreach(var recipient in ev.Recipients) {
+                    List<PubSubSubscription> subscriptions;
+                    if(!_subscriptionsByRecipient.TryGetValue(recipient, out subscriptions)) {
+                        continue;
+                    }
+                    foreach(var sub in subscriptions) {
+                        List<PubSubSubscription> subs;
+                        if(!listeners.TryGetValue(sub.Destination, out subs)) {
+                            subs = new List<PubSubSubscription>();
+                            listeners.Add(sub.Destination, subs);
+                        } else if(!subs.Contains(sub)) {
+                            subs.Add(sub);
                         }
                     }
                 }
@@ -312,17 +309,18 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Override hook for filtering recipients for an event.
         /// </summary>
         /// <param name="ev">Event to be dispatched.</param>
-        /// <param name="recipients">List of proposed recipients.</param>
+        /// <param name="subscriptions">List of matching subscriptions.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield DetermineRecipients(DispatcherEvent ev, DispatcherRecipient[] recipients, Result<DispatcherEvent> result) {
+        protected virtual Yield DetermineRecipients(DispatcherEvent ev, List<PubSubSubscription> subscriptions, Result<DispatcherEvent> result) {
             if(ev.Recipients.Length == 0) {
 
                 //if the event has no reciepient list, anyone can receive it
                 result.Return(ev);
                 yield break;
             }
-            recipients = ArrayUtil.Intersect(ev.Recipients, recipients);
+            var subscribers = subscriptions.SelectMany(x => x.Recipients).ToArray();
+            var recipients = ArrayUtil.Intersect(ev.Recipients, subscribers);
             result.Return(recipients.Length == 0 ? null : ev.WithRecipient(true, recipients));
             yield break;
         }
@@ -456,13 +454,13 @@ namespace MindTouch.Dream.Services.PubSub {
         protected virtual PubSubSubscription[] CalculateCombinedSubscriptions() {
             PubSubSubscription[] allSubs;
             lock(_subscriptionsByOwner) {
-                XUriChildMap<PubSubSubscription> tempChannelMap = new XUriChildMap<PubSubSubscription>();
-                XUriChildMap<PubSubSubscription> tempResourceMap = new XUriChildMap<PubSubSubscription>(true);
-                Dictionary<DispatcherRecipient, List<XUri>> tempRecipients = new Dictionary<DispatcherRecipient, List<XUri>>();
-                Dictionary<XUri, List<PubSubSubscriptionSet>> tempSubs = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
-                List<PubSubSubscription> allSubsList = new List<PubSubSubscription>();
-                foreach(PubSubSubscriptionSet set in _subscriptionsByOwner.Values) {
-                    foreach(PubSubSubscription sub in set.Subscriptions) {
+                var tempChannelMap = new XUriChildMap<PubSubSubscription>();
+                var tempResourceMap = new XUriChildMap<PubSubSubscription>(true);
+                var tempRecipients = new Dictionary<DispatcherRecipient, List<PubSubSubscription>>();
+                var tempSubs = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
+                var allSubsList = new List<PubSubSubscription>();
+                foreach(var set in _subscriptionsByOwner.Values) {
+                    foreach(var sub in set.Subscriptions) {
                         tempChannelMap.AddRange(sub.Channels, sub);
                         if(sub.Resources != null && sub.Resources.Length > 0) {
                             tempResourceMap.AddRange(sub.Resources, sub);
@@ -478,14 +476,14 @@ namespace MindTouch.Dream.Services.PubSub {
                         if(!sets.Contains(set)) {
                             sets.Add(set);
                         }
-                        foreach(DispatcherRecipient recipient in sub.Recipients) {
-                            List<XUri> destinations;
+                        foreach(var recipient in sub.Recipients) {
+                            List<PubSubSubscription> destinations;
                             if(!tempRecipients.TryGetValue(recipient, out destinations)) {
-                                destinations = new List<XUri>();
+                                destinations = new List<PubSubSubscription>();
                                 tempRecipients.Add(recipient, destinations);
                             }
-                            if(!destinations.Contains(sub.Destination)) {
-                                destinations.Add(sub.Destination);
+                            if(!destinations.Contains(sub)) {
+                                destinations.Add(sub);
                             }
                         }
                     }
@@ -498,8 +496,8 @@ namespace MindTouch.Dream.Services.PubSub {
                 lock(_subscriptionsByDestination) {
                     _subscriptionsByDestination = tempSubs;
                 }
-                lock(_destinationsByRecipient) {
-                    _destinationsByRecipient = tempRecipients;
+                lock(_subscriptionsByRecipient) {
+                    _subscriptionsByRecipient = tempRecipients;
                 }
             }
             return allSubs;
