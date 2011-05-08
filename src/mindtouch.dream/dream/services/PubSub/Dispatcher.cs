@@ -187,10 +187,11 @@ namespace MindTouch.Dream.Services.PubSub {
             }
             if(_log.IsDebugEnabled) {
                 _log.DebugFormat("Dispatcher '{0}' dispatching '{1}' on channel '{2}' with resource '{3}'",
-                                        _owner,
-                                        ev.Id,
-                                        ev.Channel,
-                                        ev.Resource);
+                    _owner,
+                    ev.Id,
+                    ev.Channel,
+                    ev.Resource
+                );
             }
             DispatcherEvent dispatchEvent = ev.WithVia(_owner);
             if(!_dispatchQueue.TryEnqueue(dispatchEvent)) {
@@ -231,10 +232,10 @@ namespace MindTouch.Dream.Services.PubSub {
                     continue;
                 }
                 _log.DebugFormat("dispatching event '{0}' to {1}", subEvent.Id, uri);
-                Plug p = Plug.New(uri);
-                p = p.WithCookieJar(_cookieJar);
-                Result<DreamMessage> response = p.Post(subEvent.AsMessage(), new Result<DreamMessage>(TimeSpan.MaxValue));
-                response.WhenDone(r => DispatchCompletion_Helper(uri, r));
+                Plug.New(uri)
+                    .WithCookieJar(_cookieJar)
+                    .Post(subEvent.AsMessage(), new Result<DreamMessage>(TimeSpan.MaxValue))
+                    .WhenDone(r => DispatchCompletion_Helper(uri, r));
             }
             result.Return();
             yield break;
@@ -257,7 +258,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 listeningSubs = _channelMap.GetMatches(ev.Channel, listeningSubs);
             }
-            Dictionary<XUri, List<DispatcherRecipient>> listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
+            var listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
             foreach(PubSubSubscription sub in listeningSubs) {
                 List<DispatcherRecipient> recipients;
                 if(!listeners.TryGetValue(sub.Destination, out recipients)) {
@@ -285,7 +286,7 @@ namespace MindTouch.Dream.Services.PubSub {
             //if the event has recipients attached, do subscription lookup by recipients
             _log.Debug("trying dispatch based on event recipient list event");
             lock(_destinationsByRecipient) {
-                Dictionary<XUri, List<DispatcherRecipient>> listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
+                var listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
                 foreach(DispatcherRecipient recipient in ev.Recipients) {
                     List<XUri> destinations;
                     if(_destinationsByRecipient.TryGetValue(recipient, out destinations)) {

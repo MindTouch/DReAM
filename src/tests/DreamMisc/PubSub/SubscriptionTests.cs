@@ -24,6 +24,7 @@ using MindTouch.Dream.Services.PubSub;
 using MindTouch.Web;
 using MindTouch.Xml;
 using NUnit.Framework;
+using MindTouch.Extensions.Time;
 
 namespace MindTouch.Dream.Test.PubSub {
 
@@ -94,6 +95,74 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.AreEqual(sub2recep1, sub2.Destination);
             XDoc setDoc2 = set.AsDocument();
             Assert.AreEqual(setDoc, setDoc2);
+        }
+
+        [Test]
+        public void SubscriptionSet_without_ttl_never_expires() {
+            XDoc setDoc = new XDoc("subscription-set")
+                .Attr("max-failures", 1)
+                .Elem("uri.owner", "http://owner")
+                .Start("subscription")
+                    .Attr("id", "123")
+                    .Elem("channel", "http://channel")
+                    .Elem("uri.resource", "http://resource")
+                    .Elem("uri.proxy", "http://proxy")
+                    .Start("recipient").Elem("uri", "http:///recipient").End()
+                .End();
+            var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
+            Assert.IsFalse(set.HasExpiration, "set should not have an expiration");
+            Assert.IsFalse(set.HasExpired, "set should not have expired");
+        }
+
+        [Test]
+        public void SubscriptionSet_without_ttl_has_max_failures() {
+            var setDoc = new XDoc("subscription-set")
+                .Attr("max-failures", 42)
+                .Elem("uri.owner", "http://owner")
+                .Start("subscription")
+                    .Attr("id", "123")
+                    .Elem("channel", "http://channel")
+                    .Elem("uri.resource", "http://resource")
+                    .Elem("uri.proxy", "http://proxy")
+                    .Start("recipient").Elem("uri", "http:///recipient").End()
+                .End();
+            var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
+            Assert.AreEqual(42, set.MaxFailures, "set max failures are wrong");
+        }
+
+        [Test]
+        public void SubscriptionSet_with_ttl_expires() {
+            var setDoc = new XDoc("subscription-set")
+                .Attr("ttl",1)
+                .Elem("uri.owner", "http://owner")
+                .Start("subscription")
+                    .Attr("id", "123")
+                    .Elem("channel", "http://channel")
+                    .Elem("uri.resource", "http://resource")
+                    .Elem("uri.proxy", "http://proxy")
+                    .Start("recipient").Elem("uri", "http:///recipient").End()
+                .End();
+            var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
+            Assert.IsTrue(set.HasExpiration, "set should have had an expiration");
+            Assert.IsFalse(set.HasExpired, "set should not yet have expired");
+            Assert.IsTrue(Wait.For(() => set.HasExpired, 5.Seconds()), "set should have expired by now");
+        }
+
+        [Test]
+        public void SubscriptionSet_with_ttl_has_no_max_failures() {
+            var setDoc = new XDoc("subscription-set")
+                .Attr("max-failures", 42)
+                .Attr("ttl", 1)
+                .Elem("uri.owner", "http://owner")
+                .Start("subscription")
+                    .Attr("id", "123")
+                    .Elem("channel", "http://channel")
+                    .Elem("uri.resource", "http://resource")
+                    .Elem("uri.proxy", "http://proxy")
+                    .Start("recipient").Elem("uri", "http:///recipient").End()
+                .End();
+            var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
+            Assert.AreEqual(int.MaxValue, set.MaxFailures);
         }
 
         [Test]

@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using log4net;
+using MindTouch.Extensions.Time;
 using MindTouch.Web;
 using MindTouch.Xml;
 
@@ -49,7 +50,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Pub sub service resource location uri postfix.
         /// </summary>
         public readonly string Location;
-        
+
         /// <summary>
         /// Subscriptions in set.
         /// </summary>
@@ -69,6 +70,9 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Set version serial.
         /// </summary>
         public readonly long? Version;
+
+        private readonly TimeSpan _ttl;
+        private DateTime _expires;
 
         //--- Constructors ---
 
@@ -114,7 +118,9 @@ namespace MindTouch.Dream.Services.PubSub {
             try {
                 // Note: not using AsUri to avoid automatic local:// translation
                 Owner = new XUri(setDoc["uri.owner"].AsText);
-                List<PubSubSubscription> subscriptions = new List<PubSubSubscription>();
+                _ttl = (setDoc["@ttl"].AsDouble ?? 0).Seconds();
+                Touch();
+                var subscriptions = new List<PubSubSubscription>();
                 foreach(XDoc sub in setDoc["subscription"]) {
                     subscriptions.Add(new PubSubSubscription(sub, this));
                 }
@@ -122,7 +128,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 Subscriptions = subscriptions.ToArray();
                 Location = location;
                 AccessKey = accessKey;
-                MaxFailures = setDoc["@max-failures"].AsInt ?? MAX_FAILURES;
+                MaxFailures = HasExpiration ? int.MaxValue : setDoc["@max-failures"].AsInt ?? MAX_FAILURES;
             } catch(Exception e) {
                 throw new ArgumentException("Unable to parse subscription set: " + e.Message, e);
             }
@@ -150,7 +156,19 @@ namespace MindTouch.Dream.Services.PubSub {
             }
         }
 
+        public bool HasExpired {
+            get { return _expires <= DateTime.UtcNow; }
+        }
+
+        public bool HasExpiration {
+            get { return _ttl != TimeSpan.Zero; }
+        }
+
         //--- Methods ---
+
+        public void Touch() {
+            _expires = HasExpiration ? DateTime.UtcNow.Add(_ttl) : DateTime.MaxValue;
+        }
 
         /// <summary>
         /// Create a new subscription set document.
