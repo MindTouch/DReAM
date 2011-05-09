@@ -244,7 +244,7 @@ namespace MindTouch.Dream.Services.PubSub {
                         _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
                         continue;
                     }
-                    IPubSubDispatchQueue queue = _defaultQueue;
+                    var queue = _defaultQueue;
                     if(sub.Owner.HasExpiration) {
                         lock(_subscriptionsByOwner) {
                             if(!_queuesByLocation.TryGetValue(sub.Owner.Location, out queue)) {
@@ -253,7 +253,7 @@ namespace MindTouch.Dream.Services.PubSub {
                             }
                         }
                     }
-                    queue.Enqueue(new DispatchItem(uri, subEvent, sub));
+                    queue.Enqueue(new DispatchItem(uri, subEvent, sub.Owner.Location));
                 }
             }
             result.Return();
@@ -357,24 +357,24 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         private void DispatchCompletion_Helper(DispatchItem destination, DreamMessage response, Result<bool> result) {
-
-            if(destination.Subscription.Owner.HasExpiration) {
+            // CLEANUP: proper access to lookup
+            var set = _subscriptionByLocation[destination.Location];
+            if(set.HasExpiration) {
                 if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
                     result.Return(true);
                 } else {
                     result.Return(false);
                 }
             } else {
-                var location = destination.Subscription.Owner.Location;
                 if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
                     // if the post was a success, or didn't affect a change, clear any failure count
                     lock(_dispatchFailuresByLocation) {
                         if(_log.IsDebugEnabled) {
-                            if(_dispatchFailuresByLocation.ContainsKey(location)) {
+                            if(_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
                                 _log.Debug("zeroing out existing error count");
                             }
                         }
-                        _dispatchFailuresByLocation.Remove(location);
+                        _dispatchFailuresByLocation.Remove(destination.Location);
                     }
                 } else {
 
@@ -385,19 +385,18 @@ namespace MindTouch.Dream.Services.PubSub {
                     lock(_dispatchFailuresByLocation) {
 
                         // NOTE (arnec): using ContainsKey instead of TryGetValue, since we're incrementing a value type in place
-                        if(!_dispatchFailuresByLocation.ContainsKey(location)) {
-                            _dispatchFailuresByLocation.Add(location, 1);
+                        if(!_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
+                            _dispatchFailuresByLocation.Add(destination.Location, 1);
                         } else {
-                            _dispatchFailuresByLocation[location]++;
+                            _dispatchFailuresByLocation[destination.Location]++;
                         }
-                        var set = destination.Subscription.Owner;
-                        var failures = _dispatchFailuresByLocation[location];
-                        _log.DebugFormat("failure {0} out of {1} for set at location {2}", failures, set.MaxFailures, location);
+                        var failures = _dispatchFailuresByLocation[destination.Location];
+                        _log.DebugFormat("failure {0} out of {1} for set at location {2}", failures, set.MaxFailures, destination.Location);
 
                         // kick out a subscription set if one of its subscriptions fails too many times
                         if(failures > set.MaxFailures) {
                             _log.DebugFormat("exceeded max failures, kicking set at '{0}'", set.Location);
-                            RemoveSet(location);
+                            RemoveSet(destination.Location);
                         }
                     }
                 }

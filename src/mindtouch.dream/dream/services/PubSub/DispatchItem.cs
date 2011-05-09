@@ -18,18 +18,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
 
 namespace MindTouch.Dream.Services.PubSub {
     public class DispatchItem {
         public readonly XUri Uri;
         public readonly DispatcherEvent Event;
-        public readonly PubSubSubscription Subscription;
+        public readonly string Location;
 
-        public DispatchItem(XUri uri, DispatcherEvent @event, PubSubSubscription subscription) {
+        public DispatchItem(XUri uri, DispatcherEvent @event, string location) {
             Uri = uri;
             Event = @event;
-            Subscription = subscription;
+            Location = location;
         }
     }
 }

@@ -21,6 +21,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Autofac;
 using Autofac.Builder;
 using log4net;
@@ -176,11 +178,17 @@ namespace MindTouch.Dream.Services {
             }
             if(!container.IsRegistered<IPersistentPubSubDispatchQueueFactory>()) {
                 builder = builder ?? new ContainerBuilder();
-                builder.Register(new PersistentPubSubDispatchQueueFactory(TimerFactory, 30.Seconds()))
+
+                // CLEANUP: need a safe location, not just tmp
+                var path = Path.Combine(Path.GetTempPath(), "pubsub");
+                foreach(var segment in Self.Uri.Segments.Select(x => XUri.EncodeSegment(x))) {
+                    path = Path.Combine(path, segment);
+                }
+                builder.Register(new PersistentPubSubDispatchQueueFactory(path, TimerFactory, 30.Seconds()))
                     .As<IPersistentPubSubDispatchQueueFactory>();
             }
             if(builder != null) {
-                builder.Build(container);                
+                builder.Build(container);
             }
 
             // initialize dispatcher

@@ -123,7 +123,7 @@ namespace MindTouch.Collections {
         long Id { get; }
 
         /// <summary>
-        /// The time at which this entry will be considered abananded and automatically rolled back.
+        /// The time at which this entry will be considered abandoned and automatically rolled back.
         /// </summary>
         DateTime Expiration { get; }
     }

@@ -19,20 +19,23 @@
  * limitations under the License.
  */
 using System;
+using System.IO;
 using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
     public class PersistentPubSubDispatchQueueFactory : IPersistentPubSubDispatchQueueFactory {
+        private readonly string _queueRootPath;
         private readonly TaskTimerFactory _taskTimerFactory;
         private readonly TimeSpan _retryTime;
 
-        public PersistentPubSubDispatchQueueFactory(TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
+        public PersistentPubSubDispatchQueueFactory(string queueRootPath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
+            _queueRootPath = queueRootPath;
             _taskTimerFactory = taskTimerFactory;
             _retryTime = retryTime;
         }
 
         public IPubSubDispatchQueue Create(string location) {
-            return new MemoryPubSubDispatchQueue(_taskTimerFactory, _retryTime);
+            return new PersistentPubSubDispatchQueue(Path.Combine(_queueRootPath, XUri.EncodeSegment(location)), _taskTimerFactory, _retryTime);
         }
     }
 }
