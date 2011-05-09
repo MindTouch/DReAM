@@ -360,7 +360,9 @@ namespace MindTouch.Dream.Services.PubSub {
 
             if(destination.Subscription.Owner.HasExpiration) {
                 if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
-
+                    result.Return(true);
+                } else {
+                    result.Return(false);
                 }
             } else {
                 var location = destination.Subscription.Owner.Location;

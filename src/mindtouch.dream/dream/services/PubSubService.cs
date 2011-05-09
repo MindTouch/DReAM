@@ -176,7 +176,8 @@ namespace MindTouch.Dream.Services {
             }
             if(!container.IsRegistered<IPersistentPubSubDispatchQueueFactory>()) {
                 builder = builder ?? new ContainerBuilder();
-                builder.Register(new PersistentPubSubDispatchQueueFactory(TimerFactory, 1.Seconds(), 30.Seconds()));
+                builder.Register(new PersistentPubSubDispatchQueueFactory(TimerFactory, 30.Seconds()))
+                    .As<IPersistentPubSubDispatchQueueFactory>();
             }
             if(builder != null) {
                 builder.Build(container);                

@@ -28,6 +28,7 @@ using MindTouch.Web;
 using MindTouch.Xml;
 using NUnit.Framework;
 using Moq;
+using MindTouch.Extensions.Time;
 
 namespace MindTouch.Dream.Test.PubSub {
 
@@ -37,15 +38,16 @@ namespace MindTouch.Dream.Test.PubSub {
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private Dispatcher _dispatcher;
-        private Mock<IPersistentPubSubDispatchQueueFactory> _queueFactory;
+        private Mock<IPersistentPubSubDispatchQueueFactory> _queueFactoryMock;
 
         [SetUp]
         public void Setup() {
+            MockPlug.DeregisterAll();
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
             var owner = Plug.New("mock:///pubsub");
-            _queueFactory = new Mock<IPersistentPubSubDispatchQueueFactory>();
-            _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactory.Object);
-            
+            _queueFactoryMock = new Mock<IPersistentPubSubDispatchQueueFactory>();
+            _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactoryMock.Object);
+
         }
 
         [Test]
@@ -440,7 +442,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 .WithVia(new XUri("local://12345/a"));
             var owner = Plug.New(loopService);
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactory.Object);
+            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactoryMock.Object);
             try {
                 dispatcher.Dispatch(ev);
                 Assert.Fail("should not have gotten here");
@@ -451,7 +453,7 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         [Test]
-        public void Repeated_dispatch_failure_kicks_subscription_set() {
+        public void Repeated_dispatch_failure_kicks_non_expiring_subscription_set() {
             var sub1Uri = new XUri("http://sub1/foo");
             var sub1Mock = MockPlug.Register(sub1Uri);
             sub1Mock.Expect().Verb("POST").Response(DreamMessage.BadRequest("nobody home"));
@@ -501,7 +503,7 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         [Test]
-        public void Failed_dispatch_followed_by_success_should_reset_fail_count() {
+        public void Failed_dispatch_followed_by_success_should_reset_fail_count_for_non_expiring_subscription_set() {
             bool fail = true;
             DispatcherEvent ev = new DispatcherEvent(
              new XDoc("msg"),
@@ -537,7 +539,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Attr("id", "1")
                     .Elem("channel", "channel:///foo/*")
                     .Start("recipient").Elem("uri", testUri.At("foo")).End()
-                    .End(), 
+                    .End(),
                 "def"
                 ).Item1.Location;
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
@@ -618,7 +620,7 @@ namespace MindTouch.Dream.Test.PubSub {
                         .Attr("id", "2")
                         .Elem("channel", "channel:///foo/*")
                         .Start("recipient").Elem("uri", testUri.At("sub2")).End()
-                    .End(), 
+                    .End(),
                 "def"
             );
 
@@ -674,6 +676,138 @@ namespace MindTouch.Dream.Test.PubSub {
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
             MockPlug.Deregister(testUri);
+        }
+
+        [Test]
+        public void Registration_of_expiring_set_triggers_set_specific_dispatch_queue_creation() {
+            _queueFactoryMock.Setup(x => x.Create("abc")).Returns(new Mock<IPubSubDispatchQueue>().Object).AtMostOnce().Verifiable();
+            _dispatcher.RegisterSet(
+                "abc",
+                new XDoc("subscription-set")
+                    .Attr("ttl", 1)
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/*")
+                        .Start("recipient").Elem("uri", "http:///recipient").End()
+                    .End(),
+                "def"
+            );
+            _queueFactoryMock.VerifyAll();
+        }
+
+        [Test]
+        public void Dispatch_for_expiring_set_will_hit_set_specific_queue() {
+
+            // Arrange
+            var ev = new DispatcherEvent(
+                new XDoc("msg"),
+                new XUri("channel:///foo/bar"),
+                new XUri("http://foobar.com/some/page"));
+            var setUpdated = false;
+            _dispatcher.CombinedSetUpdated += delegate {
+                setUpdated = true;
+            };
+            var recipientUri = new XUri("http://recipient");
+            var dispatchQueueMock = new Mock<IPubSubDispatchQueue>();
+            _queueFactoryMock.Setup(x => x.Create("abc")).Returns(dispatchQueueMock.Object).AtMostOnce().Verifiable();
+            _dispatcher.RegisterSet(
+                "abc",
+                new XDoc("subscription-set")
+                    .Attr("ttl", 1)
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/bar")
+                        .Start("recipient").Elem("uri", recipientUri).End()
+                    .End(),
+                "def"
+            );
+
+            // combinedset updates happen asynchronously, so give'em a chance
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "combined set didn't update in time");
+
+            // Act
+            _dispatcher.Dispatch(ev);
+
+            // Assert
+            _queueFactoryMock.VerifyAll();
+            dispatchQueueMock.Verify(x => x.SetDequeueHandler(It.IsAny<Func<DispatchItem, Result<bool>>>()), "dequeue handler was not set on queue");
+            dispatchQueueMock.Verify(
+                x => x.Enqueue(It.Is<DispatchItem>(y => y.Uri == recipientUri && y.Event.Channel == ev.Channel && y.Event.Id == ev.Id)),
+                "event wasn't enqueued"
+            );
+        }
+
+        [Test]
+        public void Dispatch_failure_for_expiring_set_will_continue_to_retry() {
+
+            // Arrange
+            var ev = new DispatcherEvent(
+                new XDoc("msg"),
+                new XUri("channel:///foo/bar"),
+                new XUri("http://foobar.com/some/page"));
+            var setUpdated = false;
+            _dispatcher.CombinedSetUpdated += delegate {
+                setUpdated = true;
+            };
+            var recipientUri = new XUri("http://recipient");
+            var failures = 5;
+            var requestCount = 0;
+            var done = false;
+            MockPlug.Register(recipientUri, (plug, verb, uri, request, response) => {
+                requestCount++;
+                if(requestCount > failures) {
+                    response.Return(DreamMessage.Ok());
+                    done = true;
+                } else {
+                    response.Return(DreamMessage.BadRequest("bad"));
+                }
+            });
+            var dispatchQueue = new MockPubSubDispatchQueue();
+            _queueFactoryMock.Setup(x => x.Create("abc")).Returns(dispatchQueue).AtMostOnce().Verifiable();
+            _dispatcher.RegisterSet(
+                "abc",
+                new XDoc("subscription-set")
+                    .Attr("ttl", 1)
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/bar")
+                        .Start("recipient").Elem("uri", recipientUri).End()
+                    .End(),
+                "def"
+            );
+
+            // combinedset updates happen asynchronously, so give'em a chance
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "combined set didn't update in time");
+
+            // Act
+            _dispatcher.Dispatch(ev);
+
+            // Assert
+            _queueFactoryMock.VerifyAll();
+            Assert.IsTrue(Wait.For(() => done, 10.Seconds()), "dispatch didn't complete");
+            Assert.AreEqual(failures + 1, requestCount, "wrong number of requests");
+            Assert.AreEqual(failures, dispatchQueue.FailureCount, "wrong number of failure responses reported to dispatchqueue");
+        }
+    }
+
+    public class MockPubSubDispatchQueue : IPubSubDispatchQueue {
+        private Func<DispatchItem, Result<bool>> _dequeueHandler;
+        public int FailureCount;
+        public void Enqueue(DispatchItem item) {
+            bool success;
+            do {
+                success = _dequeueHandler(item).Wait();
+                if(!success) {
+                    FailureCount++;
+                }
+            } while(!success);
+        }
+
+        public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            _dequeueHandler = dequeueHandler;
         }
     }
 }

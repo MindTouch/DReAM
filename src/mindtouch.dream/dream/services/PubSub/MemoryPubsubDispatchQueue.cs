@@ -25,8 +25,6 @@ using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
     public class MemoryPubSubDispatchQueue : IPubSubDispatchQueue {
-        private readonly TimeSpan _checkTime;
-        private readonly TimeSpan _retryTime;
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
@@ -35,51 +33,63 @@ namespace MindTouch.Dream.Services.PubSub {
         private Func<DispatchItem, Result<bool>> _dequeueHandler;
         private readonly Queue<DispatchItem> _queue = new Queue<DispatchItem>();
         private readonly TaskTimer _queueTimer;
+        private readonly TimeSpan _retryTime;
         private DispatchItem _currentItem;
 
-        public MemoryPubSubDispatchQueue(TaskTimerFactory taskTimerFactory, TimeSpan checkTime, TimeSpan retryTime) {
-            _checkTime = checkTime;
+        public MemoryPubSubDispatchQueue(TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
             _retryTime = retryTime;
-            _queueTimer = taskTimerFactory.New(CheckQueue, null);
-        }
-
-        private void CheckQueue(TaskTimer obj) {
-            ProcessNextItem();
-        }
-
-        private void ProcessNextItem() {
-            lock(_queue) {
-                if(_currentItem != null) {
-                    return;
-                }
-                if(_queue.Count == 0) {
-                    _queueTimer.Change(_checkTime, TaskEnv.None);
-                    return;
-                }
-                _currentItem = _queue.Peek();
-            }
-            _dequeueHandler(_currentItem).WhenDone(r => {
-                lock(_queue) {
-                    _currentItem = null;
-                    if(r.HasException || !r.Value) {
-                        _queueTimer.Change(_retryTime, TaskEnv.None);
-                        return;
-                    }
-                    _queue.Dequeue();
-                }
-                ProcessNextItem();
-            });
+            _queueTimer = taskTimerFactory.New(RetryDequeue, null);
         }
 
         public void Enqueue(DispatchItem item) {
             lock(_queue) {
                 _queue.Enqueue(item);
+                Kick();
             }
         }
 
         public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            if(dequeueHandler == null) {
+                throw new ArgumentException("cannot set the handler to a null value");
+            }
             _dequeueHandler = dequeueHandler;
-            _queueTimer.Change(_checkTime, TaskEnv.None);
+            Kick();
+        }
+
+        private void Kick() {
+            if(_currentItem != null || _dequeueHandler == null) {
+                return;
+            }
+            lock(_queue) {
+                if(_currentItem != null || _queue.Count == 0) {
+                    return;
+                }
+                _currentItem = _queue.Peek();
+                Async.Fork(TryDequeue);
+            }
+        }
+
+        private void RetryDequeue(TaskTimer obj) {
+            TryDequeue();
+        }
+
+        private void TryDequeue() {
+            _dequeueHandler(_currentItem).WhenDone(r => {
+                lock(_queue) {
+                    if(r.HasException || !r.Value) {
+                        _queueTimer.Change(_retryTime, TaskEnv.None);
+                        return;
+                    }
+                    _currentItem = null;
+                    _queue.Dequeue();
+                    if(_queue.Count > 0) {
+                        _currentItem = _queue.Peek();
+                    }
+                }
+                if(_currentItem != null) {
+                    TryDequeue();
+                }
+            });
         }
     }
 
