@@ -42,16 +42,18 @@ namespace MindTouch.Dream.Services.PubSub {
         //--- Fields ---
         private readonly XUri _owner;
         private readonly DreamCookie _serviceKeySetCookie;
-        private readonly Dictionary<XUri, int> _dispatchFailuresByDestination = new Dictionary<XUri, int>();
+        private readonly Dictionary<string, int> _dispatchFailuresByLocation = new Dictionary<string, int>();
         private readonly ProcessingQueue<DispatcherEvent> _dispatchQueue;
+        private readonly IPubSubDispatchQueue _defaultQueue;
+        private readonly IPersistentPubSubDispatchQueueFactory _queueFactory;
         private Dictionary<XUri, List<PubSubSubscriptionSet>> _subscriptionsByDestination = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
         private PubSubSubscriptionSet _combinedSet;
         private long _combinedSetVersion = 0;
 
-
-        // NOTE (arnec): always lock _subscriptionsByOwner when accessing either _subscriptionsByOwner or _subscriptionByLocation
+        // NOTE (arnec): always lock _subscriptionsByOwner when accessing either _subscriptionsByOwner or _subscriptionByLocation or _queuesByLocation
         private readonly Dictionary<XUri, PubSubSubscriptionSet> _subscriptionsByOwner = new Dictionary<XUri, PubSubSubscriptionSet>();
         private readonly Dictionary<string, PubSubSubscriptionSet> _subscriptionByLocation = new Dictionary<string, PubSubSubscriptionSet>();
+        private readonly Dictionary<string, IPubSubDispatchQueue> _queuesByLocation = new Dictionary<string, IPubSubDispatchQueue>();
 
         /// <summary>
         /// Cookie Jar provide by the hosting pub sub service
@@ -92,11 +94,15 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Create a new dispatcher.
         /// </summary>
         /// <param name="config">Configuration instance injected from pub sub service.</param>
-        public Dispatcher(DispatcherConfig config) {
+        /// <param name="queueFactory">Factory for dispatch queues used by persisted (i.e. expiring) subscriptions</param>
+        public Dispatcher(DispatcherConfig config, IPersistentPubSubDispatchQueueFactory queueFactory) {
+            _queueFactory = queueFactory;
             _owner = config.ServiceUri.AsServerUri();
             _serviceKeySetCookie = config.ServiceAccessCookie;
             _combinedSet = new PubSubSubscriptionSet(_owner, 0, _serviceKeySetCookie);
             _dispatchQueue = new ProcessingQueue<DispatcherEvent>(DispatchFromQueue, 10);
+            _defaultQueue = new ImmediatePubSubDispatchQueue();
+            _defaultQueue.SetDequeueHandler(TryDispatchItem);
         }
 
         //--- Properties ---
@@ -158,6 +164,11 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 _subscriptionByLocation.Add(set.Location, set);
                 _subscriptionsByOwner.Add(set.Owner, set);
+                if(set.HasExpiration) {
+                    var queue = _queueFactory.Create(set.Location);
+                    queue.SetDequeueHandler(TryDispatchItem);
+                    _queuesByLocation.Add(set.Location, queue);
+                }
                 Update();
                 return new Tuplet<PubSubSubscriptionSet, bool>(set, false);
             }
@@ -194,7 +205,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     ev.Resource
                 );
             }
-            DispatcherEvent dispatchEvent = ev.WithVia(_owner);
+            var dispatchEvent = ev.WithVia(_owner);
             if(!_dispatchQueue.TryEnqueue(dispatchEvent)) {
                 throw new InvalidOperationException(string.Format("Enqueue of '{0}' failed.", dispatchEvent.Id));
             }
@@ -207,7 +218,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     if(r.HasException) {
                         _log.ErrorExceptionMethodCall(r.Exception, "AsyncDispatcher", "async queue processor encountered an error");
                     } else {
-                        _log.DebugFormat("finished dispatch of event '{0}'", dispatchEvent.Id);
+                        _log.DebugFormat("finished enqueuing dispatch of event '{0}'", dispatchEvent.Id);
                     }
                 });
         }
@@ -224,22 +235,39 @@ namespace MindTouch.Dream.Services.PubSub {
             } else {
                 _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningSets.Count);
             }
-            foreach(KeyValuePair<XUri, List<PubSubSubscription>> destination in listeningSets) {
+            foreach(var destination in listeningSets) {
                 var uri = destination.Key;
-                DispatcherEvent subEvent = null;
-                yield return Coroutine.Invoke(DetermineRecipients, dispatchEvent, destination.Value, new Result<DispatcherEvent>()).Set(v => subEvent = v);
-                if(subEvent == null) {
-                    _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
-                    continue;
+                foreach(var sub in destination.Value) {
+                    DispatcherEvent subEvent = null;
+                    yield return Coroutine.Invoke(DetermineRecipients, dispatchEvent, destination.Value, new Result<DispatcherEvent>()).Set(v => subEvent = v);
+                    if(subEvent == null) {
+                        _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
+                        continue;
+                    }
+                    IPubSubDispatchQueue queue = _defaultQueue;
+                    if(sub.Owner.HasExpiration) {
+                        lock(_subscriptionsByOwner) {
+                            if(!_queuesByLocation.TryGetValue(sub.Owner.Location, out queue)) {
+                                _log.DebugFormat("unable to get dispatch queue for event '{0}'via location '{1}'", dispatchEvent.Id, sub.Owner.Location);
+                                continue;
+                            }
+                        }
+                    }
+                    queue.Enqueue(new DispatchItem(uri, subEvent, sub));
                 }
-                _log.DebugFormat("dispatching event '{0}' to {1}", subEvent.Id, uri);
-                Plug.New(uri)
-                    .WithCookieJar(_cookieJar)
-                    .Post(subEvent.AsMessage(), new Result<DreamMessage>(TimeSpan.MaxValue))
-                    .WhenDone(r => DispatchCompletion_Helper(uri, r));
             }
             result.Return();
             yield break;
+        }
+
+        private Result<bool> TryDispatchItem(DispatchItem item) {
+            var result = new Result<bool>();
+            _log.DebugFormat("dispatching event '{0}' to {1}", item.Event.Id, item.Uri);
+            Plug.New(item.Uri)
+                .WithCookieJar(_cookieJar)
+                .Post(item.Event.AsMessage(), new Result<DreamMessage>(TimeSpan.MaxValue))
+                .WhenDone(r => DispatchCompletion_Helper(item, r.Value, result));
+            return result;
         }
 
         /// <summary>
@@ -265,8 +293,10 @@ namespace MindTouch.Dream.Services.PubSub {
                 if(!listeners.TryGetValue(sub.Destination, out subs)) {
                     subs = new List<PubSubSubscription>();
                     listeners.Add(sub.Destination, subs);
+                    subs.Add(sub);
+                } else if(!subs.Contains(sub)) {
+                    subs.Add(sub);
                 }
-                subs.Add(sub);
             }
             result.Return(listeners);
             yield break;
@@ -294,6 +324,7 @@ namespace MindTouch.Dream.Services.PubSub {
                         if(!listeners.TryGetValue(sub.Destination, out subs)) {
                             subs = new List<PubSubSubscription>();
                             listeners.Add(sub.Destination, subs);
+                            subs.Add(sub);
                         } else if(!subs.Contains(sub)) {
                             subs.Add(sub);
                         }
@@ -325,52 +356,56 @@ namespace MindTouch.Dream.Services.PubSub {
             yield break;
         }
 
-        private void DispatchCompletion_Helper(XUri destination, Result<DreamMessage> result) {
-            if(result.Value.IsSuccessful || result.Value.Status == DreamStatus.NotModified) {
+        private void DispatchCompletion_Helper(DispatchItem destination, DreamMessage response, Result<bool> result) {
 
-                // if the post was a success, or didn't affect a change, clear any failure count
-                lock(_dispatchFailuresByDestination) {
-                    if(_log.IsDebugEnabled) {
-                        if(_dispatchFailuresByDestination.ContainsKey(destination)) {
-                            _log.Debug("zeroing out existing error count");
-                        }
-                    }
-                    _dispatchFailuresByDestination.Remove(destination);
+            if(destination.Subscription.Owner.HasExpiration) {
+                if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
+
                 }
             } else {
-
-                // post was a failure, increase consecutive failures
-                if(_log.IsWarnEnabled) {
-                    _log.WarnFormat("event dispatch to '{0}' failed: {1} - {2}", destination, result.Value.Status, result.Value.ToText());
-                }
-                lock(_dispatchFailuresByDestination) {
-
-                    // NOTE (arnec): using ContainsKey instead of TryGetValue, since we're incrementing a value type in place
-                    if(!_dispatchFailuresByDestination.ContainsKey(destination)) {
-                        _dispatchFailuresByDestination.Add(destination, 1);
-                    } else {
-                        _dispatchFailuresByDestination[destination]++;
-                    }
-                    List<PubSubSubscriptionSet> subscriptionSets;
-                    lock(_subscriptionsByDestination) {
-                        if(!_subscriptionsByDestination.TryGetValue(destination, out subscriptionSets)) {
-                            return;
+                var location = destination.Subscription.Owner.Location;
+                if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
+                    // if the post was a success, or didn't affect a change, clear any failure count
+                    lock(_dispatchFailuresByLocation) {
+                        if(_log.IsDebugEnabled) {
+                            if(_dispatchFailuresByLocation.ContainsKey(location)) {
+                                _log.Debug("zeroing out existing error count");
+                            }
                         }
+                        _dispatchFailuresByLocation.Remove(location);
                     }
-                    foreach(PubSubSubscriptionSet set in subscriptionSets) {
-                        _log.DebugFormat("failure {0} out of {1} for {2}",
-                                                _dispatchFailuresByDestination[destination],
-                                                set.MaxFailures,
-                                                destination);
+                } else {
+
+                    // post was a failure, increase consecutive failures
+                    if(_log.IsWarnEnabled) {
+                        _log.WarnFormat("event dispatch to '{0}' failed: {1} - {2}", destination, response.Status, response.ToText());
+                    }
+                    lock(_dispatchFailuresByLocation) {
+
+                        // NOTE (arnec): using ContainsKey instead of TryGetValue, since we're incrementing a value type in place
+                        if(!_dispatchFailuresByLocation.ContainsKey(location)) {
+                            _dispatchFailuresByLocation.Add(location, 1);
+                        } else {
+                            _dispatchFailuresByLocation[location]++;
+                        }
+                        var set = destination.Subscription.Owner;
+                        var failures = _dispatchFailuresByLocation[location];
+                        _log.DebugFormat("failure {0} out of {1} for set at location {2}", failures, set.MaxFailures, location);
 
                         // kick out a subscription set if one of its subscriptions fails too many times
-                        if(_dispatchFailuresByDestination[destination] > set.MaxFailures) {
+                        if(failures > set.MaxFailures) {
                             _log.DebugFormat("exceeded max failures, kicking set at '{0}'", set.Location);
-                            RemoveSet(set.Location);
+                            RemoveSet(location);
                         }
                     }
                 }
+
+                // Note (arnec): non-expiring sets always "succeed" at dispatch since their queues are not kept around
+                result.Return(true);
+                return;
+
             }
+
         }
 
         /// <summary>
@@ -390,12 +425,16 @@ namespace MindTouch.Dream.Services.PubSub {
                 if(set == oldSet) {
                     return oldSet;
                 }
-                foreach(DreamCookie cookie in set.Cookies) {
-                    _cookieJar.Update(cookie, null);
-                }
                 if(set.Owner != oldSet.Owner) {
                     _log.WarnFormat("subscription set owner mispatch: {0} vs. {1}", oldSet.Owner, set.Owner);
                     throw new ArgumentException("owner of new set does not match existing owner");
+                }
+                if(set.HasExpiration != oldSet.HasExpiration) {
+                    _log.WarnFormat("attempted to change a subscription type (expiring vs. non-expiring)");
+                    throw new ArgumentException("new set has different expiration type");
+                }
+                foreach(DreamCookie cookie in set.Cookies) {
+                    _cookieJar.Update(cookie, null);
                 }
                 _subscriptionByLocation[location] = set;
                 _subscriptionsByOwner[set.Owner] = set;

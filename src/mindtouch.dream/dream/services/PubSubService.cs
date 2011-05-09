@@ -29,6 +29,7 @@ using MindTouch.Dream.Services.PubSub;
 using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
+using MindTouch.Extensions.Time;
 
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
@@ -168,19 +169,28 @@ namespace MindTouch.Dream.Services {
             _log.DebugFormat("starting {0}", Self.Uri);
 
             // make sure we have an IPubSubDispatcher registered
+            ContainerBuilder builder = null;
             if(!container.IsRegistered<IPubSubDispatcher>()) {
-                var builder = new ContainerBuilder();
+                builder = new ContainerBuilder();
                 builder.Register<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
-                builder.Build(container);
+            }
+            if(!container.IsRegistered<IPersistentPubSubDispatchQueueFactory>()) {
+                builder = builder ?? new ContainerBuilder();
+                builder.Register(new PersistentPubSubDispatchQueueFactory(TimerFactory, 1.Seconds(), 30.Seconds()));
+            }
+            if(builder != null) {
+                builder.Build(container);                
             }
 
             // initialize dispatcher
-            _dispatcher = container.Resolve<IPubSubDispatcher>(TypedParameter.From(new DispatcherConfig {
-                ServiceUri = Self,
-                ServiceAccessCookie = DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri),
-                ServiceCookies = Cookies,
-                ServiceConfig = config
-            }));
+            _dispatcher = container.Resolve<IPubSubDispatcher>(
+                TypedParameter.From(new DispatcherConfig {
+                    ServiceUri = Self,
+                    ServiceAccessCookie = DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri),
+                    ServiceCookies = Cookies,
+                    ServiceConfig = config
+                })
+            );
 
             // check for upstream chaining
             if(!config["upstream"].IsEmpty) {

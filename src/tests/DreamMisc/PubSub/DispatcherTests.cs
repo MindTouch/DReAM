@@ -27,6 +27,7 @@ using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
 using NUnit.Framework;
+using Moq;
 
 namespace MindTouch.Dream.Test.PubSub {
 
@@ -35,12 +36,20 @@ namespace MindTouch.Dream.Test.PubSub {
 
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
+        private Dispatcher _dispatcher;
+        private Mock<IPersistentPubSubDispatchQueueFactory> _queueFactory;
+
+        [SetUp]
+        public void Setup() {
+            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
+            var owner = Plug.New("mock:///pubsub");
+            _queueFactory = new Mock<IPersistentPubSubDispatchQueueFactory>();
+            _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactory.Object);
+            
+        }
 
         [Test]
         public void Dispatcher_creates_set_at_location() {
-            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            var owner = Plug.New("mock:///pubsub");
-            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             var subset = new XDoc("subscription-set")
                 .Attr("max-failures", 1)
                 .Elem("uri.owner", "http:///owner")
@@ -49,22 +58,19 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "channel:///foo")
                     .Start("recipient").Attr("auth-token", "abc").Elem("uri", "mailto://foo@bar.com").End()
                 .End();
-            var set = dispatcher.RegisterSet("abc", subset, "def");
+            var set = _dispatcher.RegisterSet("abc", subset, "def");
             Assert.AreEqual("abc", set.Item1.Location);
             Assert.AreEqual("def", set.Item1.AccessKey);
             Assert.IsFalse(set.Item2);
-            PubSubSubscriptionSet fetchedSet = dispatcher[set.Item1.Location];
+            PubSubSubscriptionSet fetchedSet = _dispatcher[set.Item1.Location];
             Assert.AreEqual(subset, fetchedSet.AsDocument());
-            Tuplet<PubSubSubscriptionSet, bool> reset = dispatcher.RegisterSet("abc", subset, "def");
+            Tuplet<PubSubSubscriptionSet, bool> reset = _dispatcher.RegisterSet("abc", subset, "def");
             Assert.IsTrue(reset.Item2);
             Assert.AreEqual(set.Item1.Location, reset.Item1.Location);
         }
 
         [Test]
         public void Second_register_for_same_owner_ignores_location_and_accessKey() {
-            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            var owner = Plug.New("mock:///pubsub");
-            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             var subset = new XDoc("subscription-set")
                 .Attr("max-failures", 1)
                 .Elem("uri.owner", "http:///owner")
@@ -73,13 +79,13 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "channel:///foo")
                     .Start("recipient").Attr("auth-token", "abc").Elem("uri", "mailto://foo@bar.com").End()
                 .End();
-            var set = dispatcher.RegisterSet("abc", subset, "def");
+            var set = _dispatcher.RegisterSet("abc", subset, "def");
             Assert.AreEqual("abc", set.Item1.Location);
             Assert.AreEqual("def", set.Item1.AccessKey);
             Assert.IsFalse(set.Item2);
-            PubSubSubscriptionSet fetchedSet = dispatcher[set.Item1.Location];
+            PubSubSubscriptionSet fetchedSet = _dispatcher[set.Item1.Location];
             Assert.AreEqual(subset, fetchedSet.AsDocument());
-            Tuplet<PubSubSubscriptionSet, bool> reset = dispatcher.RegisterSet("sdfsfsd", subset, "werewrwe");
+            Tuplet<PubSubSubscriptionSet, bool> reset = _dispatcher.RegisterSet("sdfsfsd", subset, "werewrwe");
             Assert.IsTrue(reset.Item2);
             Assert.AreEqual(set.Item1.Location, reset.Item1.Location);
             Assert.AreEqual(set.Item1.AccessKey, reset.Item1.AccessKey);
@@ -87,9 +93,6 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Dispatcher_replaceset_for_wrong_owner_throws() {
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             XDoc subset = new XDoc("subscription-set")
                 .Attr("max-failures", 1)
                 .Elem("uri.owner", "http:///owner")
@@ -98,7 +101,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 .Elem("channel", "channel:///foo")
                 .Start("recipient").Attr("auth-token", "abc").Elem("uri", "mailto://foo@bar.com").End()
                 .End();
-            Tuplet<PubSubSubscriptionSet, bool> location = dispatcher.RegisterSet("abc", subset, "def");
+            Tuplet<PubSubSubscriptionSet, bool> location = _dispatcher.RegisterSet("abc", subset, "def");
             XDoc subset2 = new XDoc("subscription-set")
                 .Attr("max-failures", 1)
                 .Elem("uri.owner", "http:///ownerx")
@@ -108,7 +111,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 .Start("recipient").Attr("auth-token", "abc").Elem("uri", "mailto://foo@bar.com").End()
                 .End();
             try {
-                dispatcher.ReplaceSet(location.Item1.Location, subset2, null);
+                _dispatcher.ReplaceSet(location.Item1.Location, subset2, null);
             } catch(ArgumentException) {
                 return;
             }
@@ -117,9 +120,6 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Dispatcher_replaceset_for_unknown_location_returns_false() {
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Plug owner = Plug.New("mock:///pubsub");
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             XDoc subset = new XDoc("subscription-set")
                 .Attr("max-failures", 1)
                 .Elem("uri.owner", "http:///owner")
@@ -128,15 +128,12 @@ namespace MindTouch.Dream.Test.PubSub {
                 .Elem("channel", "channel:///foo")
                 .Start("recipient").Attr("auth-token", "abc").Elem("uri", "mailto://foo@bar.com").End()
                 .End();
-            Assert.IsNull(dispatcher.ReplaceSet("ABCD", subset, null));
+            Assert.IsNull(_dispatcher.ReplaceSet("ABCD", subset, null));
 
         }
 
         [Test]
         public void Dispatcher_removeset_returns_false_on_missing_set() {
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Plug owner = Plug.New("mock:///pubsub");
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             XDoc subset = new XDoc("subscription-set")
                 .Attr("max-failures", 1)
                 .Elem("uri.owner", "http:///owner")
@@ -145,12 +142,12 @@ namespace MindTouch.Dream.Test.PubSub {
                 .Elem("channel", "channel:///foo")
                 .Start("recipient").Attr("auth-token", "abc").Elem("uri", "mailto://foo@bar.com").End()
                 .End();
-            Tuplet<PubSubSubscriptionSet, bool> location = dispatcher.RegisterSet("abc", subset, "def");
+            Tuplet<PubSubSubscriptionSet, bool> location = _dispatcher.RegisterSet("abc", subset, "def");
             Assert.IsFalse(location.Item2);
-            Assert.IsNotNull(dispatcher[location.Item1.Location]);
-            Assert.IsTrue(dispatcher.RemoveSet(location.Item1.Location));
-            Assert.IsNull(dispatcher[location.Item1.Location]);
-            Assert.IsFalse(dispatcher.RemoveSet(location.Item1.Location));
+            Assert.IsNotNull(_dispatcher[location.Item1.Location]);
+            Assert.IsTrue(_dispatcher.RemoveSet(location.Item1.Location));
+            Assert.IsNull(_dispatcher[location.Item1.Location]);
+            Assert.IsFalse(_dispatcher.RemoveSet(location.Item1.Location));
         }
 
         [Test]
@@ -174,20 +171,17 @@ namespace MindTouch.Dream.Test.PubSub {
                 }
                 response.Return(DreamMessage.Ok());
             });
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             int expectedCombinedSetUpdates = 2;
             int combinedSetUpdates = 0;
             AutoResetEvent setResetEvent = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
                 if(combinedSetUpdates >= expectedCombinedSetUpdates) {
                     setResetEvent.Set();
                 }
             };
-            dispatcher.RegisterSet("abc",
+            _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
@@ -200,7 +194,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "channel:///foo/baz/*")
                     .Start("recipient").Elem("uri", testUri.At("sub2")).End()
                     .End(), "def");
-            dispatcher.RegisterSet("qwe",
+            _dispatcher.RegisterSet("qwe",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner2")
                     .Start("subscription")
@@ -217,7 +211,7 @@ namespace MindTouch.Dream.Test.PubSub {
             // combinedset updates happen asynchronously, so give'em a chance
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
             expectedDispatches = 3;
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
@@ -251,20 +245,17 @@ namespace MindTouch.Dream.Test.PubSub {
                 }
                 response.Return(DreamMessage.Ok());
             });
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             int expectedCombinedSetUpdates = 2;
             int combinedSetUpdates = 0;
             AutoResetEvent setResetEvent = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
                 if(combinedSetUpdates >= expectedCombinedSetUpdates) {
                     setResetEvent.Set();
                 }
             };
-            dispatcher.RegisterSet("abc",
+            _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
@@ -273,7 +264,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "event://sales.mindtouch.com/deki/comments/update")
                     .Start("recipient").Elem("uri", testUri.At("sub1")).End()
                     .End(), "def");
-            dispatcher.RegisterSet("qwe",
+            _dispatcher.RegisterSet("qwe",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner2")
                     .Start("subscription")
@@ -286,7 +277,7 @@ namespace MindTouch.Dream.Test.PubSub {
             // combinedset updates happen asynchronously, so give'em a chance
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
             expectedDispatches = 2;
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
@@ -321,20 +312,17 @@ namespace MindTouch.Dream.Test.PubSub {
                 }
                 response.Return(DreamMessage.Ok());
             });
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             int expectedCombinedSetUpdates = 2;
             int combinedSetUpdates = 0;
             AutoResetEvent setResetEvent = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
                 if(combinedSetUpdates >= expectedCombinedSetUpdates) {
                     setResetEvent.Set();
                 }
             };
-            dispatcher.RegisterSet("abc",
+            _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
@@ -344,7 +332,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("uri.proxy", testUri)
                     .Start("recipient").Elem("uri", testUri.At("sub1")).End()
                     .End(), "def");
-            dispatcher.RegisterSet("qwe",
+            _dispatcher.RegisterSet("qwe",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner2")
                     .Start("subscription")
@@ -358,7 +346,7 @@ namespace MindTouch.Dream.Test.PubSub {
             // combinedset updates happen asynchronously, so give'em a chance
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
             expectedDispatches = 1;
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
@@ -387,20 +375,17 @@ namespace MindTouch.Dream.Test.PubSub {
                 }
                 response.Return(DreamMessage.Ok());
             });
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             int expectedCombinedSetUpdates = 2;
             int combinedSetUpdates = 0;
             AutoResetEvent setResetEvent = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
                 if(combinedSetUpdates >= expectedCombinedSetUpdates) {
                     setResetEvent.Set();
                 }
             };
-            dispatcher.RegisterSet("abc",
+            _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
@@ -415,7 +400,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("uri.resource", "http://*/some/*")
                     .Start("recipient").Elem("uri", testUri.At("sub2")).End()
                     .End(), "def");
-            dispatcher.RegisterSet("asd",
+            _dispatcher.RegisterSet("asd",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner2")
                     .Start("subscription")
@@ -434,7 +419,7 @@ namespace MindTouch.Dream.Test.PubSub {
             // combinedset updates happen asynchronously, so give'em a chance
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
             expectedDispatches = 2;
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
@@ -449,13 +434,13 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Dispatch_with_owners_via_throws() {
-            XUri loopService = new XUri("local:///infinite/loop-dispatcher");
-            DispatcherEvent ev = new DispatcherEvent(new XDoc("foo"), new XUri("channel:///foo"), new XUri("http:///foo"))
+            var loopService = new XUri("local:///infinite/loop-_dispatcher");
+            var ev = new DispatcherEvent(new XDoc("foo"), new XUri("channel:///foo"), new XUri("http:///foo"))
                 .WithVia(loopService)
                 .WithVia(new XUri("local://12345/a"));
-            Plug owner = Plug.New(loopService);
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
+            var owner = Plug.New(loopService);
+            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
+            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactory.Object);
             try {
                 dispatcher.Dispatch(ev);
                 Assert.Fail("should not have gotten here");
@@ -477,19 +462,17 @@ namespace MindTouch.Dream.Test.PubSub {
                 new XDoc("msg"),
                 new XUri("channel:///foo/bar"),
                 new XUri("http://foobar.com/some/page"));
-            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = Plug.New("mock:///pubsub"), ServiceAccessCookie = cookie });
             var expectedCombinedSetUpdates = 2;
             var combinedSetUpdates = 0;
             var setResetEvent = new ManualResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
                 if(combinedSetUpdates >= expectedCombinedSetUpdates) {
                     setResetEvent.Set();
                 }
             };
-            var location1 = dispatcher.RegisterSet("abc",
+            var location1 = _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Attr("max-failures", 0)
                     .Elem("uri.owner", "http:///owner1")
@@ -498,7 +481,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "channel:///foo/*")
                     .Start("recipient").Elem("uri", sub1Uri).End()
                     .End(), "def").Item1.Location;
-            var location2 = dispatcher.RegisterSet("qwe",
+            var location2 = _dispatcher.RegisterSet("qwe",
                 new XDoc("subscription-set")
                     .Attr("max-failures", 0)
                     .Elem("uri.owner", "http:///owner2")
@@ -508,13 +491,13 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Start("recipient").Elem("uri", sub2Uri).End()
                     .End(), "asd").Item1.Location;
             Assert.IsTrue(setResetEvent.WaitOne(10000, false), "combined set didn't change expected number of times");
-            Assert.IsNotNull(dispatcher[location1]);
-            Assert.IsNotNull(dispatcher[location2]);
-            dispatcher.Dispatch(ev);
+            Assert.IsNotNull(_dispatcher[location1]);
+            Assert.IsNotNull(_dispatcher[location2]);
+            _dispatcher.Dispatch(ev);
             Assert.IsTrue(sub1Mock.WaitAndVerify(TimeSpan.FromSeconds(10)), sub1Mock.VerificationFailure);
             Assert.IsTrue(sub2Mock.WaitAndVerify(TimeSpan.FromSeconds(10)), sub1Mock.VerificationFailure);
-            Assert.IsTrue(Wait.For(() => dispatcher[location2] == null, TimeSpan.FromSeconds(10)), "Second set wasn't kicked");
-            Assert.IsTrue(Wait.For(() => dispatcher[location1] == null, TimeSpan.FromSeconds(10)), "First set wasn't kicked");
+            Assert.IsTrue(Wait.For(() => _dispatcher[location2] == null, TimeSpan.FromSeconds(10)), "Second set wasn't kicked");
+            Assert.IsTrue(Wait.For(() => _dispatcher[location1] == null, TimeSpan.FromSeconds(10)), "First set wasn't kicked");
         }
 
         [Test]
@@ -535,19 +518,17 @@ namespace MindTouch.Dream.Test.PubSub {
                 response.Return(fail ? DreamMessage.InternalError() : DreamMessage.Ok());
                 // ReSharper restore AccessToModifiedClosure
             });
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = Plug.New("mock:///pubsub"), ServiceAccessCookie = cookie });
             int expectedCombinedSetUpdates = 1;
             int combinedSetUpdates = 0;
             AutoResetEvent setResetEvent = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
                 if(combinedSetUpdates >= expectedCombinedSetUpdates) {
                     setResetEvent.Set();
                 }
             };
-            var location = dispatcher.RegisterSet(
+            var location = _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
                     .Attr("max-failures", 1)
@@ -560,33 +541,33 @@ namespace MindTouch.Dream.Test.PubSub {
                 "def"
                 ).Item1.Location;
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
-            Assert.IsNotNull(dispatcher[location]);
+            Assert.IsNotNull(_dispatcher[location]);
 
             _log.DebugFormat("first dispatch (fail={0})", fail);
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
             Thread.Sleep(1000); // failure gets dealt with async
-            Assert.IsNotNull(dispatcher[location]);
+            Assert.IsNotNull(_dispatcher[location]);
             fail = false;
 
             _log.DebugFormat("second dispatch (fail={0})", fail);
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
             Thread.Sleep(1000); // failure reset gets dealt with async
-            Assert.IsNotNull(dispatcher[location]);
+            Assert.IsNotNull(_dispatcher[location]);
             fail = true;
 
             _log.DebugFormat("third dispatch (fail={0})", fail);
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
             Thread.Sleep(1000); // failure gets dealt with async
-            Assert.IsNotNull(dispatcher[location]);
+            Assert.IsNotNull(_dispatcher[location]);
 
             _log.DebugFormat("fourth dispatch (fail={0})", fail);
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
             Thread.Sleep(1000); // failure gets dealt with async
-            Assert.IsNull(dispatcher[location]);
+            Assert.IsNull(_dispatcher[location]);
             MockPlug.Deregister(testUri);
         }
 
@@ -614,18 +595,15 @@ namespace MindTouch.Dream.Test.PubSub {
                 dispatchHappened.Set();
                 response.Return(DreamMessage.Ok());
             });
-            var owner = Plug.New("mock:///pubsub");
-            var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             var combinedSetUpdated = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 _log.DebugFormat("set updated");
                 combinedSetUpdated.Set();
             };
 
             var proxy = testUri.At("proxy");
             _log.DebugFormat("registering set");
-            dispatcher.RegisterSet(
+            _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
@@ -648,7 +626,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _log.DebugFormat("giving registration a chance to manifest");
             Assert.IsTrue(combinedSetUpdated.WaitOne(10000, false));
             _log.DebugFormat("dispatching event");
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(dispatchHappened.WaitOne(1000, false));
@@ -676,14 +654,11 @@ namespace MindTouch.Dream.Test.PubSub {
                 resetEvent.Set();
                 response.Return(DreamMessage.Ok());
             });
-            Plug owner = Plug.New("mock:///pubsub");
-            DreamCookie cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            Dispatcher dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie });
             AutoResetEvent setResetEvent = new AutoResetEvent(false);
-            dispatcher.CombinedSetUpdated += delegate {
+            _dispatcher.CombinedSetUpdated += delegate {
                 setResetEvent.Set();
             };
-            dispatcher.RegisterSet("abc",
+            _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
@@ -694,7 +669,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // combinedset updates happen asynchronously, so give'em a chance
             Assert.IsTrue(setResetEvent.WaitOne(10000, false));
-            dispatcher.Dispatch(ev);
+            _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));

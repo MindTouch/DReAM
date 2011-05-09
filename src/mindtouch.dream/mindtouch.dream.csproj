@@ -91,6 +91,12 @@
     <Compile Include="dream\DreamServiceConfigurationBuilder.cs" />
     <Compile Include="dream\DreamServiceRegistrationBuilder.cs" />
     <Compile Include="dream\IDreamServiceConfigurationBuilder.cs" />
+    <Compile Include="dream\services\PubSub\DispatchItem.cs" />
+    <Compile Include="dream\services\PubSub\ImmediatePubSubDispatchQueue.cs" />
+    <Compile Include="dream\services\PubSub\IPersistentPubSubDispatchQueueFactory.cs" />
+    <Compile Include="dream\services\PubSub\MemoryPubsubDispatchQueue.cs" />
+    <Compile Include="dream\services\PubSub\IPubSubDispatchQueue.cs" />
+    <Compile Include="dream\services\PubSub\PersistentPubSubDispatchQueueFactory.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />
     <Compile Include="system\GitRevisionAttribute.cs" />
