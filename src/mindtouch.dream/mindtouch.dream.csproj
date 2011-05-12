@@ -101,6 +101,7 @@
     <Compile Include="dream\services\PubSub\IPubSubDispatchQueue.cs" />
     <Compile Include="dream\services\PubSub\PersistentPubSubDispatchQueueFactory.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
+    <Compile Include="Numeric.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />
     <Compile Include="system\GitRevisionAttribute.cs" />
     <Compile Include="system\GitUriAttribute.cs" />

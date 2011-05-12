@@ -100,10 +100,12 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ExpiringHashSetTests.cs" />
     <Compile Include="InMemoryKeyValueCacheTests.cs" />
+    <Compile Include="JsonUtilTests.cs" />
     <Compile Include="LockTests.cs" />
     <Compile Include="MockDataCatalogTests.cs" />
     <Compile Include="MockPlugTests.cs" />
     <Compile Include="MysqlDocStoreManagerTests.cs" />
+    <Compile Include="NumericTests.cs" />
     <Compile Include="PlugTests.cs" />
     <Compile Include="PubSub\DispatcherTests.cs" />
     <Compile Include="PubSub\DispatchItemSerializerTests.cs" />
