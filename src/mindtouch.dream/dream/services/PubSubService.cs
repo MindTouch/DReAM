@@ -46,6 +46,7 @@ namespace MindTouch.Dream.Services {
 
         //--- Fields ---
         protected IPubSubDispatcher _dispatcher;
+        private string _localCachePath;
 
         //--- Features ---
         [DreamFeature("POST:publish", "Publish an event")]
@@ -170,6 +171,12 @@ namespace MindTouch.Dream.Services {
             yield return Coroutine.Invoke(base.Start, config, container, new Result());
             _log.DebugFormat("starting {0}", Self.Uri);
 
+            // CLEANUP: need a safe location, not just tmp
+            _localCachePath = Path.Combine(Path.GetTempPath(), "pubsub");
+            foreach(var segment in Self.Uri.Segments.Select(x => XUri.EncodeSegment(x))) {
+                _localCachePath = Path.Combine(_localCachePath, segment);
+            }
+
             // make sure we have an IPubSubDispatcher registered
             ContainerBuilder builder = null;
             if(!container.IsRegistered<IPubSubDispatcher>()) {
@@ -178,13 +185,7 @@ namespace MindTouch.Dream.Services {
             }
             if(!container.IsRegistered<IPersistentPubSubDispatchQueueFactory>()) {
                 builder = builder ?? new ContainerBuilder();
-
-                // CLEANUP: need a safe location, not just tmp
-                var path = Path.Combine(Path.GetTempPath(), "pubsub");
-                foreach(var segment in Self.Uri.Segments.Select(x => XUri.EncodeSegment(x))) {
-                    path = Path.Combine(path, segment);
-                }
-                builder.Register(new PersistentPubSubDispatchQueueFactory(path, TimerFactory, 30.Seconds()))
+                builder.Register(new PersistentPubSubDispatchQueueFactory(_localCachePath, TimerFactory, 30.Seconds()))
                     .As<IPersistentPubSubDispatchQueueFactory>();
             }
             if(builder != null) {
@@ -281,6 +282,18 @@ namespace MindTouch.Dream.Services {
                         }
                         yield return Async.Sleep(TimeSpan.FromMilliseconds(500));
                     }
+                }
+            }
+
+            // load persisted subscriptions
+            foreach(var setFile in Directory.GetFiles(_localCachePath, "*.xml")) {
+                try {
+                    var setDoc = XDocFactory.LoadFrom(setFile, MimeType.TEXT_XML);
+                    var location = setDoc["@location"].AsText;
+                    var accessKey = setDoc["@accesskey"].AsText;
+                    _dispatcher.RegisterSet(location, setDoc, accessKey);
+                } catch(Exception e) {
+                    _log.Warn(string.Format("unable to retrieve and re-register subscription for location", Path.GetFileNameWithoutExtension(setFile)), e);
                 }
             }
             result.Return();

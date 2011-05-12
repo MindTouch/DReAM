@@ -34,7 +34,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Default implementation of <see cref="IPubSubDispatcher"/> with extension points for sub-classing.
     /// </summary>
-    public class Dispatcher : IPubSubDispatcher {
+    public class Dispatcher : IPubSubDispatcher, IDisposable {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
@@ -459,6 +459,15 @@ namespace MindTouch.Dream.Services.PubSub {
                 _subscriptionByLocation.Remove(location);
                 Update();
                 return result;
+            }
+        }
+
+        public void Dispose() {
+            lock(_subscriptionsByOwner) {
+                foreach(var queue in _queuesByLocation.Values) {
+                    queue.Dispose();
+                }
+                _defaultQueue.Dispose();
             }
         }
 

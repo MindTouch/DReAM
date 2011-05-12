@@ -96,6 +96,13 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
             });
         }
+
+        public void Dispose() {
+            lock(_queue) {
+                _queue.Dispose();
+                _dequeueHandler = null;
+            }
+        }
     }
 
 }

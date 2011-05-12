@@ -32,5 +32,9 @@ namespace MindTouch.Dream.Services.PubSub {
         public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
             _dequeueHandler = dequeueHandler;
         }
+
+        #region Implementation of IDisposable
+        public void Dispose() { }
+        #endregion
     }
 }

@@ -93,5 +93,38 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(dispatchTiming3 < 1.Seconds(), "expected successful dispatch in less than 1 second, was " + dispatchTiming3);
             Assert.AreEqual(item2.Location, dispatched[3].Item2.Location, "wrong item location for second success item");
         }
+
+        [Test]
+        public void Creating_a_queue_with_persisted_items_starts_dispatch_once_dispatch_handler_is_attached() {
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
+
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds());
+            dispatchQueue.SetDequeueHandler((item) => { 
+                var r = new Result<bool>();
+                r.Return(false);
+                return r;
+            });
+            dispatchQueue.Enqueue(item1);
+            dispatchQueue.Dispose();
+            dispatchQueue = null;
+
+            var dispatched = new List<DispatchItem>();
+            Func<DispatchItem, Result<bool>> handler = (i) => {
+                dispatched.Add(i);
+                var result = new Result<bool>();
+                result.Return(true);
+                return result;
+            };
+            dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds());
+
+            // Act
+            dispatchQueue.SetDequeueHandler(handler);
+
+            // Assert
+            Assert.IsTrue(Wait.For(() => dispatched.Count == 1, 5.Seconds()), "item was not dispatched in time");
+            Assert.AreEqual(item1.Location, dispatched[0].Location, "wrong item location for dispatched item");
+        }
     }
 }
