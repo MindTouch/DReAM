@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Threading;
 using MindTouch.Dream;
 using MindTouch.Threading;
-using System.Linq;
 
 namespace MindTouch.Tasking {
 
@@ -183,7 +182,6 @@ namespace MindTouch.Tasking {
         }
 
         //--- Fields ---
-        private object _syncRoot = new object();
         private int _referenceCount;
         private readonly IDispatchQueue _dispatchQueue;
         private TaskTimerFactory _taskTimerFactory;
@@ -308,10 +306,7 @@ namespace MindTouch.Tasking {
         /// Acquire the environment, prevent it from being disposed.
         /// </summary>
         public void Acquire() {
-            int current;
-            lock(_syncRoot) {
-                current = ++_referenceCount;
-            }
+            var current = Interlocked.Increment(ref _referenceCount);
             if(current < 1) {
                 _log.WarnFormat("Illegal TaskEnv reference count after acquisition: {0}", current);
                 throw new InvalidOperationException(string.Format("Illegal TaskEnv reference count after acquisition: {0}", current));
@@ -322,16 +317,11 @@ namespace MindTouch.Tasking {
         /// Release the environment, possibly making it eligble for disposal.
         /// </summary>
         public void Release() {
-            int current;
-            IEnumerable<object> values;
-            lock(_syncRoot) {
-                current = --_referenceCount;
-                if(current > 0) {
-                    return;
-                }
-                values = BeginReset();
+            var current = Interlocked.Decrement(ref _referenceCount);
+            if(current > 0) {
+                return;
             }
-            EndReset(values);
+            Reset();
             if(current < 0) {
                 _log.WarnFormat("Illegal TaskEnv reference count after release: {0}", current);
             }
@@ -341,36 +331,18 @@ namespace MindTouch.Tasking {
         /// Reset all aquisitions and dispose the environment.
         /// </summary>
         public void Reset() {
-            EndReset(BeginReset());
-        }
-
-        private IEnumerable<object> BeginReset() {
-            IEnumerable<object> values = null;
-            lock(_syncRoot) {
-                if(_referenceCount > 0) {
-                    _log.WarnFormat("resetting task environment with a ref count of {0}", _referenceCount);
-                }
-                _referenceCount = 0;
-                if(Count == 0) {
-                    return null;
-                }
-                values = Values.ToList();
-                Clear();
-            }
-            return values;
-        }
-
-        private void EndReset(IEnumerable<object> values) {
-            if(values == null) {
+            _referenceCount = 0;
+            if(Count == 0) {
                 return;
             }
-            foreach(var value in values) {
+            foreach(var value in Values) {
                 var disposable = value as ITaskLifespan;
                 if(disposable == null) {
                     continue;
                 }
                 disposable.Dispose();
             }
+            Clear();
         }
 
         /// <summary>
@@ -666,17 +638,10 @@ namespace MindTouch.Tasking {
             }
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
             Acquire();
-            int executionCount = 0;
             return delegate() {
                 try {
-                    var execution = Interlocked.Increment(ref executionCount);
                     var exception = InvokeNow(action);
-                    if(execution == 1) {
-                        Release();
-                    } else {
-                        _log.WarnFormat("The action was unexpectedly called more than once ({0} times), later executions did not try to release the environment", execution);
-                    }
-
+                    Release();
 
                     // check if a result object was provided
                     if(result != null) {
@@ -715,19 +680,13 @@ namespace MindTouch.Tasking {
             }
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
             Acquire();
-            int executionCount = 0;
             return delegate() {
-                var execution = Interlocked.Increment(ref executionCount);
                 try {
                     var response = default(T);
                     var exception = InvokeNow(delegate {
                         response = func();
                     });
-                    if(execution == 1) {
-                        Release();
-                    } else {
-                        _log.WarnFormat("The action<{0}> was unexpectedly called more than once ({1} times), later executions did not try to release the environment", typeof(T), execution);
-                    }
+                    Release();
 
                     // check if a result object was provided
                     if(result != null) {

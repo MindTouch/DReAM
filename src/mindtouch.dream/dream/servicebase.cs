@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -47,7 +47,7 @@ namespace MindTouch.Dream {
     public abstract class DreamService : IDreamService {
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Class Methods ---
 
@@ -122,7 +122,6 @@ namespace MindTouch.Dream {
                 if(method.IsGenericMethod || method.IsGenericMethodDefinition) {
                     throw new NotSupportedException(string.Format("generic methods are not supported ({0})", method.Name));
                 }
-                ParameterInfo[] parameters = method.GetParameters();
 
                 // determine access level
                 string access;
@@ -474,13 +473,13 @@ namespace MindTouch.Dream {
 
                 // sort features by signature then verb
                 blueprint["features"].Sort(delegate(XDoc first, XDoc second) {
-                    string[] firstPattern = first["pattern"].Contents.Split(new char[] { ':' }, 2);
-                    string[] secondPattern = second["pattern"].Contents.Split(new char[] { ':' }, 2);
-                    int cmp = StringUtil.CompareInvariantIgnoreCase(firstPattern[1], secondPattern[1]);
+                    string[] firstPattern = first["pattern"].Contents.Split(new[] { ':' }, 2);
+                    string[] secondPattern = second["pattern"].Contents.Split(new[] { ':' }, 2);
+                    int cmp = firstPattern[1].CompareInvariantIgnoreCase(secondPattern[1]);
                     if(cmp != 0) {
                         return cmp;
                     }
-                    return StringUtil.CompareInvariant(firstPattern[0], secondPattern[0]);
+                    return firstPattern[0].CompareInvariant(secondPattern[0]);
                 });
 
                 // display features
@@ -489,11 +488,10 @@ namespace MindTouch.Dream {
                     result.Elem("h2", "Features");
                     List<string> modifiers = new List<string>();
                     foreach(XDoc feature in features) {
-                        string modifier;
                         modifiers.Clear();
 
                         // add modifiers
-                        modifier = feature["access"].AsText;
+                        string modifier = feature["access"].AsText;
                         if(modifier != null) {
                             modifiers.Add(modifier);
                         }
@@ -509,8 +507,8 @@ namespace MindTouch.Dream {
 
                         // check if feature has GET verb and no path parameters
                         string pattern = feature["pattern"].Contents;
-                        if(StringUtil.StartsWithInvariantIgnoreCase(pattern, Verb.GET + ":") && (pattern.IndexOfAny(new char[] { '{', '*', '?' }) == -1)) {
-                            string[] parts = pattern.Split(new char[] { ':' }, 2);
+                        if(pattern.StartsWithInvariantIgnoreCase(Verb.GET + ":") && (pattern.IndexOfAny(new[] { '{', '*', '?' }) == -1)) {
+                            string[] parts = pattern.Split(new[] { ':' }, 2);
                             result.Start("h3")
                                 .Start("a").Attr("href", context.AsPublicUri(Self.Uri.AtPath(parts[1])))
                                     .Value(feature["pattern"].Contents)
@@ -660,50 +658,46 @@ namespace MindTouch.Dream {
 
                 // validate the service-license
                 _license = null;
-                if(service_license != null) {
-                    Dictionary<string, string> values;
+                Dictionary<string, string> values;
+                try {
+
+                    // parse service-license
+                    values = HttpUtil.ParseNameValuePairs(service_license);
+                    if(!Encoding.UTF8.GetBytes(service_license.Substring(0, service_license.LastIndexOf(','))).VerifySignature(values["dsig"], public_key)) {
+                        throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (1)"));
+                    }
+
+                    // check if the SID matches
+                    string sid;
+                    if(!values.TryGetValue("sid", out sid) || !SID.HasPrefix(XUri.TryParse(sid), true)) {
+                        throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (2)"));
+                    }
+                    _license = service_license;
+                } catch(Exception e) {
+
+                    // unexpected error, blame it on the license
+                    if(e is DreamAbortException) {
+                        throw;
+                    }
+                    throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (1)"));
+                }
+
+                // validate expiration date
+                string expirationtext;
+                if(values.TryGetValue("expire", out expirationtext)) {
                     try {
-
-                        // parse service-license
-                        values = HttpUtil.ParseNameValuePairs(service_license);
-                        if(!Encoding.UTF8.GetBytes(service_license.Substring(0, service_license.LastIndexOf(','))).VerifySignature(values["dsig"], public_key)) {
-                            throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (1)"));
+                        DateTime expiration = DateTime.Parse(expirationtext);
+                        if(expiration < DateTime.UtcNow) {
+                            _license = null;
                         }
-
-                        // check if the SID matches
-                        string sid;
-                        if(!values.TryGetValue("sid", out sid) || !SID.HasPrefix(XUri.TryParse(sid), true)) {
-                            throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (2)"));
-                        }
-                        _license = service_license;
                     } catch(Exception e) {
+                        _license = null;
 
                         // unexpected error, blame it on the license
                         if(e is DreamAbortException) {
                             throw;
-                        } else {
-                            throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (1)"));
                         }
-                    }
-
-                    // validate expiration date
-                    string expirationtext;
-                    if(values.TryGetValue("expire", out expirationtext)) {
-                        try {
-                            DateTime expiration = DateTime.Parse(expirationtext);
-                            if(expiration < DateTime.UtcNow) {
-                                _license = null;
-                            }
-                        } catch(Exception e) {
-                            _license = null;
-
-                            // unexpected error, blame it on the license
-                            if(e is DreamAbortException) {
-                                throw;
-                            } else {
-                                throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (2)"));
-                            }
-                        }
+                        throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (2)"));
                     }
                 }
 
@@ -803,6 +797,7 @@ namespace MindTouch.Dream {
             if(config["apikey"].IsEmpty) {
                 config.Root.Elem("apikey", _apikey);
             }
+
             // post to host to create service
             Result<DreamMessage> res;
             yield return res = Env.At("services").Post(config, new Result<DreamMessage>(TimeSpan.MaxValue));
@@ -810,9 +805,8 @@ namespace MindTouch.Dream {
                 if(res.Value.HasDocument) {
                     string message = res.Value.ToDocument()[".//message"].AsText.IfNullOrEmpty("unknown error");
                     throw new DreamResponseException(res.Value, string.Format("unable to initialize service ({0})", message));
-                } else {
-                    throw new DreamResponseException(res.Value, string.Format("unable to initialize service ({0})", res.Value.ToText()));
                 }
+                throw new DreamResponseException(res.Value, string.Format("unable to initialize service ({0})", res.Value.ToText()));
             }
             result.Return(plug);
             yield break;
@@ -876,7 +870,7 @@ namespace MindTouch.Dream {
             XUri uri = Self.AtPath(path);
             DreamContext current = DreamContext.Current;
             Exception e = TaskEnv.ExecuteNew(delegate {
-                DreamFeatureStage[] stages = new DreamFeatureStage[] {
+                DreamFeatureStage[] stages = new[] {
                     new DreamFeatureStage("InServiceInvokeHandler", InServiceInvokeHandler, DreamAccess.Private)
                 };
 
@@ -925,7 +919,7 @@ namespace MindTouch.Dream {
             if(_env.IsDebugEnv) {
                 return DreamAccess.Private;
             }
-            if(!string.IsNullOrEmpty(key) && (StringUtil.EqualsInvariant(key, _apikey))) {
+            if(!string.IsNullOrEmpty(key) && (key.EqualsInvariant(_apikey))) {
                 return DreamAccess.Private;
             }
             if(key == InternalAccessKey) {

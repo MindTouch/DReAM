@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -27,7 +27,6 @@ using System.Text;
 using System.Threading;
 
 using MindTouch.Tasking;
-using MindTouch.Text;
 
 namespace MindTouch.IO {
     using Yield = IEnumerator<IYield>;
@@ -524,18 +523,6 @@ namespace MindTouch.IO {
                 result.Throw
             );
             return result;
-        }
-
-        /// <summary>
-        /// Detect stream encoding.
-        /// </summary>
-        /// <param name="stream">Stream to examine</param>
-        /// <returns>Encoding type detected or null</returns>
-        public static Encoding DetectEncoding(this Stream stream) {
-            return new BOMEncodingDetector().Detect(stream)
-
-                // TODO (steveb): add <meta> tag detector here
-                ?? new CharacterEncodingDetector().Detect(stream);
         }
 
         //--- Class Methods ---

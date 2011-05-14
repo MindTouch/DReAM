@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -298,7 +298,7 @@ namespace MindTouch.Dream.Test {
             set.Set(k, v, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[k];
-            AssertEx.AreEqual(ttl, entry.TTL);
+            Assert.AreEqual(ttl.WithoutMilliseconds(), entry.TTL.WithoutMilliseconds());
             Assert.AreEqual(expireTime, entry.When);
         }
 

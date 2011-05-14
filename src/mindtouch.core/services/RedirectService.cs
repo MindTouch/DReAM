@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -28,7 +28,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Dream Proxy", "Copyright (c) 2006-2011 MindTouch, Inc.", 
+    [DreamService("MindTouch Dream Proxy", "Copyright (c) 2006-2009 MindTouch, Inc.", 
         Info = "http://developer.mindtouch.com/Dream/Reference/Services/Proxy",
         SID = new string[] { 
             "sid://mindtouch.com/2007/03/dream/proxy",

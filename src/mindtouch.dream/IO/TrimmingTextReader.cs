@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -224,64 +224,6 @@ namespace MindTouch.IO {
                 }
             }
             return ch;
-        }
-
-        /// <summary>
-        /// Reads all characters from the current position to the end of the TextReader and returns them as one string.
-        /// </summary>
-        /// <returns>A string containing all characters from the current position to the end of the TextReader.</returns>
-        public override string ReadToEnd() {
-        
-            // NOTE (steveb): Mono 2.8.2 does not implement TextReader.ReadToEnd() properly (see https://bugzilla.novell.com/show_bug.cgi?id=655934);
-            //                once fixed, this code can be removed.
-        
-            var result = new StringBuilder();
-            for(var c = Read(); c >= 0; c = Read()) {
-                result.Append((char)c);
-            }
-            return result.ToString();
-        }
-        
-        /// <summary>
-        /// Reads a line of characters from the current stream and returns the data as a string.
-        /// </summary>
-        /// <returns>The next line from the input stream, or null if all characters have been read.</returns>
-        public override string ReadLine() {
-        
-            // NOTE (steveb): Mono 2.8.2 does not implement TextReader.ReadLine() properly (see https://bugzilla.novell.com/show_bug.cgi?id=655934);
-            //                once fixed, this code can be removed.
-        
-            StringBuilder result = null;
-            for(var c = Read(); c >= 0; c = Read()) {
-        
-                // lazy initialize string buffer so we can detect the case where we had already reached the end of the reader
-                result = result ?? new StringBuilder();
-        
-                // check simple character line ending
-                if(c == '\r') {
-                    if(Peek() == '\n') {
-                        Read();
-                    }
-                    break;
-                } else if(c == '\n') {
-                    break;
-                } else {
-                    result.Append((char)c);
-
-                    // check if buffered sequence matches Environment.NewLine
-                    if(result.Length >= Environment.NewLine.Length) {
-                        var match = true;
-                        for(int resultIndex = result.Length - 1, newlineIndex = Environment.NewLine.Length - 1; newlineIndex >= 0 && match; --resultIndex, --newlineIndex) {
-                            match = (result[resultIndex] == Environment.NewLine[newlineIndex]);
-                        }
-                        if(match) {
-                            result.Remove(result.Length - Environment.NewLine.Length, Environment.NewLine.Length);
-                            break;
-                        }
-                    }
-                }
-            }
-            return (result != null) ? result.ToString() : null;
         }
 
         private int CopyStringBuffer(char[] buffer, int index, int count) {

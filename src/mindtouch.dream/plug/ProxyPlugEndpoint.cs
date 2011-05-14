@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -75,7 +75,7 @@ namespace MindTouch.Dream {
                     return 0;
                 }
             }
-            return uri.MaxSimilarity > 0 ? uri.MaxSimilarity + Plug.BASE_ENDPOINT_SCORE : 0;
+            return uri.MaxSimilarity;
         }
 
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {

@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -450,7 +450,7 @@ namespace MindTouch.Dream {
             if(contentLength != -1) {
                 this.Headers.ContentLength = contentLength;
             }
-            this.Headers.ContentType = contentType ?? MimeType.DefaultMimeType;
+            this.Headers.ContentType = contentType ?? MimeType.BINARY;
 
             // set stream
             _stream = stream ?? Stream.Null;
@@ -471,7 +471,7 @@ namespace MindTouch.Dream {
             this.Status = status;
             this.Headers = new DreamHeaders(headers);
             this.Headers.ContentLength = bytes.LongLength;
-            this.Headers.ContentType = contentType ?? MimeType.DefaultMimeType;
+            this.Headers.ContentType = contentType ?? MimeType.BINARY;
 
             // set bytes
             _bytes = bytes;
@@ -512,7 +512,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Message Content Mime-Type.
         /// </summary>
-        public MimeType ContentType { get { return Headers.ContentType ?? MimeType.DefaultMimeType; } }
+        public MimeType ContentType { get { return Headers.ContentType ?? MimeType.BINARY; } }
 
         /// <summary>
         /// Message contains cookies.
@@ -882,7 +882,8 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsDocument() is obsolete. Use ToDocument() instead.")]
         public XDoc AsDocument() {
-            return ToDocument();
+            MakeDocument();
+            return _doc;
         }
 
         /// <summary>
@@ -890,7 +891,8 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsStream() is obsolete. Use ToStream() instead.")]
         public Stream AsStream() {
-            return ToStream();
+            MakeStream();
+            return _stream;
         }
 
         /// <summary>
@@ -898,7 +900,8 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsBytes() is obsolete. Use ToBytes() instead.")]
         public byte[] AsBytes() {
-            return ToBytes();
+            MakeBytes();
+            return _bytes;
         }
 
         /// <summary>
@@ -906,7 +909,7 @@ namespace MindTouch.Dream {
         /// </summary>
         [Obsolete("AsText() is obsolete. Use ToText() instead.")]
         public string AsText() {
-            return ToText();
+            return ContentType.CharSet.GetString(AsBytes());
         }
 
         /// <summary>
@@ -915,7 +918,7 @@ namespace MindTouch.Dream {
         /// <returns></returns>
         [Obsolete("AsTextReader() is obsolete. Use ToTextReader() instead.")]
         public TextReader AsTextReader() {
-            return ToTextReader();
+            return new StreamReader(AsStream(), ContentType.CharSet);
         }
         #endregion
     }

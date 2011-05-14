@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -83,9 +83,10 @@ namespace MindTouch.Dream.Test {
             File.Delete("test.test");
         }
 
+        [Ignore("don't have an embedded resource to run the test against")]
         [Test]
         public void ResourceUri() {
-            Plug p = Plug.New("resource://test.mindtouch.dream/MindTouch.Dream.Test.Resources.resource-test.txt");
+            Plug p = Plug.New("resource://mindtouch.dream/MindTouch.Dream.dtds.xhtml1-strict.dtd");
             string text = p.Get().ToText();
             Assert.AreNotEqual(string.Empty, text, "resource was empty");
         }

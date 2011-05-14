@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -21,8 +21,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Text;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace MindTouch.Dream {
 
@@ -722,7 +727,7 @@ namespace MindTouch.Dream {
 
             // parse types
             string[] parts = contentTypeWithParameters.Split(';');
-            string[] typeParts = parts[0].Split(new[] { '/' }, 2);
+            string[] typeParts = parts[0].Split(new char[] { '/' }, 2);
             if(typeParts.Length != 2) {
                 return false;
             }
@@ -731,7 +736,7 @@ namespace MindTouch.Dream {
 
             // parse parameters
             for(int i = 1; i < parts.Length; ++i) {
-                string[] assign = parts[i].Split(new[] { '=' }, 2);
+                string[] assign = parts[i].Split(new char[] { '=' }, 2);
                 if(assign.Length == 2) {
                     if(parameters == null) {
                         parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -743,11 +748,10 @@ namespace MindTouch.Dream {
         }
 
         //--- Fields ---
-        private readonly string _mainType;
-        private readonly string _subType;
-        private readonly Dictionary<string, string> _parameters;
+        private string _mainType;
+        private string _subType;
+        private Dictionary<string, string> _parameters;
         private string _text;
-        private Encoding _encoding;
 
         //--- Constructors ---
 
@@ -846,17 +850,14 @@ namespace MindTouch.Dream {
         /// </summary>
         public Encoding CharSet {
             get {
-                if(_encoding == null) {
-                    string charset = GetParameter(PARAM_CHARSET);
-                    if(charset != null) {
-                        _encoding = Encoding.GetEncoding(charset.Trim('"'));
-                    } else if(MainType.EqualsInvariant("text")) {
-                        _encoding = Encoding.ASCII;
-                    } else {
-                        _encoding = Encoding.UTF8;                        
-                    }
+                string charset = GetParameter(PARAM_CHARSET);
+                if(charset != null) {
+                    return Encoding.GetEncoding(charset.Trim('"'));
+                } else if(StringUtil.EqualsInvariant(MainType, "text")) {
+                    return Encoding.ASCII;
+                } else {
+                    return Encoding.UTF8;
                 }
-                return _encoding;
             }
         }
 
@@ -865,7 +866,7 @@ namespace MindTouch.Dream {
         /// </summary>
         public bool IsXml {
             get {
-                return SubType.EqualsInvariant("xml") || SubType.EndsWithInvariant("+xml");
+                return StringUtil.EqualsInvariant(SubType, "xml") || StringUtil.EndsWithInvariant(SubType, "+xml");
             }
         }
 

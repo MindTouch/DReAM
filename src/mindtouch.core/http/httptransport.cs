@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -147,6 +147,7 @@ namespace MindTouch.Dream.Http {
 
         private void RequestHandler(IAsyncResult ar) {
             HttpListenerContext httpContext = null;
+            object key = new object();
             Action<string> activity = null;
             HttpListener listener = (HttpListener)ar.AsyncState;
 
@@ -173,7 +174,6 @@ namespace MindTouch.Dream.Http {
             if(httpContext == null) {
                 return;
             }
-            DreamMessage request = null;
             try {
 
                 // finish listening for current context
@@ -183,24 +183,21 @@ namespace MindTouch.Dream.Http {
                 _log.DebugMethodCall("RequestHandler", httpContext.Request.HttpMethod, requestUri);
 
                 // create request message
-                request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
-                DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
+                DreamMessage message = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
+                DreamUtil.PrepareIncomingMessage(message, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
 
                 // check if the request was forwarded through Apache mod_proxy
-                string hostname = requestUri.GetParam(DreamInParam.HOST, null) ?? request.Headers.ForwardedHost ?? request.Headers.Host ?? requestUri.HostPort;
+                string hostname = requestUri.GetParam(DreamInParam.HOST, null) ?? message.Headers.ForwardedHost ?? message.Headers.Host ?? requestUri.HostPort;
                 activity = new ActivityState(_env, httpContext.Request.HttpMethod, httpContext.Request.Url.ToString(), hostname).Message;
                 activity("RequestHandler");
 
                 // process message
                 _env.UpdateInfoMessage(_sourceExternal, null);
                 string verb = httpContext.Request.HttpMethod;
-                _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue))
-                    .WhenDone(result => Coroutine.Invoke(ResponseHandler, request, result, httpContext, activity, new Result(TimeSpan.MaxValue)));
+                _env.SubmitRequestAsync(verb, requestUri, httpContext.User, message, new Result<DreamMessage>(TimeSpan.MaxValue))
+                    .WhenDone(result => Coroutine.Invoke(ResponseHandler, result, httpContext, activity, new Result(TimeSpan.MaxValue)));
             } catch(Exception ex) {
                 _log.ErrorExceptionMethodCall(ex, "RequestHandler");
-                if(request != null) {
-                    request.Close();
-                }
                 try {
                     DreamMessage response = DreamMessage.InternalError(ex);
                     httpContext.Response.StatusCode = (int)response.Status;
@@ -225,9 +222,8 @@ namespace MindTouch.Dream.Http {
             }
         }
 
-        private Yield ResponseHandler(DreamMessage request, Result<DreamMessage> response, HttpListenerContext httpContext, Action<string> activity, Result result) {
+        private Yield ResponseHandler(Result<DreamMessage> response, HttpListenerContext httpContext, Action<string> activity, Result result) {
             DreamMessage item = null;
-            request.Close();
             try {
                 activity("begin ResponseHandler");
                 item = response.HasException ? DreamMessage.InternalError(response.Exception) : response.Value;

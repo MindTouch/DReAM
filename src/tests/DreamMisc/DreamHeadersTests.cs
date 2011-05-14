@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -61,18 +61,6 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual("1_634121336269193470_4254e33b49bc1ee0a72c5716200e296b", cookies[11].Value);
             Assert.AreEqual("__utmb", cookies[12].Name);
             Assert.AreEqual("134392366.6.10.1276556836", cookies[12].Value);
-        }
-
-        [Test]
-        public void Preserve_order_of_hosts_in_forwarded_for_header() {
-            // X-Forwarded-For
-            var collections = new NameValueCollection();
-            collections.Add("X-Forwarded-For", "a, b, c");
-            collections.Add("X-Forwarded-For", "d, e");
-            collections.Add("X-Forwarded-For", "f, g, h");
-            var headers = new DreamHeaders(collections);
-            var values = headers.ForwardedFor;
-            Assert.AreEqual(new []{ "a", "b", "c", "d", "e", "f", "g", "h" }, values);
         }
     }
 }

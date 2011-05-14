@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -56,7 +56,6 @@ namespace MindTouch.Dream.Http {
         //--- Methods ---
         void IHttpHandler.ProcessRequest(HttpContext httpContext) {
             var key = new object();
-            DreamMessage request = null;
             try {
                 string verb = httpContext.Request.HttpMethod;
                 XUri requestUri = HttpUtil.FromHttpContext(httpContext);
@@ -64,16 +63,15 @@ namespace MindTouch.Dream.Http {
                 _log.DebugMethodCall("ProcessRequest", verb, requestUri);
 
                 // create request message
-                request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength, httpContext.Request.InputStream);
-                DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, string.Format("{0}://{1}{2}", httpContext.Request.Url.Scheme, httpContext.Request.Url.Authority, httpContext.Request.ApplicationPath), httpContext.Request.UserHostAddress, httpContext.Request.UserAgent);
+                var message = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength, httpContext.Request.InputStream);
+                DreamUtil.PrepareIncomingMessage(message, httpContext.Request.ContentEncoding, string.Format("{0}://{1}{2}", httpContext.Request.Url.Scheme, httpContext.Request.Url.Authority, httpContext.Request.ApplicationPath), httpContext.Request.UserHostAddress, httpContext.Request.UserAgent);
 
                 // TODO (arnec): should this happen before PrepareIncomingMessage?
-                request.Headers.DreamTransport = _handler.GetRequestBaseUri(httpContext.Request).ToString();
+                message.Headers.DreamTransport = _handler.GetRequestBaseUri(httpContext.Request).ToString();
 
                 // process message
-                var response = _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue)).Block();
-                request.Close();
-                var item = response.HasException ? DreamMessage.InternalError(response.Exception) : response.Value;
+                Result<DreamMessage> response = _env.SubmitRequestAsync(verb, requestUri, httpContext.User, message, new Result<DreamMessage>(TimeSpan.MaxValue)).Block();
+                DreamMessage item = response.HasException ? DreamMessage.InternalError(response.Exception) : response.Value;
 
                 // set status
                 if(_log.IsDebugEnabled) {
@@ -109,9 +107,6 @@ namespace MindTouch.Dream.Http {
                 item.Close();
             } catch(Exception ex) {
                 _log.ErrorExceptionMethodCall(ex, "CommonRequestHandler");
-                if(request != null) {
-                    request.Close();
-                }
                 if(httpContext != null) {
                     httpContext.Response.Close();
                 }

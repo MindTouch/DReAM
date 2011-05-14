@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -335,11 +335,6 @@ namespace MindTouch.Dream {
         /// 'X-HTTP-Method-Override' Application-specific Header.
         /// </summary>
         public const string METHOD_OVERRIDE = "X-HTTP-Method-Override";
-
-        /// <summary>
-        /// 'Front-End-Https' Application-specific Header.
-        /// </summary>
-        public const string FRONT_END_HTTPS = "Front-End-Https";
 
         //___ Apache mod_proxy headers ___
 
@@ -1020,14 +1015,6 @@ namespace MindTouch.Dream {
         }
 
         /// <summary>
-        /// 'Front-End-Https' Header.
-        /// </summary>
-        public string FrontEndHttps {
-            get { return this[FRONT_END_HTTPS]; }
-            set { this[FRONT_END_HTTPS] = value; }
-        }
-
-        /// <summary>
         /// 'X-Forwarded-Host' Header.
         /// </summary>
         public string ForwardedHost {
@@ -1174,15 +1161,8 @@ namespace MindTouch.Dream {
 
                                 // NOTE (steveb): 'X-Forwarded-Host', 'X-Forwarded-For' may contain one or more entries, but NameValueCollection doesn't seem to care :(
 
-                                // initialize 'last' to be the last entry added (if any) for the current header key
-                                Entry last;
-                                _headers.TryGetValue(key, out last);
-                                if(last != null) {
-                                    last = last.Last;
-                                }
-
-                                // loop over all header values
-                                for(int i = 0; i < values.Length; ++i) {
+                                Entry entry = null;
+                                for(int i = values.Length - 1; i >= 0; --i) {
                                     foreach(string value in values[i].Split(' ')) {
                                         string host = value;
                                         if((host.Length > 0) && (host[host.Length - 1] == ',')) {
@@ -1190,25 +1170,17 @@ namespace MindTouch.Dream {
                                         }
                                         host = host.Trim();
                                         if(!string.IsNullOrEmpty(host)) {
-                                            if(last != null) {
-                                                last.Next = new Entry(host, null);
-                                                last = last.Next;
-                                            } else {
-                                                _headers[key] = last = new Entry(host, null);
-                                            }
+                                            entry = new Entry(host, entry);
                                         }
                                     }
                                 }
+                                _headers[key] = entry;
                             } else {
-                                Entry last = null;
-                                for(int i = 0; i < values.Length; ++i) {
-                                    if(last != null) {
-                                        last.Next = new Entry(values[i], null);
-                                        last = last.Next;
-                                    } else {
-                                        _headers[key] = last = new Entry(values[i], null);
-                                    }
+                                Entry entry = null;
+                                for(int i = values.Length - 1; i >= 0; --i) {
+                                    entry = new Entry(values[i], entry);
                                 }
+                                _headers[key] = entry;
                             }
                         }
                     }
@@ -1242,7 +1214,6 @@ namespace MindTouch.Dream {
                         if(_headers.TryGetValue(header.Key, out existing)) {
                             existing = existing.Last;
                         }
-
                         // add new entries
                         if(existing == null) {
                             existing = new Entry(header.Value);

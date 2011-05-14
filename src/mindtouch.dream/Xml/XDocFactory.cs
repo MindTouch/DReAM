@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -192,13 +192,12 @@ namespace MindTouch.Xml {
         }
 
         private static XDoc FromHtml(TextReader reader) {
-            Sgml.SgmlReader sgmlReader = new Sgml.SgmlReader(XDoc.XmlNameTable) {
-                Dtd = _dtd,
-                DocType = "HTML",
-                WhitespaceHandling = WhitespaceHandling.All,
-                CaseFolding = Sgml.CaseFolding.ToLower,
-                InputStream = reader
-            };
+            Sgml.SgmlReader sgmlReader = new Sgml.SgmlReader(XDoc.XmlNameTable);
+            sgmlReader.Dtd = _dtd;
+            sgmlReader.DocType = "HTML";
+            sgmlReader.WhitespaceHandling = WhitespaceHandling.All;
+            sgmlReader.CaseFolding = Sgml.CaseFolding.ToLower;
+            sgmlReader.InputStream = reader;
             try {
                 XmlDocument doc = XDoc.NewXmlDocument();
                 doc.Load(sgmlReader);
@@ -221,7 +220,7 @@ namespace MindTouch.Xml {
     public static class XDocUtil {
 
         //--- Class Fields ---
-        private static readonly Regex _xmlDateTimeRex = new Regex(@"^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{2}):(\d{2})(\.(\d{2,7}))?Z$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static Regex _xmlDateTimeRex = new Regex(@"^(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{2}):(\d{2})(\.(\d{2,7}))?Z$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         //--- Class Methods ---
 
@@ -251,7 +250,7 @@ namespace MindTouch.Xml {
 
             // check if text is in date format
             DateTime date;
-            if(TryParseXmlDateTime(text, out date)) {
+            if(XDocUtil.TryParseXmlDateTime(text, out date)) {
 
                 // convert text to RFC1123 formatted date
                 text = date.ToUniversalTime().ToString("R");
@@ -346,20 +345,20 @@ namespace MindTouch.Xml {
             value = value.Replace("\r\n ", "");
 
             // split lines
-            string[] lines = value.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] lines = value.Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
             // process each line
             foreach(string line in lines) {
-                if(line.StartsWithInvariant("BEGIN:")) {
+                if(StringUtil.StartsWithInvariant(line, "BEGIN:")) {
                     result.Start(line.Substring(6).ToLowerInvariant());
-                } else if(line.StartsWithInvariant("END:")) {
+                } else if(StringUtil.StartsWithInvariant(line, "END:")) {
                     result.End();
                 } else {
-                    string[] pair = line.Split(new[] { ':' }, 2);
+                    string[] pair = line.Split(new char[] { ':' }, 2);
                     string[] attrs = pair[0].Split(';');
                     result.Start(attrs[0].ToLowerInvariant());
                     for(int i = 1; i < attrs.Length; ++i) {
-                        string[] attr = attrs[i].Split(new[] { '=' }, 2);
+                        string[] attr = attrs[i].Split(new char[] { '=' }, 2);
                         result.Attr(attr[0].ToLowerInvariant(), (attr.Length > 1) ? DecodeVersitString(attr[1]) : string.Empty);
                     }
                     if(pair.Length > 1) {
@@ -568,10 +567,10 @@ namespace MindTouch.Xml {
                 }
                 break;
             case XmlNodeType.Text:
-                writer.Write(EncodeString(node.Value));
+                writer.Write(XDocUtil.EncodeXmlString(node.Value));
                 break;
             case XmlNodeType.Attribute:
-                writer.Write("{0}:{1}", EncodeString("@" + node.Name), EncodeString(node.Value));
+                writer.Write("{0}:{1}", XDocUtil.EncodeXmlString("@" + node.Name), XDocUtil.EncodeXmlString(node.Value));
                 break;
             }
         }
@@ -605,66 +604,6 @@ namespace MindTouch.Xml {
                 firstOuter = false;
             }
         }
-
-        private static string EncodeString(string text) {
-
-            // check if text is in date format
-            DateTime date;
-            if(XDocUtil.TryParseXmlDateTime(text, out date)) {
-
-                // convert text to RFC1123 formatted date
-                text = date.ToUniversalTime().ToString("R");
-            }
-
-            // escape any special characters
-            return "\"" + EscapeString(text) + "\"";
-        }
-
-        private static string EscapeString(string text) {
-
-            // Note (arnec): This is a copy of StringUtil.EscapeString with rules adjusted according to json.org
-
-            if(string.IsNullOrEmpty(text)) {
-                return string.Empty;
-            }
-
-            // escape any special characters
-            StringBuilder result = new StringBuilder(2 * text.Length);
-            foreach(char c in text) {
-                switch(c) {
-                case '\b':
-                    result.Append("\\b");
-                    break;
-                case '\f':
-                    result.Append("\\f");
-                    break;
-                case '\n':
-                    result.Append("\\n");
-                    break;
-                case '\r':
-                    result.Append("\\r");
-                    break;
-                case '\t':
-                    result.Append("\\t");
-                    break;
-                case '"':
-                    result.Append("\\\"");
-                    break;
-                case '\\':
-                    result.Append("\\\\");
-                    break;
-                default:
-                    if((c < 32) || (c >= 127)) {
-                        result.Append("\\u");
-                        result.Append(((int)c).ToString("x4"));
-                    } else {
-                        result.Append(c);
-                    }
-                    break;
-                }
-            }
-            return result.ToString();
-        }
     }
 
     /// <summary>
@@ -682,7 +621,7 @@ namespace MindTouch.Xml {
         public static XDoc FromXSpan(XDoc xspan) {
             XDoc xml = new XDoc(xspan["@class"].Contents);
             foreach(XDoc attr in xspan["@*"]) {
-                if(attr.Name.StartsWithInvariant("xml:"))
+                if(StringUtil.StartsWithInvariant(attr.Name, "xml:"))
                     xml.Attr(attr.Name.Substring("xml:".Length), attr.Contents);
             }
             string value = xspan["text()"].Contents;

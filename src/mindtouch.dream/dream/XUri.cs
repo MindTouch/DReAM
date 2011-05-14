@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -85,7 +85,7 @@ namespace MindTouch.Dream {
         Fragment
     }
 
-    // TODO (steveb): implement XUriTemplate/XUriPattern (see http://youtrack.developer.mindtouch.com/issue/MT-9660)
+    // TODO (steveb): XUriTemplate/XUriPattern
     // {scheme}://{host}/{path-param};[{segment-param}]/[{optional-path-param};{segment-param}}]//{segment-list}?query-arg={query-param}&[optional-query-arg={query-param}]
 
     /// <summary>
@@ -94,7 +94,7 @@ namespace MindTouch.Dream {
     [Serializable]
     public sealed class XUri : ISerializable {
 
-        // NOTE (steveb): XUri parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^, |, [ and ] as a valid character in segments, queries, and fragments; and \ as valid segment separator
+        // NOTE (steveb): XUri parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^ and | as a valid character in segments, queries, and fragments; and \ as valid segment separator
 
         //--- Constants ---
 
@@ -121,17 +121,17 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Regular expression for matching path segments.
         /// </summary>
-        public const string SEGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^\[\]]*";
+        public const string SEGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^]*";
 
         /// <summary>
         /// Regular expression for matching query name/value pairs.
         /// </summary>
-        public const string QUERY_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]]*";
+        public const string QUERY_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|]*";
 
         /// <summary>
         /// Regular expression for matching fragment elements.
         /// </summary>
-        public const string FRAGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#]*";
+        public const string FRAGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|#]*";
 
         /// <summary>
         /// An empty string array.
@@ -379,7 +379,7 @@ namespace MindTouch.Dream {
         /// <param name="text">Input text.</param>
         /// <returns>Decoded text.</returns>
         public static string Decode(string text) {
-            string result = UrlDecode(text);
+            string result = XUri.UrlDecode(text);
             return result;
         }
 
@@ -1154,9 +1154,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public bool HasFragment { get { return Fragment != null; } }
 
-        /// <summary>
-        /// True if the instance is set to double-encode path segments.
-        /// </summary>
         public bool UsesSegmentDoubleEncoding { get { return _doubleEncode; } }
 
 

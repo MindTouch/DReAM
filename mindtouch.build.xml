@@ -1,36 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <configuration>
-  <assemblies
-    major="2"
-    minor="2"
-    release="2"
-    revision="0">
-    <assembly
-      name="mindtouch.dream"
-      publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.dream/AssemblyInfo.cs"
-      remap="true" />
-    <assembly
-      name="mindtouch.dream.test"
-      publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.dream.test/Properties/AssemblyInfo.cs"
-      remap="true" />
-    <assembly
-      name="mindtouch.core"
-      publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.core/AssemblyInfo.cs" />
-    <assembly
-      name="mindtouch.host"
-      publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.host/AssemblyInfo.cs" />
-    <assembly
-      name="mindtouch.host.service"
-      publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.host.service/AssemblyInfo.cs" />
-    <assembly
-      file="SgmlReaderDll.dll" />
+  <assemblies major="2" minor="2" release="0" revision="24968">
+    <assembly name="mindtouch.dream" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.dream\AssemblyInfo.cs" remap="true" />
+    <assembly name="mindtouch.dream.test" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.dream.test\Properties\AssemblyInfo.cs" remap="true" />
+    <assembly name="mindtouch.core" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.core\AssemblyInfo.cs" />
+    <assembly name="mindtouch.host" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.host\AssemblyInfo.cs" />
+    <assembly name="mindtouch.host.service" publicKeyToken="b17e0197b56911d2" culture="neutral" assemblyinfo-path="src\mindtouch.host.service\AssemblyInfo.cs" />
+    <assembly file="SgmlReaderDll.dll" />
   </assemblies>
   <configfiles>
-    <path>src/bin/mindtouch.host.exe.config</path>
+    <path>src\mindtouch.host\App.config</path>
   </configfiles>
 </configuration>

@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -29,34 +29,30 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Nothing_to_trim() {
-            using(TextReader reader = new TrimmingStringReader("this is plain text")) {
-                string result = reader.ReadToEnd();
-                Assert.AreEqual("this is plain text", result);
-            }
+            TextReader reader = new TrimmingStringReader("this is plain text");
+            string result = reader.ReadToEnd();
+            Assert.AreEqual("this is plain text", result);
         }
 
         [Test]
         public void Trim_from_the_beginning() {
-            using(TextReader reader = new TrimmingStringReader("   this is plain text")) {
-                string result = reader.ReadToEnd();
-                Assert.AreEqual("this is plain text", result);
-            }
+            TextReader reader = new TrimmingStringReader("   this is plain text");
+            string result = reader.ReadToEnd();
+            Assert.AreEqual("this is plain text", result);
         }
 
         [Test]
         public void Trim_from_the_end() {
-            using(TextReader reader = new TrimmingStringReader("this is plain text   ")) {
-                string result = reader.ReadToEnd();
-                Assert.AreEqual("this is plain text", result);
-            }
+            TextReader reader = new TrimmingStringReader("this is plain text   ");
+            string result = reader.ReadToEnd();
+            Assert.AreEqual("this is plain text", result);
         }
 
         [Test]
         public void Trim_both_the_beginning_and_end() {
-            using(TextReader reader = new TrimmingStringReader("   this is plain text   ")) {
-                string result = reader.ReadToEnd();
-                Assert.AreEqual("this is plain text", result);
-            }
+            TextReader reader = new TrimmingStringReader("   this is plain text   ");
+            string result = reader.ReadToEnd();
+            Assert.AreEqual("this is plain text", result);
         }
     }
 }

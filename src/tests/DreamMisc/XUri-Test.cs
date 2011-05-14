@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Text;
 using MindTouch.Web;
 using NUnit.Framework;
 
@@ -474,39 +473,12 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_parse_square_brackets_in_query() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"));
-        }
-
-        [Test]
-        public void Can_parse_square_brackets_in_segment() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo/[123]/bar"));
-        }
-
-        [Test]
-        public void Can_parse_square_brackets_in_fragment() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"));
-        }
-
-        [Test]
-        public void Square_brackets_in_parsed_query_are_encoded_on_render() {
-            Assert.AreEqual("http://host/foo?bar%5b123%5d=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
-        }
-
-        [Test]
-        public void Cannot_parse_uri_with_curly_brackest_in_query() {
-            Assert.IsNull(XUri.TryParse("http://host/foo?bar{123}=abc"));
-        }
-
-        [Test]
         public void TestXUriFromUriConstruction() {
             string[] evilSegments = new string[] {
-
-                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
-                "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
-                "A%4b",
-                "A^B",
-            };
+            "Iñtërnâtiônàlizætiøn",
+            "A%4b",
+            "A^B",
+        };
             foreach(string evil in evilSegments) {
                 Uri original = new Uri("http://foo/" + evil);
                 Uri fromDecoded = new Uri(original.ToString());
@@ -514,38 +486,6 @@ namespace MindTouch.Dream.Test {
                 XUri uri2 = new XUri(fromDecoded);
                 // just making sure they actually parse
             }
-        }
-
-        [Test]
-        public void Decode_extended_chars1() {
-            const string before = "F\u00F4\u00F6";
-            const string after = "F\u00F4\u00F6";
-            var decoded = XUri.Decode(before);
-            Assert.AreEqual(after, decoded);
-        }
-
-        [Test]
-        public void Decode_extended_chars2() {
-            const string before = "F%20\u00F4%20\u00F6";
-            const string after = "F \u00F4 \u00F6";
-            var decoded = XUri.Decode(before);
-            Assert.AreEqual(after, decoded);
-        }
-
-        [Test]
-        public void Decode_extended_chars3() {
-            const string before = "+F\u00F4\u00F6";
-            const string after = " F\u00F4\u00F6";
-            var decoded = XUri.Decode(before);
-            Assert.AreEqual(after, decoded);
-        }
-
-        [Test]
-        public void Decode_extended_chars4() {
-            const string before = "f%7Bb\u00FCb";
-            const string after = "f{b\u00FCb";
-            var decoded = XUri.Decode(before);
-            Assert.AreEqual(after, decoded);
         }
 
         [Test]

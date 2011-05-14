@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -56,11 +56,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public const ushort DEFAULT_MAX_AUTO_REDIRECTS = 50;
 
-        /// <summary>
-        /// Base score normal priorty <see cref="IPlugEndpoint"/> implementations should use to signal a successful match.
-        /// </summary>
-        public const int BASE_ENDPOINT_SCORE = int.MaxValue / 2;
-        
         /// <summary>
         /// Default timeout of 60 seconds for <see cref="Plug"/> invocations.
         /// </summary>

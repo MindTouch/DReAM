@@ -228,20 +228,16 @@ namespace MindTouch.Dream {
         //--- Fields ---
         private readonly IContainer _container;
         private readonly Dictionary<IDreamService, IContainer> _serviceContainers = new Dictionary<IDreamService, IContainer>();
-        private readonly XUriMap<XUri> _aliases = new XUriMap<XUri>();
-        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
-        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
-        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
-        private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
-        private readonly DateTime _created = DateTime.UtcNow;
         private IServiceActivator _serviceActivator;
         private DreamFeatureStage[] _defaultPrologues;
         private DreamFeatureStage[] _defaultEpilogues;
         private Guid _id;
         private bool _running;
+        private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         private DreamFeatureDirectory _features = new DreamFeatureDirectory();
+        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
+        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private Dictionary<string, XDoc> _blueprints;
         private string _storageType;
         private XDoc _storageConfig;
@@ -249,17 +245,20 @@ namespace MindTouch.Dream {
         private Plug _storage;
         private ManualResetEvent _shutdown;
         private XUri _localMachineUri;
+        private XUriMap<XUri> _aliases = new XUriMap<XUri>();
         private XUri _publicUri;
+        private readonly DateTime _created = DateTime.UtcNow;
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
+        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
         private long _responseCacheHits;
         private long _responseCacheMisses;
         private Plug _hostpubsub;
+        private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
         private int _reentrancyLimit;
         private string _rootRedirect;
         private string _debugMode;
-        private bool _memorizeAliases;
 
         //--- Constructors ---
         public DreamHostService() : this(null) { }
@@ -323,7 +322,7 @@ namespace MindTouch.Dream {
                 }
                 var gitUri = assembly.GetAttribute<GitUriAttribute>();
                 if(gitUri != null) {
-                    result.Elem("GitUri", gitUri.Uri);
+                    result.Elem("GitBranch", gitUri.Uri);
                 }
                 result.End();
             }
@@ -753,6 +752,7 @@ namespace MindTouch.Dream {
 
         [DreamFeature("GET:status/aliases", "Show system aliases")]
         private Yield GetStatusAliases(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            DateTime now = DateTime.UtcNow;
             XDoc result = new XDoc("aliases");
 
             // host/aliases
@@ -849,6 +849,7 @@ namespace MindTouch.Dream {
 
         [DreamFeature("GET:status/features", "Show system features")]
         private Yield GetStatusFeatures(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            DateTime now = DateTime.UtcNow;
             XDoc result;
             lock(_features) {
                 result = _features.ListAll();
@@ -970,7 +971,7 @@ namespace MindTouch.Dream {
             _features = new DreamFeatureDirectory();
             _services.Clear();
             _responseCache.Clear();
-            _aliases.Clear();
+            _aliases = new XUriMap<XUri>();
 
             // mark host as not running
             Plug.RemoveEndpoint(this);
@@ -1005,7 +1006,6 @@ namespace MindTouch.Dream {
                 _shutdown = new ManualResetEvent(false);
                 _rootRedirect = config["root-redirect"].AsText;
                 _debugMode = config["debug"].AsText.IfNullOrEmpty("false").ToLowerInvariant();
-                _memorizeAliases = config["memorize-aliases"].AsBool ?? true;
 
                 // add default prologues/epilogues
                 _defaultPrologues = new[] { 
@@ -1244,15 +1244,7 @@ namespace MindTouch.Dream {
                             // request used an override, append path of public-uri
                             serverPath = string.Join("/", _publicUri.Segments);
                         }
-
-                        // set the uri scheme based-on the incoming scheme and the override header
-                        string scheme = transport.Scheme;
-                        if("On".EqualsInvariantIgnoreCase(request.Headers.FrontEndHttps ?? "")) {
-                            scheme = Scheme.HTTPS;
-                        }
-                        scheme = uri.GetParam(DreamInParam.SCHEME, scheme);
-
-                        // set the host port
+                        string scheme = uri.GetParam(DreamInParam.SCHEME, transport.Scheme);
                         string hostPort = proxyOverride ?? request.Headers.Host ?? uri.HostPort;
                         publicUri = new XUri(string.Format("{0}://{1}", scheme, hostPort)).AtPath(serverPath);
                     }
@@ -1347,11 +1339,9 @@ namespace MindTouch.Dream {
                 }
 
                 // add uri to aliases list
-                if(_memorizeAliases) {
-                    lock(_aliases) {
-                        _aliases[transport] = transport;
-                        _aliases[publicUri] = publicUri;
-                    }
+                lock(_aliases) {
+                    _aliases[transport] = transport;
+                    _aliases[publicUri] = publicUri;
                 }
 
                 // create context
@@ -1382,10 +1372,8 @@ namespace MindTouch.Dream {
                     if(context.CacheKeyAndTimeout != null) {
                         IDreamService service = feature.Service;
 
-                        // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal
-                        //                representation to a byte array, which is better for cloning.
-                        result.Value.ToBytes();
-
+                        // convert message to byte array before cloning
+                        byte[] bytes = result.Value.ToBytes();
                         DreamMessage reply = result.Value.Clone();
                         Dictionary<object, DreamMessage> cache;
                         lock(_responseCache) {
@@ -1697,25 +1685,15 @@ namespace MindTouch.Dream {
         }
 
         private void StopService(XUri uri) {
-            string path = uri.Path.ToLowerInvariant();
+            _log.TraceMethodCall("StopService", uri);
 
             // remove service from services table
             ServiceEntry service;
             lock(_services) {
+                string path = uri.Path.ToLowerInvariant();
                 if(_services.TryGetValue(path, out service)) {
                     _services.Remove(path);
                 }
-            }
-            if(_log.IsDebugEnabled) {
-                string sid = "<UNKNOWN>";
-                string type = "<UNKNOWN>";
-                if(service != null) {
-                    sid = service.SID.ToString();
-                    if(service.Service != null) {
-                        type = service.Service.GetType().ToString();
-                    }
-                }
-                _log.DebugMethodCall("stop", path, sid, type);
             }
 
             // deactivate service
@@ -1902,7 +1880,7 @@ namespace MindTouch.Dream {
             } else {
                 normalized = null;
             }
-            return (result > 0) ? result + Plug.BASE_ENDPOINT_SCORE : 0;
+            return result;
         }
 
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {

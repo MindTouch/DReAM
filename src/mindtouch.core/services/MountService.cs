@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -29,7 +29,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Dream Mount Service", "Copyright (c) 2006-2011 MindTouch, Inc.", 
+    [DreamService("MindTouch Dream Mount Service", "Copyright (c) 2006-2009 MindTouch, Inc.", 
         Info = "http://developer.mindtouch.com/Dream/Reference/Services/Mount",
         SID = new string[] { 
             "sid://mindtouch.com/2006/11/dream/mount",
@@ -69,7 +69,7 @@ namespace MindTouch.Dream.Services {
         }
     }
 
-    [DreamService("MindTouch Dream Mount File System Service", "Copyright (c) 2006-2011 MindTouch, Inc.",
+    [DreamService("MindTouch Dream Mount File System Service", "Copyright (c) 2006-2009 MindTouch, Inc.",
         Info = "http://developer.mindtouch.com/Dream/Reference/Services/Mount",
         SID = new string[] { 
             "sid://mindtouch.com/2006/11/dream/mountfilesystem",
@@ -120,6 +120,7 @@ namespace MindTouch.Dream.Services {
         //--- Methods ---
         protected override Yield Start(XDoc config, Result result) {
             yield return Coroutine.Invoke(base.Start, config, new Result());
+            System.Collections.IDictionary d = Environment.GetEnvironmentVariables();
             _path = Environment.ExpandEnvironmentVariables(config["mount"].Contents);
             if(!Path.IsPathRooted(_path)) {
                 throw new ArgumentException(string.Format("storage path is not absolute: {0}", _path));

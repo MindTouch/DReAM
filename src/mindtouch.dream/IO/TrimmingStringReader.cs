@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -143,8 +143,6 @@ namespace MindTouch.IO {
             if(_text == null) {
                 throw new ObjectDisposedException("reader has already been closed or disposed");
             }
-
-            // TODO (steveb): by .Net spec, this should also detect Environment.NewLine sequence
 
             // loop over string until we find a newline character
             for(int current = _position; current < _length; ++current) {

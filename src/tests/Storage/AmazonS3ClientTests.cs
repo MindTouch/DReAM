@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2009 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -88,7 +88,7 @@ namespace MindTouch.Dream.Storage.Test {
             try {
                 _client.PutFile("foo/bar/", Helper.CreateFileHandle(data, null));
                 Assert.Fail("didn't throw");
-            } catch(InvalidOperationException) { }
+            } catch(InvalidOperationException e) { }
         }
 
         [Test]
