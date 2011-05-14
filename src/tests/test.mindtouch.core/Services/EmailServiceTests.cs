@@ -54,6 +54,9 @@ namespace MindTouch.Core.Test.Services {
             }
         }
 
+        //--- Constants ---
+        private const string DEFAULT_HOST = "defaulthost";
+
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
 
