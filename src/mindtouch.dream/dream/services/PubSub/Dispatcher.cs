@@ -45,7 +45,7 @@ namespace MindTouch.Dream.Services.PubSub {
         private readonly Dictionary<string, int> _dispatchFailuresByLocation = new Dictionary<string, int>();
         private readonly ProcessingQueue<DispatcherEvent> _dispatchQueue;
         private readonly IPubSubDispatchQueue _defaultQueue;
-        private readonly IPersistentPubSubDispatchQueueFactory _queueFactory;
+        private readonly IPersistentPubSubDispatchQueueRepository _queueRepository;
         private Dictionary<XUri, List<PubSubSubscriptionSet>> _subscriptionsByDestination = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
         private PubSubSubscriptionSet _combinedSet;
         private long _combinedSetVersion = 0;
@@ -94,9 +94,9 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Create a new dispatcher.
         /// </summary>
         /// <param name="config">Configuration instance injected from pub sub service.</param>
-        /// <param name="queueFactory">Factory for dispatch queues used by persisted (i.e. expiring) subscriptions</param>
-        public Dispatcher(DispatcherConfig config, IPersistentPubSubDispatchQueueFactory queueFactory) {
-            _queueFactory = queueFactory;
+        /// <param name="queueRepository">Factory for dispatch queues used by persisted (i.e. expiring) subscriptions</param>
+        public Dispatcher(DispatcherConfig config, IPersistentPubSubDispatchQueueRepository queueRepository) {
+            _queueRepository = queueRepository;
             _owner = config.ServiceUri.AsServerUri();
             _serviceKeySetCookie = config.ServiceAccessCookie;
             _combinedSet = new PubSubSubscriptionSet(_owner, 0, _serviceKeySetCookie);
@@ -165,9 +165,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 _subscriptionByLocation.Add(set.Location, set);
                 _subscriptionsByOwner.Add(set.Owner, set);
                 if(set.HasExpiration) {
-                    var queue = _queueFactory.Create(set.Location);
-                    queue.SetDequeueHandler(TryDispatchItem);
-                    _queuesByLocation.Add(set.Location, queue);
+                    _queueRepository.Register(set, TryDispatchItem);
                 }
                 Update();
                 return new Tuplet<PubSubSubscriptionSet, bool>(set, false);

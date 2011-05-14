@@ -111,7 +111,6 @@ namespace MindTouch.Dream.Test.PubSub {
                 .End();
             var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
             Assert.IsFalse(set.HasExpiration, "set should not have an expiration");
-            Assert.IsFalse(set.HasExpired, "set should not have expired");
         }
 
         [Test]
@@ -144,8 +143,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 .End();
             var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
             Assert.IsTrue(set.HasExpiration, "set should have had an expiration");
-            Assert.IsFalse(set.HasExpired, "set should not yet have expired");
-            Assert.IsTrue(Wait.For(() => set.HasExpired, 5.Seconds()), "set should have expired by now");
+            Assert.AreEqual(set.ExpirationTTL, 1.Seconds());
         }
 
         [Test]

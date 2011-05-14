@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 using System;
-using System.Collections.Generic;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.IO;
@@ -37,7 +36,9 @@ namespace MindTouch.Dream.Services.PubSub {
         private readonly TaskTimer _queueTimer;
         private readonly TimeSpan _retryTime;
         private ITransactionalQueueEntry<DispatchItem> _currentItem;
+        private DateTime _failureWindowStart = DateTime.MinValue;
 
+        //--- Construtors
         public PersistentPubSubDispatchQueue(string queuePath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
             _retryTime = retryTime;
             _queueTimer = taskTimerFactory.New(RetryDequeue, null);
@@ -46,6 +47,15 @@ namespace MindTouch.Dream.Services.PubSub {
             };
         }
 
+        //--- Fields ---
+        public TimeSpan FailureWindow {
+            get {
+                var failureWindowStart = _failureWindowStart;
+                return failureWindowStart == DateTime.MinValue ? TimeSpan.Zero : DateTime.UtcNow - failureWindowStart;
+            }
+        }
+
+        //--- Methods ---
         public void Enqueue(DispatchItem item) {
             _queue.Enqueue(item);
             Kick();
@@ -57,6 +67,13 @@ namespace MindTouch.Dream.Services.PubSub {
             }
             _dequeueHandler = dequeueHandler;
             Kick();
+        }
+
+        public void Dispose() {
+            lock(_queue) {
+                _queue.Dispose();
+                _dequeueHandler = null;
+            }
         }
 
         private void Kick() {
@@ -83,9 +100,11 @@ namespace MindTouch.Dream.Services.PubSub {
             _dequeueHandler(_currentItem.Value).WhenDone(r => {
                 lock(_queue) {
                     if(r.HasException || !r.Value) {
+                        _failureWindowStart = DateTime.UtcNow;
                         _queueTimer.Change(_retryTime, TaskEnv.None);
                         return;
                     }
+                    _failureWindowStart = DateTime.MinValue;
                     _queue.CommitDequeue(_currentItem.Id);
                     _currentItem = _queue.Dequeue();
                 }
@@ -95,13 +114,6 @@ namespace MindTouch.Dream.Services.PubSub {
                     TryDequeue();
                 }
             });
-        }
-
-        public void Dispose() {
-            lock(_queue) {
-                _queue.Dispose();
-                _dequeueHandler = null;
-            }
         }
     }
 

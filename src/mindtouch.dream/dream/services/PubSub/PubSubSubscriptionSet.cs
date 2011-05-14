@@ -71,8 +71,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// </summary>
         public readonly long? Version;
 
-        private readonly TimeSpan _ttl;
-        private DateTime _expires;
+        public readonly TimeSpan ExpirationTTL;
 
         //--- Constructors ---
 
@@ -87,8 +86,8 @@ namespace MindTouch.Dream.Services.PubSub {
             Owner = owner;
             Version = version;
             Dictionary<string, PubSubSubscription> subs = new Dictionary<string, PubSubSubscription>();
-            foreach(PubSubSubscription sub in childSubscriptions) {
-                foreach(XUri channel in sub.Channels) {
+            foreach(var sub in childSubscriptions) {
+                foreach(var channel in sub.Channels) {
                     if(channel.Scheme == "pubsub") {
 
                         // pubsub scheme is for PubSubService internal use only, so it should never be aggregated
@@ -118,8 +117,7 @@ namespace MindTouch.Dream.Services.PubSub {
             try {
                 // Note: not using AsUri to avoid automatic local:// translation
                 Owner = new XUri(setDoc["uri.owner"].AsText);
-                _ttl = (setDoc["@ttl"].AsDouble ?? 0).Seconds();
-                Touch();
+                ExpirationTTL = (setDoc["@ttl"].AsDouble ?? 0).Seconds();
                 var subscriptions = new List<PubSubSubscription>();
                 foreach(XDoc sub in setDoc["subscription"]) {
                     subscriptions.Add(new PubSubSubscription(sub, this));
@@ -142,8 +140,8 @@ namespace MindTouch.Dream.Services.PubSub {
         public List<DreamCookie> Cookies {
             get {
                 var lookup = new HashSet<string>();
-                List<DreamCookie> cookies = new List<DreamCookie>();
-                foreach(PubSubSubscription sub in Subscriptions) {
+                var cookies = new List<DreamCookie>();
+                foreach(var sub in Subscriptions) {
                     if(sub.Cookie != null) {
                         string h = sub.Cookie.ToString();
                         if(!lookup.Contains(h)) {
@@ -156,19 +154,11 @@ namespace MindTouch.Dream.Services.PubSub {
             }
         }
 
-        public bool HasExpired {
-            get { return _expires <= DateTime.UtcNow; }
-        }
-
         public bool HasExpiration {
-            get { return _ttl != TimeSpan.Zero; }
+            get { return ExpirationTTL != TimeSpan.Zero; }
         }
 
         //--- Methods ---
-
-        public void Touch() {
-            _expires = HasExpiration ? DateTime.UtcNow.Add(_ttl) : DateTime.MaxValue;
-        }
 
         /// <summary>
         /// Create a new subscription set document.

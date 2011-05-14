@@ -23,8 +23,16 @@ using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
     public class ImmediatePubSubDispatchQueue : IPubSubDispatchQueue {
+
+        //--- Fields ---
         private Func<DispatchItem, Result<bool>> _dequeueHandler;
 
+        //--- Properties ---
+        public TimeSpan FailureWindow {
+            get { return TimeSpan.Zero; }
+        }
+
+        //--- Methods ---
         public void Enqueue(DispatchItem item) {
             _dequeueHandler(item);
         }
@@ -33,8 +41,6 @@ namespace MindTouch.Dream.Services.PubSub {
             _dequeueHandler = dequeueHandler;
         }
 
-        #region Implementation of IDisposable
         public void Dispose() { }
-        #endregion
     }
 }

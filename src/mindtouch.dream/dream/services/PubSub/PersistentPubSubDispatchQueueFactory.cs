@@ -19,14 +19,16 @@
  * limitations under the License.
  */
 using System;
+using System.Collections.Generic;
 using System.IO;
 using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
-    public class PersistentPubSubDispatchQueueFactory : IPersistentPubSubDispatchQueueFactory {
+    public class PersistentPubSubDispatchQueueFactory : IPersistentPubSubDispatchQueueRepository {
         private readonly string _queueRootPath;
         private readonly TaskTimerFactory _taskTimerFactory;
         private readonly TimeSpan _retryTime;
+        private readonly Dictionary<string, IPubSubDispatchQueue> _repository = new Dictionary<string, IPubSubDispatchQueue>();
 
         public PersistentPubSubDispatchQueueFactory(string queueRootPath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
             _queueRootPath = queueRootPath;
@@ -34,8 +36,18 @@ namespace MindTouch.Dream.Services.PubSub {
             _retryTime = retryTime;
         }
 
-        public IPubSubDispatchQueue Create(string location) {
-            return new PersistentPubSubDispatchQueue(Path.Combine(_queueRootPath, XUri.EncodeSegment(location)), _taskTimerFactory, _retryTime);
+        public void Register(PubSubSubscriptionSet set, Func<DispatchItem, Result<bool>> handler) {
+            var queue =new PersistentPubSubDispatchQueue(Path.Combine(_queueRootPath, XUri.EncodeSegment(set.Location)), _taskTimerFactory, _retryTime);
+            queue.SetDequeueHandler(handler);
+            _repository[set.Location] = queue;
+        }
+
+        public void Delete(PubSubSubscriptionSet set) {
+            throw new NotImplementedException();
+        }
+
+        public IPubSubDispatchQueue this[PubSubSubscriptionSet set] {
+            get { throw new NotImplementedException(); }
         }
     }
 }

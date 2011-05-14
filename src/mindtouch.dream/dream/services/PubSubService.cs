@@ -88,6 +88,12 @@ namespace MindTouch.Dream.Services {
                     .Elem("access-key", set.Item1.AccessKey);
                 msg = DreamMessage.Created(locationUri, responseDoc);
                 msg.Headers.Location = locationUri.With("access-key", set.Item1.AccessKey);
+                if(set.Item1.HasExpiration) {
+
+                    // Persist expiring subscriptions
+                    subscriptionSet.Attr("location", location).Attr("accesskey", accessKey);
+                    subscriptionSet.Save(Path.Combine(_localCachePath, location + ".xml"));
+                }
             }
             response.Return(msg);
             yield break;
@@ -144,6 +150,12 @@ namespace MindTouch.Dream.Services {
                         } else {
                             _log.DebugFormat("Updating set '{0}'", setId);
                         }
+                        if(set.HasExpiration) {
+
+                            // Persist expiring subscriptions
+                            subscriptionDocument.Attr("location", set.Location).Attr("accesskey", set.AccessKey);
+                            subscriptionDocument.Save(Path.Combine(_localCachePath, set.Location + ".xml"));
+                        }
                         responseMsg = DreamMessage.Ok();
                     }
                 } else {
@@ -176,6 +188,9 @@ namespace MindTouch.Dream.Services {
             foreach(var segment in Self.Uri.Segments.Select(x => XUri.EncodeSegment(x))) {
                 _localCachePath = Path.Combine(_localCachePath, segment);
             }
+            if(!Directory.Exists(_localCachePath)) {
+                Directory.CreateDirectory(_localCachePath);
+            }
 
             // make sure we have an IPubSubDispatcher registered
             ContainerBuilder builder = null;
@@ -183,10 +198,10 @@ namespace MindTouch.Dream.Services {
                 builder = new ContainerBuilder();
                 builder.Register<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
             }
-            if(!container.IsRegistered<IPersistentPubSubDispatchQueueFactory>()) {
+            if(!container.IsRegistered<IPersistentPubSubDispatchQueueRepository>()) {
                 builder = builder ?? new ContainerBuilder();
                 builder.Register(new PersistentPubSubDispatchQueueFactory(_localCachePath, TimerFactory, 30.Seconds()))
-                    .As<IPersistentPubSubDispatchQueueFactory>();
+                    .As<IPersistentPubSubDispatchQueueRepository>();
             }
             if(builder != null) {
                 builder.Build(container);
@@ -204,7 +219,7 @@ namespace MindTouch.Dream.Services {
 
             // check for upstream chaining
             if(!config["upstream"].IsEmpty) {
-                XDoc combinedset = _dispatcher.CombinedSet.AsDocument();
+                _dispatcher.CombinedSet.AsDocument();
 
                 // we've been provided 1 or more upstream pubsub services that we need to subscribe to
                 foreach(XDoc upstream in config["upstream/uri"]) {

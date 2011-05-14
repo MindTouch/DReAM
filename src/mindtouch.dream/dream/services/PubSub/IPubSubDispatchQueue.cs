@@ -23,6 +23,11 @@ using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
     public interface IPubSubDispatchQueue : IDisposable {
+
+        //--- Properties ---
+        TimeSpan FailureWindow { get; }
+
+        //--- Methods ---
         void Enqueue(DispatchItem item);
         void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler);
     }

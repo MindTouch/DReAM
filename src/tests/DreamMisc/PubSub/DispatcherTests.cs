@@ -38,14 +38,14 @@ namespace MindTouch.Dream.Test.PubSub {
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private Dispatcher _dispatcher;
-        private Mock<IPersistentPubSubDispatchQueueFactory> _queueFactoryMock;
+        private Mock<IPersistentPubSubDispatchQueueRepository> _queueFactoryMock;
 
         [SetUp]
         public void Setup() {
             MockPlug.DeregisterAll();
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
             var owner = Plug.New("mock:///pubsub");
-            _queueFactoryMock = new Mock<IPersistentPubSubDispatchQueueFactory>();
+            _queueFactoryMock = new Mock<IPersistentPubSubDispatchQueueRepository>();
             _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactoryMock.Object);
 
         }
@@ -796,6 +796,8 @@ namespace MindTouch.Dream.Test.PubSub {
     public class MockPubSubDispatchQueue : IPubSubDispatchQueue {
         private Func<DispatchItem, Result<bool>> _dequeueHandler;
         public int FailureCount;
+        public TimeSpan FailureWindow { get { return TimeSpan.Zero; } }
+
         public void Enqueue(DispatchItem item) {
             bool success;
             do {

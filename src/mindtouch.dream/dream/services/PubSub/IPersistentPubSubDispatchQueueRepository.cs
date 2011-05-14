@@ -18,8 +18,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+using System;
+using MindTouch.Tasking;
+
 namespace MindTouch.Dream.Services.PubSub {
-    public interface IPersistentPubSubDispatchQueueFactory {
-        IPubSubDispatchQueue Create(string location);
+    public interface IPersistentPubSubDispatchQueueRepository {
+        void Register(PubSubSubscriptionSet set, Func<DispatchItem, Result<bool>> handler);
+        void Delete(PubSubSubscriptionSet set);
+        IPubSubDispatchQueue this[PubSubSubscriptionSet set] { get; }
     }
 }
