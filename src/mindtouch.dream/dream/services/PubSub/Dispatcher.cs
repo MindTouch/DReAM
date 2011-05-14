@@ -53,7 +53,6 @@ namespace MindTouch.Dream.Services.PubSub {
         // NOTE (arnec): always lock _subscriptionsByOwner when accessing either _subscriptionsByOwner or _subscriptionByLocation or _queuesByLocation
         private readonly Dictionary<XUri, PubSubSubscriptionSet> _subscriptionsByOwner = new Dictionary<XUri, PubSubSubscriptionSet>();
         private readonly Dictionary<string, PubSubSubscriptionSet> _subscriptionByLocation = new Dictionary<string, PubSubSubscriptionSet>();
-        private readonly Dictionary<string, IPubSubDispatchQueue> _queuesByLocation = new Dictionary<string, IPubSubDispatchQueue>();
 
         /// <summary>
         /// Cookie Jar provide by the hosting pub sub service
@@ -103,6 +102,13 @@ namespace MindTouch.Dream.Services.PubSub {
             _dispatchQueue = new ProcessingQueue<DispatcherEvent>(DispatchFromQueue, 10);
             _defaultQueue = new ImmediatePubSubDispatchQueue();
             _defaultQueue.SetDequeueHandler(TryDispatchItem);
+            var pubSubSubscriptionSets = queueRepository.Initialize(TryDispatchItem);
+            lock(_subscriptionsByOwner) {
+                foreach(var set in pubSubSubscriptionSets) {
+                    RegisterSet(set, true);
+                    Update();
+                }
+            }
         }
 
         //--- Properties ---
@@ -137,11 +143,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <returns>Enumerable of <see cref="PubSubSubscriptionSet"/>.</returns>
         public IEnumerable<PubSubSubscriptionSet> GetAllSubscriptionSets() {
             lock(_subscriptionsByOwner) {
-                List<PubSubSubscriptionSet> sets = new List<PubSubSubscriptionSet>();
-                foreach(PubSubSubscriptionSet set in _subscriptionsByOwner.Values) {
-                    sets.Add(set);
-                }
-                return sets;
+                return _subscriptionsByOwner.Values.ToList();
             }
         }
 
@@ -154,6 +156,10 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <returns>Tuple of subscription set and <see langword="True"/> if the set was newly created, or <see langword="False"/> if the set existed (does not update the set).</returns>
         public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(string location, XDoc setDoc, string accessKey) {
             var set = new PubSubSubscriptionSet(setDoc, location, accessKey);
+            return RegisterSet(set, false);
+        }
+
+        private Tuplet<PubSubSubscriptionSet, bool> RegisterSet(PubSubSubscriptionSet set, bool init) {
             foreach(var cookie in set.Cookies) {
                 _cookieJar.Update(cookie, null);
             }
@@ -164,10 +170,12 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 _subscriptionByLocation.Add(set.Location, set);
                 _subscriptionsByOwner.Add(set.Owner, set);
-                if(set.HasExpiration) {
-                    _queueRepository.Register(set, TryDispatchItem);
+                if(set.HasExpiration && !init) {
+                    _queueRepository.RegisterOrUpdate(set);
                 }
-                Update();
+                if(!init) {
+                    Update();
+                }
                 return new Tuplet<PubSubSubscriptionSet, bool>(set, false);
             }
         }
@@ -242,14 +250,15 @@ namespace MindTouch.Dream.Services.PubSub {
                         _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
                         continue;
                     }
-                    var queue = _defaultQueue;
+                    IPubSubDispatchQueue queue;
                     if(sub.Owner.HasExpiration) {
-                        lock(_subscriptionsByOwner) {
-                            if(!_queuesByLocation.TryGetValue(sub.Owner.Location, out queue)) {
-                                _log.DebugFormat("unable to get dispatch queue for event '{0}'via location '{1}'", dispatchEvent.Id, sub.Owner.Location);
-                                continue;
-                            }
+                        queue = _queueRepository[sub.Owner];
+                        if(queue == null) {
+                            _log.DebugFormat("unable to get dispatch queue for event '{0}'via location '{1}'", dispatchEvent.Id, sub.Owner.Location);
+                            continue;
                         }
+                    } else {
+                        queue = _defaultQueue;
                     }
                     queue.Enqueue(new DispatchItem(uri, subEvent, sub.Owner.Location));
                 }
@@ -455,6 +464,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 bool result = _subscriptionsByOwner.Remove(set.Owner);
                 _subscriptionByLocation.Remove(location);
+                _queueRepository.Delete(set);
                 Update();
                 return result;
             }
@@ -462,9 +472,7 @@ namespace MindTouch.Dream.Services.PubSub {
 
         public void Dispose() {
             lock(_subscriptionsByOwner) {
-                foreach(var queue in _queuesByLocation.Values) {
-                    queue.Dispose();
-                }
+                _queueRepository.Dispose();
                 _defaultQueue.Dispose();
             }
         }

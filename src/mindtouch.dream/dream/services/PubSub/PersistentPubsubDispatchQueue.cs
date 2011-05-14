@@ -34,12 +34,15 @@ namespace MindTouch.Dream.Services.PubSub {
         private Func<DispatchItem, Result<bool>> _dequeueHandler;
         private readonly ITransactionalQueue<DispatchItem> _queue;
         private readonly TaskTimer _queueTimer;
+        private readonly string _queuePath;
         private readonly TimeSpan _retryTime;
         private ITransactionalQueueEntry<DispatchItem> _currentItem;
         private DateTime _failureWindowStart = DateTime.MinValue;
+        private bool _isDisposed;
 
         //--- Construtors
         public PersistentPubSubDispatchQueue(string queuePath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
+            _queuePath = queuePath;
             _retryTime = retryTime;
             _queueTimer = taskTimerFactory.New(RetryDequeue, null);
             _queue = new TransactionalQueue<DispatchItem>(new MultiFileQueueStream(queuePath), new DispatchItemSerializer()) {
@@ -57,11 +60,13 @@ namespace MindTouch.Dream.Services.PubSub {
 
         //--- Methods ---
         public void Enqueue(DispatchItem item) {
+            EnsureNotDisposed();
             _queue.Enqueue(item);
             Kick();
         }
 
         public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            EnsureNotDisposed();
             if(dequeueHandler == null) {
                 throw new ArgumentException("cannot set the handler to a null value");
             }
@@ -69,8 +74,15 @@ namespace MindTouch.Dream.Services.PubSub {
             Kick();
         }
 
+        public void ClearAndDispose() {
+            EnsureNotDisposed();
+            _queue.Clear();
+            Dispose();
+        }
+
         public void Dispose() {
             lock(_queue) {
+                _isDisposed = true;
                 _queue.Dispose();
                 _dequeueHandler = null;
             }
@@ -89,6 +101,12 @@ namespace MindTouch.Dream.Services.PubSub {
                     return;
                 }
                 Async.Fork(TryDequeue);
+            }
+        }
+
+        private void EnsureNotDisposed() {
+            if(_isDisposed) {
+                throw new ObjectDisposedException("PersistentPubSubDispatchQueue", string.Format("Queue at path '{0}' is already disposed", _queuePath));
             }
         }
 

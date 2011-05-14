@@ -97,7 +97,7 @@
     <Compile Include="dream\services\PubSub\ImmediatePubSubDispatchQueue.cs" />
     <Compile Include="dream\services\PubSub\IPersistentPubSubDispatchQueueRepository.cs" />
     <Compile Include="dream\services\PubSub\IPubSubDispatchQueue.cs" />
-    <Compile Include="dream\services\PubSub\PersistentPubSubDispatchQueueFactory.cs" />
+    <Compile Include="dream\services\PubSub\PersistentPubSubDispatchQueueRepository.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
     <Compile Include="Numeric.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />

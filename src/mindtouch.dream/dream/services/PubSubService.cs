@@ -46,7 +46,6 @@ namespace MindTouch.Dream.Services {
 
         //--- Fields ---
         protected IPubSubDispatcher _dispatcher;
-        private string _localCachePath;
 
         //--- Features ---
         [DreamFeature("POST:publish", "Publish an event")]
@@ -88,12 +87,6 @@ namespace MindTouch.Dream.Services {
                     .Elem("access-key", set.Item1.AccessKey);
                 msg = DreamMessage.Created(locationUri, responseDoc);
                 msg.Headers.Location = locationUri.With("access-key", set.Item1.AccessKey);
-                if(set.Item1.HasExpiration) {
-
-                    // Persist expiring subscriptions
-                    subscriptionSet.Attr("location", location).Attr("accesskey", accessKey);
-                    subscriptionSet.Save(Path.Combine(_localCachePath, location + ".xml"));
-                }
             }
             response.Return(msg);
             yield break;
@@ -107,8 +100,8 @@ namespace MindTouch.Dream.Services {
 
         [DreamFeature("GET:diagnostics/subscriptions", "Diagnostic: Get all subscription sets registered with this service")]
         protected Yield DiagnosticGetAllSubscriptionSets(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            XDoc sets = new XDoc("subscription-sets");
-            foreach(PubSubSubscriptionSet set in _dispatcher.GetAllSubscriptionSets()) {
+            var sets = new XDoc("subscription-sets");
+            foreach(var set in _dispatcher.GetAllSubscriptionSets()) {
                 sets.Add(set.AsDocument());
             }
             response.Return(DreamMessage.Ok(sets));
@@ -150,12 +143,6 @@ namespace MindTouch.Dream.Services {
                         } else {
                             _log.DebugFormat("Updating set '{0}'", setId);
                         }
-                        if(set.HasExpiration) {
-
-                            // Persist expiring subscriptions
-                            subscriptionDocument.Attr("location", set.Location).Attr("accesskey", set.AccessKey);
-                            subscriptionDocument.Save(Path.Combine(_localCachePath, set.Location + ".xml"));
-                        }
                         responseMsg = DreamMessage.Ok();
                     }
                 } else {
@@ -171,9 +158,9 @@ namespace MindTouch.Dream.Services {
 
         [DreamFeature("DELETE:subscribers/{id}", "Remove subscription set")]
         protected Yield RemoveSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            string id = context.GetParam("id");
+            var id = context.GetParam("id");
             _dispatcher.RemoveSet(id);
-            DreamMessage msg = DreamMessage.Ok();
+            var msg = DreamMessage.Ok();
             response.Return(msg);
             yield break;
         }
@@ -183,15 +170,6 @@ namespace MindTouch.Dream.Services {
             yield return Coroutine.Invoke(base.Start, config, container, new Result());
             _log.DebugFormat("starting {0}", Self.Uri);
 
-            // CLEANUP: need a safe location, not just tmp
-            _localCachePath = Path.Combine(Path.GetTempPath(), "pubsub");
-            foreach(var segment in Self.Uri.Segments.Select(x => XUri.EncodeSegment(x))) {
-                _localCachePath = Path.Combine(_localCachePath, segment);
-            }
-            if(!Directory.Exists(_localCachePath)) {
-                Directory.CreateDirectory(_localCachePath);
-            }
-
             // make sure we have an IPubSubDispatcher registered
             ContainerBuilder builder = null;
             if(!container.IsRegistered<IPubSubDispatcher>()) {
@@ -199,8 +177,15 @@ namespace MindTouch.Dream.Services {
                 builder.Register<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
             }
             if(!container.IsRegistered<IPersistentPubSubDispatchQueueRepository>()) {
+
+                // CLEANUP: need a safe location, not just tmp
+                var localCachePath = Path.Combine(Path.GetTempPath(), "pubsub");
+                localCachePath = Self.Uri.Segments.Select(x => XUri.EncodeSegment(x)).Aggregate(localCachePath, Path.Combine);
+                if(!Directory.Exists(localCachePath)) {
+                    Directory.CreateDirectory(localCachePath);
+                }
                 builder = builder ?? new ContainerBuilder();
-                builder.Register(new PersistentPubSubDispatchQueueFactory(_localCachePath, TimerFactory, 30.Seconds()))
+                builder.Register(new PersistentPubSubDispatchQueueRepository(localCachePath, TimerFactory, 30.Seconds()))
                     .As<IPersistentPubSubDispatchQueueRepository>();
             }
             if(builder != null) {
@@ -297,18 +282,6 @@ namespace MindTouch.Dream.Services {
                         }
                         yield return Async.Sleep(TimeSpan.FromMilliseconds(500));
                     }
-                }
-            }
-
-            // load persisted subscriptions
-            foreach(var setFile in Directory.GetFiles(_localCachePath, "*.xml")) {
-                try {
-                    var setDoc = XDocFactory.LoadFrom(setFile, MimeType.TEXT_XML);
-                    var location = setDoc["@location"].AsText;
-                    var accessKey = setDoc["@accesskey"].AsText;
-                    _dispatcher.RegisterSet(location, setDoc, accessKey);
-                } catch(Exception e) {
-                    _log.Warn(string.Format("unable to retrieve and re-register subscription for location", Path.GetFileNameWithoutExtension(setFile)), e);
                 }
             }
             result.Return();
