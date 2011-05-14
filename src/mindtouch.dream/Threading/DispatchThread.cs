@@ -55,7 +55,9 @@ namespace MindTouch.Threading {
         internal DispatchThread() {
 
             // create new thread
-            Thread thread = new Thread(DispatchLoop) { IsBackground = true };
+            var thread = Async.MaxStackSize.HasValue
+                ? new Thread(DispatchLoop, Async.MaxStackSize.Value) { IsBackground = true }
+                : new Thread(DispatchLoop) { IsBackground = true };
 
             //  assign ID
             _id = thread.ManagedThreadId;
@@ -95,7 +97,7 @@ namespace MindTouch.Threading {
                 _host = value;
             }
         }
-        
+
         //--- Methods ---
         public bool TryStealWorkItem(out Action callback) {
             return _inbox.TrySteal(out callback);
@@ -148,7 +150,7 @@ namespace MindTouch.Threading {
                         if(_host == null) {
 
                             // NOTE (steveb): this is a brand new thread without a host yet
-                            
+
                             // return the thread to the dispatch scheduler
                             DispatchThreadScheduler.ReleaseThread(this, result);
                         } else {

@@ -92,6 +92,7 @@
     <Compile Include="dream\DreamServiceRegistrationBuilder.cs" />
     <Compile Include="dream\IDreamServiceConfigurationBuilder.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
+    <Compile Include="Numeric.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />
     <Compile Include="system\GitRevisionAttribute.cs" />
     <Compile Include="system\GitUriAttribute.cs" />

@@ -567,10 +567,10 @@ namespace MindTouch.Xml {
                 }
                 break;
             case XmlNodeType.Text:
-                writer.Write(XDocUtil.EncodeXmlString(node.Value));
+                writer.Write(EncodeString(node.Value));
                 break;
             case XmlNodeType.Attribute:
-                writer.Write("{0}:{1}", XDocUtil.EncodeXmlString("@" + node.Name), XDocUtil.EncodeXmlString(node.Value));
+                writer.Write("{0}:{1}", EncodeString("@" + node.Name), EncodeString(node.Value));
                 break;
             }
         }
@@ -603,6 +603,66 @@ namespace MindTouch.Xml {
                 }
                 firstOuter = false;
             }
+        }
+
+        private static string EncodeString(string text) {
+
+            // check if text is in date format
+            DateTime date;
+            if(XDocUtil.TryParseXmlDateTime(text, out date)) {
+
+                // convert text to RFC1123 formatted date
+                text = date.ToUniversalTime().ToString("R");
+            }
+
+            // escape any special characters
+            return "\"" + EscapeString(text) + "\"";
+        }
+
+        private static string EscapeString(string text) {
+
+            // Note (arnec): This is a copy of StringUtil.EscapeString with rules adjusted according to json.org
+
+            if(string.IsNullOrEmpty(text)) {
+                return string.Empty;
+            }
+
+            // escape any special characters
+            StringBuilder result = new StringBuilder(2 * text.Length);
+            foreach(char c in text) {
+                switch(c) {
+                case '\b':
+                    result.Append("\\b");
+                    break;
+                case '\f':
+                    result.Append("\\f");
+                    break;
+                case '\n':
+                    result.Append("\\n");
+                    break;
+                case '\r':
+                    result.Append("\\r");
+                    break;
+                case '\t':
+                    result.Append("\\t");
+                    break;
+                case '"':
+                    result.Append("\\\"");
+                    break;
+                case '\\':
+                    result.Append("\\\\");
+                    break;
+                default:
+                    if((c < 32) || (c >= 127)) {
+                        result.Append("\\u");
+                        result.Append(((int)c).ToString("x4"));
+                    } else {
+                        result.Append(c);
+                    }
+                    break;
+                }
+            }
+            return result.ToString();
         }
     }
 

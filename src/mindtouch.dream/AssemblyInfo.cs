@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -32,7 +32,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MindTouch, Inc.")]
 [assembly: AssemblyProduct("MindTouch Dream")]
-[assembly: AssemblyCopyright("Copyright (c) 2006-2009 MindTouch, Inc.")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2011 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -55,11 +55,11 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.2.0.24968")]
-[assembly: AssemblyFileVersion("2.2.0.24968")]
+[assembly: AssemblyVersion("2.2.2.0")]
+[assembly: AssemblyFileVersion("2.2.2.0")]
 [assembly: GitBranch("2.2")]
-[assembly: GitRevision("b68cc64669f9dfd3f4126de9e5579028a92d90af")]
-[assembly: GitUri("https://github.com/sdether/DReAM")]
+[assembly: GitRevision("HEAD")]
+[assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 //
 // In order to sign your assembly you must specify a key to use. Refer to the 
@@ -88,5 +88,5 @@ using System.Runtime.InteropServices;
 //
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
-[assembly: AssemblyKeyFile(@"..\mindtouch.snk")]
+[assembly: AssemblyKeyFile(@"../mindtouch.snk")]
 #endif

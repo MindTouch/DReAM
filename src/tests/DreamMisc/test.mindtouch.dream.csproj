@@ -88,6 +88,7 @@
     <Compile Include="CookieTests.cs" />
     <Compile Include="DreamFeatureTests.cs" />
     <Compile Include="DreamHeadersTests.cs" />
+    <Compile Include="DreamHostAliasesTests.cs" />
     <Compile Include="ExpiringDictionaryTests.cs" />
     <Compile Include="CoroutineTests.cs" />
     <Compile Include="CultureUtilTests.cs" />
@@ -98,10 +99,12 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ExpiringHashSetTests.cs" />
     <Compile Include="InMemoryKeyValueCacheTests.cs" />
+    <Compile Include="JsonUtilTests.cs" />
     <Compile Include="LockTests.cs" />
     <Compile Include="MockDataCatalogTests.cs" />
     <Compile Include="MockPlugTests.cs" />
     <Compile Include="MysqlDocStoreManagerTests.cs" />
+    <Compile Include="NumericTests.cs" />
     <Compile Include="PlugTests.cs" />
     <Compile Include="PubSubTests.cs" />
     <Compile Include="ResultTest.cs" />

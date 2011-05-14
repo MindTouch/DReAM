@@ -33,7 +33,7 @@ namespace MindTouch.Dream {
             normalized = uri;
             switch(uri.Scheme) {
             case "xri":
-                return 1;
+                return Plug.BASE_ENDPOINT_SCORE;
             default:
                 return 0;
             }
