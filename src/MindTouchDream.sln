@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.blueprints", "min
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.dream", "tests\DreamMisc\test.mindtouch.dream.csproj", "{2E8FBF2E-AB73-43D9-B384-45DAD40597AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.system.priorityqueue", "tests\PriorityQueue\test.system.priorityqueue.csproj", "{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.storage", "tests\Storage\test.mindtouch.storage.csproj", "{909B67F2-F2D6-4B68-8401-A56747379995}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.bench", "mindtouch.bench\mindtouch.bench.csproj", "{74182840-62F6-4587-8FA8-88C4D57598AE}"
@@ -86,14 +84,6 @@ Global
 		{2E8FBF2E-AB73-43D9-B384-45DAD40597AF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2E8FBF2E-AB73-43D9-B384-45DAD40597AF}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
 		{2E8FBF2E-AB73-43D9-B384-45DAD40597AF}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Documentation|Any CPU.Build.0 = Debug|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
 		{909B67F2-F2D6-4B68-8401-A56747379995}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{909B67F2-F2D6-4B68-8401-A56747379995}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{909B67F2-F2D6-4B68-8401-A56747379995}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
@@ -146,7 +136,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2E8FBF2E-AB73-43D9-B384-45DAD40597AF} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
-		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
 		{909B67F2-F2D6-4B68-8401-A56747379995} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
 		{66E62AB7-D8A5-494A-970F-AA6705E33361} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
 		{E23ADD96-5514-449A-8FD9-1BC0B0177146} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}

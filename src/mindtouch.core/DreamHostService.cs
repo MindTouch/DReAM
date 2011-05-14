@@ -402,7 +402,7 @@ namespace MindTouch.Dream {
                 response.Return(DreamMessage.NotFound("type not found"));
                 yield break;
             }
-            yield return Coroutine.Invoke(RegisterBlueprint, blueprint, type, new Result());
+            RegisterBlueprint(blueprint, type);
             response.Return(DreamMessage.Ok());
         }
 
@@ -449,7 +449,7 @@ namespace MindTouch.Dream {
             foreach(Type t in types) {
                 object[] dsa = t.GetCustomAttributes(typeof(DreamServiceAttribute), false);
                 if((dsa != null) && (dsa.Length > 0)) {
-                    yield return Coroutine.Invoke(RegisterBlueprint, (XDoc)null, t, new Result());
+                    RegisterBlueprint(null, t);
                 }
             }
             response.Return(DreamMessage.Ok());
@@ -517,7 +517,7 @@ namespace MindTouch.Dream {
                     }
                 }
                 blueprint = CreateServiceBlueprint(type);
-                yield return Coroutine.Invoke(RegisterBlueprint, (XDoc)null, type, new Result());
+                RegisterBlueprint(null, type);
             } else {
 
                 // validate blueprints
@@ -1623,7 +1623,7 @@ namespace MindTouch.Dream {
                 }
             }
 
-            //attach default pubsub service plug
+            // attach default pubsub service plug
             if(_hostpubsub != null) {
                 if(config["uri.pubsub"].ListLength == 0) {
                     config.Elem("uri.pubsub", _hostpubsub);
@@ -1744,12 +1744,11 @@ namespace MindTouch.Dream {
             }
         }
 
-        private Yield RegisterBlueprint(XDoc blueprint, Type type, Result response) {
+        private void RegisterBlueprint(XDoc blueprint, Type type) {
 
             // check if type has already been registers
             if(_registeredTypes.ContainsKey(type.AssemblyQualifiedName)) {
-                response.Return();
-                yield break;
+                return;
             }
             if(!type.IsA<IDreamService>()) {
                 throw new DreamAbortException(DreamMessage.BadRequest("class is not derived from IDreamService"));
@@ -1788,9 +1787,6 @@ namespace MindTouch.Dream {
             lock(_registeredTypes) {
                 _registeredTypes[type.AssemblyQualifiedName] = type;
             }
-
-            // indicate we're done
-            response.Return();
         }
 
         private DreamFeatureDirectory CreateServiceFeatureDirectory(IDreamService service, XDoc blueprint, XDoc config) {

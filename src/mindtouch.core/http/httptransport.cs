@@ -72,17 +72,17 @@ namespace MindTouch.Dream.Http {
         }
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
-        private IDreamEnvironment _env;
+        private readonly IDreamEnvironment _env;
         private XUri _uri;
-        private int _minSimilarity;
+        private readonly int _minSimilarity;
         private HttpListener _listener;
-        private string _sourceInternal;
-        private string _sourceExternal;
+        private readonly string _sourceInternal;
+        private readonly string _sourceExternal;
         private string _serverSignature;
-        private AuthenticationSchemes _authenticationSheme;
+        private readonly AuthenticationSchemes _authenticationSheme;
 
         //--- Constructors ---
         public HttpTransport(IDreamEnvironment env, XUri uri, AuthenticationSchemes authenticationSheme){
