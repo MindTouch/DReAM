@@ -126,5 +126,10 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(Wait.For(() => dispatched.Count == 1, 5.Seconds()), "item was not dispatched in time");
             Assert.AreEqual(item1.Location, dispatched[0].Location, "wrong item location for dispatched item");
         }
+
+        [Test]
+        public void ClearAndDispose_removes_queue_from_disk() {
+            Assert.Fail();
+        }
     }
 }

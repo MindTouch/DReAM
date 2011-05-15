@@ -45,6 +45,10 @@ namespace MindTouch.Dream.Services.PubSub {
             _queueRootPath = queueRootPath;
             _taskTimerFactory = taskTimerFactory;
             _retryTime = retryTime;
+
+            if(!Directory.Exists(_queueRootPath)) {
+                Directory.CreateDirectory(_queueRootPath);
+            }
         }
 
         //--- Methods ---
