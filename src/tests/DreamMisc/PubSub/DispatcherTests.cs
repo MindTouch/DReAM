@@ -38,15 +38,19 @@ namespace MindTouch.Dream.Test.PubSub {
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private Dispatcher _dispatcher;
-        private Mock<IPersistentPubSubDispatchQueueRepository> _queueFactoryMock;
+        private Mock<IPersistentPubSubDispatchQueueRepository> _queueRepositoryMock;
+        private Func<DispatchItem, Result<bool>> _dequeueHandler;
 
         [SetUp]
         public void Setup() {
             MockPlug.DeregisterAll();
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
             var owner = Plug.New("mock:///pubsub");
-            _queueFactoryMock = new Mock<IPersistentPubSubDispatchQueueRepository>();
-            _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactoryMock.Object);
+            _queueRepositoryMock = new Mock<IPersistentPubSubDispatchQueueRepository>();
+            _queueRepositoryMock.Setup(x => x.Initialize(It.IsAny<Func<DispatchItem, Result<bool>>>()))
+                .Callback((Func<DispatchItem, Result<bool>> handler) => _dequeueHandler = handler)
+                .Returns(new PubSubSubscriptionSet[0]);
+            _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueRepositoryMock.Object);
 
         }
 
@@ -223,7 +227,6 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.AreEqual(ev.Id, dispatches[testUri.At("sub1")].Headers.DreamEventId);
             Assert.IsTrue(dispatches.ContainsKey(testUri.At("sub3")));
             Assert.IsTrue(dispatches.ContainsKey(testUri.At("sub4")));
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
@@ -288,7 +291,6 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.AreEqual(ev.AsMessage().ToDocument(), dispatches[testUri.At("sub1")].ToDocument());
             Assert.AreEqual(ev.Id, dispatches[testUri.At("sub1")].Headers.DreamEventId);
             Assert.IsTrue(dispatches.ContainsKey(testUri.At("sub2")));
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
@@ -299,30 +301,21 @@ namespace MindTouch.Dream.Test.PubSub {
                 new XUri("http://foobar.com/some/comment"));
             List<DreamMessage> dispatches = new List<DreamMessage>();
             XUri testUri = new XUri("http://sales.mindtouch.com/").At(StringUtil.CreateAlphaNumericKey(4));
-            AutoResetEvent resetEvent = new AutoResetEvent(false);
             int dispatchCounter = 0;
-            int expectedDispatches = 0;
             MockPlug.Register(testUri, delegate(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
                 if(testUri == plug.Uri) {
-                    dispatches.Add(request);
-                    dispatchCounter++;
-                    // ReSharper disable AccessToModifiedClosure
-                    if(dispatchCounter >= expectedDispatches) {
-                        // ReSharper restore AccessToModifiedClosure
-                        resetEvent.Set();
+                    lock(dispatches) {
+                        dispatches.Add(request);
+                        dispatchCounter++;
+                        // ReSharper disable AccessToModifiedClosure
                     }
                 }
                 response.Return(DreamMessage.Ok());
             });
-            int expectedCombinedSetUpdates = 2;
             int combinedSetUpdates = 0;
-            AutoResetEvent setResetEvent = new AutoResetEvent(false);
             _dispatcher.CombinedSetUpdated += delegate {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
-                if(combinedSetUpdates >= expectedCombinedSetUpdates) {
-                    setResetEvent.Set();
-                }
             };
             _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
@@ -346,16 +339,22 @@ namespace MindTouch.Dream.Test.PubSub {
                     .End(), "asd");
 
             // combinedset updates happen asynchronously, so give'em a chance
-            Assert.IsTrue(setResetEvent.WaitOne(10000, false));
-            expectedDispatches = 1;
+            const int expectedCombinedSetUpdates = 2;
+            Assert.IsTrue(
+                Wait.For(() => combinedSetUpdates >= expectedCombinedSetUpdates, 10.Seconds()),
+                string.Format("expected at least {0} combined set updates, gave up after {1}", expectedCombinedSetUpdates, combinedSetUpdates)
+            );
+            const int expectedDispatches = 1;
             _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
-            Assert.IsTrue(resetEvent.WaitOne(10000, false));
+            Assert.IsTrue(
+                Wait.For(() => dispatchCounter >= expectedDispatches, 10.Seconds()),
+                string.Format("expected at least {0} dispatches, gave up after {1}", expectedDispatches, dispatchCounter)
+            );
             Assert.AreEqual(1, dispatches.Count);
             Assert.AreEqual(ev.AsMessage().ToDocument(), dispatches[0].ToDocument());
             Assert.AreEqual(ev.Id, dispatches[0].Headers.DreamEventId);
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
@@ -431,7 +430,6 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.AreEqual(ev.AsMessage().ToDocument(), dispatches[testUri.At("sub1")].ToDocument());
             Assert.AreEqual(ev.Id, dispatches[testUri.At("sub1")].Headers.DreamEventId);
             Assert.IsTrue(dispatches.ContainsKey(testUri.At("sub3")));
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
@@ -442,7 +440,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 .WithVia(new XUri("local://12345/a"));
             var owner = Plug.New(loopService);
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
-            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueFactoryMock.Object);
+            var dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueRepositoryMock.Object);
             try {
                 dispatcher.Dispatch(ev);
                 Assert.Fail("should not have gotten here");
@@ -570,7 +568,6 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
             Thread.Sleep(1000); // failure gets dealt with async
             Assert.IsNull(_dispatcher[location]);
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
@@ -641,7 +638,6 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.AreEqual(2, recipients.Length);
             Assert.Contains(proxyRecipient1, recipients);
             Assert.Contains(proxyRecipient2, recipients);
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
@@ -675,12 +671,11 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(resetEvent.WaitOne(10000, false));
-            MockPlug.Deregister(testUri);
         }
 
         [Test]
-        public void Registration_of_expiring_set_triggers_set_specific_dispatch_queue_creation() {
-            _queueFactoryMock.Setup(x => x.Create("abc")).Returns(new Mock<IPubSubDispatchQueue>().Object).AtMostOnce().Verifiable();
+        public void Registration_of_expiring_set_triggers_set_specific_dispatch_queue_registration() {
+            _queueRepositoryMock.Setup(x => x.RegisterOrUpdate(It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")));
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
@@ -693,7 +688,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .End(),
                 "def"
             );
-            _queueFactoryMock.VerifyAll();
+            _queueRepositoryMock.VerifyAll();
         }
 
         [Test]
@@ -710,7 +705,11 @@ namespace MindTouch.Dream.Test.PubSub {
             };
             var recipientUri = new XUri("http://recipient");
             var dispatchQueueMock = new Mock<IPubSubDispatchQueue>();
-            _queueFactoryMock.Setup(x => x.Create("abc")).Returns(dispatchQueueMock.Object).AtMostOnce().Verifiable();
+            var queueResolved = false;
+            _queueRepositoryMock.Setup(x => x[It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")])
+                .Callback(() => queueResolved = true)
+                .Returns(dispatchQueueMock.Object)
+                .Verifiable();
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
@@ -731,10 +730,21 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.Dispatch(ev);
 
             // Assert
-            _queueFactoryMock.VerifyAll();
-            dispatchQueueMock.Verify(x => x.SetDequeueHandler(It.IsAny<Func<DispatchItem, Result<bool>>>()), "dequeue handler was not set on queue");
+
+            // dispatch happens asynchronously so we need to wait until our mock repository was accessed
+            Assert.IsTrue(
+                Wait.For(() => queueResolved, 10.Seconds()),
+                "mock repository was not accessed in time"                
+            );
+            _queueRepositoryMock.VerifyAll();
+            dispatchQueueMock.Verify(
+                x => x.SetDequeueHandler(It.IsAny<Func<DispatchItem, Result<bool>>>()),
+                Times.Never(), 
+                "dequeue handler was set on queue"
+            );
             dispatchQueueMock.Verify(
                 x => x.Enqueue(It.Is<DispatchItem>(y => y.Uri == recipientUri && y.Event.Channel == ev.Channel && y.Event.Id == ev.Id)),
+                Times.Once(),
                 "event wasn't enqueued"
             );
         }
@@ -764,8 +774,12 @@ namespace MindTouch.Dream.Test.PubSub {
                     response.Return(DreamMessage.BadRequest("bad"));
                 }
             });
-            var dispatchQueue = new MockPubSubDispatchQueue();
-            _queueFactoryMock.Setup(x => x.Create("abc")).Returns(dispatchQueue).AtMostOnce().Verifiable();
+            var dispatchQueue = new MockPubSubDispatchQueue(_dequeueHandler);
+            var queueResolved = false;
+            _queueRepositoryMock.Setup(x => x[It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")])
+                .Callback(() => queueResolved = true)
+                .Returns(dispatchQueue)
+                .Verifiable();
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
@@ -786,7 +800,13 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.Dispatch(ev);
 
             // Assert
-            _queueFactoryMock.VerifyAll();
+
+            // dispatch happens asynchronously so we need to wait until our mock repository was accessed
+            Assert.IsTrue(
+                Wait.For(() => queueResolved, 10.Seconds()),
+                "mock repository was not accessed in time"
+            );
+            _queueRepositoryMock.VerifyAll();
             Assert.IsTrue(Wait.For(() => done, 10.Seconds()), "dispatch didn't complete");
             Assert.AreEqual(failures + 1, requestCount, "wrong number of requests");
             Assert.AreEqual(failures, dispatchQueue.FailureCount, "wrong number of failure responses reported to dispatchqueue");
@@ -796,6 +816,11 @@ namespace MindTouch.Dream.Test.PubSub {
     public class MockPubSubDispatchQueue : IPubSubDispatchQueue {
         private Func<DispatchItem, Result<bool>> _dequeueHandler;
         public int FailureCount;
+
+        public MockPubSubDispatchQueue(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            _dequeueHandler = dequeueHandler;
+        }
+
         public TimeSpan FailureWindow { get { return TimeSpan.Zero; } }
 
         public void Enqueue(DispatchItem item) {
@@ -809,7 +834,7 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
-            _dequeueHandler = dequeueHandler;
+            throw new InvalidOperationException("should never be called");
         }
 
         #region Implementation of IDisposable

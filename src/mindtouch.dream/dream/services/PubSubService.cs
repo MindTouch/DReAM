@@ -37,7 +37,7 @@ namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
     [DreamService("MindTouch Publication and Subscription Service", "Copyright (c) 2006-2011 MindTouch, Inc.",
-        SID = new string[] { "sid://mindtouch.com/dream/2008/10/pubsub" }
+        SID = new[] { "sid://mindtouch.com/dream/2008/10/pubsub" }
     )]
     internal class PubSubService : DreamService {
 
@@ -68,11 +68,11 @@ namespace MindTouch.Dream.Services {
 
         [DreamFeature("POST:subscribers", "Intialize a set of subscriptions")]
         internal Yield CreateSubscriptionSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            XDoc subscriptionSet = request.ToDocument();
+            var subscriptionSet = request.ToDocument();
             var location = request.Headers["set-location-key"] ?? StringUtil.CreateAlphaNumericKey(8);
             var accessKey = request.Headers["set-access-key"] ?? StringUtil.CreateAlphaNumericKey(8);
-            Tuplet<PubSubSubscriptionSet, bool> set = _dispatcher.RegisterSet(location, subscriptionSet, accessKey);
-            XUri locationUri = Self.At("subscribers", set.Item1.Location).Uri.AsPublicUri();
+            var set = _dispatcher.RegisterSet(location, subscriptionSet, accessKey);
+            var locationUri = Self.At("subscribers", set.Item1.Location).Uri.AsPublicUri();
             DreamMessage msg = null;
             if(set.Item2) {
 
@@ -82,7 +82,7 @@ namespace MindTouch.Dream.Services {
             } else {
 
                 // new subs cause a Created with Location of the sub, plus XDoc containing the location
-                XDoc responseDoc = new XDoc("subscription-set")
+                var responseDoc = new XDoc("subscription-set")
                     .Elem("uri.location", locationUri)
                     .Elem("access-key", set.Item1.AccessKey);
                 msg = DreamMessage.Created(locationUri, responseDoc);
@@ -110,12 +110,8 @@ namespace MindTouch.Dream.Services {
 
         [DreamFeature("GET:subscribers/{id}", "Intialize a set of subscriptions")]
         protected Yield GetSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            PubSubSubscriptionSet set = _dispatcher[context.GetParam("id")];
-            if(set == null) {
-                response.Return(DreamMessage.NotFound("There is no subscription set at this location"));
-            } else {
-                response.Return(DreamMessage.Ok(set.AsDocument()));
-            }
+            var set = _dispatcher[context.GetParam("id")];
+            response.Return(set == null ? DreamMessage.NotFound("There is no subscription set at this location") : DreamMessage.Ok(set.AsDocument()));
             yield break;
         }
 

@@ -103,6 +103,8 @@ namespace MindTouch.Dream.Services.PubSub {
             _defaultQueue = new ImmediatePubSubDispatchQueue();
             _defaultQueue.SetDequeueHandler(TryDispatchItem);
             var pubSubSubscriptionSets = queueRepository.Initialize(TryDispatchItem);
+
+            // Note (arnec): only invoking lock here, so that RegisterSet and Update don't do it over and over
             lock(_subscriptionsByOwner) {
                 foreach(var set in pubSubSubscriptionSets) {
                     RegisterSet(set, true);
