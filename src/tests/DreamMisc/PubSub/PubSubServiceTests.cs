@@ -71,7 +71,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Can_inject_custom_dispatcher() {
-            Plug pubsub = CreatePubSubService("upstream",
+            CreatePubSubService("upstream",
                 new XDoc("config")
                     .Start("components")
                         .Start("component")
@@ -79,8 +79,23 @@ namespace MindTouch.Dream.Test.PubSub {
                             .Attr("type", typeof(IPubSubDispatcher).AssemblyQualifiedName)
                         .End()
                     .End()
-            ).WithInternalKey().AtLocalHost;
+            );
             Assert.AreEqual(1, MockDispatcher.Instantiations);
+        }
+
+        [Test]
+        public void Can_inject_custom_dispatch_queue() {
+            CreatePubSubService("upstream",
+                new XDoc("config")
+                    .Start("components")
+                        .Start("component")
+                            .Attr("implementation", typeof(MockPubSubDispatchQueueRepository).AssemblyQualifiedName)
+                            .Attr("type", typeof(IPersistentPubSubDispatchQueueRepository).AssemblyQualifiedName)
+                        .End()
+                    .End()
+            );
+            Assert.AreEqual(1, MockPubSubDispatchQueueRepository.Instantiations);
+            Assert.AreEqual(1, MockPubSubDispatchQueueRepository.InitCalled);
         }
 
         [Test]

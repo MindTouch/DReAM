@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 using System;
+using System.IO;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.IO;
@@ -75,12 +76,23 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         public void ClearAndDispose() {
-            EnsureNotDisposed();
+            if(_isDisposed) {
+                return;
+            }
             _queue.Clear();
+            _queue.Dispose();
+            try {
+                Directory.Delete(_queuePath, true);
+            } catch(Exception e) {
+                _log.Warn(string.Format("unable to remove queue at path '{0}': {1}", _queuePath, e.Message), e);
+            }
             Dispose();
         }
 
         public void Dispose() {
+            if(_isDisposed) {
+                return;
+            }
             lock(_queue) {
                 _isDisposed = true;
                 _queue.Dispose();

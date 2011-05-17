@@ -96,16 +96,14 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Creating_a_queue_with_persisted_items_starts_dispatch_once_dispatch_handler_is_attached() {
+
             // Arrange
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
 
             var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds());
-            dispatchQueue.SetDequeueHandler((item) => { 
-                var r = new Result<bool>();
-                r.Return(false);
-                return r;
-            });
+            dispatchQueue.SetDequeueHandler((item) => new Result<bool>().WithReturn(false));
+
             dispatchQueue.Enqueue(item1);
             dispatchQueue.Dispose();
             dispatchQueue = null;
@@ -129,7 +127,109 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void ClearAndDispose_removes_queue_from_disk() {
-            Assert.Fail();
+
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
+
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+            dispatchQueue.SetDequeueHandler((item) => new Result<bool>().WithReturn(false));
+            dispatchQueue.Enqueue(item1);
+            Assert.IsTrue(Directory.GetFiles(queuePath).Length > 0, "queue directory did not contain any files");
+
+            // Act
+            dispatchQueue.ClearAndDispose();
+
+            // Assert
+            Assert.IsFalse(Directory.Exists(queuePath), "queue directory still exists");
+        }
+
+        [Test]
+        public void Disposed_queue_throws_on_access() {
+
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+
+            // Act
+            dispatchQueue.Dispose();
+
+            // Assert
+            try {
+                var item = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
+                dispatchQueue.Enqueue(item);
+                Assert.Fail("Enqueue didn't throw");
+            } catch(ObjectDisposedException) {
+            } catch(Exception e) {
+                Assert.Fail(string.Format("Enqueue threw unexpected exception: {0}", e));
+            }
+            try {
+                dispatchQueue.SetDequeueHandler(null);
+                Assert.Fail("SetDequeueHandler didn't throw");
+            } catch(ObjectDisposedException) {
+            } catch(AssertionException) {
+                throw;
+            } catch(Exception e) {
+                Assert.Fail(string.Format("SetDequeueHandler threw unexpected exception: {0}", e));
+            }
+        }
+
+        [Test]
+        public void ClearAndDisposed_queue_throws_on_access() {
+
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+
+            // Act
+            dispatchQueue.ClearAndDispose();
+
+            // Assert
+            try {
+                var item = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
+                dispatchQueue.Enqueue(item);
+                Assert.Fail("Enqueue didn't throw");
+            } catch(ObjectDisposedException) {
+            } catch(AssertionException) {
+                throw;
+            } catch(Exception e) {
+                Assert.Fail(string.Format("Enqueue threw unexpected exception: {0}", e));
+            }
+            try {
+                dispatchQueue.SetDequeueHandler(null);
+                Assert.Fail("SetDequeueHandler didn't throw");
+            } catch(ObjectDisposedException) {
+            } catch(Exception e) {
+                Assert.Fail(string.Format("SetDequeueHandler threw unexpected exception: {0}", e));
+            }
+        }
+
+        [Test]
+        public void Dispose_is_idempotent() {
+
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+
+            // Act
+            dispatchQueue.Dispose();
+
+            // Assert
+            dispatchQueue.Dispose();
+        }
+
+        [Test]
+        public void DisposeAndClear_is_idempotent() {
+
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+
+            // Act
+            dispatchQueue.ClearAndDispose();
+
+            // Assert
+            dispatchQueue.ClearAndDispose();
         }
     }
 }

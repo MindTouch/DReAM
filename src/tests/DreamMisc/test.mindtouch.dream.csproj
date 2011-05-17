@@ -110,6 +110,7 @@
     <Compile Include="PubSub\DispatcherTests.cs" />
     <Compile Include="PubSub\DispatchItemSerializerTests.cs" />
     <Compile Include="PubSub\MockDispatcher.cs" />
+    <Compile Include="PubSub\MockPubSubDispatchQueueRepository.cs" />
     <Compile Include="PubSub\PersistentPubSubDispatchQueueRespositoryTests.cs" />
     <Compile Include="PubSub\PersistentPubSubDispatchQueueTests.cs" />
     <Compile Include="PubSub\SubscriptionTests.cs" />

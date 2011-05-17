@@ -62,6 +62,7 @@ namespace MindTouch.Dream.Services.PubSub {
             _handler = handler;
 
             // load persisted subscriptions
+            var subscriptions = new List<PubSubSubscriptionSet>();
             foreach(var setFile in Directory.GetFiles(_queueRootPath, "*.xml")) {
                 PubSubSubscriptionSet set;
                 try {
@@ -74,9 +75,9 @@ namespace MindTouch.Dream.Services.PubSub {
                     _log.Warn(string.Format("unable to retrieve and re-register subscription for location", Path.GetFileNameWithoutExtension(setFile)), e);
                     continue;
                 }
-                yield return set;
+                subscriptions.Add(set);
             }
-
+            return subscriptions;
         }
 
         public void RegisterOrUpdate(PubSubSubscriptionSet set) {
