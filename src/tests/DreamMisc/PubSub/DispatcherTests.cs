@@ -750,6 +750,67 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         [Test]
+        public void Dispatch_for_expiring_set_happens_only_once_for_an_event() {
+
+            // Arrange
+            var doc = new XDoc("msg").Elem("foo", StringUtil.CreateAlphaNumericKey(10));
+            var ev = new DispatcherEvent(
+                doc,
+                new XUri("channel:///foo/bar"),
+                new XUri("http://foobar.com/some/page"));
+            var setUpdated = false;
+            _dispatcher.CombinedSetUpdated += delegate {
+                setUpdated = true;
+            };
+            var recipientUri = new XUri("http://recipient");
+            XDoc dispatched = null;
+            var dispatchCount = 0;
+            MockPlug.Register(recipientUri, (plug, verb, uri, request, response) => {
+                dispatchCount++;
+                dispatched = request.ToDocument();
+                response.Return(DreamMessage.Ok());
+            });
+            var dispatchQueue = new MockPubSubDispatchQueue(_dequeueHandler);
+            var queueResolved = false;
+            _queueRepositoryMock.Setup(x => x[It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")])
+                .Callback(() => queueResolved = true)
+                .Returns(dispatchQueue)
+                .Verifiable();
+            _dispatcher.RegisterSet(
+                "abc",
+                new XDoc("subscription-set")
+                    .Attr("ttl", 100)
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/bar")
+                        .Start("recipient").Elem("uri", recipientUri).End()
+                    .End(),
+                "def"
+            );
+
+            // combinedset updates happen asynchronously, so give'em a chance
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "combined set didn't update in time");
+
+            // Act
+            _dispatcher.Dispatch(ev);
+
+            // Assert
+
+            // dispatch happens asynchronously so we need to wait until our mock repository was accessed
+            Assert.IsTrue(
+                Wait.For(() => dispatched != null, 10.Seconds()),
+                "dispatch didn't happen"
+            );
+            Assert.IsFalse(
+                Wait.For(() => dispatchCount > 1, 2.Seconds()),
+                "more than one dispatch happened"
+            );
+            _queueRepositoryMock.VerifyAll();
+            Assert.AreEqual(doc.ToCompactString(), dispatched.ToCompactString());
+        }
+
+        [Test]
         public void Dispatch_failure_for_expiring_set_will_continue_to_retry() {
 
             // Arrange
@@ -814,6 +875,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Dispatch_failures_lasting_longer_than_set_expirationTTL_will_drop_subscription_and_events() {
+
             // Arrange
             var ev = new DispatcherEvent(
                 new XDoc("msg"),
@@ -825,7 +887,9 @@ namespace MindTouch.Dream.Test.PubSub {
             };
             var recipientUri = new XUri("http://recipient");
             MockPlug.Register(recipientUri, (plug, verb, uri, request, response) => response.Return(DreamMessage.BadRequest("bad")));
-            var dispatchQueue = new MockPubSubDispatchQueue(_dequeueHandler);
+            var dispatchQueue = new MockPubSubDispatchQueue(_dequeueHandler) {
+                FailureWindow = 10.Seconds()
+            };
             var queueResolved = false;
             _queueRepositoryMock.Setup(x => x[It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")])
                 .Callback(() => queueResolved = true)
@@ -857,42 +921,96 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "subscription wasn't removed in tim");
             _queueRepositoryMock.VerifyAll();
             foreach(var set in _dispatcher.GetAllSubscriptionSets()) {
-                Assert.AreNotEqual("abc",set.Location, "found set in list of subscriptions after it should have been dropped");
+                Assert.AreNotEqual("abc", set.Location, "found set in list of subscriptions after it should have been dropped");
             }
         }
 
         [Test]
-        public void Can_remove_set_while_dispatches_are_pending() {
-            Assert.Fail();
-        }
-    }
+        public void Removing_set_while_dispatches_are_pending_drops_dispatches() {
 
-    public class MockPubSubDispatchQueue : IPubSubDispatchQueue {
-        private Func<DispatchItem, Result<bool>> _dequeueHandler;
-        public int FailureCount;
-
-        public MockPubSubDispatchQueue(Func<DispatchItem, Result<bool>> dequeueHandler) {
-            _dequeueHandler = dequeueHandler;
-        }
-
-        public TimeSpan FailureWindow { get { return TimeSpan.Zero; } }
-
-        public void Enqueue(DispatchItem item) {
-            bool success;
-            do {
-                success = _dequeueHandler(item).Wait();
-                if(!success) {
-                    FailureCount++;
+            // Arrange
+            var ev = new DispatcherEvent(
+                new XDoc("msg"),
+                new XUri("channel:///foo/bar"),
+                new XUri("http://foobar.com/some/page"));
+            var setUpdated = false;
+            _dispatcher.CombinedSetUpdated += delegate {
+                setUpdated = true;
+            };
+            var recipientUri = new XUri("http://recipient");
+            var fail = true;
+            var success = false;
+            var attempts = 0;
+            MockPlug.Register(recipientUri, (plug, verb, uri, request, response) => {
+                attempts++;
+                if(fail) {
+                    response.Return(DreamMessage.BadRequest("bad"));
+                } else {
+                    response.Return(DreamMessage.Ok());
+                    success = true;
                 }
-            } while(!success);
+            });
+            var dispatchQueue = new MockPubSubDispatchQueue(_dequeueHandler);
+            var queueResolved = false;
+            _queueRepositoryMock.Setup(x => x[It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")])
+                .Callback(() => queueResolved = true)
+                .Returns(dispatchQueue)
+                .Verifiable();
+            _dispatcher.RegisterSet(
+                "abc",
+                new XDoc("subscription-set")
+                    .Attr("ttl", 100)
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/bar")
+                        .Start("recipient").Elem("uri", recipientUri).End()
+                    .End(),
+                "def"
+            );
+
+            // combinedset updates happen asynchronously, so give'em a chance
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "combined set didn't update in time");
+
+            // Act
+            _dispatcher.Dispatch(ev);
+            Assert.IsTrue(Wait.For(() => attempts > 0, 10.Seconds()), "never attempted to dispatch event");
+            _dispatcher.RemoveSet("abc");
+            // we observe the removal of the subscription by seeing the combined set updated
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "subscription wasn't removed in tim");
+            fail = false;
+
+            // Assert
+            Assert.IsFalse(Wait.For(() => success, 2.Seconds()), "dispatch made it through after all");
         }
 
-        public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
-            throw new InvalidOperationException("should never be called");
-        }
+        public class MockPubSubDispatchQueue : IPubSubDispatchQueue {
+            private Func<DispatchItem, Result<bool>> _dequeueHandler;
+            public int FailureCount;
+            public MockPubSubDispatchQueue(Func<DispatchItem, Result<bool>> dequeueHandler) {
+                _dequeueHandler = dequeueHandler;
+                FailureWindow = TimeSpan.Zero;
+            }
 
-        #region Implementation of IDisposable
-        public void Dispose() { }
-        #endregion
+            public TimeSpan FailureWindow { get; set; }
+
+            public void Enqueue(DispatchItem item) {
+                bool success;
+                do {
+                    success = _dequeueHandler(item).Wait();
+                    if(!success) {
+                        FailureCount++;
+                    }
+                } while(!success);
+            }
+
+            public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
+                throw new InvalidOperationException("should never be called");
+            }
+
+            #region Implementation of IDisposable
+            public void Dispose() { }
+            #endregion
+        }
     }
 }

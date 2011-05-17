@@ -206,7 +206,23 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Can_return_message_after_queue_has_been_disposed() {
-            
+
+            // Arrange
+            var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
+
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+            var dispatchResult = new Result<bool>();
+            dispatchQueue.SetDequeueHandler((item) => dispatchResult);
+            dispatchQueue.Enqueue(item1);
+
+            // Act
+            dispatchQueue.Dispose();
+            dispatchResult.Return(true);
+
+            // Assert
+
+            // should not have thrown on the return, that is all
         }
 
         [Test]

@@ -129,6 +129,9 @@ namespace MindTouch.Dream.Services.PubSub {
         private void TryDequeue() {
             _dequeueHandler(_currentItem.Value).WhenDone(r => {
                 lock(_queue) {
+                    if(_isDisposed) {
+                        return;
+                    }
                     if(r.HasException || !r.Value) {
                         _failureWindowStart = DateTime.UtcNow;
                         _queueTimer.Change(_retryTime, TaskEnv.None);

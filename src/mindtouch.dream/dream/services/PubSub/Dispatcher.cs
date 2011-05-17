@@ -366,8 +366,6 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         private void DispatchCompletion_Helper(DispatchItem destination, DreamMessage response, Result<bool> result) {
-
-            // CLEANUP: proper access to lookup
             PubSubSubscriptionSet set;
             lock(_subscriptionsByOwner) {
                 if(!_subscriptionByLocation.TryGetValue(destination.Location, out set)) {
@@ -388,9 +386,16 @@ namespace MindTouch.Dream.Services.PubSub {
                     return;
                 }
                 if(queue.FailureWindow > set.ExpirationTTL) {
-                    _log.DebugFormat("the destination has failed continously for {0} and had an expiration failure window of {1}. The subscription at location '{0}' has been dropped", destination.Location, destination.Event.Id);
+                    _log.DebugFormat("the destination has failed continously for {0} and had an expiration failure window of {1}. The subscription at location '{2}' has been dropped, as has event '{3}'",
+                        queue.FailureWindow,
+                        set.ExpirationTTL,
+                        destination.Location,
+                        destination.Event.Id
+                    );
+                    RemoveSet(set.Location);
+                    result.Return(true);
+                    return;
                 }
-                RemoveSet(set.Location);
                 result.Return(false);
                 return;
             }
