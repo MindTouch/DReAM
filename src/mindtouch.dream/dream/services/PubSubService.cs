@@ -129,18 +129,18 @@ namespace MindTouch.Dream.Services {
                 var set = _dispatcher.ReplaceSet(setId, subscriptionDocument, accessKey);
                 _log.DebugFormat("Trying to update set {0}", setId);
                 if(set != null) {
-                    long? version = subscriptionDocument["@version"].AsLong;
+                    var version = subscriptionDocument["@version"].AsLong;
                     if(version.HasValue && version.Value <= set.Version) {
                         _log.DebugFormat("set not modified: {0}", setId);
                         response.Return(DreamMessage.NotModified());
-                    } else {
-                        if(version.HasValue) {
-                            _log.DebugFormat("Updating set '{0}' from version {1} to {2}", setId, set.Version, version);
-                        } else {
-                            _log.DebugFormat("Updating set '{0}'", setId);
-                        }
-                        responseMsg = DreamMessage.Ok();
+                        yield break;
                     }
+                    if(version.HasValue) {
+                        _log.DebugFormat("Updating set '{0}' from version {1} to {2}", setId, set.Version, version);
+                    } else {
+                        _log.DebugFormat("Updating set '{0}'", setId);
+                    }
+                    responseMsg = DreamMessage.Ok();
                 } else {
                     _log.DebugFormat("no such set: {0}", setId);
                     responseMsg = DreamMessage.NotFound("There is no subscription set at this location");
@@ -172,17 +172,19 @@ namespace MindTouch.Dream.Services {
                 builder = new ContainerBuilder();
                 builder.Register<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
             }
-            if(!container.IsRegistered<IPersistentPubSubDispatchQueueRepository>()) {
+            if(!container.IsRegistered<IPubSubDispatchQueueRepository>()) {
 
                 // CLEANUP: need a safe location, not just tmp
-                var localCachePath = Path.Combine(Path.GetTempPath(), "pubsub");
-                localCachePath = Self.Uri.Segments.Select(x => XUri.EncodeSegment(x)).Aggregate(localCachePath, Path.Combine);
-                if(!Directory.Exists(localCachePath)) {
-                    Directory.CreateDirectory(localCachePath);
-                }
+                var localQueuePath = config["queue-path"].AsText;
                 builder = builder ?? new ContainerBuilder();
-                builder.Register(new PersistentPubSubDispatchQueueRepository(localCachePath, TimerFactory, 30.Seconds()))
-                    .As<IPersistentPubSubDispatchQueueRepository>();
+                if(string.IsNullOrEmpty(localQueuePath)) {
+                    _log.Debug("no queue persistent path provided, using memory queues");
+                    builder.Register(new MemoryPubSubDispatchQueueRepository(TimerFactory, 30.Seconds()))
+                        .As<IPubSubDispatchQueueRepository>();
+                } else {
+                    builder.Register(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, 30.Seconds()))
+                        .As<IPubSubDispatchQueueRepository>();
+                }
             }
             if(builder != null) {
                 builder.Build(container);

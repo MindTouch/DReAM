@@ -45,7 +45,7 @@ namespace MindTouch.Dream.Services.PubSub {
         private readonly Dictionary<string, int> _dispatchFailuresByLocation = new Dictionary<string, int>();
         private readonly ProcessingQueue<DispatcherEvent> _dispatchQueue;
         private readonly IPubSubDispatchQueue _defaultQueue;
-        private readonly IPersistentPubSubDispatchQueueRepository _queueRepository;
+        private readonly IPubSubDispatchQueueRepository _queueRepository;
         private Dictionary<XUri, List<PubSubSubscriptionSet>> _subscriptionsByDestination = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
         private PubSubSubscriptionSet _combinedSet;
         private long _combinedSetVersion = 0;
@@ -94,7 +94,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// </summary>
         /// <param name="config">Configuration instance injected from pub sub service.</param>
         /// <param name="queueRepository">Factory for dispatch queues used by persisted (i.e. expiring) subscriptions</param>
-        public Dispatcher(DispatcherConfig config, IPersistentPubSubDispatchQueueRepository queueRepository) {
+        public Dispatcher(DispatcherConfig config, IPubSubDispatchQueueRepository queueRepository) {
             _queueRepository = queueRepository;
             _owner = config.ServiceUri.AsServerUri();
             _serviceKeySetCookie = config.ServiceAccessCookie;

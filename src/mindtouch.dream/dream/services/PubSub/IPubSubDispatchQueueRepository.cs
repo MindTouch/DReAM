@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
-    public interface IPersistentPubSubDispatchQueueRepository : IEnumerable<IPubSubDispatchQueue>, IDisposable {
+    public interface IPubSubDispatchQueueRepository : IEnumerable<IPubSubDispatchQueue>, IDisposable {
         IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler);
         void RegisterOrUpdate(PubSubSubscriptionSet set);
         void Delete(PubSubSubscriptionSet set);

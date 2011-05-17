@@ -38,7 +38,7 @@ namespace MindTouch.Dream.Test.PubSub {
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private Dispatcher _dispatcher;
-        private Mock<IPersistentPubSubDispatchQueueRepository> _queueRepositoryMock;
+        private Mock<IPubSubDispatchQueueRepository> _queueRepositoryMock;
         private Func<DispatchItem, Result<bool>> _dequeueHandler;
 
         [SetUp]
@@ -46,7 +46,7 @@ namespace MindTouch.Dream.Test.PubSub {
             MockPlug.DeregisterAll();
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
             var owner = Plug.New("mock:///pubsub");
-            _queueRepositoryMock = new Mock<IPersistentPubSubDispatchQueueRepository>();
+            _queueRepositoryMock = new Mock<IPubSubDispatchQueueRepository>();
             _queueRepositoryMock.Setup(x => x.Initialize(It.IsAny<Func<DispatchItem, Result<bool>>>()))
                 .Callback((Func<DispatchItem, Result<bool>> handler) => _dequeueHandler = handler)
                 .Returns(new PubSubSubscriptionSet[0]);

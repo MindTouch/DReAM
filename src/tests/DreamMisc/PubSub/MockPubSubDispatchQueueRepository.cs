@@ -25,7 +25,7 @@ using MindTouch.Dream.Services.PubSub;
 using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Test.PubSub {
-    public class MockPubSubDispatchQueueRepository : IPersistentPubSubDispatchQueueRepository {
+    public class MockPubSubDispatchQueueRepository : IPubSubDispatchQueueRepository {
         public static int Instantiations;
         public static int InitCalled;
         public MockPubSubDispatchQueueRepository() {
@@ -46,7 +46,7 @@ namespace MindTouch.Dream.Test.PubSub {
         public void Dispose() { }
         #endregion
 
-        #region Implementation of IPersistentPubSubDispatchQueueRepository
+        #region Implementation of IPubSubDispatchQueueRepository
         public IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler) {
             InitCalled++;
             return new PubSubSubscriptionSet[0];

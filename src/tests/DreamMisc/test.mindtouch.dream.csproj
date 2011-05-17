@@ -107,6 +107,8 @@
     <Compile Include="MysqlDocStoreManagerTests.cs" />
     <Compile Include="NumericTests.cs" />
     <Compile Include="PlugTests.cs" />
+    <Compile Include="PubSub\MemoryPubSubDispatchQueueRespositoryTests.cs" />
+    <Compile Include="PubSub\MemoryPubSubDispatchQueueTests.cs" />
     <Compile Include="PubSub\DispatcherTests.cs" />
     <Compile Include="PubSub\DispatchItemSerializerTests.cs" />
     <Compile Include="PubSub\MockDispatcher.cs" />

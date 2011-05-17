@@ -90,7 +90,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Start("components")
                         .Start("component")
                             .Attr("implementation", typeof(MockPubSubDispatchQueueRepository).AssemblyQualifiedName)
-                            .Attr("type", typeof(IPersistentPubSubDispatchQueueRepository).AssemblyQualifiedName)
+                            .Attr("type", typeof(IPubSubDispatchQueueRepository).AssemblyQualifiedName)
                         .End()
                     .End()
             );

@@ -21,34 +21,26 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using log4net;
 using MindTouch.Tasking;
-using MindTouch.Xml;
 
 namespace MindTouch.Dream.Services.PubSub {
-    public class PersistentPubSubDispatchQueueRepository : IPubSubDispatchQueueRepository {
+    public class MemoryPubSubDispatchQueueRepository : IPubSubDispatchQueueRepository {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
-        private readonly string _queueRootPath;
         private readonly TaskTimerFactory _taskTimerFactory;
         private readonly TimeSpan _retryTime;
-        private readonly Dictionary<string, PersistentPubSubDispatchQueue> _repository = new Dictionary<string, PersistentPubSubDispatchQueue>();
+        private readonly Dictionary<string, MemoryPubSubDispatchQueue> _repository = new Dictionary<string, MemoryPubSubDispatchQueue>();
         private Func<DispatchItem, Result<bool>> _handler;
 
         //--- Constructors ---
-        public PersistentPubSubDispatchQueueRepository(string queueRootPath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
-            _queueRootPath = queueRootPath;
+        public MemoryPubSubDispatchQueueRepository(TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
             _taskTimerFactory = taskTimerFactory;
             _retryTime = retryTime;
-
-            if(!Directory.Exists(_queueRootPath)) {
-                Directory.CreateDirectory(_queueRootPath);
-            }
         }
 
         //--- Methods ---
@@ -60,36 +52,16 @@ namespace MindTouch.Dream.Services.PubSub {
                 throw new InvalidOperationException("cannot initialize and already initialized repository");
             }
             _handler = handler;
-
-            // load persisted subscriptions
-            var subscriptions = new List<PubSubSubscriptionSet>();
-            foreach(var setFile in Directory.GetFiles(_queueRootPath, "*.xml")) {
-                PubSubSubscriptionSet set;
-                try {
-                    var setDoc = XDocFactory.LoadFrom(setFile, MimeType.TEXT_XML);
-                    var location = setDoc["@location"].AsText;
-                    var accessKey = setDoc["@accesskey"].AsText;
-                    set = new PubSubSubscriptionSet(setDoc, location, accessKey);
-                    RegisterOrUpdate(set);
-                } catch(Exception e) {
-                    _log.Warn(string.Format("unable to retrieve and re-register subscription for location", Path.GetFileNameWithoutExtension(setFile)), e);
-                    continue;
-                }
-                subscriptions.Add(set);
-            }
-            return subscriptions;
+            return new PubSubSubscriptionSet[0];
         }
 
         public void RegisterOrUpdate(PubSubSubscriptionSet set) {
             lock(_repository) {
-                var subscriptionDocument = set.AsDocument();
-                subscriptionDocument.Attr("location", set.Location).Attr("accesskey", set.AccessKey);
-                subscriptionDocument.Save(Path.Combine(_queueRootPath, set.Location + ".xml"));
                 if(_repository.ContainsKey(set.Location)) {
                     return;
                 }
 
-                var queue = new PersistentPubSubDispatchQueue(Path.Combine(_queueRootPath, XUri.EncodeSegment(set.Location)), _taskTimerFactory, _retryTime);
+                var queue = new MemoryPubSubDispatchQueue(set.Location, _taskTimerFactory, _retryTime);
                 queue.SetDequeueHandler(_handler);
                 _repository[set.Location] = queue;
             }
@@ -97,24 +69,18 @@ namespace MindTouch.Dream.Services.PubSub {
 
         public void Delete(PubSubSubscriptionSet set) {
             lock(_repository) {
-                PersistentPubSubDispatchQueue queue;
+                MemoryPubSubDispatchQueue queue;
                 if(!_repository.TryGetValue(set.Location, out queue)) {
                     return;
                 }
                 _repository.Remove(set.Location);
                 queue.ClearAndDispose();
-                var subscriptionDocPath = Path.Combine(_queueRootPath, set.Location + ".xml");
-                try {
-                    File.Delete(subscriptionDocPath);
-                } catch(Exception e) {
-                    _log.Warn(string.Format("unable to delete subscription doc at '{0}'", subscriptionDocPath), e);
-                }
             }
         }
 
         public IPubSubDispatchQueue this[PubSubSubscriptionSet set] {
             get {
-                PersistentPubSubDispatchQueue queue;
+                MemoryPubSubDispatchQueue queue;
                 return _repository.TryGetValue(set.Location, out queue) ? queue : null;
             }
         }
