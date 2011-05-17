@@ -205,6 +205,11 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         [Test]
+        public void Can_return_message_after_queue_has_been_disposed() {
+            
+        }
+
+        [Test]
         public void Dispose_is_idempotent() {
 
             // Arrange

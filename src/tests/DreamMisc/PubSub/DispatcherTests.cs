@@ -679,7 +679,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 1)
+                    .Attr("ttl", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -713,7 +713,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 1)
+                    .Attr("ttl", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -734,12 +734,12 @@ namespace MindTouch.Dream.Test.PubSub {
             // dispatch happens asynchronously so we need to wait until our mock repository was accessed
             Assert.IsTrue(
                 Wait.For(() => queueResolved, 10.Seconds()),
-                "mock repository was not accessed in time"                
+                "mock repository was not accessed in time"
             );
             _queueRepositoryMock.VerifyAll();
             dispatchQueueMock.Verify(
                 x => x.SetDequeueHandler(It.IsAny<Func<DispatchItem, Result<bool>>>()),
-                Times.Never(), 
+                Times.Never(),
                 "dequeue handler was set on queue"
             );
             dispatchQueueMock.Verify(
@@ -783,7 +783,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 1)
+                    .Attr("ttl", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -810,6 +810,60 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(Wait.For(() => done, 10.Seconds()), "dispatch didn't complete");
             Assert.AreEqual(failures + 1, requestCount, "wrong number of requests");
             Assert.AreEqual(failures, dispatchQueue.FailureCount, "wrong number of failure responses reported to dispatchqueue");
+        }
+
+        [Test]
+        public void Dispatch_failures_lasting_longer_than_set_expirationTTL_will_drop_subscription_and_events() {
+            // Arrange
+            var ev = new DispatcherEvent(
+                new XDoc("msg"),
+                new XUri("channel:///foo/bar"),
+                new XUri("http://foobar.com/some/page"));
+            var setUpdated = false;
+            _dispatcher.CombinedSetUpdated += delegate {
+                setUpdated = true;
+            };
+            var recipientUri = new XUri("http://recipient");
+            MockPlug.Register(recipientUri, (plug, verb, uri, request, response) => response.Return(DreamMessage.BadRequest("bad")));
+            var dispatchQueue = new MockPubSubDispatchQueue(_dequeueHandler);
+            var queueResolved = false;
+            _queueRepositoryMock.Setup(x => x[It.Is<PubSubSubscriptionSet>(y => y.Location == "abc")])
+                .Callback(() => queueResolved = true)
+                .Returns(dispatchQueue)
+                .Verifiable();
+            _dispatcher.RegisterSet(
+                "abc",
+                new XDoc("subscription-set")
+                    .Attr("ttl", 1)
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                        .Attr("id", "1")
+                        .Elem("channel", "channel:///foo/bar")
+                        .Start("recipient").Elem("uri", recipientUri).End()
+                    .End(),
+                "def"
+            );
+
+            // combinedset updates happen asynchronously, so give'em a chance
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "combined set didn't update in time");
+
+            // Act
+            _dispatcher.Dispatch(ev);
+            setUpdated = false;
+
+            // Assert
+
+            // we observe the removal of the subscription by seeing the combined set updated
+            Assert.IsTrue(Wait.For(() => setUpdated, 10.Seconds()), "subscription wasn't removed in tim");
+            _queueRepositoryMock.VerifyAll();
+            foreach(var set in _dispatcher.GetAllSubscriptionSets()) {
+                Assert.AreNotEqual("abc",set.Location, "found set in list of subscriptions after it should have been dropped");
+            }
+        }
+
+        [Test]
+        public void Can_remove_set_while_dispatches_are_pending() {
+            Assert.Fail();
         }
     }
 

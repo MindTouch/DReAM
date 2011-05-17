@@ -366,56 +366,71 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         private void DispatchCompletion_Helper(DispatchItem destination, DreamMessage response, Result<bool> result) {
+
             // CLEANUP: proper access to lookup
-            var set = _subscriptionByLocation[destination.Location];
+            PubSubSubscriptionSet set;
+            lock(_subscriptionsByOwner) {
+                if(!_subscriptionByLocation.TryGetValue(destination.Location, out set)) {
+                    _log.DebugFormat("the subscription at location '{0}' no longer exists, dropping event '{1}' ", destination.Location, destination.Event.Id);
+                    result.Return(true);
+                    return;
+                }
+            }
             if(set.HasExpiration) {
                 if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
                     result.Return(true);
-                } else {
-                    result.Return(false);
+                    return;
+                }
+                var queue = _queueRepository[set];
+                if(queue == null) {
+                    _log.DebugFormat("the dispatch queue for subscription at location '{0}' no longer exists, dropping event '{1}' ", destination.Location, destination.Event.Id);
+                    result.Return(true);
+                    return;
+                }
+                if(queue.FailureWindow > set.ExpirationTTL) {
+                    _log.DebugFormat("the destination has failed continously for {0} and had an expiration failure window of {1}. The subscription at location '{0}' has been dropped", destination.Location, destination.Event.Id);
+                }
+                RemoveSet(set.Location);
+                result.Return(false);
+                return;
+            }
+            if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
+                // if the post was a success, or didn't affect a change, clear any failure count
+                lock(_dispatchFailuresByLocation) {
+                    if(_log.IsDebugEnabled) {
+                        if(_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
+                            _log.Debug("zeroing out existing error count");
+                        }
+                    }
+                    _dispatchFailuresByLocation.Remove(destination.Location);
                 }
             } else {
-                if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
-                    // if the post was a success, or didn't affect a change, clear any failure count
-                    lock(_dispatchFailuresByLocation) {
-                        if(_log.IsDebugEnabled) {
-                            if(_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
-                                _log.Debug("zeroing out existing error count");
-                            }
-                        }
-                        _dispatchFailuresByLocation.Remove(destination.Location);
+
+                // post was a failure, increase consecutive failures
+                if(_log.IsWarnEnabled) {
+                    _log.WarnFormat("event dispatch to '{0}' failed: {1} - {2}", destination, response.Status, response.ToText());
+                }
+                lock(_dispatchFailuresByLocation) {
+
+                    // NOTE (arnec): using ContainsKey instead of TryGetValue, since we're incrementing a value type in place
+                    if(!_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
+                        _dispatchFailuresByLocation.Add(destination.Location, 1);
+                    } else {
+                        _dispatchFailuresByLocation[destination.Location]++;
                     }
-                } else {
+                    var failures = _dispatchFailuresByLocation[destination.Location];
+                    _log.DebugFormat("failure {0} out of {1} for set at location {2}", failures, set.MaxFailures, destination.Location);
 
-                    // post was a failure, increase consecutive failures
-                    if(_log.IsWarnEnabled) {
-                        _log.WarnFormat("event dispatch to '{0}' failed: {1} - {2}", destination, response.Status, response.ToText());
-                    }
-                    lock(_dispatchFailuresByLocation) {
-
-                        // NOTE (arnec): using ContainsKey instead of TryGetValue, since we're incrementing a value type in place
-                        if(!_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
-                            _dispatchFailuresByLocation.Add(destination.Location, 1);
-                        } else {
-                            _dispatchFailuresByLocation[destination.Location]++;
-                        }
-                        var failures = _dispatchFailuresByLocation[destination.Location];
-                        _log.DebugFormat("failure {0} out of {1} for set at location {2}", failures, set.MaxFailures, destination.Location);
-
-                        // kick out a subscription set if one of its subscriptions fails too many times
-                        if(failures > set.MaxFailures) {
-                            _log.DebugFormat("exceeded max failures, kicking set at '{0}'", set.Location);
-                            RemoveSet(destination.Location);
-                        }
+                    // kick out a subscription set if one of its subscriptions fails too many times
+                    if(failures > set.MaxFailures) {
+                        _log.DebugFormat("exceeded max failures, kicking set at '{0}'", set.Location);
+                        RemoveSet(destination.Location);
                     }
                 }
-
-                // Note (arnec): non-expiring sets always "succeed" at dispatch since their queues are not kept around
-                result.Return(true);
-                return;
-
             }
 
+            // Note (arnec): non-expiring sets always "succeed" at dispatch since their queues are not kept around
+            result.Return(true);
         }
 
         /// <summary>
