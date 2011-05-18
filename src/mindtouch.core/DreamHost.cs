@@ -30,6 +30,8 @@ using MindTouch.Tasking;
 using MindTouch.Xml;
 
 namespace MindTouch.Dream {
+    using Yield = IEnumerator<IYield>;
+
     /// <summary>
     /// Provides a hosting environment for <see cref="IDreamService"/> based services.
     /// </summary>

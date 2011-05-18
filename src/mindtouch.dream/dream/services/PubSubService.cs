@@ -132,15 +132,15 @@ namespace MindTouch.Dream.Services {
                     var version = subscriptionDocument["@version"].AsLong;
                     if(version.HasValue && version.Value <= set.Version) {
                         _log.DebugFormat("set not modified: {0}", setId);
-                        response.Return(DreamMessage.NotModified());
-                        yield break;
-                    }
-                    if(version.HasValue) {
-                        _log.DebugFormat("Updating set '{0}' from version {1} to {2}", setId, set.Version, version);
+                        responseMsg = DreamMessage.NotModified();
                     } else {
-                        _log.DebugFormat("Updating set '{0}'", setId);
+                        if(version.HasValue) {
+                            _log.DebugFormat("Updating set '{0}' from version {1} to {2}", setId, set.Version, version);
+                        } else {
+                            _log.DebugFormat("Updating set '{0}'", setId);
+                        }
+                        responseMsg = DreamMessage.Ok();
                     }
-                    responseMsg = DreamMessage.Ok();
                 } else {
                     _log.DebugFormat("no such set: {0}", setId);
                     responseMsg = DreamMessage.NotFound("There is no subscription set at this location");
@@ -173,8 +173,6 @@ namespace MindTouch.Dream.Services {
                 builder.Register<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
             }
             if(!container.IsRegistered<IPubSubDispatchQueueRepository>()) {
-
-                // CLEANUP: need a safe location, not just tmp
                 var localQueuePath = config["queue-path"].AsText;
                 builder = builder ?? new ContainerBuilder();
                 if(string.IsNullOrEmpty(localQueuePath)) {

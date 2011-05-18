@@ -24,9 +24,13 @@ using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
     public interface IPubSubDispatchQueueRepository : IEnumerable<IPubSubDispatchQueue>, IDisposable {
+
+        //--- Properties ---
+        IPubSubDispatchQueue this[PubSubSubscriptionSet set] { get; }
+
+        //--- Methods ---
         IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler);
         void RegisterOrUpdate(PubSubSubscriptionSet set);
         void Delete(PubSubSubscriptionSet set);
-        IPubSubDispatchQueue this[PubSubSubscriptionSet set] { get; }
     }
 }

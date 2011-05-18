@@ -21,10 +21,13 @@
 
 namespace MindTouch.Dream.Services.PubSub {
     public class DispatchItem {
+
+        //--- Fields ---
         public readonly XUri Uri;
         public readonly DispatcherEvent Event;
         public readonly string Location;
 
+        //--- Constructors ---
         public DispatchItem(XUri uri, DispatcherEvent @event, string location) {
             Uri = uri;
             Event = @event;

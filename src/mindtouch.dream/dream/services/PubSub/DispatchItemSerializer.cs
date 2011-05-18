@@ -1,11 +1,33 @@
+/*
+ * MindTouch Dream - a distributed REST framework 
+ * Copyright (C) 2006-2011 MindTouch, Inc.
+ * www.mindtouch.com  oss@mindtouch.com
+ *
+ * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * please review the licensing section.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 using System;
 using System.IO;
 using System.Text;
 using MindTouch.IO;
-using MindTouch.Xml;
 
 namespace MindTouch.Dream.Services.PubSub {
+    
     public class DispatchItemSerializer : IQueueItemSerializer<DispatchItem> {
+
+        //--- Methods ---
         public Stream ToStream(DispatchItem item) {
             var stream = new MemoryStream();
             WriteString(stream, item.Uri.ToString());
@@ -22,7 +44,6 @@ namespace MindTouch.Dream.Services.PubSub {
             stream.Position = 0;
             return stream;
         }
-
 
         public DispatchItem FromStream(Stream stream) {
             var uri = new XUri(ReadString(stream));
@@ -49,11 +70,6 @@ namespace MindTouch.Dream.Services.PubSub {
             var length = BitConverter.GetBytes(bytes.Length);
             stream.Write(length);
             stream.Write(bytes);
-        }
-
-        private void WritePair(Stream stream, string key, string value) {
-            WriteString(stream,key);
-            WriteString(stream,value);
         }
     }
 }

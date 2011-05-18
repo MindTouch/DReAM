@@ -50,7 +50,7 @@ namespace MindTouch.Dream.Services.PubSub {
         private PubSubSubscriptionSet _combinedSet;
         private long _combinedSetVersion = 0;
 
-        // NOTE (arnec): always lock _subscriptionsByOwner when accessing either _subscriptionsByOwner or _subscriptionByLocation or _queuesByLocation
+        // NOTE (arnec): always lock _subscriptionsByOwner when accessing either _subscriptionsByOwner or _subscriptionByLocation
         private readonly Dictionary<XUri, PubSubSubscriptionSet> _subscriptionsByOwner = new Dictionary<XUri, PubSubSubscriptionSet>();
         private readonly Dictionary<string, PubSubSubscriptionSet> _subscriptionByLocation = new Dictionary<string, PubSubSubscriptionSet>();
 
@@ -232,25 +232,32 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         private Yield Dispatch_Helper(DispatcherEvent dispatchEvent, Result result) {
-            Dictionary<XUri, List<PubSubSubscription>> listeningSets = null;
+            Dictionary<XUri, List<PubSubSubscription>> listeningSubscriptions = null;
             if(dispatchEvent.Recipients != null && dispatchEvent.Recipients.Length > 0) {
-                yield return Coroutine.Invoke(GetListenersForRecipients, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSets = v);
+                yield return Coroutine.Invoke(GetListenersForRecipients, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSubscriptions = v);
             } else {
-                yield return Coroutine.Invoke(GetListenersByChannelResourceMatch, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSets = v);
+                yield return Coroutine.Invoke(GetListenersByChannelResourceMatch, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSubscriptions = v);
             }
-            if(listeningSets.Count == 0) {
+            if(listeningSubscriptions.Count == 0) {
                 _log.DebugFormat("event '{0}' for resource '{1}' has no endpoints to dispatch to", dispatchEvent.Id, dispatchEvent.Resource);
             } else {
-                _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningSets.Count);
+                _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningSubscriptions.Count);
             }
-            foreach(var destination in listeningSets) {
+            foreach(var destination in listeningSubscriptions) {
                 var uri = destination.Key;
+                _log.DebugFormat("endpoint {0} has {1} subscription(s) for event '{0}'", uri, destination.Value.Count, dispatchEvent.Id);
                 foreach(var sub in destination.Value) {
                     DispatcherEvent subEvent = null;
-                    yield return Coroutine.Invoke(DetermineRecipients, dispatchEvent, destination.Value, new Result<DispatcherEvent>()).Set(v => subEvent = v);
+                    yield return Coroutine.Invoke(FilterRecipients, dispatchEvent, sub, new Result<DispatcherEvent>()).Set(v => subEvent = v);
                     if(subEvent == null) {
-                        _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
+                        _log.DebugFormat("no recipient union for event '{0}' and subscription {1}", dispatchEvent.Id, uri, sub.Id);
                         continue;
+                    }
+
+                    // if the event has no recipients, but the subscription does, attach those recipients so that the receiver can filter it
+                    // as the subscription intended
+                    if(!subEvent.Recipients.Any() && sub.Recipients.Any()) {
+                        subEvent = subEvent.WithRecipient(true, sub.Recipients);
                     }
                     IPubSubDispatchQueue queue;
                     if(sub.Owner.UsesFailureDuration) {
@@ -319,7 +326,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <returns>Synchronization handle for the action's execution.</returns>
         protected virtual Yield GetListenersForRecipients(DispatcherEvent ev, Result<Dictionary<XUri, List<PubSubSubscription>>> result) {
 
-            //if the event has recipients attached, do subscription lookup by recipients
+            // if the event has recipients attached, do subscription lookup by recipients
             _log.Debug("trying dispatch based on event recipient list event");
             lock(_subscriptionsByRecipient) {
                 var listeners = new Dictionary<XUri, List<PubSubSubscription>>();
@@ -349,18 +356,17 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Override hook for filtering recipients for an event.
         /// </summary>
         /// <param name="ev">Event to be dispatched.</param>
-        /// <param name="subscriptions">List of matching subscriptions.</param>
+        /// <param name="subscription">Matching subscription.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield DetermineRecipients(DispatcherEvent ev, List<PubSubSubscription> subscriptions, Result<DispatcherEvent> result) {
+        protected virtual Yield FilterRecipients(DispatcherEvent ev, PubSubSubscription subscription, Result<DispatcherEvent> result) {
             if(ev.Recipients.Length == 0) {
 
-                //if the event has no reciepient list, anyone can receive it
+                // if the event has no recipient list, anyone can receive it
                 result.Return(ev);
                 yield break;
             }
-            var subscribers = subscriptions.SelectMany(x => x.Recipients).ToArray();
-            var recipients = ArrayUtil.Intersect(ev.Recipients, subscribers);
+            var recipients = ArrayUtil.Intersect(ev.Recipients, subscription.Recipients);
             result.Return(recipients.Length == 0 ? null : ev.WithRecipient(true, recipients));
             yield break;
         }
@@ -434,7 +440,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
             }
 
-            // Note (arnec): non-expiring sets always "succeed" at dispatch since their queues are not kept around
+            // Note (arnec): max-failure sets always "succeed" at dispatch since their queues are not kept around
             result.Return(true);
         }
 
@@ -460,8 +466,8 @@ namespace MindTouch.Dream.Services.PubSub {
                     throw new ArgumentException("owner of new set does not match existing owner");
                 }
                 if(set.UsesFailureDuration != oldSet.UsesFailureDuration) {
-                    _log.WarnFormat("attempted to change a subscription type (expiring vs. non-expiring)");
-                    throw new ArgumentException("new set has different expiration type");
+                    _log.WarnFormat("attempted to change a subscription type (max-failure vs. failure-duration)");
+                    throw new ArgumentException("new set has different failure type");
                 }
                 foreach(DreamCookie cookie in set.Cookies) {
                     _cookieJar.Update(cookie, null);

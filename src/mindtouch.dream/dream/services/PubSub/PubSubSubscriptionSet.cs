@@ -154,6 +154,10 @@ namespace MindTouch.Dream.Services.PubSub {
             }
         }
 
+        /// <summary>
+        /// True if this set upes <see cref="MaxFailureDuration"/> instead of <see cref="MaxFailures"/> to determine whether the set has exceeded
+        /// its failure threshold and should be dropped.
+        /// </summary>
         public bool UsesFailureDuration {
             get { return MaxFailureDuration != TimeSpan.Zero; }
         }

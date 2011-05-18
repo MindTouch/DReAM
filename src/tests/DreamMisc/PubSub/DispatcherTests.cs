@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using MindTouch.Dream.Services.PubSub;
 using MindTouch.Tasking;
@@ -154,6 +155,87 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(_dispatcher.RemoveSet(location.Item1.Location));
             Assert.IsNull(_dispatcher[location.Item1.Location]);
             Assert.IsFalse(_dispatcher.RemoveSet(location.Item1.Location));
+        }
+
+        [Test]
+        public void Dispatch_of_event_without_recipients_gets_matched_subscription_recipients_attached() {
+            var ev = new DispatcherEvent(
+                new XDoc("msg"),
+                new XUri("channel:///foo/bar"),
+                new XUri("http://foobar.com/some/page"));
+            var dispatches = new Dictionary<XUri, DispatcherEvent>();
+            var testUri = new XUri("http:///").At(StringUtil.CreateAlphaNumericKey(4));
+            MockPlug.Register(testUri, delegate(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
+                dispatches.Add(plug.Uri, new DispatcherEvent(request));
+                response.Return(DreamMessage.Ok());
+            });
+            var combinedSetUpdates = 0;
+            _dispatcher.CombinedSetUpdated += delegate {
+                combinedSetUpdates++;
+                _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
+            };
+            var r1 = testUri.At("sub1");
+            var r2 = testUri.At("sub2");
+            _dispatcher.RegisterSet("abc",
+                new XDoc("subscription-set")
+                    .Elem("uri.owner", "http:///owner1")
+                    .Start("subscription")
+                    .Attr("id", "1")
+                    .Elem("channel", "channel:///foo/*")
+                    .Start("recipient").Elem("uri", r1).End()
+                    .End()
+                    .Start("subscription")
+                    .Attr("id", "2")
+                    .Elem("channel", "channel:///foo/baz/*")
+                    .Start("recipient").Elem("uri", r2).End()
+                    .End(), "def");
+            var r3 = testUri.At("sub3");
+            var r4 = testUri.At("sub4");
+            _dispatcher.RegisterSet("qwe",
+                new XDoc("subscription-set")
+                    .Elem("uri.owner", "http:///owner2")
+                    .Start("subscription")
+                    .Attr("id", "3")
+                    .Elem("channel", "channel:///foo/bar")
+                    .Start("recipient").Elem("uri", r3).End()
+                    .End()
+                    .Start("subscription")
+                    .Attr("id", "4")
+                    .Elem("channel", "channel:///foo/bar/*")
+                    .Start("recipient").Elem("uri", r4).End()
+                    .End(), "asd");
+
+            // combinedset updates happen asynchronously, so give'em a chance
+            const int expectedCombinedSetUpdates = 2;
+            Assert.IsTrue(
+                Wait.For(() => combinedSetUpdates >= expectedCombinedSetUpdates, 10.Seconds()),
+                string.Format("expected at least {0} combined set updates, gave up after {1}", expectedCombinedSetUpdates, combinedSetUpdates)
+            );
+            _dispatcher.Dispatch(ev);
+            const int expectedDispatches = 3;
+
+            // dispatch happens async on a worker thread
+            Assert.IsTrue(
+                Wait.For(() => {
+
+                    // Doing extra sleeping to improve the chance of catching excess dispatches
+                    Thread.Sleep(100);
+                    return dispatches.Count == expectedDispatches;
+                }, 10.Seconds()),
+                string.Format("expected at exactly {0} dispatches, gave up after {1}", expectedDispatches, dispatches.Count)
+            );
+            Assert.IsTrue(dispatches.ContainsKey(r1), "did not receive an event for sub 1");
+            var sub1Event = dispatches[r1];
+            Assert.AreEqual(1, sub1Event.Recipients.Length, "wrong number of recipient for sub 1");
+            Assert.AreEqual(r1, sub1Event.Recipients[0].Uri, "wrong recipient for sub 1");
+            Assert.IsTrue(dispatches.ContainsKey(r3), "did not receive an event for sub 3");
+            var sub3Event = dispatches[r3];
+            Assert.AreEqual(1, sub3Event.Recipients.Length, "wrong number of recipient for sub 3");
+            Assert.AreEqual(r3, sub3Event.Recipients[0].Uri, "wrong recipient for sub 3");
+            Assert.IsTrue(dispatches.ContainsKey(r4), "did not receive an event for sub 4");
+            var sub4Event = dispatches[r4];
+            Assert.AreEqual(1, sub4Event.Recipients.Length, "wrong number of recipient for sub 4");
+            Assert.AreEqual(r4, sub4Event.Recipients[0].Uri, "wrong recipient for sub 4");
         }
 
         [Test]
@@ -295,19 +377,18 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Dispatch_based_on_channel_match_with_different_wikiid_patterns_but_same_proxy_destination() {
-            DispatcherEvent ev = new DispatcherEvent(
+            var ev = new DispatcherEvent(
                 new XDoc("msg"),
                 new XUri("event://sales.mindtouch.com/deki/comments/create"),
                 new XUri("http://foobar.com/some/comment"));
-            List<DreamMessage> dispatches = new List<DreamMessage>();
+            var dispatches = new List<DispatcherEvent>();
             XUri testUri = new XUri("http://sales.mindtouch.com/").At(StringUtil.CreateAlphaNumericKey(4));
             int dispatchCounter = 0;
             MockPlug.Register(testUri, delegate(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
                 if(testUri == plug.Uri) {
                     lock(dispatches) {
-                        dispatches.Add(request);
+                        dispatches.Add(new DispatcherEvent(request));
                         dispatchCounter++;
-                        // ReSharper disable AccessToModifiedClosure
                     }
                 }
                 response.Return(DreamMessage.Ok());
@@ -317,6 +398,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 combinedSetUpdates++;
                 _log.DebugFormat("combinedset updated ({0})", combinedSetUpdates);
             };
+            var recipient1Uri = testUri.At("sub1");
             _dispatcher.RegisterSet("abc",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner1")
@@ -325,17 +407,18 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "event://sales.mindtouch.com/deki/comments/create")
                     .Elem("channel", "event://sales.mindtouch.com/deki/comments/update")
                     .Elem("uri.proxy", testUri)
-                    .Start("recipient").Elem("uri", testUri.At("sub1")).End()
+                    .Start("recipient").Elem("uri", recipient1Uri).End()
                     .End(), "def");
+            var recipient2Uri = testUri.At("sub1");
             _dispatcher.RegisterSet("qwe",
                 new XDoc("subscription-set")
                     .Elem("uri.owner", "http:///owner2")
                     .Start("subscription")
-                    .Attr("id", "3")
+                    .Attr("id", "2")
                     .Elem("channel", "event://*/deki/comments/create")
                     .Elem("channel", "event://*/deki/comments/update")
                     .Elem("uri.proxy", testUri)
-                    .Start("recipient").Elem("uri", testUri.At("sub2")).End()
+                    .Start("recipient").Elem("uri", recipient2Uri).End()
                     .End(), "asd");
 
             // combinedset updates happen asynchronously, so give'em a chance
@@ -344,17 +427,27 @@ namespace MindTouch.Dream.Test.PubSub {
                 Wait.For(() => combinedSetUpdates >= expectedCombinedSetUpdates, 10.Seconds()),
                 string.Format("expected at least {0} combined set updates, gave up after {1}", expectedCombinedSetUpdates, combinedSetUpdates)
             );
-            const int expectedDispatches = 1;
+            const int expectedDispatches = 2;
             _dispatcher.Dispatch(ev);
 
             // dispatch happens async on a worker thread
             Assert.IsTrue(
-                Wait.For(() => dispatchCounter >= expectedDispatches, 10.Seconds()),
-                string.Format("expected at least {0} dispatches, gave up after {1}", expectedDispatches, dispatchCounter)
+                Wait.For(() => {
+
+                    // Doing extra sleeping to improve the chance of catching excess dispatches
+                    Thread.Sleep(100);
+                    return dispatchCounter == expectedDispatches;
+                }, 10.Seconds()),
+                string.Format("expected at exactly {0} dispatches, gave up after {1}", expectedDispatches, dispatchCounter)
             );
-            Assert.AreEqual(1, dispatches.Count);
-            Assert.AreEqual(ev.AsMessage().ToDocument(), dispatches[0].ToDocument());
-            Assert.AreEqual(ev.Id, dispatches[0].Headers.DreamEventId);
+            var sub1Event = dispatches.Where(x => x.Recipients.Any() && x.Recipients.FirstOrDefault().Uri == recipient1Uri).FirstOrDefault();
+            Assert.IsNotNull(sub1Event, "did not receive an event with recipient matching our first subscription");
+            Assert.AreEqual(ev.AsDocument(), sub1Event.AsDocument(), "event document is wrong");
+            Assert.AreEqual(ev.Id, sub1Event.Id, "event id is wrong");
+            var sub2Event = dispatches.Where(x => x.Recipients.Any() && x.Recipients.FirstOrDefault().Uri == recipient2Uri).FirstOrDefault();
+            Assert.IsNotNull(sub2Event, "did not receive an event with recipient matching our second subscription");
+            Assert.AreEqual(ev.AsDocument(), sub2Event.AsDocument(), "event document is wrong");
+            Assert.AreEqual(ev.Id, sub2Event.Id, "event id is wrong");
         }
 
         [Test]
