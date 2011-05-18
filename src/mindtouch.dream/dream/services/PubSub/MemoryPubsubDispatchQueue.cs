@@ -129,13 +129,13 @@ namespace MindTouch.Dream.Services.PubSub {
                     }
                     _failureWindowStart = DateTime.MinValue;
                     _queue.Dequeue();
-                    _currentItem = _queue.Dequeue();
+                    _currentItem = null;
+                    if(_queue.Count == 0) {
+                        return;
+                    }
+                    _currentItem = _queue.Peek();
                 }
-
-                // TODO (arnec): race condition?
-                if(_currentItem != null) {
-                    TryDequeue();
-                }
+                TryDequeue();
             });
         }
     }

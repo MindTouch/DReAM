@@ -71,7 +71,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// </summary>
         public readonly long? Version;
 
-        public readonly TimeSpan ExpirationTTL;
+        public readonly TimeSpan MaxFailureDuration;
 
         //--- Constructors ---
 
@@ -117,7 +117,7 @@ namespace MindTouch.Dream.Services.PubSub {
             try {
                 // Note: not using AsUri to avoid automatic local:// translation
                 Owner = new XUri(setDoc["uri.owner"].AsText);
-                ExpirationTTL = (setDoc["@ttl"].AsDouble ?? 0).Seconds();
+                MaxFailureDuration = (setDoc["@max-failure-duration"].AsDouble ?? 0).Seconds();
                 var subscriptions = new List<PubSubSubscription>();
                 foreach(XDoc sub in setDoc["subscription"]) {
                     subscriptions.Add(new PubSubSubscription(sub, this));
@@ -126,7 +126,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 Subscriptions = subscriptions.ToArray();
                 Location = location;
                 AccessKey = accessKey;
-                MaxFailures = HasExpiration ? int.MaxValue : setDoc["@max-failures"].AsInt ?? MAX_FAILURES;
+                MaxFailures = UsesFailureDuration ? int.MaxValue : setDoc["@max-failures"].AsInt ?? MAX_FAILURES;
             } catch(Exception e) {
                 throw new ArgumentException("Unable to parse subscription set: " + e.Message, e);
             }
@@ -154,8 +154,8 @@ namespace MindTouch.Dream.Services.PubSub {
             }
         }
 
-        public bool HasExpiration {
-            get { return ExpirationTTL != TimeSpan.Zero; }
+        public bool UsesFailureDuration {
+            get { return MaxFailureDuration != TimeSpan.Zero; }
         }
 
         //--- Methods ---

@@ -172,7 +172,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 _subscriptionByLocation.Add(set.Location, set);
                 _subscriptionsByOwner.Add(set.Owner, set);
-                if(set.HasExpiration && !init) {
+                if(set.UsesFailureDuration && !init) {
                     _queueRepository.RegisterOrUpdate(set);
                 }
                 if(!init) {
@@ -253,7 +253,7 @@ namespace MindTouch.Dream.Services.PubSub {
                         continue;
                     }
                     IPubSubDispatchQueue queue;
-                    if(sub.Owner.HasExpiration) {
+                    if(sub.Owner.UsesFailureDuration) {
                         queue = _queueRepository[sub.Owner];
                         if(queue == null) {
                             _log.DebugFormat("unable to get dispatch queue for event '{0}'via location '{1}'", dispatchEvent.Id, sub.Owner.Location);
@@ -374,7 +374,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     return;
                 }
             }
-            if(set.HasExpiration) {
+            if(set.UsesFailureDuration) {
                 if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
                     result.Return(true);
                     return;
@@ -385,10 +385,10 @@ namespace MindTouch.Dream.Services.PubSub {
                     result.Return(true);
                     return;
                 }
-                if(queue.FailureWindow > set.ExpirationTTL) {
+                if(queue.FailureWindow > set.MaxFailureDuration) {
                     _log.DebugFormat("the destination has failed continously for {0} and had an expiration failure window of {1}. The subscription at location '{2}' has been dropped, as has event '{3}'",
                         queue.FailureWindow,
-                        set.ExpirationTTL,
+                        set.MaxFailureDuration,
                         destination.Location,
                         destination.Event.Id
                     );
@@ -459,7 +459,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     _log.WarnFormat("subscription set owner mispatch: {0} vs. {1}", oldSet.Owner, set.Owner);
                     throw new ArgumentException("owner of new set does not match existing owner");
                 }
-                if(set.HasExpiration != oldSet.HasExpiration) {
+                if(set.UsesFailureDuration != oldSet.UsesFailureDuration) {
                     _log.WarnFormat("attempted to change a subscription type (expiring vs. non-expiring)");
                     throw new ArgumentException("new set has different expiration type");
                 }

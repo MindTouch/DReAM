@@ -679,7 +679,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 100)
+                    .Attr("max-failure-duration", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -713,7 +713,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 100)
+                    .Attr("max-failure-duration", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -779,7 +779,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 100)
+                    .Attr("max-failure-duration", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -844,7 +844,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 100)
+                    .Attr("max-failure-duration", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -874,7 +874,7 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         [Test]
-        public void Dispatch_failures_lasting_longer_than_set_expirationTTL_will_drop_subscription_and_events() {
+        public void Dispatch_failures_lasting_longer_than_set_MaxFailureDuration_will_drop_subscription_and_events() {
 
             // Arrange
             var ev = new DispatcherEvent(
@@ -898,7 +898,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 1)
+                    .Attr("max-failure-duration", 1)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")
@@ -959,7 +959,7 @@ namespace MindTouch.Dream.Test.PubSub {
             _dispatcher.RegisterSet(
                 "abc",
                 new XDoc("subscription-set")
-                    .Attr("ttl", 100)
+                    .Attr("max-failure-duration", 100)
                     .Elem("uri.owner", "http:///owner1")
                     .Start("subscription")
                         .Attr("id", "1")

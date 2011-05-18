@@ -110,7 +110,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Start("recipient").Elem("uri", "http:///recipient").End()
                 .End();
             var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
-            Assert.IsFalse(set.HasExpiration, "set should not have an expiration");
+            Assert.IsFalse(set.UsesFailureDuration, "set should not have an expiration");
         }
 
         [Test]
@@ -132,7 +132,7 @@ namespace MindTouch.Dream.Test.PubSub {
         [Test]
         public void SubscriptionSet_with_ttl_expires() {
             var setDoc = new XDoc("subscription-set")
-                .Attr("ttl",1)
+                .Attr("max-failure-duration", 1)
                 .Elem("uri.owner", "http://owner")
                 .Start("subscription")
                     .Attr("id", "123")
@@ -142,15 +142,15 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Start("recipient").Elem("uri", "http:///recipient").End()
                 .End();
             var set = new PubSubSubscriptionSet(setDoc, "abc", "def");
-            Assert.IsTrue(set.HasExpiration, "set should have had an expiration");
-            Assert.AreEqual(set.ExpirationTTL, 1.Seconds());
+            Assert.IsTrue(set.UsesFailureDuration, "set should have had an expiration");
+            Assert.AreEqual(set.MaxFailureDuration, 1.Seconds());
         }
 
         [Test]
         public void SubscriptionSet_with_ttl_has_no_max_failures() {
             var setDoc = new XDoc("subscription-set")
                 .Attr("max-failures", 42)
-                .Attr("ttl", 1)
+                .Attr("max-failure-duration", 1)
                 .Elem("uri.owner", "http://owner")
                 .Start("subscription")
                     .Attr("id", "123")

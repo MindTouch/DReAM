@@ -140,12 +140,11 @@ namespace MindTouch.Dream.Services.PubSub {
                     _failureWindowStart = DateTime.MinValue;
                     _queue.CommitDequeue(_currentItem.Id);
                     _currentItem = _queue.Dequeue();
+                    if(_currentItem == null) {
+                        return;
+                    }
                 }
-
-                // TODO (arnec): race condition?
-                if(_currentItem != null) {
-                    TryDequeue();
-                }
+                TryDequeue();
             });
         }
     }
