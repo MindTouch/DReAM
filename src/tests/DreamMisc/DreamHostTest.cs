@@ -21,6 +21,11 @@
 
 using System;
 using System.Collections.Generic;
+<<<<<<< HEAD
+=======
+using System.Linq;
+using System.Net;
+>>>>>>> 5f122341be4c3bb765a8aa5d8e4c03b28679443e
 using System.Threading;
 using log4net;
 
@@ -52,6 +57,40 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+<<<<<<< HEAD
+=======
+        public void DreamTestHelper_will_retry_host_creation_10_times() {
+            _log.DebugFormat("---- starting up a bunch of listeners  -----");
+            var port = _hostinfo.LocalHost.Uri.Port;
+            var listeners = new List<HttpListener>();
+            for(var i = 1; i < 12; i++) {
+                var listener = new HttpListener { IgnoreWriteExceptions = true };
+                var prefix = string.Format("http://localhost:{0}/", port + i);
+                _log.DebugFormat("---- starting listener on {0}", prefix);
+                listener.Prefixes.Add(prefix);
+                listener.Start();
+                Assert.IsTrue(listener.IsListening);
+                Assert.AreEqual(prefix, listener.Prefixes.First());
+                listeners.Add(listener);
+            }
+            try {
+                _log.DebugFormat("---- trying to create a host  -----");
+                DreamTestHelper.CreateRandomPortHost();
+                Assert.Fail("didn't throw");
+            } catch(InvalidOperationException) { }
+            _log.DebugFormat("---- trying to create a host again  -----");
+            var host3 = DreamTestHelper.CreateRandomPortHost();
+            host3.Dispose();
+
+            // Note (arnec): have to iterate the listeners here or the test will fail in Release mode, since listeners will have been optimized away
+            // before it is needed
+            foreach(var listener in listeners) {
+                _log.DebugFormat("still listening on {0}",listener.Prefixes.First());
+            }
+        }
+
+        [Test]
+>>>>>>> 5f122341be4c3bb765a8aa5d8e4c03b28679443e
         public void Host_Blueprint_should_be_publicly_accessible() {
             Plug local = Plug.New(_host.Uri.WithoutQuery()).At("@blueprint");
             DreamMessage response = local.GetAsync().Wait();

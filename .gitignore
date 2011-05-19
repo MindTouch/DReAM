@@ -16,4 +16,10 @@ _ReSharper.*/
 App_Data/
 *.pidb
 *.test-cache
+<<<<<<< HEAD
 *.userprefs
+=======
+*.cache
+*.pidb
+
+>>>>>>> 5f122341be4c3bb765a8aa5d8e4c03b28679443e
