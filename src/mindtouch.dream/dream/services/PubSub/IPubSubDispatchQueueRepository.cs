@@ -22,8 +22,8 @@ using System;
 using System.Collections.Generic;
 using MindTouch.Tasking;
 
-namespace MindTouch.Dream.Services.PubSub {
-    public interface IPubSubDispatchQueueRepository : IEnumerable<IPubSubDispatchQueue>, IDisposable {
+namespace MindTouch.Dream.Services.PubSub { // IEnumerable<IPubSubDispatchQueue>, needed?
+    public interface IPubSubDispatchQueueRepository : IDisposable {
 
         //--- Properties ---
         IPubSubDispatchQueue this[PubSubSubscriptionSet set] { get; }

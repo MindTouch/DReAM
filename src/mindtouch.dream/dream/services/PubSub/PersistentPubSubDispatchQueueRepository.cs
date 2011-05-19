@@ -102,7 +102,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     return;
                 }
                 _repository.Remove(set.Location);
-                queue.ClearAndDispose();
+                queue.DeleteAndDispose();
                 var subscriptionDocPath = Path.Combine(_queueRootPath, set.Location + ".xml");
                 try {
                     File.Delete(subscriptionDocPath);

@@ -29,6 +29,7 @@ namespace MindTouch.Dream.Services.PubSub {
 
         //--- Methods ---
         public Stream ToStream(DispatchItem item) {
+            *** need magic string to detect version
             var stream = new MemoryStream();
             WriteString(stream, item.Uri.ToString());
             WriteString(stream, item.Location);
@@ -57,7 +58,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 var value = ReadString(stream);
                 msg.Headers.Add(key, value);
             }
-            return new DispatchItem(uri,new DispatcherEvent(msg), location);
+            return new DispatchItem(uri, new DispatcherEvent(msg), location);
         }
 
         private string ReadString(Stream stream) {

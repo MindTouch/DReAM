@@ -70,7 +70,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Set version serial.
         /// </summary>
         public readonly long? Version;
-
+** no docs
         public readonly TimeSpan MaxFailureDuration;
 
         //--- Constructors ---

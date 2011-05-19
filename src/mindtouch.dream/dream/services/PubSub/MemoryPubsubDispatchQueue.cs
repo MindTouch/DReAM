@@ -49,8 +49,9 @@ namespace MindTouch.Dream.Services.PubSub {
         //--- Fields ---
         public TimeSpan FailureWindow {
             get {
-                var failureWindowStart = _failureWindowStart;
-                return failureWindowStart == DateTime.MinValue ? TimeSpan.Zero : DateTime.UtcNow - failureWindowStart;
+                lock(_queue) {
+                    return _failureWindowStart == DateTime.MinValue ? TimeSpan.Zero : DateTime.UtcNow - _failureWindowStart;
+                }
             }
         }
 
@@ -68,14 +69,6 @@ namespace MindTouch.Dream.Services.PubSub {
             }
             _dequeueHandler = dequeueHandler;
             Kick();
-        }
-
-        public void ClearAndDispose() {
-            if(_isDisposed) {
-                return;
-            }
-            _queue.Clear();
-            Dispose();
         }
 
         public void Dispose() {
@@ -122,7 +115,9 @@ namespace MindTouch.Dream.Services.PubSub {
                         return;
                     }
                     if(r.HasException || !r.Value) {
-                        _failureWindowStart = DateTime.UtcNow;
+                        if(_failureWindowStart == DateTime.MinValue) {
+                            _failureWindowStart = DateTime.UtcNow;
+                        }
                         _queueTimer.Change(_retryTime, TaskEnv.None);
                         return;
                     }

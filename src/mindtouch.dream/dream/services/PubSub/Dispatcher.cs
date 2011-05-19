@@ -102,14 +102,15 @@ namespace MindTouch.Dream.Services.PubSub {
             _dispatchQueue = new ProcessingQueue<DispatcherEvent>(DispatchFromQueue, 10);
             _defaultQueue = new ImmediatePubSubDispatchQueue();
             _defaultQueue.SetDequeueHandler(TryDispatchItem);
+            *** break init into two steps
             var pubSubSubscriptionSets = queueRepository.Initialize(TryDispatchItem);
 
             // Note (arnec): only invoking lock here, so that RegisterSet and Update don't do it over and over
             lock(_subscriptionsByOwner) {
                 foreach(var set in pubSubSubscriptionSets) {
-                    RegisterSet(set, true);
-                    Update();
+                    RegisterSet(set);
                 }
+                Update();
             }
         }
 
@@ -158,10 +159,12 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <returns>Tuple of subscription set and <see langword="True"/> if the set was newly created, or <see langword="False"/> if the set existed (does not update the set).</returns>
         public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(string location, XDoc setDoc, string accessKey) {
             var set = new PubSubSubscriptionSet(setDoc, location, accessKey);
-            return RegisterSet(set, false);
+            var result = RegisterSet(set);
+            Update();
+            return result;
         }
 
-        private Tuplet<PubSubSubscriptionSet, bool> RegisterSet(PubSubSubscriptionSet set, bool init) {
+        private Tuplet<PubSubSubscriptionSet, bool> RegisterSet(PubSubSubscriptionSet set) {
             foreach(var cookie in set.Cookies) {
                 _cookieJar.Update(cookie, null);
             }
@@ -174,9 +177,6 @@ namespace MindTouch.Dream.Services.PubSub {
                 _subscriptionsByOwner.Add(set.Owner, set);
                 if(set.UsesFailureDuration && !init) {
                     _queueRepository.RegisterOrUpdate(set);
-                }
-                if(!init) {
-                    Update();
                 }
                 return new Tuplet<PubSubSubscriptionSet, bool>(set, false);
             }

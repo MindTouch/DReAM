@@ -34,6 +34,7 @@ namespace MindTouch.Dream.Services.PubSub {
 
         //--- Methods ---
         public void Enqueue(DispatchItem item) {
+            ** sanity check dequeue handler
             _dequeueHandler(item);
         }
 

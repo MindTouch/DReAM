@@ -69,8 +69,9 @@ namespace MindTouch.Dream.Services {
         [DreamFeature("POST:subscribers", "Intialize a set of subscriptions")]
         internal Yield CreateSubscriptionSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             var subscriptionSet = request.ToDocument();
-            var location = request.Headers["set-location-key"] ?? StringUtil.CreateAlphaNumericKey(8);
-            var accessKey = request.Headers["set-access-key"] ?? StringUtil.CreateAlphaNumericKey(8);
+*** fix all uses of this header
+            var location = request.Headers["X-Set-Location-Key"] ?? StringUtil.CreateAlphaNumericKey(8);
+            var accessKey = request.Headers["X-Set-Access-Key"] ?? StringUtil.CreateAlphaNumericKey(8);
             var set = _dispatcher.RegisterSet(location, subscriptionSet, accessKey);
             var locationUri = Self.At("subscribers", set.Item1.Location).Uri.AsPublicUri();
             DreamMessage msg = null;
@@ -115,34 +116,34 @@ namespace MindTouch.Dream.Services {
             yield break;
         }
 
-        [DreamFeature("POST:subscribers/{id}", "Replace subscription set (should only be used for chaining)")]
-        [DreamFeature("PUT:subscribers/{id}", "Replace subscription set")]
+        [DreamFeature("POST:subscribers/{location}", "Replace subscription set (should only be used for chaining)")]
+        [DreamFeature("PUT:subscribers/{location}", "Replace subscription set")]
         protected Yield ReplaceSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             DreamMessage responseMsg = null;
             try {
-                var setId = context.GetParam("id");
+                var location = context.GetParam("location");
                 if(!string.IsNullOrEmpty(request.Headers.DreamEventId)) {
-                    _log.DebugFormat("'{0}' update is event: {1} - {2}", setId, request.Headers.DreamEventChannel, request.Headers.DreamEventId);
+                    _log.DebugFormat("'{0}' update is event: {1} - {2}", location, request.Headers.DreamEventChannel, request.Headers.DreamEventId);
                 }
                 var subscriptionDocument = request.ToDocument();
-                var accessKey = request.Headers["set-access-key"];
-                var set = _dispatcher.ReplaceSet(setId, subscriptionDocument, accessKey);
-                _log.DebugFormat("Trying to update set {0}", setId);
+                var accessKey = request.Headers["X-Set-Access-Key"];
+                var set = _dispatcher.ReplaceSet(location, subscriptionDocument, accessKey);
+                _log.DebugFormat("Trying to update set {0}", location);
                 if(set != null) {
                     var version = subscriptionDocument["@version"].AsLong;
                     if(version.HasValue && version.Value <= set.Version) {
-                        _log.DebugFormat("set not modified: {0}", setId);
+                        _log.DebugFormat("set not modified: {0}", location);
                         responseMsg = DreamMessage.NotModified();
                     } else {
                         if(version.HasValue) {
-                            _log.DebugFormat("Updating set '{0}' from version {1} to {2}", setId, set.Version, version);
+                            _log.DebugFormat("Updating set '{0}' from version {1} to {2}", location, set.Version, version);
                         } else {
-                            _log.DebugFormat("Updating set '{0}'", setId);
+                            _log.DebugFormat("Updating set '{0}'", location);
                         }
                         responseMsg = DreamMessage.Ok();
                     }
                 } else {
-                    _log.DebugFormat("no such set: {0}", setId);
+                    _log.DebugFormat("no such set: {0}", location);
                     responseMsg = DreamMessage.NotFound("There is no subscription set at this location");
                 }
             } catch(ArgumentException e) {
@@ -151,7 +152,7 @@ namespace MindTouch.Dream.Services {
             response.Return(responseMsg);
             yield break;
         }
-
+*** change id to location
         [DreamFeature("DELETE:subscribers/{id}", "Remove subscription set")]
         protected Yield RemoveSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             var id = context.GetParam("id");
@@ -177,10 +178,10 @@ namespace MindTouch.Dream.Services {
                 builder = builder ?? new ContainerBuilder();
                 if(string.IsNullOrEmpty(localQueuePath)) {
                     _log.Debug("no queue persistent path provided, using memory queues");
-                    builder.Register(new MemoryPubSubDispatchQueueRepository(TimerFactory, 30.Seconds()))
+                    builder.Register(new MemoryPubSubDispatchQueueRepository(TimerFactory, **make a config**))
                         .As<IPubSubDispatchQueueRepository>();
                 } else {
-                    builder.Register(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, 30.Seconds()))
+                    builder.Register(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, **make a config**))
                         .As<IPubSubDispatchQueueRepository>();
                 }
             }

@@ -138,7 +138,7 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.IsTrue(Directory.GetFiles(queuePath).Length > 0, "queue directory did not contain any files");
 
             // Act
-            dispatchQueue.ClearAndDispose();
+            dispatchQueue.DeleteAndDispose();
 
             // Assert
             Assert.IsFalse(Directory.Exists(queuePath), "queue directory still exists");
@@ -182,7 +182,7 @@ namespace MindTouch.Dream.Test.PubSub {
             var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
 
             // Act
-            dispatchQueue.ClearAndDispose();
+            dispatchQueue.DeleteAndDispose();
 
             // Assert
             try {
@@ -247,10 +247,10 @@ namespace MindTouch.Dream.Test.PubSub {
             var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
 
             // Act
-            dispatchQueue.ClearAndDispose();
+            dispatchQueue.DeleteAndDispose();
 
             // Assert
-            dispatchQueue.ClearAndDispose();
+            dispatchQueue.DeleteAndDispose();
         }
     }
 }

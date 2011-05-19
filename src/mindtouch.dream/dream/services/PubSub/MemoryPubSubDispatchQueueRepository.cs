@@ -39,6 +39,7 @@ namespace MindTouch.Dream.Services.PubSub {
 
         //--- Constructors ---
         public MemoryPubSubDispatchQueueRepository(TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
+            //CLEANUP: check args
             _taskTimerFactory = taskTimerFactory;
             _retryTime = retryTime;
         }
@@ -60,8 +61,8 @@ namespace MindTouch.Dream.Services.PubSub {
                 if(_repository.ContainsKey(set.Location)) {
                     return;
                 }
-
                 var queue = new MemoryPubSubDispatchQueue(set.Location, _taskTimerFactory, _retryTime);
+                //CLEANUP: Handler can be in ctor
                 queue.SetDequeueHandler(_handler);
                 _repository[set.Location] = queue;
             }
@@ -74,14 +75,16 @@ namespace MindTouch.Dream.Services.PubSub {
                     return;
                 }
                 _repository.Remove(set.Location);
-                queue.ClearAndDispose();
+                queue.Dispose();
             }
         }
 
         public IPubSubDispatchQueue this[PubSubSubscriptionSet set] {
             get {
                 MemoryPubSubDispatchQueue queue;
-                return _repository.TryGetValue(set.Location, out queue) ? queue : null;
+                lock(_repository) {
+                    return _repository.TryGetValue(set.Location, out queue) ? queue : null;
+                }
             }
         }
 
