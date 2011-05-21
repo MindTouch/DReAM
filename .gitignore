@@ -18,3 +18,5 @@ App_Data/
 *.test-cache
 *.userprefs
 *.resources
+*.cache
+*.pidb
