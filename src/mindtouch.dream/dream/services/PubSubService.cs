@@ -69,7 +69,6 @@ namespace MindTouch.Dream.Services {
         [DreamFeature("POST:subscribers", "Intialize a set of subscriptions")]
         internal Yield CreateSubscriptionSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             var subscriptionSet = request.ToDocument();
-*** fix all uses of this header
             var location = request.Headers["X-Set-Location-Key"] ?? StringUtil.CreateAlphaNumericKey(8);
             var accessKey = request.Headers["X-Set-Access-Key"] ?? StringUtil.CreateAlphaNumericKey(8);
             var set = _dispatcher.RegisterSet(location, subscriptionSet, accessKey);
@@ -109,9 +108,9 @@ namespace MindTouch.Dream.Services {
             yield break;
         }
 
-        [DreamFeature("GET:subscribers/{id}", "Intialize a set of subscriptions")]
+        [DreamFeature("GET:subscribers/{location}", "Intialize a set of subscriptions")]
         protected Yield GetSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            var set = _dispatcher[context.GetParam("id")];
+            var set = _dispatcher[context.GetParam("location")];
             response.Return(set == null ? DreamMessage.NotFound("There is no subscription set at this location") : DreamMessage.Ok(set.AsDocument()));
             yield break;
         }
@@ -152,11 +151,10 @@ namespace MindTouch.Dream.Services {
             response.Return(responseMsg);
             yield break;
         }
-*** change id to location
-        [DreamFeature("DELETE:subscribers/{id}", "Remove subscription set")]
+        [DreamFeature("DELETE:subscribers/{location}", "Remove subscription set")]
         protected Yield RemoveSubscribeSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            var id = context.GetParam("id");
-            _dispatcher.RemoveSet(id);
+            var location = context.GetParam("location");
+            _dispatcher.RemoveSet(location);
             var msg = DreamMessage.Ok();
             response.Return(msg);
             yield break;
@@ -176,12 +174,13 @@ namespace MindTouch.Dream.Services {
             if(!container.IsRegistered<IPubSubDispatchQueueRepository>()) {
                 var localQueuePath = config["queue-path"].AsText;
                 builder = builder ?? new ContainerBuilder();
+                var retryTime = (config["failed-dispatch-retry"].AsInt ?? 60).Seconds();
                 if(string.IsNullOrEmpty(localQueuePath)) {
                     _log.Debug("no queue persistent path provided, using memory queues");
-                    builder.Register(new MemoryPubSubDispatchQueueRepository(TimerFactory, **make a config**))
+                    builder.Register(new MemoryPubSubDispatchQueueRepository(TimerFactory, retryTime))
                         .As<IPubSubDispatchQueueRepository>();
                 } else {
-                    builder.Register(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, **make a config**))
+                    builder.Register(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, retryTime))
                         .As<IPubSubDispatchQueueRepository>();
                 }
             }
@@ -294,8 +293,8 @@ namespace MindTouch.Dream.Services {
 
         public override DreamAccess DetermineAccess(DreamContext context, DreamMessage request) {
             if(context.Feature.Signature.StartsWith("subscribers/")) {
-                var id = context.GetParam("id", null);
-                var set = _dispatcher[id];
+                var location = context.GetParam("location", null);
+                var set = _dispatcher[location];
                 if(set != null) {
                     var accessKey = context.GetParam("access-key", null);
                     if(string.IsNullOrEmpty(accessKey)) {
@@ -307,9 +306,9 @@ namespace MindTouch.Dream.Services {
                     if(set.AccessKey.EqualsInvariant(accessKey)) {
                         return DreamAccess.Private;
                     }
-                    _log.DebugFormat("no matching access-key in query or cookie for location '{0}'", id);
+                    _log.DebugFormat("no matching access-key in query or cookie for location '{0}'", location);
                 } else {
-                    _log.DebugFormat("no subscription set for location '{0}'", id);
+                    _log.DebugFormat("no subscription set for location '{0}'", location);
                 }
             }
             return base.DetermineAccess(context, request);

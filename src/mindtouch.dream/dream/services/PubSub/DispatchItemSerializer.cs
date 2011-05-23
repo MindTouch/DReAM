@@ -24,13 +24,16 @@ using System.Text;
 using MindTouch.IO;
 
 namespace MindTouch.Dream.Services.PubSub {
-    
+
     public class DispatchItemSerializer : IQueueItemSerializer<DispatchItem> {
+
+        //--- Constants ---
+        public const byte SERIALIZER_VERSION = 1;
 
         //--- Methods ---
         public Stream ToStream(DispatchItem item) {
-            *** need magic string to detect version
             var stream = new MemoryStream();
+            stream.WriteByte(SERIALIZER_VERSION);
             WriteString(stream, item.Uri.ToString());
             WriteString(stream, item.Location);
             var msg = item.Event.AsMessage();
@@ -47,6 +50,10 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         public DispatchItem FromStream(Stream stream) {
+            var version = stream.ReadByte();
+            if(version != SERIALIZER_VERSION) {
+                throw new InvalidDataException(string.Format("Invalid Version: stream reported version as {0}, expected {1}", version, SERIALIZER_VERSION));
+            }
             var uri = new XUri(ReadString(stream));
             var location = ReadString(stream);
             var mimetype = new MimeType(ReadString(stream));

@@ -22,15 +22,46 @@ using System;
 using System.Collections.Generic;
 using MindTouch.Tasking;
 
-namespace MindTouch.Dream.Services.PubSub { // IEnumerable<IPubSubDispatchQueue>, needed?
+namespace MindTouch.Dream.Services.PubSub {
+
+    /// <summary>
+    /// Repository for dispatch queues by subscription.
+    /// </summary>
     public interface IPubSubDispatchQueueRepository : IDisposable {
 
         //--- Properties ---
+
+        /// <summary>
+        /// Retrieve the queue for a subscription.
+        /// </summary>
+        /// <param name="set"><see cref="PubSubSubscriptionSet"/> identifying the dispatch queue.</param>
+        /// <returns>Returns the dispatch queue or null, if there is no queue for that set.</returns>
         IPubSubDispatchQueue this[PubSubSubscriptionSet set] { get; }
 
         //--- Methods ---
-        IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler);
+
+        /// <summary>
+        /// Retrieve all sets that the repository has loaded from its optional storage. This will only return data before <see cref="InitializeRepository"/> is called, after which the sets will be initialized with queues.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<PubSubSubscriptionSet> GetUninitializedSets();
+
+        /// <summary>
+        /// Attach the dequeue handler to use for constructing dispatch queues. Calling this will also initalize queues for all sets found in <see cref="GetUninitializedSets"/>.
+        /// </summary>
+        /// <param name="dequeueHandler">Callback for items to be dispatched.</param>
+        void InitializeRepository(Func<DispatchItem, Result<bool>> dequeueHandler);
+
+        /// <summary>
+        /// Register or update an existing set and its queue.
+        /// </summary>
+        /// <param name="set">The set to register.</param>
         void RegisterOrUpdate(PubSubSubscriptionSet set);
+
+        /// <summary>
+        /// Delete a set and its queue. Has no effect if the set isn't registered.
+        /// </summary>
+        /// <param name="set">The set to be deleted.</param>
         void Delete(PubSubSubscriptionSet set);
     }
 }

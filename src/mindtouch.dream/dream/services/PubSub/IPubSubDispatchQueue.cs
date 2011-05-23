@@ -19,16 +19,27 @@
  * limitations under the License.
  */
 using System;
-using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
+
+    /// <summary>
+    /// Dispatch Queue used by <see cref="Dispatcher"/> for events with applicable subscription.
+    /// </summary>
     public interface IPubSubDispatchQueue : IDisposable {
 
         //--- Properties ---
+
+        /// <summary>
+        /// Duration of the current chain of failures, <see cref="TimeSpan.Zero"/> if no failures are currently occuring.
+        /// </summary>
         TimeSpan FailureWindow { get; }
 
         //--- Methods ---
+
+        /// <summary>
+        /// Enqueue a new item to dispatch.
+        /// </summary>
+        /// <param name="item"></param>
         void Enqueue(DispatchItem item);
-        void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler);
     }
 }

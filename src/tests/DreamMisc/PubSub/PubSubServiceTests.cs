@@ -96,6 +96,7 @@ namespace MindTouch.Dream.Test.PubSub {
             );
             Assert.AreEqual(1, MockPubSubDispatchQueueRepository.Instantiations);
             Assert.AreEqual(1, MockPubSubDispatchQueueRepository.InitCalled);
+            Assert.AreEqual(1, MockPubSubDispatchQueueRepository.GetUninitializedSetsCalled);
         }
 
         [Test]
@@ -125,7 +126,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // create subscription
             Plug pubsub = CreatePubSubService().WithInternalKey().AtLocalHost;
-            DreamMessage response = pubsub.At("subscribers").WithHeader("set-location-key",locationKey).Post(set, new Result<DreamMessage>()).Wait();
+            DreamMessage response = pubsub.At("subscribers").WithHeader("X-Set-Location-Key",locationKey).Post(set, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Created, response.Status);
             Assert.IsNull(response.Headers.ContentLocation);
@@ -190,7 +191,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // create subscription
             var pubsub = CreatePubSubService().WithInternalKey().AtLocalHost;
-            var response = pubsub.At("subscribers").WithHeader("set-access-key", accessKey).Post(set, new Result<DreamMessage>()).Wait();
+            var response = pubsub.At("subscribers").WithHeader("X-Set-Access-Key", accessKey).Post(set, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Created, response.Status);
             Assert.IsNull(response.Headers.ContentLocation);
@@ -275,7 +276,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "channel:///foo/*")
                     .Start("recipient").Elem("uri", "http:///foo/sub1").End()
                 .End();
-            response = subscription.WithHeader("set-access-key", newAccessKey).Put(set2, new Result<DreamMessage>()).Wait();
+            response = subscription.WithHeader("X-Set-Access-Key", newAccessKey).Put(set2, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
 
             // retrieve new subscription with old key

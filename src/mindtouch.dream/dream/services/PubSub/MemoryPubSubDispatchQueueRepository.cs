@@ -19,9 +19,7 @@
  * limitations under the License.
  */
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using log4net;
 using MindTouch.Tasking;
 
@@ -39,21 +37,26 @@ namespace MindTouch.Dream.Services.PubSub {
 
         //--- Constructors ---
         public MemoryPubSubDispatchQueueRepository(TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
-            //CLEANUP: check args
+            if(taskTimerFactory == null) {
+                throw new ArgumentNullException("taskTimerFactory");
+            }
             _taskTimerFactory = taskTimerFactory;
             _retryTime = retryTime;
         }
 
         //--- Methods ---
-        public IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler) {
-            if(handler == null) {
-                throw new ArgumentException("cannot set the handler to a null value");
+        public IEnumerable<PubSubSubscriptionSet> GetUninitializedSets() {
+            return new PubSubSubscriptionSet[0];
+        }
+
+        public void InitializeRepository(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            if(dequeueHandler == null) {
+                throw new ArgumentNullException("dequeueHandler","cannot set the handler to a null value");
             }
             if(_handler != null) {
                 throw new InvalidOperationException("cannot initialize and already initialized repository");
             }
-            _handler = handler;
-            return new PubSubSubscriptionSet[0];
+            _handler = dequeueHandler;
         }
 
         public void RegisterOrUpdate(PubSubSubscriptionSet set) {
@@ -61,9 +64,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 if(_repository.ContainsKey(set.Location)) {
                     return;
                 }
-                var queue = new MemoryPubSubDispatchQueue(set.Location, _taskTimerFactory, _retryTime);
-                //CLEANUP: Handler can be in ctor
-                queue.SetDequeueHandler(_handler);
+                var queue = new MemoryPubSubDispatchQueue(set.Location, _taskTimerFactory, _retryTime, _handler);
                 _repository[set.Location] = queue;
             }
         }
@@ -81,22 +82,11 @@ namespace MindTouch.Dream.Services.PubSub {
 
         public IPubSubDispatchQueue this[PubSubSubscriptionSet set] {
             get {
-                MemoryPubSubDispatchQueue queue;
                 lock(_repository) {
+                    MemoryPubSubDispatchQueue queue;
                     return _repository.TryGetValue(set.Location, out queue) ? queue : null;
                 }
             }
-        }
-
-        public IEnumerator<IPubSubDispatchQueue> GetEnumerator() {
-            lock(_repository) {
-                IEnumerable<IPubSubDispatchQueue> enumerable = _repository.Values.ToArray();
-                return enumerable.GetEnumerator();
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() {
-            return GetEnumerator();
         }
 
         public void Dispose() {

@@ -52,7 +52,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             Func<DispatchItem, Result<bool>> handler = (item) => new Result<bool>().WithReturn(true);
-            _repository.Initialize(handler);
+            _repository.InitializeRepository(handler);
             var set1 = CreateSet();
             _repository.RegisterOrUpdate(set1);
             var set2 = CreateSet();
@@ -61,7 +61,7 @@ namespace MindTouch.Dream.Test.PubSub {
             CreateRepository();
 
             // Act
-            var subscriptions = _repository.Initialize(handler);
+            var subscriptions = _repository.GetUninitializedSets();
 
             // Assert
             Assert.AreEqual(2, subscriptions.Count());
@@ -79,7 +79,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 dispatched.Add(item);
                 return new Result<bool>().WithReturn(true);
             };
-            _repository.Initialize(failHandler);
+            _repository.InitializeRepository(failHandler);
             var set = CreateSet();
             _repository.RegisterOrUpdate(set);
             var dispatchItem = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
@@ -88,7 +88,7 @@ namespace MindTouch.Dream.Test.PubSub {
             CreateRepository();
 
             // Act
-            _repository.Initialize(successHandler);
+            _repository.InitializeRepository(successHandler);
 
             // Assert
             Assert.IsTrue(Wait.For(() => dispatched.Count > 0, 10.Seconds()), "no items were dispatched");
@@ -112,7 +112,7 @@ namespace MindTouch.Dream.Test.PubSub {
         public void Can_register_a_new_set_and_retrieve_its_queue() {
             // Arrange
             Func<DispatchItem, Result<bool>> handler = (item) => new Result<bool>().WithReturn(true);
-            _repository.Initialize(handler);
+            _repository.InitializeRepository(handler);
             var set = CreateSet();
 
             // Act
@@ -132,7 +132,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 dispatched.Add(item);
                 return new Result<bool>().WithReturn(true);
             };
-            _repository.Initialize(successHandler);
+            _repository.InitializeRepository(successHandler);
             var set = CreateSet();
             var dispatchItem = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
 
@@ -150,7 +150,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             Func<DispatchItem, Result<bool>> handler = (item) => new Result<bool>().WithReturn(true);
-            _repository.Initialize(handler);
+            _repository.InitializeRepository(handler);
             var set = CreateSet();
 
             // Act
@@ -168,7 +168,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             Func<DispatchItem, Result<bool>> handler = (item) => new Result<bool>().WithReturn(true);
-            _repository.Initialize(handler);
+            _repository.InitializeRepository(handler);
             var set = CreateSet();
             _repository.RegisterOrUpdate(set);
 
@@ -187,7 +187,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             Func<DispatchItem, Result<bool>> handler = (item) => new Result<bool>().WithReturn(true);
-            _repository.Initialize(handler);
+            _repository.InitializeRepository(handler);
             var set = CreateSet();
             _repository.RegisterOrUpdate(set);
 
@@ -203,7 +203,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             Func<DispatchItem, Result<bool>> handler = (item) => new Result<bool>().WithReturn(true);
-            _repository.Initialize(handler);
+            _repository.InitializeRepository(handler);
             var set = CreateSet();
             _repository.RegisterOrUpdate(set);
 

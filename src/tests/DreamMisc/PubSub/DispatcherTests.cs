@@ -48,8 +48,9 @@ namespace MindTouch.Dream.Test.PubSub {
             var cookie = DreamCookie.NewSetCookie("foo", "bar", new XUri("http://xyz/abc/"));
             var owner = Plug.New("mock:///pubsub");
             _queueRepositoryMock = new Mock<IPubSubDispatchQueueRepository>();
-            _queueRepositoryMock.Setup(x => x.Initialize(It.IsAny<Func<DispatchItem, Result<bool>>>()))
-                .Callback((Func<DispatchItem, Result<bool>> handler) => _dequeueHandler = handler)
+            _queueRepositoryMock.Setup(x => x.InitializeRepository(It.IsAny<Func<DispatchItem, Result<bool>>>()))
+                .Callback((Func<DispatchItem, Result<bool>> handler) => _dequeueHandler = handler);
+            _queueRepositoryMock.Setup(x => x.GetUninitializedSets())
                 .Returns(new PubSubSubscriptionSet[0]);
             _dispatcher = new Dispatcher(new DispatcherConfig { ServiceUri = owner, ServiceAccessCookie = cookie }, _queueRepositoryMock.Object);
 
@@ -830,11 +831,6 @@ namespace MindTouch.Dream.Test.PubSub {
                 "mock repository was not accessed in time"
             );
             _queueRepositoryMock.VerifyAll();
-            dispatchQueueMock.Verify(
-                x => x.SetDequeueHandler(It.IsAny<Func<DispatchItem, Result<bool>>>()),
-                Times.Never(),
-                "dequeue handler was set on queue"
-            );
             dispatchQueueMock.Verify(
                 x => x.Enqueue(It.Is<DispatchItem>(y => y.Uri == recipientUri && y.Event.Channel == ev.Channel && y.Event.Id == ev.Id)),
                 Times.Once(),

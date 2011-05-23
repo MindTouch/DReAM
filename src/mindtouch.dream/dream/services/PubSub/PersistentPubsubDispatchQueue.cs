@@ -42,13 +42,24 @@ namespace MindTouch.Dream.Services.PubSub {
         private bool _isDisposed;
 
         //--- Construtors
-        public PersistentPubSubDispatchQueue(string queuePath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
+        public PersistentPubSubDispatchQueue(string queuePath, TaskTimerFactory taskTimerFactory, TimeSpan retryTime, Func<DispatchItem, Result<bool>> handler) {
+            if(string.IsNullOrEmpty(queuePath)) {
+                throw new ArgumentNullException("location");
+            }
+            if(taskTimerFactory == null) {
+                throw new ArgumentNullException("taskTimerFactory");
+            }
+            if(handler == null) {
+                throw new ArgumentNullException("handler");
+            }
             _queuePath = queuePath;
             _retryTime = retryTime;
             _queueTimer = taskTimerFactory.New(RetryDequeue, null);
             _queue = new TransactionalQueue<DispatchItem>(new MultiFileQueueStream(queuePath), new DispatchItemSerializer()) {
                 DefaultCommitTimeout = TimeSpan.MaxValue
             };
+            _dequeueHandler = handler;
+            Kick();
         }
 
         //--- Fields ---
@@ -64,15 +75,6 @@ namespace MindTouch.Dream.Services.PubSub {
         public void Enqueue(DispatchItem item) {
             EnsureNotDisposed();
             _queue.Enqueue(item);
-            Kick();
-        }
-
-        public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
-            EnsureNotDisposed();
-            if(dequeueHandler == null) {
-                throw new ArgumentException("cannot set the handler to a null value");
-            }
-            _dequeueHandler = dequeueHandler;
             Kick();
         }
 

@@ -28,28 +28,20 @@ namespace MindTouch.Dream.Test.PubSub {
     public class MockPubSubDispatchQueueRepository : IPubSubDispatchQueueRepository {
         public static int Instantiations;
         public static int InitCalled;
+        public static int GetUninitializedSetsCalled;
+
         public MockPubSubDispatchQueueRepository() {
             Instantiations++;
         }
 
-        #region Implementation of IEnumerable
-        public IEnumerator<IPubSubDispatchQueue> GetEnumerator() {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() {
-            return GetEnumerator();
-        }
-        #endregion
-
-        #region Implementation of IDisposable
-        public void Dispose() { }
-        #endregion
-
         #region Implementation of IPubSubDispatchQueueRepository
-        public IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler) {
-            InitCalled++;
+        public IEnumerable<PubSubSubscriptionSet> GetUninitializedSets() {
+            GetUninitializedSetsCalled++;
             return new PubSubSubscriptionSet[0];
+        }
+
+        public void InitializeRepository(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            InitCalled++;
         }
 
         public void RegisterOrUpdate(PubSubSubscriptionSet set) {
@@ -63,6 +55,10 @@ namespace MindTouch.Dream.Test.PubSub {
         public IPubSubDispatchQueue this[PubSubSubscriptionSet set] {
             get { throw new NotImplementedException(); }
         }
+        #endregion
+
+        #region Implementation of IDisposable
+        public void Dispose() { }
         #endregion
     }
 }

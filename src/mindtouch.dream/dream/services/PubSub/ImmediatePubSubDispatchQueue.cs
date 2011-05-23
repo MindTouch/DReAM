@@ -25,7 +25,15 @@ namespace MindTouch.Dream.Services.PubSub {
     public class ImmediatePubSubDispatchQueue : IPubSubDispatchQueue {
 
         //--- Fields ---
-        private Func<DispatchItem, Result<bool>> _dequeueHandler;
+        private readonly Func<DispatchItem, Result<bool>> _dequeueHandler;
+
+        //--- Constructors ---
+        public ImmediatePubSubDispatchQueue(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            if(dequeueHandler == null) {
+                throw new ArgumentNullException("dequeueHandler");
+            }
+            _dequeueHandler = dequeueHandler;
+        }
 
         //--- Properties ---
         public TimeSpan FailureWindow {
@@ -34,12 +42,7 @@ namespace MindTouch.Dream.Services.PubSub {
 
         //--- Methods ---
         public void Enqueue(DispatchItem item) {
-            ** sanity check dequeue handler
             _dequeueHandler(item);
-        }
-
-        public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
-            _dequeueHandler = dequeueHandler;
         }
 
         public void Dispose() { }

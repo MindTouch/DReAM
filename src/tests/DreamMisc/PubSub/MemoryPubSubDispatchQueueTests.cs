@@ -42,8 +42,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 result.Return(true);
                 return result;
             };
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Seconds());
-            dispatchQueue.SetDequeueHandler(handler);
+            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Seconds(), handler);
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
             var item2 = new DispatchItem(new XUri("http://b"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "b");
 
@@ -73,8 +72,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 result.Return(dispatchCounter > 2);
                 return result;
             };
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Seconds());
-            dispatchQueue.SetDequeueHandler(handler);
+            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Seconds(), handler);
 
             // Act
             dispatchQueue.Enqueue(item1);
@@ -98,7 +96,7 @@ namespace MindTouch.Dream.Test.PubSub {
         public void Disposed_queue_throws_on_access() {
 
             // Arrange
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes());
+            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes(), i => new Result<bool>().WithReturn(true));
 
             // Act
             dispatchQueue.Dispose();
@@ -112,44 +110,6 @@ namespace MindTouch.Dream.Test.PubSub {
             } catch(Exception e) {
                 Assert.Fail(string.Format("Enqueue threw unexpected exception: {0}", e));
             }
-            try {
-                dispatchQueue.SetDequeueHandler(null);
-                Assert.Fail("SetDequeueHandler didn't throw");
-            } catch(ObjectDisposedException) {
-            } catch(AssertionException) {
-                throw;
-            } catch(Exception e) {
-                Assert.Fail(string.Format("SetDequeueHandler threw unexpected exception: {0}", e));
-            }
-        }
-
-        [Test]
-        public void ClearAndDisposed_queue_throws_on_access() {
-
-            // Arrange
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes());
-
-            // Act
-            dispatchQueue.ClearAndDispose();
-
-            // Assert
-            try {
-                var item = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
-                dispatchQueue.Enqueue(item);
-                Assert.Fail("Enqueue didn't throw");
-            } catch(ObjectDisposedException) {
-            } catch(AssertionException) {
-                throw;
-            } catch(Exception e) {
-                Assert.Fail(string.Format("Enqueue threw unexpected exception: {0}", e));
-            }
-            try {
-                dispatchQueue.SetDequeueHandler(null);
-                Assert.Fail("SetDequeueHandler didn't throw");
-            } catch(ObjectDisposedException) {
-            } catch(Exception e) {
-                Assert.Fail(string.Format("SetDequeueHandler threw unexpected exception: {0}", e));
-            }
         }
 
         [Test]
@@ -158,9 +118,8 @@ namespace MindTouch.Dream.Test.PubSub {
             // Arrange
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
 
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes());
             var dispatchResult = new Result<bool>();
-            dispatchQueue.SetDequeueHandler((item) => dispatchResult);
+            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes(), (item) => dispatchResult);
             dispatchQueue.Enqueue(item1);
 
             // Act
@@ -176,26 +135,13 @@ namespace MindTouch.Dream.Test.PubSub {
         public void Dispose_is_idempotent() {
 
             // Arrange
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes());
+            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes(), i => new Result<bool>().WithReturn(true));
 
             // Act
             dispatchQueue.Dispose();
 
             // Assert
             dispatchQueue.Dispose();
-        }
-
-        [Test]
-        public void DisposeAndClear_is_idempotent() {
-
-            // Arrange
-            var dispatchQueue = new MemoryPubSubDispatchQueue("queue", TaskTimerFactory.Current, 1.Minutes());
-
-            // Act
-            dispatchQueue.ClearAndDispose();
-
-            // Assert
-            dispatchQueue.ClearAndDispose();
         }
     }
 }

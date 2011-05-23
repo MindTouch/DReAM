@@ -19,10 +19,8 @@
  * limitations under the License.
  */
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using log4net;
 using MindTouch.Tasking;
 using MindTouch.Xml;
@@ -38,6 +36,7 @@ namespace MindTouch.Dream.Services.PubSub {
         private readonly TaskTimerFactory _taskTimerFactory;
         private readonly TimeSpan _retryTime;
         private readonly Dictionary<string, PersistentPubSubDispatchQueue> _repository = new Dictionary<string, PersistentPubSubDispatchQueue>();
+        private readonly List<PubSubSubscriptionSet> _uninitializedSets = new List<PubSubSubscriptionSet>();
         private Func<DispatchItem, Result<bool>> _handler;
 
         //--- Constructors ---
@@ -49,20 +48,6 @@ namespace MindTouch.Dream.Services.PubSub {
             if(!Directory.Exists(_queueRootPath)) {
                 Directory.CreateDirectory(_queueRootPath);
             }
-        }
-
-        //--- Methods ---
-        public IEnumerable<PubSubSubscriptionSet> Initialize(Func<DispatchItem, Result<bool>> handler) {
-            if(handler == null) {
-                throw new ArgumentException("cannot set the handler to a null value");
-            }
-            if(_handler != null) {
-                throw new InvalidOperationException("cannot initialize and already initialized repository");
-            }
-            _handler = handler;
-
-            // load persisted subscriptions
-            var subscriptions = new List<PubSubSubscriptionSet>();
             foreach(var setFile in Directory.GetFiles(_queueRootPath, "*.xml")) {
                 PubSubSubscriptionSet set;
                 try {
@@ -70,14 +55,35 @@ namespace MindTouch.Dream.Services.PubSub {
                     var location = setDoc["@location"].AsText;
                     var accessKey = setDoc["@accesskey"].AsText;
                     set = new PubSubSubscriptionSet(setDoc, location, accessKey);
-                    RegisterOrUpdate(set);
                 } catch(Exception e) {
                     _log.Warn(string.Format("unable to retrieve and re-register subscription for location", Path.GetFileNameWithoutExtension(setFile)), e);
                     continue;
                 }
-                subscriptions.Add(set);
+                _uninitializedSets.Add(set);
             }
-            return subscriptions;
+        }
+
+        //--- Methods ---
+        public IEnumerable<PubSubSubscriptionSet> GetUninitializedSets() {
+            lock(_repository) {
+                return _uninitializedSets.ToArray();
+            }
+        }
+
+        public void InitializeRepository(Func<DispatchItem, Result<bool>> dequeueHandler) {
+            if(dequeueHandler == null) {
+                throw new ArgumentException("cannot set the handler to a null value");
+            }
+            if(_handler != null) {
+                throw new InvalidOperationException("cannot initialize and already initialized repository");
+            }
+            _handler = dequeueHandler;
+            lock(_repository) {
+                foreach(var set in _uninitializedSets) {
+                    RegisterOrUpdate(set);
+                }
+                _uninitializedSets.Clear();
+            }
         }
 
         public void RegisterOrUpdate(PubSubSubscriptionSet set) {
@@ -89,8 +95,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     return;
                 }
 
-                var queue = new PersistentPubSubDispatchQueue(Path.Combine(_queueRootPath, XUri.EncodeSegment(set.Location)), _taskTimerFactory, _retryTime);
-                queue.SetDequeueHandler(_handler);
+                var queue = new PersistentPubSubDispatchQueue(Path.Combine(_queueRootPath, XUri.EncodeSegment(set.Location)), _taskTimerFactory, _retryTime, _handler);
                 _repository[set.Location] = queue;
             }
         }
@@ -119,21 +124,10 @@ namespace MindTouch.Dream.Services.PubSub {
             }
         }
 
-        public IEnumerator<IPubSubDispatchQueue> GetEnumerator() {
-            lock(_repository) {
-                IEnumerable<IPubSubDispatchQueue> enumerable = _repository.Values.ToArray();
-                return enumerable.GetEnumerator();
-            }
-        }
-
-        IEnumerator IEnumerable.GetEnumerator() {
-            return GetEnumerator();
-        }
-
         public void Dispose() {
             lock(_repository) {
-                foreach(var queue in _repository.Values) {
-                    queue.Dispose();
+                foreach(var tuplet in _repository.Values) {
+                    tuplet.Dispose();
                 }
             }
         }

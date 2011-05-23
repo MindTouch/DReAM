@@ -57,7 +57,7 @@ namespace MindTouch.Dream.Services.PubSub {
         public readonly PubSubSubscription[] Subscriptions;
 
         /// <summary>
-        /// Maximum allowed dispatch failures before the set is dropped.
+        /// Maximum allowed dispatch failures before the set is dropped. Only used if <see cref="UsesFailureDuration"/> is false.
         /// </summary>
         public readonly int MaxFailures;
 
@@ -70,7 +70,10 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Set version serial.
         /// </summary>
         public readonly long? Version;
-** no docs
+
+        /// <summary>
+        /// Maximum time period repeated failures are accepted before the set is dropped. Only used if <see cref="UsesFailureDuration"/> is true.
+        /// </summary>
         public readonly TimeSpan MaxFailureDuration;
 
         //--- Constructors ---

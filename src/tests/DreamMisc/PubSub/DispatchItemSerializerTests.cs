@@ -84,6 +84,29 @@ namespace MindTouch.Dream.Test.PubSub {
             Assert.AreEqual(via2, item2.Event.Via[1], "second via mismatch");
         }
 
+        [Test]
+        public void Deserialize_wrong_version_throws() {
+            var msg = new XDoc("msg");
+            var channel = new XUri("channel://foo.com/bar");
+            var origin = new XUri("http://foo.com/baz");
+            var ev = new DispatcherEvent(msg, channel, origin);
+            var item = new DispatchItem(
+                new XUri("http://foo"),
+                ev,
+                "abc"
+            );
+            var serializer = new DispatchItemSerializer();
+            var stream = serializer.ToStream(item);
+            stream.WriteByte(5);
+            stream.Position = 0;
+            try {
+                serializer.FromStream(stream);
+                Assert.Fail("should have thrown");
+            } catch(InvalidDataException) {
+                return;
+            }
+        }
+
         [Test, Ignore("perf test")]
         public void Speed() {
             var body = new XDoc("msg").Elem("foo", "bar");

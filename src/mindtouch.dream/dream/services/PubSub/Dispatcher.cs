@@ -100,18 +100,17 @@ namespace MindTouch.Dream.Services.PubSub {
             _serviceKeySetCookie = config.ServiceAccessCookie;
             _combinedSet = new PubSubSubscriptionSet(_owner, 0, _serviceKeySetCookie);
             _dispatchQueue = new ProcessingQueue<DispatcherEvent>(DispatchFromQueue, 10);
-            _defaultQueue = new ImmediatePubSubDispatchQueue();
-            _defaultQueue.SetDequeueHandler(TryDispatchItem);
-            *** break init into two steps
-            var pubSubSubscriptionSets = queueRepository.Initialize(TryDispatchItem);
+            _defaultQueue = new ImmediatePubSubDispatchQueue(TryDispatchItem);
+            var pubSubSubscriptionSets = queueRepository.GetUninitializedSets();
 
             // Note (arnec): only invoking lock here, so that RegisterSet and Update don't do it over and over
             lock(_subscriptionsByOwner) {
                 foreach(var set in pubSubSubscriptionSets) {
-                    RegisterSet(set);
+                    RegisterSet(set, true);
                 }
                 Update();
             }
+            queueRepository.InitializeRepository(TryDispatchItem);
         }
 
         //--- Properties ---
@@ -159,12 +158,12 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <returns>Tuple of subscription set and <see langword="True"/> if the set was newly created, or <see langword="False"/> if the set existed (does not update the set).</returns>
         public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(string location, XDoc setDoc, string accessKey) {
             var set = new PubSubSubscriptionSet(setDoc, location, accessKey);
-            var result = RegisterSet(set);
+            var result = RegisterSet(set, false);
             Update();
             return result;
         }
 
-        private Tuplet<PubSubSubscriptionSet, bool> RegisterSet(PubSubSubscriptionSet set) {
+        private Tuplet<PubSubSubscriptionSet, bool> RegisterSet(PubSubSubscriptionSet set, bool init) {
             foreach(var cookie in set.Cookies) {
                 _cookieJar.Update(cookie, null);
             }

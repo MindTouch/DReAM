@@ -42,8 +42,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 result.Return(true);
                 return result;
             };
-            var dispatchQueue = new PersistentPubSubDispatchQueue(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()), TaskTimerFactory.Current, 1.Seconds());
-            dispatchQueue.SetDequeueHandler(handler);
+            var dispatchQueue = new PersistentPubSubDispatchQueue(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()), TaskTimerFactory.Current, 1.Seconds(), handler);
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
             var item2 = new DispatchItem(new XUri("http://b"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "b");
 
@@ -73,8 +72,7 @@ namespace MindTouch.Dream.Test.PubSub {
                 result.Return(dispatchCounter > 2);
                 return result;
             };
-            var dispatchQueue = new PersistentPubSubDispatchQueue(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()), TaskTimerFactory.Current, 1.Seconds());
-            dispatchQueue.SetDequeueHandler(handler);
+            var dispatchQueue = new PersistentPubSubDispatchQueue(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()), TaskTimerFactory.Current, 1.Seconds(), handler);
 
             // Act
             dispatchQueue.Enqueue(item1);
@@ -95,18 +93,15 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         [Test]
-        public void Creating_a_queue_with_persisted_items_starts_dispatch_once_dispatch_handler_is_attached() {
+        public void Creating_a_queue_with_persisted_items_starts_dispatch_immediately() {
 
             // Arrange
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
 
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds());
-            dispatchQueue.SetDequeueHandler((item) => new Result<bool>().WithReturn(false));
-
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds(), (item) => new Result<bool>().WithReturn(false));
             dispatchQueue.Enqueue(item1);
             dispatchQueue.Dispose();
-            dispatchQueue = null;
 
             var dispatched = new List<DispatchItem>();
             Func<DispatchItem, Result<bool>> handler = (i) => {
@@ -115,10 +110,9 @@ namespace MindTouch.Dream.Test.PubSub {
                 result.Return(true);
                 return result;
             };
-            dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds());
 
             // Act
-            dispatchQueue.SetDequeueHandler(handler);
+            dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Seconds(), handler);
 
             // Assert
             Assert.IsTrue(Wait.For(() => dispatched.Count == 1, 5.Seconds()), "item was not dispatched in time");
@@ -132,8 +126,7 @@ namespace MindTouch.Dream.Test.PubSub {
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
 
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
-            dispatchQueue.SetDequeueHandler((item) => new Result<bool>().WithReturn(false));
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes(), (item) => new Result<bool>().WithReturn(false));
             dispatchQueue.Enqueue(item1);
             Assert.IsTrue(Directory.GetFiles(queuePath).Length > 0, "queue directory did not contain any files");
 
@@ -149,7 +142,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes(), i => new Result<bool>().WithReturn(true));
 
             // Act
             dispatchQueue.Dispose();
@@ -163,15 +156,6 @@ namespace MindTouch.Dream.Test.PubSub {
             } catch(Exception e) {
                 Assert.Fail(string.Format("Enqueue threw unexpected exception: {0}", e));
             }
-            try {
-                dispatchQueue.SetDequeueHandler(null);
-                Assert.Fail("SetDequeueHandler didn't throw");
-            } catch(ObjectDisposedException) {
-            } catch(AssertionException) {
-                throw;
-            } catch(Exception e) {
-                Assert.Fail(string.Format("SetDequeueHandler threw unexpected exception: {0}", e));
-            }
         }
 
         [Test]
@@ -179,7 +163,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes(), i => new Result<bool>().WithReturn(true));
 
             // Act
             dispatchQueue.DeleteAndDispose();
@@ -195,13 +179,6 @@ namespace MindTouch.Dream.Test.PubSub {
             } catch(Exception e) {
                 Assert.Fail(string.Format("Enqueue threw unexpected exception: {0}", e));
             }
-            try {
-                dispatchQueue.SetDequeueHandler(null);
-                Assert.Fail("SetDequeueHandler didn't throw");
-            } catch(ObjectDisposedException) {
-            } catch(Exception e) {
-                Assert.Fail(string.Format("SetDequeueHandler threw unexpected exception: {0}", e));
-            }
         }
 
         [Test]
@@ -211,9 +188,8 @@ namespace MindTouch.Dream.Test.PubSub {
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             var item1 = new DispatchItem(new XUri("http://a"), new DispatcherEvent(new XDoc("msg"), new XUri("http://channl"), new XUri("http://resource")), "a");
 
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
             var dispatchResult = new Result<bool>();
-            dispatchQueue.SetDequeueHandler((item) => dispatchResult);
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes(), i => dispatchResult);
             dispatchQueue.Enqueue(item1);
 
             // Act
@@ -230,7 +206,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes(), i => new Result<bool>().WithReturn(true));
 
             // Act
             dispatchQueue.Dispose();
@@ -244,7 +220,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // Arrange
             var queuePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes());
+            var dispatchQueue = new PersistentPubSubDispatchQueue(queuePath, TaskTimerFactory.Current, 1.Minutes(), i => new Result<bool>().WithReturn(true));
 
             // Act
             dispatchQueue.DeleteAndDispose();

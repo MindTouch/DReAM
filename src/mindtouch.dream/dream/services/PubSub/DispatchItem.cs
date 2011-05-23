@@ -20,14 +20,37 @@
  */
 
 namespace MindTouch.Dream.Services.PubSub {
+
+    /// <summary>
+    /// Serializable container for an <see cref="DispatcherEvent"/> for a specific <see cref="PubSubSubscriptionSet"/> identified by its location.
+    /// </summary>
     public class DispatchItem {
 
         //--- Fields ---
+
+        /// <summary>
+        /// Uri the event will be dispatched to.
+        /// </summary>
         public readonly XUri Uri;
+
+        /// <summary>
+        /// Event to dispatch.
+        /// </summary>
         public readonly DispatcherEvent Event;
+
+        /// <summary>
+        /// Location string identifying the <see cref="PubSubSubscriptionSet"/> the event is being dispatched for.
+        /// </summary>
         public readonly string Location;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Create a new dispatch item
+        /// </summary>
+        /// <param name="uri">Uri the event will be dispatched to.</param>
+        /// <param name="event">Event to dispatch.</param>
+        /// <param name="location">Location string identifying the <see cref="PubSubSubscriptionSet"/> the event is being dispatched for.</param>
         public DispatchItem(XUri uri, DispatcherEvent @event, string location) {
             Uri = uri;
             Event = @event;

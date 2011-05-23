@@ -40,10 +40,20 @@ namespace MindTouch.Dream.Services.PubSub {
         private bool _isDisposed;
 
         //--- Construtors
-        public MemoryPubSubDispatchQueue(string location, TaskTimerFactory taskTimerFactory, TimeSpan retryTime) {
+        public MemoryPubSubDispatchQueue(string location, TaskTimerFactory taskTimerFactory, TimeSpan retryTime, Func<DispatchItem, Result<bool>> handler) {
+            if(string.IsNullOrEmpty(location)) {
+                throw new ArgumentNullException("location");
+            }
+            if(taskTimerFactory == null) {
+                throw new ArgumentNullException("taskTimerFactory");
+            }
+            if(handler == null) {
+                throw new ArgumentNullException("handler");
+            }
             _location = location;
             _retryTime = retryTime;
             _queueTimer = taskTimerFactory.New(RetryDequeue, null);
+            _dequeueHandler = handler;
         }
 
         //--- Fields ---
@@ -59,15 +69,6 @@ namespace MindTouch.Dream.Services.PubSub {
         public void Enqueue(DispatchItem item) {
             EnsureNotDisposed();
             _queue.Enqueue(item);
-            Kick();
-        }
-
-        public void SetDequeueHandler(Func<DispatchItem, Result<bool>> dequeueHandler) {
-            EnsureNotDisposed();
-            if(dequeueHandler == null) {
-                throw new ArgumentException("cannot set the handler to a null value");
-            }
-            _dequeueHandler = dequeueHandler;
             Kick();
         }
 
