@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -54,6 +54,9 @@ namespace MindTouch.Core.Test.Services {
             }
         }
 
+        //--- Constants ---
+        private const string DEFAULT_HOST = "defaulthost";
+
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
 
@@ -76,7 +79,10 @@ namespace MindTouch.Core.Test.Services {
                 _hostInfo, 
                 "sid://mindtouch.com/2009/01/dream/email", 
                 "email", 
-                new XDoc("config").Elem("apikey", "servicekey"));
+                new XDoc("config")
+                    .Elem("apikey", "servicekey")
+                    .Elem("smtp-host", DEFAULT_HOST)
+            );
             _plug = _emailService.WithInternalKey().AtLocalHost;
         }
 
@@ -102,9 +108,9 @@ namespace MindTouch.Core.Test.Services {
             _log.Debug("sending message");
             var response = _plug.At("message").Post(email, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
-            Assert.AreEqual("localhost", _smtpClientFactory.Settings.Host);
-            Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
-            Assert.AreEqual("to@bar.com", _smtpClientFactory.Client.Message.To.First().ToString());
+            Assert.AreEqual(DEFAULT_HOST, _smtpClientFactory.Settings.Host);
+            Assert.AreEqual("\"from@bar.com\" <from@bar.com>", _smtpClientFactory.Client.Message.From.ToString());
+            Assert.AreEqual("\"to@bar.com\" <to@bar.com>", _smtpClientFactory.Client.Message.To.First().ToString());
             Assert.AreEqual("subject", _smtpClientFactory.Client.Message.Subject);
             Assert.AreEqual("body", _smtpClientFactory.Client.Message.Body);
         }
@@ -131,6 +137,28 @@ namespace MindTouch.Core.Test.Services {
         }
 
         [Test]
+        public void Omitting_host_in_custom_settings_but_providing_apikey_inherits_default_settings() {
+            var apikey = StringUtil.CreateAlphaNumericKey(6);
+            var settings = new XDoc("config")
+                .Elem("apikey", apikey);
+            var response = _plug.At("configuration", "custom").Put(settings);
+            Assert.IsTrue(response.IsSuccessful);
+            var email = new XDoc("email")
+                .Attr("configuration", "custom")
+                .Elem("to", "to@bar.com")
+                .Elem("from", "from@bar.com")
+                .Elem("subject", "subject")
+                .Elem("body", "body");
+            _log.Debug("sending message");
+            var settingsPlug = Plug.New(_plug.Uri).With("apikey", apikey);
+            response = settingsPlug.At("message").Post(email, new Result<DreamMessage>()).Wait();
+            Assert.IsTrue(response.IsSuccessful);
+            Assert.AreEqual(DEFAULT_HOST, _smtpClientFactory.Settings.Host);
+            Assert.IsNotNull(_smtpClientFactory.Client.Message);
+            Assert.AreEqual("\"from@bar.com\" <from@bar.com>", _smtpClientFactory.Client.Message.From.ToString());
+        }
+
+        [Test]
         public void Can_send_using_settings_apikey() {
             var apikey = StringUtil.CreateAlphaNumericKey(6);
             var settings = new XDoc("config")
@@ -150,7 +178,7 @@ namespace MindTouch.Core.Test.Services {
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual("customhost", _smtpClientFactory.Settings.Host);
             Assert.IsNotNull(_smtpClientFactory.Client.Message);
-            Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
+            Assert.AreEqual("\"from@bar.com\" <from@bar.com>", _smtpClientFactory.Client.Message.From.ToString());
         }
     }
 }

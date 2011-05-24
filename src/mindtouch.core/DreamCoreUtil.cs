@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -77,7 +77,6 @@ namespace MindTouch.Dream {
             // TODO (steveb): we should use a 'fixed capacity' cue which marks itself as done when 'count' is reached
 
             XDoc forks = fork.Elements;
-            List<XDoc> items = new List<XDoc>();
             foreach(XDoc cmd in forks) {
 
                 // TODO (steveb): we should be doing this in parallel, not sequentially!

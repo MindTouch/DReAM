@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -205,7 +205,8 @@ namespace MindTouch.Dream.Http {
                             if(pending.Count > 1) {
 
                                 // clone the message to all relays
-                                foreach(Result<DreamMessage> result in pending) {
+                                original.Memorize(new Result()).Wait();
+                                foreach(var result in pending) {
                                     result.Return(original.Clone());
                                 }
                             } else {
@@ -237,7 +238,7 @@ namespace MindTouch.Dream.Http {
             // 3.   Reading the body of the response is not covered by using the HttpWebResponse.Timeout method. In ASP.NET 1.1 and in later versions, reading the body of the response 
             //      is covered by using the HttpWebRequest.ReadWriteTimeout method. The HttpWebRequest.ReadWriteTimeout method is used to handle cases where the response headers are 
             //      retrieved in a timely manner but where the reading of the response body times out.
-            
+
             httpRequest.KeepAlive = false;
             httpRequest.ProtocolVersion = System.Net.HttpVersion.Version10;
 
@@ -252,7 +253,7 @@ namespace MindTouch.Dream.Http {
             } else if(!string.IsNullOrEmpty(uri.User) || !string.IsNullOrEmpty(uri.Password)) {
                 httpRequest.Credentials = new NetworkCredential(uri.User ?? string.Empty, uri.Password ?? string.Empty);
                 httpRequest.PreAuthenticate = true;
-         
+
                 // Note (arnec): this manually adds the basic auth header, so it can authorize
                 // in a single request without requiring challenge 
                 var authbytes = Encoding.ASCII.GetBytes(string.Concat(uri.User ?? string.Empty, ":", uri.Password ?? string.Empty));

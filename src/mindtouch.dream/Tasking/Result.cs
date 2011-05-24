@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch Inc.
+ * Copyright (C) 2006-2011 MindTouch Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -578,8 +578,6 @@ namespace MindTouch.Tasking {
         [Obsolete("This method is thread-blocking. Please avoid using it if possible.")]
 #endif
         public AResult Block() {
-
-            // TODO (steveb): check if we can use Monitor instead of AutoResetEvent
 
             // block until result is available
             if(!HasFinished) {

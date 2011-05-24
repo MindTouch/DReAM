@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -487,7 +487,6 @@ namespace MindTouch.Data {
         private IDbCommand CreateExecutableCommand(IDbConnection connection) {
             IDbCommand command = _factory.CreateQuery(_command.CommandText);
             try {
-                command.CommandTimeout = _command.CommandTimeout;
                 command.CommandType = _command.CommandType;
                 command.Connection = connection;
                 foreach(IDataParameter parameter in _command.Parameters) {
@@ -619,7 +618,7 @@ namespace MindTouch.Data {
         private void QueryFinished(IDbCommand command) {
             _stopWatch.Stop();
             if(_stopWatch.Elapsed > SLOW_SQL) {
-                _log.WarnFormat("SLOW SQL ({0:0.000}s): {1}", _stopWatch.Elapsed.TotalSeconds, command.CommandText);
+                _log.WarnFormat("SLOW SQL ({0:0.000}s, database: {2}): {1}", _stopWatch.Elapsed.TotalSeconds, command.CommandText, command.Connection.Database);
             }
             _catalog.FireQueryFinished(this);
         }

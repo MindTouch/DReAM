@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
@@ -34,7 +35,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2009 MindTouch, Inc.",
+    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2011 MindTouch, Inc.",
         Info = "http://developer.mindtouch.com/Dream/Services/EmailService",
         SID = new[] { "sid://mindtouch.com/2009/01/dream/email" }
     )]
@@ -59,25 +60,25 @@ namespace MindTouch.Dream.Services {
         //--- Features ---
         [DreamFeature("POST:message", "Send an email")]
         internal Yield SendEmail(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            XDoc mailDoc = request.ToDocument();
-            MailMessage mailMsg = new MailMessage();
+            var mailDoc = request.ToDocument();
+            var mailMsg = new MailMessage();
             foreach(XDoc to in mailDoc["to"]) {
                 var email = to.AsText;
                 if(string.IsNullOrEmpty(email)) {
                     continue;
                 }
                 _log.DebugFormat("Adding TO address '{0}'", email);
-                mailMsg.To.Add(new MailAddress(email));
+                mailMsg.To.Add(GetEmailAddress(email));
             }
             if(mailMsg.To.Count == 0) {
                 throw new DreamBadRequestException("message does not contains any TO email addresses");
             }
             var from = mailDoc["from"].AsText;
             _log.DebugFormat("from address: {0}", from);
-            mailMsg.From = new MailAddress(from);
+            mailMsg.From = GetEmailAddress(from);
             mailMsg.Subject = mailDoc["subject"].AsText;
             string plaintextBody = null;
-            foreach(XDoc body in mailDoc["body"]) {
+            foreach(var body in mailDoc["body"]) {
                 AlternateView view;
                 if(body["@html"].AsBool ?? false) {
                     _log.Debug("adding html body");
@@ -92,7 +93,7 @@ namespace MindTouch.Dream.Services {
                 _log.Debug("adding plain text body");
                 mailMsg.Body = plaintextBody;
             }
-            foreach(XDoc header in mailDoc["headers/header"]) {
+            foreach(var header in mailDoc["headers/header"]) {
                 var name = header["name"].AsText;
                 var value = header["value"].AsText;
                 _log.DebugFormat("adding header '{0}': {1}", name, value);
@@ -103,28 +104,50 @@ namespace MindTouch.Dream.Services {
             yield break;
         }
 
+        private MailAddress GetEmailAddress(string addressString) {
+            var address = new MailAddress(addressString);
+            if(string.IsNullOrEmpty(address.DisplayName)) {
+                address = new MailAddress(addressString, addressString);
+            }
+            return address;
+        }
+
         [DreamFeature("PUT:configuration/{configuration}", "Set smtp settings for a named configuration")]
         internal Yield ConfigureSmtp(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            string configuration = context.GetParam("configuration");
-            XDoc settingsDoc = request.ToDocument();
+            var configuration = context.GetParam("configuration");
+            var settingsDoc = request.ToDocument();
             _log.DebugFormat("configuring settings for configuration '{0}'", configuration);
             var host = settingsDoc["smtp-host"].AsText;
-            if(string.IsNullOrEmpty(host)) {
-                response.Return(DreamMessage.BadRequest("must specify an smtp-host"));
+            var apikey = settingsDoc["apikey"].AsText;
+            if(string.IsNullOrEmpty(host) && string.IsNullOrEmpty(apikey)) {
+                response.Return(DreamMessage.BadRequest("must specify either new smtp config with a host or specify an apikey"));
                 yield break;
             }
             _log.DebugFormat("Smtp Host: {0}", host);
-            var settings = new SmtpSettings {
-                Host = host,
-                AuthUser = settingsDoc["smtp-auth-user"].AsText,
-                AuthPassword = settingsDoc["smtp-auth-password"].AsText,
-                Apikey = settingsDoc["apikey"].AsText,
+            SmtpSettings settings;
+            if(string.IsNullOrEmpty(host)) {
+                settings = new SmtpSettings() {
+                    Host = _defaultSettings.Host,
+                    Apikey = apikey,
+                    AuthPassword = _defaultSettings.AuthPassword,
+                    AuthUser = _defaultSettings.AuthUser,
+                    EnableSsl = _defaultSettings.EnableSsl,
+                    Port = _defaultSettings.Port,
+                };
+            } else {
+                _log.DebugFormat("Smtp Host: {0}", host);
+                settings = new SmtpSettings {
+                    Host = host,
+                    AuthUser = settingsDoc["smtp-auth-user"].AsText,
+                    AuthPassword = settingsDoc["smtp-auth-password"].AsText,
+                    Apikey = apikey,
 
-                // Note (arnec): ssl requires mono 2.0 and likely root certificate import via 'mozroots --import --ask-remove --machine'
-                EnableSsl = settingsDoc["use-ssl"].AsBool ?? false
-            };
-            if(settingsDoc["smtp-port"].AsInt.HasValue) {
-                settings.Port = settingsDoc["smtp-port"].AsInt.Value;
+                    // Note (arnec): ssl requires mono 2.0 and likely root certificate import via 'mozroots --import --ask-remove --machine'
+                    EnableSsl = settingsDoc["use-ssl"].AsBool ?? false
+                };
+                if(settingsDoc["smtp-port"].AsInt.HasValue) {
+                    settings.Port = settingsDoc["smtp-port"].AsInt.Value;
+                }
             }
             lock(_smtpSettings) {
                 _smtpSettings[configuration] = settings;
@@ -235,23 +258,59 @@ namespace MindTouch.Dream.Services {
         }
     }
 
+    /// <summary>
+    /// Settings container for clients created with <see cref="ISmtpClientFactory"/>.
+    /// </summary>
     public class SmtpSettings {
 
         //--- Fields ---
+
+        /// <summary>
+        /// Smtp Host
+        /// </summary>
         public string Host;
+
+        /// <summary>
+        /// Optional Smtp Port;
+        /// </summary>
         public int? Port;
+
+        /// <summary>
+        /// Optional Authentication User
+        /// </summary>
         public string AuthUser;
+
+        /// <summary>
+        /// Optional Authentication Password
+        /// </summary>
         public string AuthPassword;
+
+        /// <summary>
+        /// Try to use secure connection?
+        /// </summary>
         public bool EnableSsl;
+
+        /// <summary>
+        /// Apikey that will be provided to authorize the use of these settings.
+        /// </summary>
         public string Apikey;
     }
 
+    /// <summary>
+    /// Implementation of <see cref="ISmtpClientFactory"/>
+    /// </summary>
     public class SmtpClientFactory : ISmtpClientFactory {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
 
         //--- Methods ---
+
+        /// <summary>
+        /// Create a new <see cref="ISmtpClient"/>.
+        /// </summary>
+        /// <param name="settings">Client settings.</param>
+        /// <returns>New <see cref="ISmtpClient"/> instance</returns>
         public ISmtpClient CreateClient(SmtpSettings settings) {
             var client = new SmtpClient {
                 Host = settings.Host,
@@ -271,31 +330,56 @@ namespace MindTouch.Dream.Services {
         }
     }
 
+    /// <summary>
+    /// Factory for creating <see cref="ISmtpClient"/> instances.
+    /// </summary>
     public interface ISmtpClientFactory {
 
         //--- Methods ---
+
+        /// <summary>
+        /// Create a new <see cref="ISmtpClient"/>.
+        /// </summary>
+        /// <param name="settings">Client settings.</param>
+        /// <returns>New <see cref="ISmtpClient"/> instance</returns>
         ISmtpClient CreateClient(SmtpSettings settings);
     }
 
+    /// <summary>
+    /// Implemenation of <see cref="ISmtpClient"/> wrapping the standard <see cref="SmtpClient"/>.
+    /// </summary>
     public class SmtpClientWrapper : ISmtpClient {
 
         //--- Fields ---
         private readonly SmtpClient _client;
 
         //--- Constructors ---
+        
+        /// <summary>
+        /// Create a new <see cref="SmtpClient"/> wrapper.
+        /// </summary>
+        /// <param name="client"></param>
         public SmtpClientWrapper(SmtpClient client) {
             _client = client;
         }
 
-        //--- Methods ---
-        public void Send(MailMessage message) {
+        //--- ISmtpClient Members ---
+        void ISmtpClient.Send(MailMessage message) {
             _client.Send(message);
         }
     }
 
+    /// <summary>
+    /// Simple Smtp client interface
+    /// </summary>
     public interface ISmtpClient {
 
         //--- Methods ---
+
+        /// <summary>
+        /// Send a mail message.
+        /// </summary>
+        /// <param name="message">Message to send.</param>
         void Send(MailMessage message);
     }
 

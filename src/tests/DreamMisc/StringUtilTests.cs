@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -105,7 +105,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        [ExpectedException(typeof(ArgumentException), ExpectedMessage = "length of string replacements must be even\r\nParameter name: replacements")]
+        [ExpectedException(typeof(ArgumentException))]
         public void ReplaceAll_with_uneven_substitutions() {
             string before = "This is a string to replace stuff in.";
             string after = before.ReplaceAll(

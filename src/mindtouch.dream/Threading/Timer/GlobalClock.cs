@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -49,7 +49,9 @@ namespace MindTouch.Threading.Timer {
         private static NamedClockCallback[] _callbacks = new NamedClockCallback[INITIAL_CALLBACK_CAPACITY];
         private static readonly int _intervalMilliseconds;
 
+#if LOCKFREEE
         private static SingleLinkNode<NamedClockCallback> _head;
+#endif
 
         //--- Class Constructor ---
         static GlobalClock() {

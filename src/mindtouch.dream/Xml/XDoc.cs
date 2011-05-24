@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -1852,7 +1852,7 @@ namespace MindTouch.Xml {
                 return this;
             }
 
-            // TODO (steveb): allow renaming of attribute nodes
+            // TODO (steveb): allow renaming of attribute nodes (see http://youtrack.developer.mindtouch.com/issue/MT-9661)
 
             XmlNode current = CurrentNode;
             XmlElement node = current.OwnerDocument.CreateElement(name);

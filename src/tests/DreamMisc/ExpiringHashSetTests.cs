@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -180,9 +180,8 @@ namespace MindTouch.Dream.Test {
             var items = from x in set select x;
             Assert.AreEqual(n, items.Count());
             for(var i = 1; i <= n; i++) {
-// ReSharper disable AccessToModifiedClosure
-                Assert.IsTrue((from x in set where x.Value == i && x.TTL == TimeSpan.FromSeconds(i) select x).Any());
-// ReSharper restore AccessToModifiedClosure
+                var j = i;
+                Assert.IsTrue((from x in set where x.Value == j && x.TTL == TimeSpan.FromSeconds(j) select x).Any());
             }
         }
 
@@ -268,7 +267,7 @@ namespace MindTouch.Dream.Test {
             set.SetExpiration(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
-            Assert.AreEqual(ttl, entry.TTL);
+            AssertEx.AreEqual(ttl, entry.TTL);
             Assert.AreEqual(expireTime,entry.When);
         }
 
@@ -281,7 +280,7 @@ namespace MindTouch.Dream.Test {
             set.SetExpiration(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
-            Assert.AreEqual(ttl, entry.TTL);
+            AssertEx.AreEqual(ttl, entry.TTL);;
             Assert.AreNotEqual(expireTime, entry.When);
             Assert.GreaterOrEqual(entry.When, expireTime);
             Assert.LessOrEqual(entry.When, expireTime.AddSeconds(3));

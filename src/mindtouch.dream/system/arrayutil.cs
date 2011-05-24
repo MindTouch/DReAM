@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2009 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -136,6 +136,20 @@ namespace System {
                 return result;
             }
             return collection.ToDictionary(keySelector);
+        }
+
+        /// <summary>
+        /// Get a value from a dictionary or a default value if not found
+        /// </summary>
+        /// <typeparam name="TKey">Dictionary key type</typeparam>
+        /// <typeparam name="TValue">Dictionary value type</typeparam>
+        /// <param name="dictionary">The dictionary to operate on</param>
+        /// <param name="key">Key to try to retrieve a value for</param>
+        /// <param name="default">Default value to return should the key not exist</param>
+        /// <returns>Either the value for the given key, or the default</returns>
+        public static TValue TryGetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue @default) {
+            TValue value;
+            return dictionary.TryGetValue(key, out value) ? value : @default;
         }
 
         /// <summary>

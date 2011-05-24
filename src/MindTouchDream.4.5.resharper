@@ -83,9 +83,7 @@
       </Naming2>
     </CSharp>
     <VB>
-      <FormatSettings>
-        <INDENT_SIZE>4</INDENT_SIZE>
-      </FormatSettings>
+      <FormatSettings />
       <ImportsSettings />
       <Naming2 />
     </VB>
@@ -107,7 +105,7 @@
       <PredefinedRule Inspect="True" Prefix="" Suffix="" Style="AaBb" ElementKind="Other" />
       <PredefinedRule Inspect="True" Prefix="_" Suffix="" Style="aaBb" ElementKind="PrivateInstanceFields" />
       <PredefinedRule Inspect="True" Prefix="_" Suffix="" Style="aaBb" ElementKind="PrivateStaticFields" />
-      <PredefinedRule Inspect="True" Prefix="" Suffix="" Style="AaBb" ElementKind="PrivateConstants" />
+      <PredefinedRule Inspect="True" Prefix="" Suffix="" Style="AA_BB" ElementKind="PrivateConstants" />
       <PredefinedRule Inspect="True" Prefix="" Suffix="" Style="AaBb" ElementKind="PrivateStaticReadonly" />
     </Naming2>
   </CodeStyleSettings>
