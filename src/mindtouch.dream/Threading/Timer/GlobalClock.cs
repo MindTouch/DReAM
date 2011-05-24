@@ -49,7 +49,9 @@ namespace MindTouch.Threading.Timer {
         private static NamedClockCallback[] _callbacks = new NamedClockCallback[INITIAL_CALLBACK_CAPACITY];
         private static readonly int _intervalMilliseconds;
 
+#if LOCKFREEE
         private static SingleLinkNode<NamedClockCallback> _head;
+#endif
 
         //--- Class Constructor ---
         static GlobalClock() {
