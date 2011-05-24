@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using log4net;
@@ -58,12 +59,13 @@ namespace MindTouch.Dream.Test {
             var port = _hostinfo.LocalHost.Uri.Port;
             var listeners = new List<HttpListener>();
             for(var i = 1; i < 12; i++) {
-                var listener = new HttpListener();
-                listener.IgnoreWriteExceptions = true;
+                var listener = new HttpListener { IgnoreWriteExceptions = true };
                 var prefix = string.Format("http://localhost:{0}/", port + i);
                 _log.DebugFormat("---- starting listener on {0}", prefix);
                 listener.Prefixes.Add(prefix);
                 listener.Start();
+                Assert.IsTrue(listener.IsListening);
+                Assert.AreEqual(prefix, listener.Prefixes.First());
                 listeners.Add(listener);
             }
             try {
@@ -74,6 +76,12 @@ namespace MindTouch.Dream.Test {
             _log.DebugFormat("---- trying to create a host again  -----");
             var host3 = DreamTestHelper.CreateRandomPortHost();
             host3.Dispose();
+
+            // Note (arnec): have to iterate the listeners here or the test will fail in Release mode, since listeners will have been optimized away
+            // before it is needed
+            foreach(var listener in listeners) {
+                _log.DebugFormat("still listening on {0}",listener.Prefixes.First());
+            }
         }
 
         [Test]
