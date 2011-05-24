@@ -173,6 +173,7 @@ namespace MindTouch.Tasking {
         private volatile bool _running = true;
         private int _counter;
         private DateTime _last = DateTime.UtcNow;
+        private volatile bool _shutdown;
 
         //--- Constructors ---
         private TaskTimerFactory() {
@@ -286,6 +287,7 @@ namespace MindTouch.Tasking {
             List<KeyValuePair<TaskTimer, TaskEnv>> timers = null;
 
             // stop the thread timer
+            _shutdown = true;
             GlobalClock.RemoveCallback(Tick);
             _owner.Target = null;
 
@@ -322,6 +324,11 @@ namespace MindTouch.Tasking {
         }
 
         private void Tick(DateTime now, TimeSpan elapsed) {
+
+            // ignore ticks that come in after we've initialized a shutdown
+            if(_shutdown) {
+                return;
+            }
 
             // check if some timers are ready
             List<KeyValuePair<TaskTimer, TaskEnv>> timers = null;
