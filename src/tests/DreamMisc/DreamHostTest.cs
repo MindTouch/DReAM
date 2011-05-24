@@ -21,11 +21,8 @@
 
 using System;
 using System.Collections.Generic;
-<<<<<<< HEAD
-=======
 using System.Linq;
 using System.Net;
->>>>>>> 5f122341be4c3bb765a8aa5d8e4c03b28679443e
 using System.Threading;
 using log4net;
 
@@ -57,8 +54,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-<<<<<<< HEAD
-=======
         public void DreamTestHelper_will_retry_host_creation_10_times() {
             _log.DebugFormat("---- starting up a bunch of listeners  -----");
             var port = _hostinfo.LocalHost.Uri.Port;
@@ -90,7 +85,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
->>>>>>> 5f122341be4c3bb765a8aa5d8e4c03b28679443e
         public void Host_Blueprint_should_be_publicly_accessible() {
             Plug local = Plug.New(_host.Uri.WithoutQuery()).At("@blueprint");
             DreamMessage response = local.GetAsync().Wait();
