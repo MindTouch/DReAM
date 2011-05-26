@@ -39,21 +39,23 @@ namespace MindTouch.Dream.Test.PubSub {
         //--- Fields ---
         private DreamHostInfo _hostInfo;
 
-        [TearDown]
-        public void Teardown() {
+        [TestFixtureSetUp]
+        public void FixtureSetup() {
+            _hostInfo = DreamTestHelper.CreateRandomPortHost();
+        }
+
+        [SetUp]
+        public void Setup() {
             MockPlug.DeregisterAll();
         }
 
         [TestFixtureTearDown]
         public void FixtureTeardown() {
-            if(_hostInfo != null) {
-                _hostInfo.Dispose();
-            }
+            _hostInfo.Dispose();
         }
 
         [Test]
         public void New_services_gets_pubsub_uri_in_config() {
-            InitHost();
             MockServiceInfo mock = MockService.CreateMockService(_hostInfo);
             Assert.AreEqual(_hostInfo.LocalHost.At("host", "$pubsub").Uri.WithoutQuery(), mock.Service.ServiceConfig["uri.pubsub"].AsUri);
             bool foundKey = false;
@@ -126,7 +128,7 @@ namespace MindTouch.Dream.Test.PubSub {
 
             // create subscription
             Plug pubsub = CreatePubSubService().WithInternalKey().AtLocalHost;
-            DreamMessage response = pubsub.At("subscribers").WithHeader("X-Set-Location-Key",locationKey).Post(set, new Result<DreamMessage>()).Wait();
+            DreamMessage response = pubsub.At("subscribers").WithHeader("X-Set-Location-Key", locationKey).Post(set, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Created, response.Status);
             Assert.IsNull(response.Headers.ContentLocation);
@@ -153,7 +155,7 @@ namespace MindTouch.Dream.Test.PubSub {
                     .Elem("channel", "channel:///foo/*")
                     .Start("recipient").Elem("uri", "http:///foo/sub1").End()
                 .End();
-            response = subscription.Put(set2,new Result<DreamMessage>()).Wait();
+            response = subscription.Put(set2, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
 
             // retrieve new subscription
@@ -743,7 +745,6 @@ namespace MindTouch.Dream.Test.PubSub {
 
         [Test]
         public void Publish_against_pubsub_channel_should_be_forbidden() {
-            InitHost();
             // publish event via a mock service, since publish is marked internal
             var mock = MockService.CreateMockService(_hostInfo);
             var resetEvent = new AutoResetEvent(false);
@@ -787,7 +788,6 @@ namespace MindTouch.Dream.Test.PubSub {
                 .End();
 
             // create subscription using a mockservice, so we get the general pubsub subscribe injected
-            InitHost();
             MockServiceInfo subMock = MockService.CreateMockService(_hostInfo);
             subMock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
                 DreamMessage r = subMock.Service.PubSub.At("subscribers").PostAsync(set).Wait();
@@ -922,7 +922,6 @@ namespace MindTouch.Dream.Test.PubSub {
         [Ignore("slow test, run manually")]
         [Test]
         public void Parallel_chaining_subscription_and_message_propagation() {
-            InitHost();
             var rootPubsub = Plug.New(_hostInfo.Host.LocalMachineUri.At("host", "$pubsub", "subscribers"));
             var goTrigger = new ManualResetEvent(false);
             var pubsubResults = new List<Result<Plug>>();
@@ -1051,7 +1050,6 @@ namespace MindTouch.Dream.Test.PubSub {
                 .End();
 
             // create pubsub chain
-            InitHost();
             Plug middle = Plug.New(_hostInfo.Host.LocalMachineUri.At("host", "$pubsub", "subscribers"));
             Plug upstreamPubSub = CreatePubSubService("upstream", new XDoc("config").Start("downstream").Elem("uri", middle).End()).WithInternalKey().AtLocalHost;
             Plug downstreamPubSub = CreatePubSubService("downstream", new XDoc("config").Start("upstream").Elem("uri", middle).End()).WithInternalKey().AtLocalHost;
@@ -1225,19 +1223,11 @@ namespace MindTouch.Dream.Test.PubSub {
             return false;
         }
 
-        private void InitHost() {
-            if(_hostInfo != null) {
-                return;
-            }
-            _hostInfo = DreamTestHelper.CreateRandomPortHost();
-        }
-
         private DreamServiceInfo CreatePubSubService(XDoc extraConfig) {
             return CreatePubSubService(null, extraConfig);
         }
 
         private DreamServiceInfo CreatePubSubService(string namePrefix, XDoc extraConfig) {
-            InitHost();
             return DreamTestHelper.CreateService(_hostInfo, "sid://mindtouch.com/dream/2008/10/pubsub", namePrefix, extraConfig);
         }
 
