@@ -34,11 +34,25 @@ namespace MindTouch.Dream.Test {
         /// <param name="response">Response message.</param>
         /// <param name="status">Status to assert.</param>
         public static void AssertStatus(this DreamMessage response, DreamStatus status) {
+            AssertStatus(response, status, null);
+        }
+
+        /// <summary>
+        /// Assert that the status of the message is equal to an expected value.
+        /// </summary>
+        /// <param name="response">Response message.</param>
+        /// <param name="status">Status to assert.</param>
+        /// <param name="failureMessage">Failure message.</param>
+        public static void AssertStatus(this DreamMessage response, DreamStatus status, string failureMessage) {
             if(response.Status == status) {
                 return;
             }
+            if(!string.IsNullOrEmpty(failureMessage)) {
+                failureMessage = failureMessage + "\r\n";
+            }
             Assert.Fail(
-                string.Format("Request status was {0} instead of {1} failed:\r\n{2}",
+                string.Format("{0}Request status was {1} instead of {2}:\r\n{3}",
+                failureMessage,
                 response.Status,
                 status,
                 (response.HasDocument
@@ -51,10 +65,23 @@ namespace MindTouch.Dream.Test {
         /// </summary>
         /// <param name="response">Response message.</param>
         public static void AssertSuccess(this DreamMessage response) {
+            AssertSuccess(response, null);
+        }
+
+        /// <summary>
+        /// Assert that the response indicates a successful request.
+        /// </summary>
+        /// <param name="response">Response message.</param>
+        /// <param name="failureMessage">Failure message.</param>
+        public static void AssertSuccess(this DreamMessage response, string failureMessage) {
             if(response.IsSuccessful) {
                 return;
             }
+            if(!string.IsNullOrEmpty(failureMessage)) {
+                failureMessage = failureMessage + "\r\n";
+            }
             Assert.Fail(
+                failureMessage +
                 "Request failed:\r\n" +
                 (response.HasDocument
                 ? string.Format("{0}: {1}", response.Status, response.ToDocument()["message"].AsText)
