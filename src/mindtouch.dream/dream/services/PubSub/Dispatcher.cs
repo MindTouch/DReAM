@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.Tasking;
@@ -33,7 +34,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Default implementation of <see cref="IPubSubDispatcher"/> with extension points for sub-classing.
     /// </summary>
-    public class Dispatcher : IPubSubDispatcher {
+    public class Dispatcher : IPubSubDispatcher, IDisposable {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
@@ -41,12 +42,13 @@ namespace MindTouch.Dream.Services.PubSub {
         //--- Fields ---
         private readonly XUri _owner;
         private readonly DreamCookie _serviceKeySetCookie;
-        private readonly Dictionary<XUri, int> _dispatchFailuresByDestination = new Dictionary<XUri, int>();
+        private readonly Dictionary<string, int> _dispatchFailuresByLocation = new Dictionary<string, int>();
         private readonly ProcessingQueue<DispatcherEvent> _dispatchQueue;
+        private readonly IPubSubDispatchQueue _defaultQueue;
+        private readonly IPubSubDispatchQueueRepository _queueRepository;
         private Dictionary<XUri, List<PubSubSubscriptionSet>> _subscriptionsByDestination = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
         private PubSubSubscriptionSet _combinedSet;
         private long _combinedSetVersion = 0;
-
 
         // NOTE (arnec): always lock _subscriptionsByOwner when accessing either _subscriptionsByOwner or _subscriptionByLocation
         private readonly Dictionary<XUri, PubSubSubscriptionSet> _subscriptionsByOwner = new Dictionary<XUri, PubSubSubscriptionSet>();
@@ -63,7 +65,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <remarks>
         /// Should not be modified by subclass.
         /// </remarks>
-        protected Dictionary<DispatcherRecipient, List<XUri>> _destinationsByRecipient = new Dictionary<DispatcherRecipient, List<XUri>>();
+        protected Dictionary<DispatcherRecipient, List<PubSubSubscription>> _subscriptionsByRecipient = new Dictionary<DispatcherRecipient, List<PubSubSubscription>>();
 
         // NOTE (arnec): always lock _channelMap when accessing either _channelMap or _resourceMap
 
@@ -91,11 +93,24 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Create a new dispatcher.
         /// </summary>
         /// <param name="config">Configuration instance injected from pub sub service.</param>
-        public Dispatcher(DispatcherConfig config) {
+        /// <param name="queueRepository">Factory for dispatch queues used by persisted (i.e. expiring) subscriptions</param>
+        public Dispatcher(DispatcherConfig config, IPubSubDispatchQueueRepository queueRepository) {
+            _queueRepository = queueRepository;
             _owner = config.ServiceUri.AsServerUri();
             _serviceKeySetCookie = config.ServiceAccessCookie;
             _combinedSet = new PubSubSubscriptionSet(_owner, 0, _serviceKeySetCookie);
             _dispatchQueue = new ProcessingQueue<DispatcherEvent>(DispatchFromQueue, 10);
+            _defaultQueue = new ImmediatePubSubDispatchQueue(TryDispatchItem);
+            var pubSubSubscriptionSets = queueRepository.GetUninitializedSets();
+
+            // Note (arnec): only invoking lock here, so that RegisterSet and Update don't do it over and over
+            lock(_subscriptionsByOwner) {
+                foreach(var set in pubSubSubscriptionSets) {
+                    RegisterSet(set, true);
+                }
+                Update();
+            }
+            queueRepository.InitializeRepository(TryDispatchItem);
         }
 
         //--- Properties ---
@@ -130,32 +145,38 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <returns>Enumerable of <see cref="PubSubSubscriptionSet"/>.</returns>
         public IEnumerable<PubSubSubscriptionSet> GetAllSubscriptionSets() {
             lock(_subscriptionsByOwner) {
-                List<PubSubSubscriptionSet> sets = new List<PubSubSubscriptionSet>();
-                foreach(PubSubSubscriptionSet set in _subscriptionsByOwner.Values) {
-                    sets.Add(set);
-                }
-                return sets;
+                return _subscriptionsByOwner.Values.ToList();
             }
         }
 
         /// <summary>
         /// Register a subscription set
         /// </summary>
+        /// <param name="location">location id.</param>
         /// <param name="setDoc">Xml formatted subscription set.</param>
+        /// <param name="accessKey">secret key for accessing the set.</param>
         /// <returns>Tuple of subscription set and <see langword="True"/> if the set was newly created, or <see langword="False"/> if the set existed (does not update the set).</returns>
-        public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(XDoc setDoc) {
-            PubSubSubscriptionSet set = new PubSubSubscriptionSet(setDoc);
-            foreach(DreamCookie cookie in set.Cookies) {
+        public Tuplet<PubSubSubscriptionSet, bool> RegisterSet(string location, XDoc setDoc, string accessKey) {
+            var set = new PubSubSubscriptionSet(setDoc, location, accessKey);
+            var result = RegisterSet(set, false);
+            Update();
+            return result;
+        }
+
+        private Tuplet<PubSubSubscriptionSet, bool> RegisterSet(PubSubSubscriptionSet set, bool init) {
+            foreach(var cookie in set.Cookies) {
                 _cookieJar.Update(cookie, null);
             }
             lock(_subscriptionsByOwner) {
                 PubSubSubscriptionSet existing;
-                if(_subscriptionsByOwner.TryGetValue(set.Owner, out existing)) {
+                if(_subscriptionsByOwner.TryGetValue(set.Owner, out existing) || _subscriptionByLocation.TryGetValue(set.Location, out existing)) {
                     return new Tuplet<PubSubSubscriptionSet, bool>(existing, true);
                 }
                 _subscriptionByLocation.Add(set.Location, set);
                 _subscriptionsByOwner.Add(set.Owner, set);
-                Update();
+                if(set.UsesFailureDuration && !init) {
+                    _queueRepository.RegisterOrUpdate(set);
+                }
                 return new Tuplet<PubSubSubscriptionSet, bool>(set, false);
             }
         }
@@ -185,12 +206,13 @@ namespace MindTouch.Dream.Services.PubSub {
             }
             if(_log.IsDebugEnabled) {
                 _log.DebugFormat("Dispatcher '{0}' dispatching '{1}' on channel '{2}' with resource '{3}'",
-                                        _owner,
-                                        ev.Id,
-                                        ev.Channel,
-                                        ev.Resource);
+                    _owner,
+                    ev.Id,
+                    ev.Channel,
+                    ev.Resource
+                );
             }
-            DispatcherEvent dispatchEvent = ev.WithVia(_owner);
+            var dispatchEvent = ev.WithVia(_owner);
             if(!_dispatchQueue.TryEnqueue(dispatchEvent)) {
                 throw new InvalidOperationException(string.Format("Enqueue of '{0}' failed.", dispatchEvent.Id));
             }
@@ -203,39 +225,64 @@ namespace MindTouch.Dream.Services.PubSub {
                     if(r.HasException) {
                         _log.ErrorExceptionMethodCall(r.Exception, "AsyncDispatcher", "async queue processor encountered an error");
                     } else {
-                        _log.DebugFormat("finished dispatch of event '{0}'", dispatchEvent.Id);
+                        _log.DebugFormat("finished enqueuing dispatch of event '{0}'", dispatchEvent.Id);
                     }
                 });
         }
 
         private Yield Dispatch_Helper(DispatcherEvent dispatchEvent, Result result) {
-            Dictionary<XUri, List<DispatcherRecipient>> listeningEndpoints = null;
+            Dictionary<XUri, List<PubSubSubscription>> listeningSubscriptions = null;
             if(dispatchEvent.Recipients != null && dispatchEvent.Recipients.Length > 0) {
-                yield return Coroutine.Invoke(GetListenersForRecipients, dispatchEvent, new Result<Dictionary<XUri, List<DispatcherRecipient>>>()).Set(v => listeningEndpoints = v);
+                yield return Coroutine.Invoke(GetListenersForRecipients, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSubscriptions = v);
             } else {
-                yield return Coroutine.Invoke(GetListenersByChannelResourceMatch, dispatchEvent, new Result<Dictionary<XUri, List<DispatcherRecipient>>>()).Set(v => listeningEndpoints = v);
+                yield return Coroutine.Invoke(GetListenersByChannelResourceMatch, dispatchEvent, new Result<Dictionary<XUri, List<PubSubSubscription>>>()).Set(v => listeningSubscriptions = v);
             }
-            if(listeningEndpoints.Count == 0) {
+            if(listeningSubscriptions.Count == 0) {
                 _log.DebugFormat("event '{0}' for resource '{1}' has no endpoints to dispatch to", dispatchEvent.Id, dispatchEvent.Resource);
             } else {
-                _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningEndpoints.Count);
+                _log.DebugFormat("event '{0}' for resource '{1}' ready for dispatch with {2} endpoint(s)", dispatchEvent.Id, dispatchEvent.Resource, listeningSubscriptions.Count);
             }
-            foreach(KeyValuePair<XUri, List<DispatcherRecipient>> destination in listeningEndpoints) {
+            foreach(var destination in listeningSubscriptions) {
                 var uri = destination.Key;
-                DispatcherEvent subEvent = null;
-                yield return Coroutine.Invoke(DetermineRecipients, dispatchEvent, destination.Value.ToArray(), new Result<DispatcherEvent>()).Set(v => subEvent = v);
-                if(subEvent == null) {
-                    _log.DebugFormat("no recipient union for event '{0}' and {1}", dispatchEvent.Id, uri);
-                    continue;
+                _log.DebugFormat("endpoint {0} has {1} subscription(s) for event '{0}'", uri, destination.Value.Count, dispatchEvent.Id);
+                foreach(var sub in destination.Value) {
+                    DispatcherEvent subEvent = null;
+                    yield return Coroutine.Invoke(FilterRecipients, dispatchEvent, sub, new Result<DispatcherEvent>()).Set(v => subEvent = v);
+                    if(subEvent == null) {
+                        _log.DebugFormat("no recipient union for event '{0}' and subscription {1}", dispatchEvent.Id, uri, sub.Id);
+                        continue;
+                    }
+
+                    // if the event has no recipients, but the subscription does, attach those recipients so that the receiver can filter it
+                    // as the subscription intended
+                    if(!subEvent.Recipients.Any() && sub.Recipients.Any()) {
+                        subEvent = subEvent.WithRecipient(true, sub.Recipients);
+                    }
+                    IPubSubDispatchQueue queue;
+                    if(sub.Owner.UsesFailureDuration) {
+                        queue = _queueRepository[sub.Owner];
+                        if(queue == null) {
+                            _log.DebugFormat("unable to get dispatch queue for event '{0}'via location '{1}'", dispatchEvent.Id, sub.Owner.Location);
+                            continue;
+                        }
+                    } else {
+                        queue = _defaultQueue;
+                    }
+                    queue.Enqueue(new DispatchItem(uri, subEvent, sub.Owner.Location));
                 }
-                _log.DebugFormat("dispatching event '{0}' to {1}", subEvent.Id, uri);
-                Plug p = Plug.New(uri);
-                p = p.WithCookieJar(_cookieJar);
-                Result<DreamMessage> response = p.Post(subEvent.AsMessage(), new Result<DreamMessage>(TimeSpan.MaxValue));
-                response.WhenDone(r => DispatchCompletion_Helper(uri, r));
             }
             result.Return();
             yield break;
+        }
+
+        private Result<bool> TryDispatchItem(DispatchItem item) {
+            var result = new Result<bool>();
+            _log.DebugFormat("dispatching event '{0}' to {1}", item.Event.Id, item.Uri);
+            Plug.New(item.Uri)
+                .WithCookieJar(_cookieJar)
+                .Post(item.Event.AsMessage(), new Result<DreamMessage>(TimeSpan.MaxValue))
+                .WhenDone(r => DispatchCompletion_Helper(item, r.Value, result));
+            return result;
         }
 
         /// <summary>
@@ -244,7 +291,7 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <param name="ev">Event to be dispatched.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield GetListenersByChannelResourceMatch(DispatcherEvent ev, Result<Dictionary<XUri, List<DispatcherRecipient>>> result) {
+        protected virtual Yield GetListenersByChannelResourceMatch(DispatcherEvent ev, Result<Dictionary<XUri, List<PubSubSubscription>>> result) {
 
             // dispatch to all subscriptions that listen for this event and its contents
             _log.Debug("trying dispatch based on channel matches");
@@ -255,17 +302,15 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 listeningSubs = _channelMap.GetMatches(ev.Channel, listeningSubs);
             }
-            Dictionary<XUri, List<DispatcherRecipient>> listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
-            foreach(PubSubSubscription sub in listeningSubs) {
-                List<DispatcherRecipient> recipients;
-                if(!listeners.TryGetValue(sub.Destination, out recipients)) {
-                    recipients = new List<DispatcherRecipient>();
-                    listeners.Add(sub.Destination, recipients);
-                }
-                foreach(DispatcherRecipient recipient in sub.Recipients) {
-                    if(!recipients.Contains(recipient)) {
-                        recipients.Add(recipient);
-                    }
+            var listeners = new Dictionary<XUri, List<PubSubSubscription>>();
+            foreach(var sub in listeningSubs) {
+                List<PubSubSubscription> subs;
+                if(!listeners.TryGetValue(sub.Destination, out subs)) {
+                    subs = new List<PubSubSubscription>();
+                    listeners.Add(sub.Destination, subs);
+                    subs.Add(sub);
+                } else if(!subs.Contains(sub)) {
+                    subs.Add(sub);
                 }
             }
             result.Return(listeners);
@@ -278,24 +323,25 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <param name="ev">Event to be dispatched.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield GetListenersForRecipients(DispatcherEvent ev, Result<Dictionary<XUri, List<DispatcherRecipient>>> result) {
+        protected virtual Yield GetListenersForRecipients(DispatcherEvent ev, Result<Dictionary<XUri, List<PubSubSubscription>>> result) {
 
-            //if the event has recipients attached, do subscription lookup by recipients
+            // if the event has recipients attached, do subscription lookup by recipients
             _log.Debug("trying dispatch based on event recipient list event");
-            lock(_destinationsByRecipient) {
-                Dictionary<XUri, List<DispatcherRecipient>> listeners = new Dictionary<XUri, List<DispatcherRecipient>>();
-                foreach(DispatcherRecipient recipient in ev.Recipients) {
-                    List<XUri> destinations;
-                    if(_destinationsByRecipient.TryGetValue(recipient, out destinations)) {
-                        foreach(XUri destination in destinations) {
-                            List<DispatcherRecipient> recipients;
-                            if(!listeners.TryGetValue(destination, out recipients)) {
-                                recipients = new List<DispatcherRecipient>();
-                                listeners.Add(destination, recipients);
-                            }
-                            if(!recipients.Contains(recipient)) {
-                                recipients.Add(recipient);
-                            }
+            lock(_subscriptionsByRecipient) {
+                var listeners = new Dictionary<XUri, List<PubSubSubscription>>();
+                foreach(var recipient in ev.Recipients) {
+                    List<PubSubSubscription> subscriptions;
+                    if(!_subscriptionsByRecipient.TryGetValue(recipient, out subscriptions)) {
+                        continue;
+                    }
+                    foreach(var sub in subscriptions) {
+                        List<PubSubSubscription> subs;
+                        if(!listeners.TryGetValue(sub.Destination, out subs)) {
+                            subs = new List<PubSubSubscription>();
+                            listeners.Add(sub.Destination, subs);
+                            subs.Add(sub);
+                        } else if(!subs.Contains(sub)) {
+                            subs.Add(sub);
                         }
                     }
                 }
@@ -309,67 +355,92 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Override hook for filtering recipients for an event.
         /// </summary>
         /// <param name="ev">Event to be dispatched.</param>
-        /// <param name="recipients">List of proposed recipients.</param>
+        /// <param name="subscription">Matching subscription.</param>
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
-        protected virtual Yield DetermineRecipients(DispatcherEvent ev, DispatcherRecipient[] recipients, Result<DispatcherEvent> result) {
+        protected virtual Yield FilterRecipients(DispatcherEvent ev, PubSubSubscription subscription, Result<DispatcherEvent> result) {
             if(ev.Recipients.Length == 0) {
 
-                //if the event has no reciepient list, anyone can receive it
+                // if the event has no recipient list, anyone can receive it
                 result.Return(ev);
                 yield break;
             }
-            recipients = ArrayUtil.Intersect(ev.Recipients, recipients);
+            var recipients = ArrayUtil.Intersect(ev.Recipients, subscription.Recipients);
             result.Return(recipients.Length == 0 ? null : ev.WithRecipient(true, recipients));
             yield break;
         }
 
-        private void DispatchCompletion_Helper(XUri destination, Result<DreamMessage> result) {
-            if(result.Value.IsSuccessful || result.Value.Status == DreamStatus.NotModified) {
-
+        private void DispatchCompletion_Helper(DispatchItem destination, DreamMessage response, Result<bool> result) {
+            PubSubSubscriptionSet set;
+            lock(_subscriptionsByOwner) {
+                if(!_subscriptionByLocation.TryGetValue(destination.Location, out set)) {
+                    _log.DebugFormat("the subscription at location '{0}' no longer exists, dropping event '{1}' ", destination.Location, destination.Event.Id);
+                    result.Return(true);
+                    return;
+                }
+            }
+            if(set.UsesFailureDuration) {
+                if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
+                    result.Return(true);
+                    return;
+                }
+                var queue = _queueRepository[set];
+                if(queue == null) {
+                    _log.DebugFormat("the dispatch queue for subscription at location '{0}' no longer exists, dropping event '{1}' ", destination.Location, destination.Event.Id);
+                    result.Return(true);
+                    return;
+                }
+                if(queue.FailureWindow > set.MaxFailureDuration) {
+                    _log.DebugFormat("the destination has failed continously for {0} and had an expiration failure window of {1}. The subscription at location '{2}' has been dropped, as has event '{3}'",
+                        queue.FailureWindow,
+                        set.MaxFailureDuration,
+                        destination.Location,
+                        destination.Event.Id
+                    );
+                    RemoveSet(set.Location);
+                    result.Return(true);
+                    return;
+                }
+                result.Return(false);
+                return;
+            }
+            if(response.IsSuccessful || response.Status == DreamStatus.NotModified) {
                 // if the post was a success, or didn't affect a change, clear any failure count
-                lock(_dispatchFailuresByDestination) {
+                lock(_dispatchFailuresByLocation) {
                     if(_log.IsDebugEnabled) {
-                        if(_dispatchFailuresByDestination.ContainsKey(destination)) {
+                        if(_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
                             _log.Debug("zeroing out existing error count");
                         }
                     }
-                    _dispatchFailuresByDestination.Remove(destination);
+                    _dispatchFailuresByLocation.Remove(destination.Location);
                 }
             } else {
 
                 // post was a failure, increase consecutive failures
                 if(_log.IsWarnEnabled) {
-                    _log.WarnFormat("event dispatch to '{0}' failed: {1} - {2}", destination, result.Value.Status, result.Value.ToText());
+                    _log.WarnFormat("event dispatch to '{0}' failed: {1} - {2}", destination, response.Status, response.ToText());
                 }
-                lock(_dispatchFailuresByDestination) {
+                lock(_dispatchFailuresByLocation) {
 
                     // NOTE (arnec): using ContainsKey instead of TryGetValue, since we're incrementing a value type in place
-                    if(!_dispatchFailuresByDestination.ContainsKey(destination)) {
-                        _dispatchFailuresByDestination.Add(destination, 1);
+                    if(!_dispatchFailuresByLocation.ContainsKey(destination.Location)) {
+                        _dispatchFailuresByLocation.Add(destination.Location, 1);
                     } else {
-                        _dispatchFailuresByDestination[destination]++;
+                        _dispatchFailuresByLocation[destination.Location]++;
                     }
-                    List<PubSubSubscriptionSet> subscriptionSets;
-                    lock(_subscriptionsByDestination) {
-                        if(!_subscriptionsByDestination.TryGetValue(destination, out subscriptionSets)) {
-                            return;
-                        }
-                    }
-                    foreach(PubSubSubscriptionSet set in subscriptionSets) {
-                        _log.DebugFormat("failure {0} out of {1} for {2}",
-                                                _dispatchFailuresByDestination[destination],
-                                                set.MaxFailures,
-                                                destination);
+                    var failures = _dispatchFailuresByLocation[destination.Location];
+                    _log.DebugFormat("failure {0} out of {1} for set at location {2}", failures, set.MaxFailures, destination.Location);
 
-                        // kick out a subscription set if one of its subscriptions fails too many times
-                        if(_dispatchFailuresByDestination[destination] > set.MaxFailures) {
-                            _log.DebugFormat("exceeded max failures, kicking set at '{0}'", set.Location);
-                            RemoveSet(set.Location);
-                        }
+                    // kick out a subscription set if one of its subscriptions fails too many times
+                    if(failures > set.MaxFailures) {
+                        _log.DebugFormat("exceeded max failures, kicking set at '{0}'", set.Location);
+                        RemoveSet(destination.Location);
                     }
                 }
             }
+
+            // Note (arnec): max-failure sets always "succeed" at dispatch since their queues are not kept around
+            result.Return(true);
         }
 
         /// <summary>
@@ -377,23 +448,28 @@ namespace MindTouch.Dream.Services.PubSub {
         /// </summary>
         /// <param name="location">Set resource location uri postfix.</param>
         /// <param name="setDoc">New set document.</param>
+        /// <param name="accessKey"></param>
         /// <returns>Updated set.</returns>
-        public PubSubSubscriptionSet ReplaceSet(string location, XDoc setDoc) {
+        public PubSubSubscriptionSet ReplaceSet(string location, XDoc setDoc, string accessKey) {
             lock(_subscriptionsByOwner) {
                 PubSubSubscriptionSet oldSet;
                 if(!_subscriptionByLocation.TryGetValue(location, out oldSet)) {
                     return null;
                 }
-                PubSubSubscriptionSet set = oldSet.Derive(setDoc);
+                PubSubSubscriptionSet set = oldSet.Derive(setDoc, accessKey);
                 if(set == oldSet) {
                     return oldSet;
-                }
-                foreach(DreamCookie cookie in set.Cookies) {
-                    _cookieJar.Update(cookie, null);
                 }
                 if(set.Owner != oldSet.Owner) {
                     _log.WarnFormat("subscription set owner mispatch: {0} vs. {1}", oldSet.Owner, set.Owner);
                     throw new ArgumentException("owner of new set does not match existing owner");
+                }
+                if(set.UsesFailureDuration != oldSet.UsesFailureDuration) {
+                    _log.WarnFormat("attempted to change a subscription type (max-failure vs. failure-duration)");
+                    throw new ArgumentException("new set has different failure type");
+                }
+                foreach(DreamCookie cookie in set.Cookies) {
+                    _cookieJar.Update(cookie, null);
                 }
                 _subscriptionByLocation[location] = set;
                 _subscriptionsByOwner[set.Owner] = set;
@@ -415,8 +491,16 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 bool result = _subscriptionsByOwner.Remove(set.Owner);
                 _subscriptionByLocation.Remove(location);
+                _queueRepository.Delete(set);
                 Update();
                 return result;
+            }
+        }
+
+        public void Dispose() {
+            lock(_subscriptionsByOwner) {
+                _queueRepository.Dispose();
+                _defaultQueue.Dispose();
             }
         }
 
@@ -452,13 +536,13 @@ namespace MindTouch.Dream.Services.PubSub {
         protected virtual PubSubSubscription[] CalculateCombinedSubscriptions() {
             PubSubSubscription[] allSubs;
             lock(_subscriptionsByOwner) {
-                XUriChildMap<PubSubSubscription> tempChannelMap = new XUriChildMap<PubSubSubscription>();
-                XUriChildMap<PubSubSubscription> tempResourceMap = new XUriChildMap<PubSubSubscription>(true);
-                Dictionary<DispatcherRecipient, List<XUri>> tempRecipients = new Dictionary<DispatcherRecipient, List<XUri>>();
-                Dictionary<XUri, List<PubSubSubscriptionSet>> tempSubs = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
-                List<PubSubSubscription> allSubsList = new List<PubSubSubscription>();
-                foreach(PubSubSubscriptionSet set in _subscriptionsByOwner.Values) {
-                    foreach(PubSubSubscription sub in set.Subscriptions) {
+                var tempChannelMap = new XUriChildMap<PubSubSubscription>();
+                var tempResourceMap = new XUriChildMap<PubSubSubscription>(true);
+                var tempRecipients = new Dictionary<DispatcherRecipient, List<PubSubSubscription>>();
+                var tempSubs = new Dictionary<XUri, List<PubSubSubscriptionSet>>();
+                var allSubsList = new List<PubSubSubscription>();
+                foreach(var set in _subscriptionsByOwner.Values) {
+                    foreach(var sub in set.Subscriptions) {
                         tempChannelMap.AddRange(sub.Channels, sub);
                         if(sub.Resources != null && sub.Resources.Length > 0) {
                             tempResourceMap.AddRange(sub.Resources, sub);
@@ -474,14 +558,14 @@ namespace MindTouch.Dream.Services.PubSub {
                         if(!sets.Contains(set)) {
                             sets.Add(set);
                         }
-                        foreach(DispatcherRecipient recipient in sub.Recipients) {
-                            List<XUri> destinations;
+                        foreach(var recipient in sub.Recipients) {
+                            List<PubSubSubscription> destinations;
                             if(!tempRecipients.TryGetValue(recipient, out destinations)) {
-                                destinations = new List<XUri>();
+                                destinations = new List<PubSubSubscription>();
                                 tempRecipients.Add(recipient, destinations);
                             }
-                            if(!destinations.Contains(sub.Destination)) {
-                                destinations.Add(sub.Destination);
+                            if(!destinations.Contains(sub)) {
+                                destinations.Add(sub);
                             }
                         }
                     }
@@ -494,8 +578,8 @@ namespace MindTouch.Dream.Services.PubSub {
                 lock(_subscriptionsByDestination) {
                     _subscriptionsByDestination = tempSubs;
                 }
-                lock(_destinationsByRecipient) {
-                    _destinationsByRecipient = tempRecipients;
+                lock(_subscriptionsByRecipient) {
+                    _subscriptionsByRecipient = tempRecipients;
                 }
             }
             return allSubs;
