@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using log4net;
+using MindTouch.Extensions.Time;
 using MindTouch.Web;
 using MindTouch.Xml;
 
@@ -49,14 +50,14 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Pub sub service resource location uri postfix.
         /// </summary>
         public readonly string Location;
-        
+
         /// <summary>
         /// Subscriptions in set.
         /// </summary>
         public readonly PubSubSubscription[] Subscriptions;
 
         /// <summary>
-        /// Maximum allowed dispatch failures before the set is dropped.
+        /// Maximum allowed dispatch failures before the set is dropped. Only used if <see cref="UsesFailureDuration"/> is false.
         /// </summary>
         public readonly int MaxFailures;
 
@@ -69,6 +70,11 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Set version serial.
         /// </summary>
         public readonly long? Version;
+
+        /// <summary>
+        /// Maximum time period repeated failures are accepted before the set is dropped. Only used if <see cref="UsesFailureDuration"/> is true.
+        /// </summary>
+        public readonly TimeSpan MaxFailureDuration;
 
         //--- Constructors ---
 
@@ -83,8 +89,8 @@ namespace MindTouch.Dream.Services.PubSub {
             Owner = owner;
             Version = version;
             Dictionary<string, PubSubSubscription> subs = new Dictionary<string, PubSubSubscription>();
-            foreach(PubSubSubscription sub in childSubscriptions) {
-                foreach(XUri channel in sub.Channels) {
+            foreach(var sub in childSubscriptions) {
+                foreach(var channel in sub.Channels) {
                     if(channel.Scheme == "pubsub") {
 
                         // pubsub scheme is for PubSubService internal use only, so it should never be aggregated
@@ -108,15 +114,14 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Create a new subscription set from a subscription set document.
         /// </summary>
         /// <param name="setDoc">Set Xml document.</param>
-        public PubSubSubscriptionSet(XDoc setDoc)
-            : this(setDoc, StringUtil.CreateAlphaNumericKey(8), StringUtil.CreateAlphaNumericKey(8)) {
-        }
-
-        private PubSubSubscriptionSet(XDoc setDoc, string location, string accessKey) {
+        /// <param name="location">location id.</param>
+        /// <param name="accessKey">secret key for accessing the set.</param>
+        public PubSubSubscriptionSet(XDoc setDoc, string location, string accessKey) {
             try {
                 // Note: not using AsUri to avoid automatic local:// translation
                 Owner = new XUri(setDoc["uri.owner"].AsText);
-                List<PubSubSubscription> subscriptions = new List<PubSubSubscription>();
+                MaxFailureDuration = (setDoc["@max-failure-duration"].AsDouble ?? 0).Seconds();
+                var subscriptions = new List<PubSubSubscription>();
                 foreach(XDoc sub in setDoc["subscription"]) {
                     subscriptions.Add(new PubSubSubscription(sub, this));
                 }
@@ -124,7 +129,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 Subscriptions = subscriptions.ToArray();
                 Location = location;
                 AccessKey = accessKey;
-                MaxFailures = setDoc["@max-failures"].AsInt ?? MAX_FAILURES;
+                MaxFailures = UsesFailureDuration ? int.MaxValue : setDoc["@max-failures"].AsInt ?? MAX_FAILURES;
             } catch(Exception e) {
                 throw new ArgumentException("Unable to parse subscription set: " + e.Message, e);
             }
@@ -138,8 +143,8 @@ namespace MindTouch.Dream.Services.PubSub {
         public List<DreamCookie> Cookies {
             get {
                 var lookup = new HashSet<string>();
-                List<DreamCookie> cookies = new List<DreamCookie>();
-                foreach(PubSubSubscription sub in Subscriptions) {
+                var cookies = new List<DreamCookie>();
+                foreach(var sub in Subscriptions) {
                     if(sub.Cookie != null) {
                         string h = sub.Cookie.ToString();
                         if(!lookup.Contains(h)) {
@@ -150,6 +155,14 @@ namespace MindTouch.Dream.Services.PubSub {
                 }
                 return cookies;
             }
+        }
+
+        /// <summary>
+        /// True if this set upes <see cref="MaxFailureDuration"/> instead of <see cref="MaxFailures"/> to determine whether the set has exceeded
+        /// its failure threshold and should be dropped.
+        /// </summary>
+        public bool UsesFailureDuration {
+            get { return MaxFailureDuration != TimeSpan.Zero; }
         }
 
         //--- Methods ---
@@ -175,14 +188,16 @@ namespace MindTouch.Dream.Services.PubSub {
         /// Derive a new set using a newer subscription set document.
         /// </summary>
         /// <param name="doc"></param>
+        /// <param name="accessKey">Optional new access key</param>
         /// <returns></returns>
-        public PubSubSubscriptionSet Derive(XDoc doc) {
-            long? version = doc["@version"].AsLong;
+        public PubSubSubscriptionSet Derive(XDoc doc, string accessKey) {
+            accessKey = accessKey ?? AccessKey;
+            var version = doc["@version"].AsLong;
             if(version.HasValue && Version.HasValue && version.Value <= Version.Value) {
                 _log.DebugFormat("Supplied version is not newer than current: {0} <= {1}", version.Value, Version);
                 return this;
             }
-            return new PubSubSubscriptionSet(doc, Location, AccessKey);
+            return new PubSubSubscriptionSet(doc, Location, accessKey);
         }
     }
 }
