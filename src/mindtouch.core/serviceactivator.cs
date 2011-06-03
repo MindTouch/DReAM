@@ -20,6 +20,7 @@
  */
 using System;
 using Autofac;
+using Autofac.Core;
 using MindTouch.Xml;
 
 namespace MindTouch.Dream {
@@ -47,7 +48,7 @@ namespace MindTouch.Dream {
 
         public IDreamService Create(XDoc config, Type type) {
             object service;
-            if(!_container.TryResolve(type, out service, TypedParameter.From(config))) {
+            if(!_container.TryResolve(new TypedService(type), new[] { TypedParameter.From(config) }, out service)) {
                 service = Activator.CreateInstance(type);
             }
             return (IDreamService)service;

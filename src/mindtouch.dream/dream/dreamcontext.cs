@@ -137,14 +137,14 @@ namespace MindTouch.Dream {
         private readonly string[] _suffixes;
         private readonly Dictionary<string, string[]> _pathParams;
         private readonly Dictionary<string, string> _license;
-        private readonly Func<IContainer> _requestContainerFactory;
+        private readonly Func<ILifetimeScope> _requestContainerFactory;
         private XUri _publicUriOverride;
         private XUri _serverUri;
         private Hashtable _state;
         private System.Diagnostics.StackTrace _stackTrace = DebugUtil.GetStackTrace();
         private CultureInfo _culture;
         private bool _isTaskDisposed;
-        private IContainer _container;
+        private ILifetimeScope _lifetimeScope;
         private TaskEnv _ownerEnv;
 
         //--- Constructors ---
@@ -161,7 +161,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="culture">Request Culture.</param>
         /// <param name="requestContainerFactory">Factory delegate to create a request container on demand.</param>
-        public DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<IContainer> requestContainerFactory) {
+        public DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<ILifetimeScope> requestContainerFactory) {
             if(env == null) {
                 throw new ArgumentNullException("env");
             }
@@ -203,7 +203,7 @@ namespace MindTouch.Dream {
             _license = CheckServiceLicense();
         }
 
-        private DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<IContainer> requestContainerFactory, Dictionary<string, string> license) {
+        private DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<ILifetimeScope> requestContainerFactory, Dictionary<string, string> license) {
             if(env == null) {
                 throw new ArgumentNullException("env");
             }
@@ -322,15 +322,15 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Request Inversion of Control container.
         /// </summary>
-        public IContainer Container {
+        public ILifetimeScope Container {
             get {
-                if(_container == null ) {
-                    _container = _requestContainerFactory();
+                if(_lifetimeScope == null ) {
+                    _lifetimeScope = _requestContainerFactory();
                     var builder = new ContainerBuilder();
-                    builder.Register(this).ExternallyOwned();
-                    builder.Build(_container);
+                    builder.RegisterInstance(this).ExternallyOwned();
+                    builder.Update(_lifetimeScope);
                 }
-                return _container;
+                return _lifetimeScope;
             }
         }
 
@@ -827,9 +827,9 @@ namespace MindTouch.Dream {
                 _log.Warn("disposing already disposed context");
             }
             _isTaskDisposed = true;
-            if(_container != null) {
-                _container.Dispose();
-                _container = null;
+            if(_lifetimeScope != null) {
+                _lifetimeScope.Dispose();
+                _lifetimeScope = null;
             }
             if(_state == null) {
                 return;

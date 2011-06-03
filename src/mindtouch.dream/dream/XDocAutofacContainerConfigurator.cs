@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Text;
 using Autofac;
 using Autofac.Builder;
-using Autofac.Registrars;
+using Autofac.Core;
 using log4net;
 using MindTouch.Xml;
 
@@ -105,17 +105,23 @@ namespace MindTouch.Dream {
                 var componentDebug = new DebugStringBuilder(_log.IsDebugEnabled);
                 var implementationTypename = component["@implementation"].AsText;
                 var type = LoadType(component["@type"]);
-                IReflectiveRegistrar registrar;
+                IRegistrationBuilder<object,ConcreteReflectionActivatorData,SingleRegistrationStyle> registrar;
+                var name = component["@name"].AsText;
                 if(string.IsNullOrEmpty(implementationTypename)) {
                     componentDebug.AppendFormat("registering concrete type '{0}'", type.FullName);
-                    registrar = builder.Register(type);
+                    registrar = builder.RegisterType(type);
                 } else {
                     var concreteType = LoadType(implementationTypename);
-                    registrar = builder.Register(concreteType);
-                    registrar.As(new TypedService(type));
-                    componentDebug.AppendFormat("registering concrete type '{0}' as '{1}'", concreteType.FullName, type.FullName);
+                    registrar = builder.RegisterType(concreteType);
+                    if(string.IsNullOrEmpty(name)) {
+                        registrar.As(new TypedService(type));
+                        componentDebug.AppendFormat("registering concrete type '{0}' as '{1}'", concreteType.FullName, type.FullName);
+                    } else {
+                        registrar.Named(name, type);
+                        componentDebug.AppendFormat("registering concrete type '{0}' as '{1}' named '{2}'", concreteType.FullName, type.FullName, name);
+                    }
                 }
-                registrar.WithArguments(GetParameters(component));
+                registrar.WithParameters(GetParameters(component));
 
                 // set scope
                 DreamContainerScope scope = _defaultScope;
@@ -127,11 +133,7 @@ namespace MindTouch.Dream {
                 registrar.InScope(scope);
 
                 // set up name
-                var name = component["@name"].AsText;
-                if(!string.IsNullOrEmpty(name)) {
-                    componentDebug.AppendFormat(" named '{0}'", name);
-                    registrar.Named(name);
-                }
+               
                 if(_log.IsDebugEnabled) {
                     _log.Debug(componentDebug.ToString());
                 }
