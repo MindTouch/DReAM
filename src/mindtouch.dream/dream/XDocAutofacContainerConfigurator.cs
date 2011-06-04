@@ -105,21 +105,19 @@ namespace MindTouch.Dream {
                 var componentDebug = new DebugStringBuilder(_log.IsDebugEnabled);
                 var implementationTypename = component["@implementation"].AsText;
                 var type = LoadType(component["@type"]);
-                IRegistrationBuilder<object,ConcreteReflectionActivatorData,SingleRegistrationStyle> registrar;
+                IRegistrationBuilder<object, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar;
                 var name = component["@name"].AsText;
                 if(string.IsNullOrEmpty(implementationTypename)) {
                     componentDebug.AppendFormat("registering concrete type '{0}'", type.FullName);
                     registrar = builder.RegisterType(type);
                 } else {
                     var concreteType = LoadType(implementationTypename);
-                    registrar = builder.RegisterType(concreteType);
-                    if(string.IsNullOrEmpty(name)) {
-                        registrar.As(new TypedService(type));
                         componentDebug.AppendFormat("registering concrete type '{0}' as '{1}'", concreteType.FullName, type.FullName);
-                    } else {
-                        registrar.Named(name, type);
-                        componentDebug.AppendFormat("registering concrete type '{0}' as '{1}' named '{2}'", concreteType.FullName, type.FullName, name);
-                    }
+                    registrar = builder.RegisterType(concreteType).As(new TypedService(type));
+                }
+                if(!string.IsNullOrEmpty(name)) {
+                    registrar.Named(name, type);
+                    componentDebug.AppendFormat("named '{0}'", name);
                 }
                 registrar.WithParameters(GetParameters(component));
 
@@ -131,9 +129,6 @@ namespace MindTouch.Dream {
                 }
                 componentDebug.AppendFormat(" in '{0}' scope", scope);
                 registrar.InScope(scope);
-
-                // set up name
-               
                 if(_log.IsDebugEnabled) {
                     _log.Debug(componentDebug.ToString());
                 }

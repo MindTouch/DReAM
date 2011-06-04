@@ -389,11 +389,10 @@ namespace MindTouch.Dream {
         private void PreInitializeLifetimeScope(IContainer rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
             var components = config["components"];
             lifetimeScopeBuilder.RegisterInstance(_timerFactory).ExternallyOwned();
-            if(components.IsEmpty) {
-                return;
+            if(!components.IsEmpty) {
+                _log.Debug("registering service level module");
+                lifetimeScopeBuilder.RegisterModule(new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service));
             }
-            _log.Debug("registering service level module");
-            lifetimeScopeBuilder.RegisterModule(new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service));
             InitializeLifetimeScope(rootContainer, lifetimeScopeBuilder, config);
         }
 

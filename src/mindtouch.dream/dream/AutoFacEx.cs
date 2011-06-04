@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-using Autofac;
 using Autofac.Builder;
 
 namespace MindTouch.Dream {
@@ -37,7 +36,7 @@ namespace MindTouch.Dream {
         /// <param name="registrar">Registrar instance.</param>
         /// <param name="scope">Container Resolution scope.</param>
         /// <returns>The modified registrar instance.</returns>
-        public static IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> InScope<T>(this IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar, DreamContainerScope scope) {
+        public static IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> InScope<TLimit, TActivatorData, TRegistrationStyle>(this IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registrar, DreamContainerScope scope) {
             return scope == DreamContainerScope.Factory ? registrar.InstancePerDependency() : registrar.InstancePerMatchingLifetimeScope(scope);
         }
 
@@ -46,7 +45,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <param name="registrar">Registrar instance.</param>
         /// <returns>The modified registrar instance.</returns>
-        public static IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> HostScoped<T>(this IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar) {
+        public static IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> HostScoped<TLimit, TActivatorData, TRegistrationStyle>(this IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registrar) {
             return registrar.InScope(DreamContainerScope.Host);
         }
 
@@ -55,7 +54,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <param name="registrar">Registrar instance.</param>
         /// <returns>The modified registrar instance.</returns>
-        public static IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> ServiceScoped<T>(this IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar) {
+        public static IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> ServiceScoped<TLimit, TActivatorData, TRegistrationStyle>(this IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registrar) {
             return registrar.InScope(DreamContainerScope.Service);
         }
 
@@ -64,45 +63,8 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <param name="registrar">Registrar instance.</param>
         /// <returns>The modified registrar instance.</returns>
-        public static IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> RequestScoped<T>(this IRegistrationBuilder<T, ConcreteReflectionActivatorData, SingleRegistrationStyle> registrar) {
+        public static IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> RequestScoped<TLimit, TActivatorData, TRegistrationStyle>(this IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registrar) {
             return registrar.InScope(DreamContainerScope.Request);
         }
-
-        ///// <summary>
-        ///// Set the registered item's container resolution scope.
-        ///// </summary>
-        ///// <param name="registrar">Registrar instance.</param>
-        ///// <param name="scope">Container Resolution scope.</param>
-        ///// <returns>The modified registrar instance.</returns>
-        //public static IRegistrationBuilder<object, ConcreteReflectionActivatorData, SingleRegistrationStyle> InScope(this IReflectiveRegistrar registrar, DreamContainerScope scope) {
-        //    return scope == DreamContainerScope.Factory ? registrar.WithScope(InstanceScope.Factory) : registrar.InContext(scope);
-        //}
-
-        ///// <summary>
-        ///// Set the registered item's contrainer resolution scope to <see cref="DreamContainerScope.Host"/>
-        ///// </summary>
-        ///// <param name="registrar">Registrar instance.</param>
-        ///// <returns>The modified registrar instance.</returns>
-        //public static IReflectiveRegistrar HostScoped(this IReflectiveRegistrar registrar) {
-        //    return registrar.InScope(DreamContainerScope.Host);
-        //}
-
-        ///// <summary>
-        ///// Set the registered item's contrainer resolution scope to <see cref="DreamContainerScope.Service"/>
-        ///// </summary>
-        ///// <param name="registrar">Registrar instance.</param>
-        ///// <returns>The modified registrar instance.</returns>
-        //public static IReflectiveRegistrar ServiceScoped(this IReflectiveRegistrar registrar) {
-        //    return registrar.InScope(DreamContainerScope.Service);
-        //}
-
-        ///// <summary>
-        ///// Set the registered item's contrainer resolution scope to <see cref="DreamContainerScope.Request"/>
-        ///// </summary>
-        ///// <param name="registrar">Registrar instance.</param>
-        ///// <returns>The modified registrar instance.</returns>
-        //public static IReflectiveRegistrar RequestScoped(this IReflectiveRegistrar registrar) {
-        //    return registrar.InScope(DreamContainerScope.Request);
-        //}
     }
 }

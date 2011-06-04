@@ -40,15 +40,15 @@ namespace MindTouch.Dream {
     }
 
     internal class DefaultServiceActivator : IServiceActivator {
-        private readonly IContainer _container;
+        private readonly ILifetimeScope _lifetimeScope;
 
-        public DefaultServiceActivator(IContainer container) {
-            _container = container;
+        public DefaultServiceActivator(ILifetimeScope lifetimeScope) {
+            _lifetimeScope = lifetimeScope;
         }
 
         public IDreamService Create(XDoc config, Type type) {
             object service;
-            if(!_container.TryResolve(new TypedService(type), new[] { TypedParameter.From(config) }, out service)) {
+            if(!_lifetimeScope.TryResolve(new TypedService(type), new[] { TypedParameter.From(config) }, out service)) {
                 service = Activator.CreateInstance(type);
             }
             return (IDreamService)service;
