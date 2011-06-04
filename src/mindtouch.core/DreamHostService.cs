@@ -1448,12 +1448,12 @@ namespace MindTouch.Dream {
             return response;
         }
 
-        public ILifetimeScope CreateServiceLifetimeScope(IDreamService service, Action<IContainer,ContainerBuilder> registrationCallback) {
+        public ILifetimeScope CreateServiceLifetimeScope(IDreamService service, Action<IContainer, ContainerBuilder> registrationCallback) {
             lock(_serviceLifetimeScopes) {
                 if(_serviceLifetimeScopes.ContainsKey(service)) {
                     throw new InvalidOperationException(string.Format("LifetimeScope for service  '{0}' at '{1}' has already been created.", service, service.Self.Uri));
                 }
-                var serviceLifetimeScope = _hostLifetimeScope.BeginLifetimeScope(DreamContainerScope.Service, b => registrationCallback(_container,b));
+                var serviceLifetimeScope = _hostLifetimeScope.BeginLifetimeScope(DreamContainerScope.Service, b => registrationCallback(_container, b));
                 _serviceLifetimeScopes[service] = serviceLifetimeScope;
                 return serviceLifetimeScope;
             }
@@ -1534,15 +1534,15 @@ namespace MindTouch.Dream {
             }
         }
 
-        private Func<ILifetimeScope> GetRequestLifetimeScopeFactory(IDreamService service) {
-            return () => {
+        private Func<Action<ContainerBuilder>, ILifetimeScope> GetRequestLifetimeScopeFactory(IDreamService service) {
+            return buildAction => {
                 ILifetimeScope serviceLifetimeScope;
                 lock(_serviceLifetimeScopes) {
                     if(!_serviceLifetimeScopes.TryGetValue(service, out serviceLifetimeScope)) {
                         throw new InvalidOperationException(string.Format("Cannot create a request container for service  '{0}' at '{1}'. This error  normally occurs if DreamContext.Container is invoked in Service Start or Shutdown", service, service.Self.Uri));
                     }
                 }
-                var requestLifetimeScope = serviceLifetimeScope.BeginLifetimeScope(DreamContainerScope.Request);
+                var requestLifetimeScope = serviceLifetimeScope.BeginLifetimeScope(DreamContainerScope.Request, buildAction);
                 return requestLifetimeScope;
             };
         }

@@ -137,7 +137,7 @@ namespace MindTouch.Dream {
         private readonly string[] _suffixes;
         private readonly Dictionary<string, string[]> _pathParams;
         private readonly Dictionary<string, string> _license;
-        private readonly Func<ILifetimeScope> _requestContainerFactory;
+        private readonly Func<Action<ContainerBuilder>, ILifetimeScope> _requestContainerFactory;
         private XUri _publicUriOverride;
         private XUri _serverUri;
         private Hashtable _state;
@@ -161,7 +161,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="culture">Request Culture.</param>
         /// <param name="requestContainerFactory">Factory delegate to create a request container on demand.</param>
-        public DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<ILifetimeScope> requestContainerFactory) {
+        public DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<Action<ContainerBuilder>, ILifetimeScope> requestContainerFactory) {
             if(env == null) {
                 throw new ArgumentNullException("env");
             }
@@ -203,7 +203,7 @@ namespace MindTouch.Dream {
             _license = CheckServiceLicense();
         }
 
-        private DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<ILifetimeScope> requestContainerFactory, Dictionary<string, string> license) {
+        private DreamContext(IDreamEnvironment env, string verb, XUri uri, DreamFeature feature, XUri publicUri, XUri serverUri, DreamMessage request, CultureInfo culture, Func<Action<ContainerBuilder>, ILifetimeScope> requestContainerFactory, Dictionary<string, string> license) {
             if(env == null) {
                 throw new ArgumentNullException("env");
             }
@@ -325,10 +325,7 @@ namespace MindTouch.Dream {
         public ILifetimeScope Container {
             get {
                 if(_lifetimeScope == null ) {
-                    _lifetimeScope = _requestContainerFactory();
-                    var builder = new ContainerBuilder();
-                    builder.RegisterInstance(this).ExternallyOwned();
-                    builder.Update(_lifetimeScope);
+                    _lifetimeScope = _requestContainerFactory(builder => builder.RegisterInstance(this).ExternallyOwned());
                 }
                 return _lifetimeScope;
             }
