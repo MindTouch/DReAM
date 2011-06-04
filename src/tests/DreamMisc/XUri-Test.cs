@@ -300,7 +300,7 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual("/c=GB", uri.Path);
             Assert.AreEqual(1, uri.Segments.Length);
             Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual("objectClass%3fone", uri.Query);
+            Assert.AreEqual("objectClass%3Fone", uri.Query);
             Assert.AreEqual(null, uri.Fragment);
         }
 
@@ -490,7 +490,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Square_brackets_in_parsed_query_are_encoded_on_render() {
-            Assert.AreEqual("http://host/foo?bar%5b123%5d=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
+            Assert.AreEqual("http://host/foo?bar%5B123%5D=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
         }
 
         [Test]

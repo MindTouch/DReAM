@@ -211,8 +211,8 @@ namespace MindTouch.Dream {
         private Plug _owner;
         private XDoc _blueprint;
         private readonly DreamCookieJar _cookies = new DreamCookieJar();
-        private readonly string _privateAccessKey;
-        private readonly string _internalAccessKey;
+        private string _privateAccessKey;
+        private string _internalAccessKey;
         private string _apikey;
         private string _license;
         private TaskTimerFactory _timerFactory;
@@ -617,23 +617,31 @@ namespace MindTouch.Dream {
             _config = config;
             _self = Plug.New(config["uri.self"].AsUri);
             if(_self == null) {
-                throw new ArgumentNullException("uri.self");
+                throw new ArgumentNullException("config", "Missing element'uri.self'");
             }
             _owner = Plug.New(config["uri.owner"].AsUri);
+
+            // check for service access keys
+            var internalAccessKey = config["internal-service-key"].AsText;
+            if(!string.IsNullOrEmpty(internalAccessKey)) {
+                _internalAccessKey = internalAccessKey;
+            }
+            var privateAccessKey = config["private-service-key"].AsText;
+            if(!string.IsNullOrEmpty(privateAccessKey)) {
+                _privateAccessKey = privateAccessKey;
+            }
 
             // check for api-key settings
             _apikey = config["apikey"].AsText;
 
             // process 'set-cookie' entries
-            List<DreamCookie> setCookies = DreamCookie.ParseAllSetCookieNodes(config["set-cookie"]);
+            var setCookies = DreamCookie.ParseAllSetCookieNodes(config["set-cookie"]);
             if(setCookies.Count > 0) {
                 Cookies.Update(setCookies, null);
             }
 
             // grant private access key to self, host, and owner
-            //string privateAcccessCookie = HttpUtil.RenderSetCookieHeader(HttpUtil.SetCookie("service-key", PrivateAccessKey, Self.Uri.Path, Self.Uri.Host, DateTime.MaxValue));
-            //Cookies.Update(HttpUtil.ParseSetCookieHeader(privateAcccessCookie), null);
-            DreamCookie privateAcccessCookie = DreamCookie.NewSetCookie("service-key", PrivateAccessKey, Self.Uri);
+            var privateAcccessCookie = DreamCookie.NewSetCookie("service-key", PrivateAccessKey, Self.Uri);
             Cookies.Update(privateAcccessCookie, null);
             yield return Env.At("@grants").Post(DreamMessage.Ok(privateAcccessCookie.AsSetCookieDocument), new Result<DreamMessage>(TimeSpan.MaxValue));
             if(Owner != null) {

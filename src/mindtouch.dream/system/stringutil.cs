@@ -981,10 +981,7 @@ namespace System {
         /// <param name="n">Integer to convert.</param>
         /// <returns>Hexadecimal character.</returns>
         public static char IntToHexChar(int n) {
-            if(n <= 9) {
-                return (char)(n + 0x30);
-            }
-            return (char)((n - 10) + 0x61);
+            return n.ToString("X")[0];
         }
 
         /// <summary>

@@ -58,9 +58,11 @@ namespace MindTouch.Dream.Services.PubSub {
         /// <summary>
         /// Register a subscription set
         /// </summary>
+        /// <param name="location"></param>
         /// <param name="setDoc">Xml formatted subscription set.</param>
+        /// <param name="accessKey"></param>
         /// <returns>Tuple of subscription set and <see langword="True"/> if the set was newly created, or <see langword="False"/> if the set existed (does not update the set).</returns>
-        Tuplet<PubSubSubscriptionSet, bool> RegisterSet(XDoc setDoc);
+        Tuplet<PubSubSubscriptionSet, bool> RegisterSet(string location, XDoc setDoc, string accessKey);
 
         /// <summary>
         /// Dispatch an event against the registered subscriptions.
@@ -73,8 +75,9 @@ namespace MindTouch.Dream.Services.PubSub {
         /// </summary>
         /// <param name="location">Set resource location uri postfix.</param>
         /// <param name="setDoc">New set document.</param>
+        /// <param name="accessKey">Updates set access key, if provided.</param>
         /// <returns>Updated set.</returns>
-        PubSubSubscriptionSet ReplaceSet(string location, XDoc setDoc);
+        PubSubSubscriptionSet ReplaceSet(string location, XDoc setDoc, string accessKey);
 
         /// <summary>
         /// Remove a set.

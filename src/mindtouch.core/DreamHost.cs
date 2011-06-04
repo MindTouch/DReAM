@@ -25,7 +25,6 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using Autofac;
-using Autofac.Builder;
 using MindTouch.Dream.Http;
 using MindTouch.Tasking;
 using MindTouch.Xml;
