@@ -273,7 +273,6 @@ namespace MindTouch.Dream.Services {
 
             // make sure we have an IPubSubDispatcher registered
             if(!rootContainer.IsRegistered<IPubSubDispatcher>()) {
-                lifetimeScopeBuilder = new ContainerBuilder();
                 lifetimeScopeBuilder.RegisterType<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
             }
             if(!rootContainer.IsRegistered<IPubSubDispatchQueueRepository>()) {
