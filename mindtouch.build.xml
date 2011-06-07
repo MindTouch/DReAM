@@ -3,7 +3,7 @@
   <assemblies
     major="2"
     minor="2"
-    release="2"
+    release="3"
     revision="0">
     <assembly
       name="mindtouch.dream"
