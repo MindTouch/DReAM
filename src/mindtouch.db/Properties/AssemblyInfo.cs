@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -34,3 +35,10 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: GitBranch("2.2")]
+[assembly: GitRevision("HEAD")]
+[assembly: GitUri("https://github.com/MindTouch/DReAM")]
+#if SIGNED
+[assembly: AssemblyDelaySign(false)]
+[assembly: AssemblyKeyFile(@"../mindtouch.snk")]
+#endif
