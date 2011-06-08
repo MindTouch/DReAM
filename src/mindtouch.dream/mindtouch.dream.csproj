@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -85,6 +85,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Data\attributes.cs" />
+    <Compile Include="Data\ADataUpdater.cs" />
+    <Compile Include="Data\IDataUpdater.cs" />
+    <Compile Include="Data\MysqlDataUpdater.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data\VersionInfo.cs" />
     <Compile Include="dream\AutoFacEx.cs" />
     <Compile Include="dream\DreamContainerScope.cs" />
     <Compile Include="dream\DreamFeatureStage.cs" />
@@ -148,7 +155,6 @@
     <Compile Include="IO\SkipWriteStream.cs" />
     <Compile Include="IO\XDocQueueItemSerializer.cs" />
     <Compile Include="Data\DataCatalog.cs" />
-    <Compile Include="Data\DataColumnAttribute.cs" />
     <Compile Include="Data\DataCommand.cs" />
     <Compile Include="Data\DataFactory.cs" />
     <Compile Include="Data\IDataCommand.cs" />
