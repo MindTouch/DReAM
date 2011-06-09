@@ -15,6 +15,7 @@
         <Files>
             mindtouch.core.dll;
             mindtouch.core.xml;
+            mindtouch.db.exe;
             mindtouch.dream.dll;
             mindtouch.dream.xml;
             mindtouch.dream.test.dll;

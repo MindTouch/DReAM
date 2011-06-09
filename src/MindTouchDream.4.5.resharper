@@ -83,7 +83,9 @@
       </Naming2>
     </CSharp>
     <VB>
-      <FormatSettings />
+      <FormatSettings>
+        <INDENT_SIZE>4</INDENT_SIZE>
+      </FormatSettings>
       <ImportsSettings />
       <Naming2 />
     </VB>

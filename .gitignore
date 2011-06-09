@@ -14,9 +14,13 @@ _ReSharper.*/
 *.user
 *.log
 App_Data/
-*.pidb
-*.test-cache
 *.userprefs
+*.pidb
 *.resources
+src/test-results/*.xml
+src/*/test-results/*.xml
+src/*/*/test-results/*.xml
+*.test-cache
 *.cache
 *.pidb
+*~
