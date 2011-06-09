@@ -24,3 +24,4 @@ src/*/*/test-results/*.xml
 *.cache
 *.pidb
 
+*~

@@ -77,7 +77,7 @@ namespace MindTouch.Data.Db {
                 MysqlDataUpdater mysqlSchemaUpdater = null;
                 try {
                     mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion);
-                } catch(VersionInfoException ex) {
+                } catch(VersionInfoException) {
                     PrintErrorAndExit("You entered an incorrect version numner.");
                 }
                 mysqlSchemaUpdater.LoadMethods(dllAssembly);
@@ -90,7 +90,7 @@ namespace MindTouch.Data.Db {
                     }
                     if(!dryrun) {
                         try { mysqlSchemaUpdater.TestConnection(); }
-                        catch (Exception ex) {
+                        catch (Exception) {
                             System.Threading.Thread.Sleep(5000);
                             mysqlSchemaUpdater.TestConnection();
                         }
