@@ -20,16 +20,13 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Reflection;
 
 namespace MindTouch.Data {
     public class MysqlDataUpdater : ADataUpdater {
 
         //--- Fields ---
-        private DataCatalog _dataCatalog;
+        private readonly DataCatalog _dataCatalog;
         
         //--- Constructors ---
         public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version) {

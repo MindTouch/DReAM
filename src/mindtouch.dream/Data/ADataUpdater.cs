@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Reflection;
 
 namespace MindTouch.Data {
@@ -34,6 +33,7 @@ namespace MindTouch.Data {
 
         //--- Types ---
         protected class UpdateMethod : IComparable<UpdateMethod> {
+
             //--- Fields ---
             private readonly MethodInfo _methodInfo;
             private readonly VersionInfo _effectiveVersion;

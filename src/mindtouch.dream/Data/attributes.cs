@@ -65,14 +65,15 @@ namespace MindTouch.Data {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public class EffectiveVersionAttribute : Attribute {
 
-        // public fields
+        //--- Fields ---
         private string _version;
 
-        // constructor
+        //--- Constructors ---
         public EffectiveVersionAttribute(string version) {
             _version = version;
         }
 
+        //--- Methods ---
         public string VersionString {
             get { return _version; }
         }
