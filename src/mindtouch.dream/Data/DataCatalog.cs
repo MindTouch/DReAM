@@ -52,6 +52,17 @@ namespace MindTouch.Data {
         /// <param name="readonly"><see langword="True"/> if the query is read-only.</param>
         /// <returns>New Query instance.</returns>
         IDataCommand NewQuery(string query, bool @readonly);
+
+        /// <summary>
+        /// Test the database connection.
+        /// </summary>
+        void TestConnection();
+
+        /// <summary>
+        /// Test the read-only database connection.
+        /// </summary>
+        /// <param name="readonly"></param>
+        void TestConnection(bool @readonly);
     }
 
     /// <summary>
