@@ -269,7 +269,7 @@ namespace MindTouch.Dream.Services {
             result.Return();
         }
 
-        protected override void InitializeLifetimeScope(IContainer rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+        protected override void InitializeLifetimeScope(IRegistrationInspector rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
 
             // make sure we have an IPubSubDispatcher registered
             if(!rootContainer.IsRegistered<IPubSubDispatcher>()) {

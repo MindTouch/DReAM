@@ -20,7 +20,9 @@
  */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Autofac;
 using Autofac.Builder;
@@ -33,7 +35,7 @@ namespace MindTouch.Dream {
     /// <summary>
     /// Autofac <see cref="Module"/> implemenation for Dream specific configuration xml.
     /// </summary>
-    public class XDocAutofacContainerConfigurator : Module {
+    public class XDocAutofacContainerConfigurator : Module, IEnumerable<Type> {
 
         //--- Types ---
         private class DebugStringBuilder {
@@ -112,14 +114,21 @@ namespace MindTouch.Dream {
                     registrar = builder.RegisterType(type);
                 } else {
                     var concreteType = LoadType(implementationTypename);
-                        componentDebug.AppendFormat("registering concrete type '{0}' as '{1}'", concreteType.FullName, type.FullName);
+                    componentDebug.AppendFormat("registering concrete type '{0}' as '{1}'", concreteType.FullName, type.FullName);
                     registrar = builder.RegisterType(concreteType).As(new TypedService(type));
                 }
                 if(!string.IsNullOrEmpty(name)) {
                     registrar.Named(name, type);
                     componentDebug.AppendFormat("named '{0}'", name);
                 }
-                registrar.WithParameters(GetParameters(component));
+                registrar.WithParameters(
+                    (from parameter in component["parameters/parameter"]
+                     let parameterName = parameter["@name"].AsText
+                     let parameterValue = parameter["@value"].AsText
+                     select new ResolvedParameter(
+                         (p, c) => p.Name == parameterName,
+                         (p, c) => SysUtil.ChangeType(parameterValue, p.ParameterType))
+                     ).Cast<Parameter>());
 
                 // set scope
                 DreamContainerScope scope = _defaultScope;
@@ -132,12 +141,6 @@ namespace MindTouch.Dream {
                 if(_log.IsDebugEnabled) {
                     _log.Debug(componentDebug.ToString());
                 }
-            }
-        }
-
-        private IEnumerable<Parameter> GetParameters(XDoc component) {
-            foreach(var parameter in component["parameters/parameter"]) {
-                yield return new NamedParameter(parameter["@name"].AsText, parameter["@value"].AsText);
             }
         }
 
@@ -154,6 +157,17 @@ namespace MindTouch.Dream {
                 throw new ArgumentException(string.Format("Type {0} could not be loaded", typeName));
             }
             return type;
+        }
+
+        public IEnumerator<Type> GetEnumerator() {
+            return (from component in _config["component"]
+                    let implementationTypename = component["@implementation"].AsText
+                    select LoadType(component["@type"])
+                    ).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return GetEnumerator();
         }
     }
 }

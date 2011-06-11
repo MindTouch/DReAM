@@ -389,14 +389,17 @@ namespace MindTouch.Dream {
         private void PreInitializeLifetimeScope(IContainer rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
             var components = config["components"];
             lifetimeScopeBuilder.RegisterInstance(_timerFactory).ExternallyOwned();
+            var registrationInspector = new RegistrationInspector(rootContainer);
             if(!components.IsEmpty) {
                 _log.Debug("registering service level module");
-                lifetimeScopeBuilder.RegisterModule(new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service));
+                var module = new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service);
+                registrationInspector.Register(module);
+                lifetimeScopeBuilder.RegisterModule(module);
             }
-            InitializeLifetimeScope(rootContainer, lifetimeScopeBuilder, config);
+            InitializeLifetimeScope(registrationInspector, lifetimeScopeBuilder, config);
         }
 
-        protected virtual void InitializeLifetimeScope(IContainer rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) { }
+        protected virtual void InitializeLifetimeScope(IRegistrationInspector rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) { }
 
         /// <summary>
         /// <see cref="DreamFeature"/> for deinitializing the service.
@@ -959,4 +962,5 @@ namespace MindTouch.Dream {
             }
         }
     }
+
 }
