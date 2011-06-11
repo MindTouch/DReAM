@@ -66,7 +66,7 @@ namespace MindTouch.Core.Test.Services {
         private DreamServiceInfo _emailService;
         private Plug _plug;
         private SmtpClientFactoryMock _smtpClientFactory;
-
+        
         //--- Methods ---
 
         [TestFixtureSetUp]

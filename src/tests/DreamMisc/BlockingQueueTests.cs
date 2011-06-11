@@ -273,6 +273,9 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Many_producers_many_consumers_loop_with_foreach() {
+
+            // TODO (steveb): test fails under Mono 2.8.2
+            
             int n = 200;
             List<string> enqueued = new List<string>();
             List<string> dequeued = new List<string>();

@@ -123,7 +123,6 @@ namespace MindTouch.Dream.Services {
                 response.Return(DreamMessage.BadRequest("must specify either new smtp config with a host or specify an apikey"));
                 yield break;
             }
-            _log.DebugFormat("Smtp Host: {0}", host);
             SmtpSettings settings;
             if(string.IsNullOrEmpty(host)) {
                 settings = new SmtpSettings() {
@@ -149,9 +148,9 @@ namespace MindTouch.Dream.Services {
                     settings.Port = settingsDoc["smtp-port"].AsInt.Value;
                 }
             }
-            lock(_smtpSettings) {
-                _smtpSettings[configuration] = settings;
-            }
+                lock(_smtpSettings) {
+                    _smtpSettings[configuration] = settings;
+                }
             response.Return(DreamMessage.Ok());
             yield break;
         }
@@ -203,7 +202,7 @@ namespace MindTouch.Dream.Services {
             }
             _defaultSettings.AuthUser = config["smtp-auth-user"].AsText;
             _defaultSettings.AuthPassword = config["smtp-auth-password"].AsText;
-            _clientFactory = container.IsRegistered<ISmtpClientFactory>() 
+            _clientFactory = container.IsRegistered<ISmtpClientFactory>()
                 ? container.Resolve<ISmtpClientFactory>()
                 : new SmtpClientFactory();
 

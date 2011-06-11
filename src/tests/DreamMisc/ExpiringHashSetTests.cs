@@ -280,7 +280,7 @@ namespace MindTouch.Dream.Test {
             set.SetExpiration(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
-            AssertEx.AreEqual(ttl, entry.TTL);;
+            AssertEx.AreEqual(ttl, entry.TTL);
             Assert.AreNotEqual(expireTime, entry.When);
             Assert.GreaterOrEqual(entry.When, expireTime);
             Assert.LessOrEqual(entry.When, expireTime.AddSeconds(3));
