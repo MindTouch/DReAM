@@ -511,6 +511,14 @@ namespace MindTouch.Dream.Test.Data {
             return new MockDataCommand(this, 0, @readonly ? "READONLY-" : "" + query);
         }
 
+        void IDataCatalog.TestConnection() {
+            throw new NotImplementedException();
+        }
+
+        void IDataCatalog.TestConnection(bool @readonly) {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Create a new mock command to intercept a specific <see cref="IDataCatalog.NewQuery(string)"/> call.
         /// </summary>

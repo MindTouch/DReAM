@@ -368,21 +368,13 @@ namespace MindTouch.Dream {
             _timerFactory = TaskTimerFactory.Create(this);
 
             // configure service container
-            var components = config["components"];
-            var servicecontainer = _env.CreateServiceContainer(this);
-            var builder = new ContainerBuilder();
-            builder.Register(_timerFactory).ExternallyOwned();
-            if(!components.IsEmpty) {
-                _log.Debug("registering service level module");
-                builder.RegisterModule(new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service));
-            }
-            builder.Build(servicecontainer);
+            var lifetimeScope = _env.CreateServiceLifetimeScope(this, (c, b) => PreInitializeLifetimeScope(c, b, config));
 
             // call container-less start (which contains shared start logic)
             yield return Coroutine.Invoke(Start, request.ToDocument(), new Result());
 
             // call start with container for sub-classes that want to resolve instances at service start
-            yield return Coroutine.Invoke(Start, config, servicecontainer, new Result());
+            yield return Coroutine.Invoke(Start, config, lifetimeScope, new Result());
 
             response.Return(DreamMessage.Ok(new XDoc("service-info")
                 .Start("private-key")
@@ -393,6 +385,27 @@ namespace MindTouch.Dream {
                 .End()
                ));
         }
+
+        private void PreInitializeLifetimeScope(IContainer rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+            var components = config["components"];
+            lifetimeScopeBuilder.RegisterInstance(_timerFactory).ExternallyOwned();
+            var registrationInspector = new RegistrationInspector(rootContainer);
+            if(!components.IsEmpty) {
+                _log.Debug("registering service level module");
+                var module = new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service);
+                registrationInspector.Register(module);
+                lifetimeScopeBuilder.RegisterModule(module);
+            }
+            InitializeLifetimeScope(registrationInspector, lifetimeScopeBuilder, config);
+        }
+
+        /// <summary>
+        /// This method is called before the Start method and allows the service container to be modified before it is created.
+        /// </summary>
+        /// <param name="inspector">Utility class for determining what types have already been registered for use by the service scope</param>
+        /// <param name="lifetimeScopeBuilder">Builder instance for registering new types</param>
+        /// <param name="config">Same config document that is later passed to Start</param>
+        protected virtual void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) { }
 
         /// <summary>
         /// <see cref="DreamFeature"/> for deinitializing the service.
@@ -593,10 +606,10 @@ namespace MindTouch.Dream {
         /// Should not be manually invoked and should only be overridden if <see cref="Start(MindTouch.Xml.XDoc,MindTouch.Tasking.Result)"/> isn't already overriden.
         /// </remarks>
         /// <param name="config">Service configuration.</param>
-        /// <param name="serviceContainer">Service level IoC container</param>
+        /// <param name="serviceLifetimeScope">Service level IoC container</param>
         /// <param name="result">Synchronization handle for coroutine invocation.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> execution environment.</returns>
-        protected virtual Yield Start(XDoc config, IContainer serviceContainer, Result result) {
+        protected virtual Yield Start(XDoc config, ILifetimeScope serviceLifetimeScope, Result result) {
             result.Return();
             yield break;
         }
@@ -605,7 +618,7 @@ namespace MindTouch.Dream {
         /// Perform startup configuration of a service instance.
         /// </summary>
         /// <remarks>
-        /// Should not be manually invoked and should only be overridden if <see cref="Start(MindTouch.Xml.XDoc,Autofac.IContainer,MindTouch.Tasking.Result)"/> isn't already overriden.
+        /// Should not be manually invoked and should only be overridden if <see cref="Start(MindTouch.Xml.XDoc,Autofac.ILifetimeScope,MindTouch.Tasking.Result)"/> isn't already overriden.
         /// </remarks>
         /// <param name="config">Service configuration.</param>
         /// <param name="result">Synchronization handle for coroutine invocation.</param>

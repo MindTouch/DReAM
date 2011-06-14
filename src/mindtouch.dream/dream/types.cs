@@ -169,8 +169,9 @@ namespace MindTouch.Dream {
         /// instead.
         /// </remarks>
         /// <param name="service"></param>
+        /// <param name="registrationCallback"></param>
         /// <returns></returns>
-        IContainer CreateServiceContainer(IDreamService service);
+        ILifetimeScope CreateServiceLifetimeScope(IDreamService service, Action<IContainer,ContainerBuilder> registrationCallback);
 
         /// <summary>
         /// Must be called at <see cref="IDreamService"/> shutdown to dispose of the service level container.

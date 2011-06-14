@@ -20,12 +20,9 @@
  */
 
 using System;
-using System.Linq;
 using Autofac;
-using Autofac.Builder;
-using Autofac.Component;
-using Autofac.Component.Scope;
-using Autofac.Component.Tagged;
+using Autofac.Core;
+using Autofac.Core.Registration;
 using MindTouch.Xml;
 using NUnit.Framework;
 
@@ -35,18 +32,15 @@ namespace MindTouch.Dream.Test {
     [TestFixture]
     public class XDocAutofacContainerConfiguratorTests {
 
-        private IContainer _hostContainer;
-        private IContainer _serviceContainer;
-        private IContainer _requestContainer;
+        private ILifetimeScope _hostContainer;
+        private ILifetimeScope _serviceContainer;
+        private ILifetimeScope _requestContainer;
 
         [SetUp]
         public void Setup() {
-            _hostContainer = new ContainerBuilder().Build();
-            _hostContainer.TagWith(DreamContainerScope.Host);
-            _serviceContainer = _hostContainer.CreateInnerContainer();
-            _serviceContainer.TagWith(DreamContainerScope.Service);
-            _requestContainer = _serviceContainer.CreateInnerContainer();
-            _requestContainer.TagWith(DreamContainerScope.Request);
+            _hostContainer = new ContainerBuilder().Build().BeginLifetimeScope(DreamContainerScope.Host);
+            _serviceContainer = _hostContainer.BeginLifetimeScope(DreamContainerScope.Service);
+            _requestContainer = _serviceContainer.BeginLifetimeScope(DreamContainerScope.Request);
         }
 
         [Test]
@@ -105,8 +99,7 @@ namespace MindTouch.Dream.Test {
                     .Attr("name", "fooz")
                     .Attr("type", typeof(Foo).AssemblyQualifiedName)
                 .End());
-            Assert.IsTrue(_hostContainer.IsRegistered("fooz"));
-            //var registration = _hostContainer.ComponentRegistrations.Where(x => x.Descriptor.BestKnownImplementationType == typeof(Foo)).First();
+            IsRegisteredInScopeWithName(typeof(Foo), DreamContainerScope.Service, "fooz");
         }
 
         [Test]
@@ -136,33 +129,88 @@ namespace MindTouch.Dream.Test {
         }
 
         private void IsRegisteredInScope(Type type, DreamContainerScope scope) {
-            IComponentRegistration registration = GetRegistration(type);
-            if(scope == DreamContainerScope.Factory) {
-                var componentRegistration = registration as Registration;
-                Assert.IsNotNull(componentRegistration);
-                Assert.AreEqual(typeof(FactoryScope), componentRegistration.Scope.GetType());
-            } else {
-                var taggedRegistration = registration as TaggedRegistration<DreamContainerScope>;
-                Assert.IsNotNull(taggedRegistration);
-                Assert.AreEqual(scope, taggedRegistration.Tag);
+            IComponentRegistration registration;
+            Assert.IsTrue(_serviceContainer.ComponentRegistry.TryGetRegistration(new TypedService(type), out registration),
+                          string.Format("no registration found for type '{0}'", type));
+            Assert.AreEqual(InstanceOwnership.OwnedByLifetimeScope, registration.Ownership);
+            object instance;
+            switch(scope) {
+            case DreamContainerScope.Factory:
+                Assert.AreEqual(InstanceSharing.None, registration.Sharing);
+                break;
+            case DreamContainerScope.Host:
+                Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
+                Assert.IsTrue(_hostContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in host");
+                Assert.IsTrue(_serviceContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in request");
+                break;
+            case DreamContainerScope.Service:
+                Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
+                try {
+                    Assert.IsFalse(_hostContainer.TryResolve(new TypedService(type), out instance), "able to resolve in host");
+                } catch(DependencyResolutionException) {}
+                Assert.IsTrue(_serviceContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in request");
+                break;
+            case DreamContainerScope.Request:
+                Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
+                try {
+                    Assert.IsFalse(_hostContainer.TryResolve(new TypedService(type), out instance), "able to resolve in host");
+                } catch(DependencyResolutionException) {}
+                try {
+                    Assert.IsFalse(_serviceContainer.TryResolve(new TypedService(type), out instance), "able to resolve in service");
+                } catch(DependencyResolutionException) {}
+                Assert.IsTrue(_requestContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in request");
+                break;
             }
         }
 
-        private IComponentRegistration GetRegistration(Type type) {
+
+        private void IsRegisteredInScopeWithName(Type type, DreamContainerScope scope, string name) {
             IComponentRegistration registration;
-            Assert.IsTrue(_serviceContainer.TryGetDefaultRegistrationFor(new TypedService(type), out registration),
-                          string.Format("no registration found for type '{0}'", type));
-            return registration;
+            Assert.IsTrue(_serviceContainer.ComponentRegistry.TryGetRegistration(new NamedService(name, type), out registration),
+                          string.Format("no registration found for type '{0}' with name '{1}'", typeof(Foo), "fooz"));
+            Assert.AreEqual(InstanceOwnership.OwnedByLifetimeScope, registration.Ownership);
+            object instance;
+            switch(scope) {
+            case DreamContainerScope.Factory:
+                Assert.AreEqual(InstanceSharing.None, registration.Sharing);
+                break;
+            case DreamContainerScope.Host:
+                Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
+                Assert.IsTrue(_hostContainer.TryResolve(name, type, out instance), "unable to resolve in host");
+                Assert.IsTrue(_serviceContainer.TryResolve(name, type, out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolve(name, type, out instance), "unable to resolve in request");
+                break;
+            case DreamContainerScope.Service:
+                Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
+                try {
+                    Assert.IsFalse(_hostContainer.TryResolve(name, type, out instance), "able to resolve in host");
+                } catch(DependencyResolutionException) {}
+                Assert.IsTrue(_serviceContainer.TryResolve(name, type, out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolve(name, type, out instance), "unable to resolve in request");
+                break;
+            case DreamContainerScope.Request:
+                Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
+                try {
+                    Assert.IsFalse(_hostContainer.TryResolve(name, type, out instance), "able to resolve in host");
+                } catch(DependencyResolutionException) {}
+                try {
+                    Assert.IsFalse(_serviceContainer.TryResolve(name, type, out instance), "able to resolve in service");
+                } catch(DependencyResolutionException) {}
+                Assert.IsTrue(_requestContainer.TryResolve(name, type, out instance), "unable to resolve in request");
+                break;
+            }
         }
 
         private void Configure(XDoc doc) {
             var builder = new ContainerBuilder();
             builder.RegisterModule(new XDocAutofacContainerConfigurator(doc, DreamContainerScope.Service));
-            builder.Build(_hostContainer);
+            builder.Update(_hostContainer.ComponentRegistry);
         }
 
         public class Foo : IFoo, IBaz {
-            public Foo() {}
+            public Foo() { }
             public Foo(int x, int y) {
                 X = x;
                 Y = y;

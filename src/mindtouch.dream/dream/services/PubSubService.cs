@@ -161,32 +161,10 @@ namespace MindTouch.Dream.Services {
         }
 
         //--- Methods ---
-        protected override Yield Start(XDoc config, IContainer container, Result result) {
+        protected override Yield Start(XDoc config, ILifetimeScope container, Result result) {
             yield return Coroutine.Invoke(base.Start, config, container, new Result());
             _log.DebugFormat("starting {0}", Self.Uri);
 
-            // make sure we have an IPubSubDispatcher registered
-            ContainerBuilder builder = null;
-            if(!container.IsRegistered<IPubSubDispatcher>()) {
-                builder = new ContainerBuilder();
-                builder.Register<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
-            }
-            if(!container.IsRegistered<IPubSubDispatchQueueRepository>()) {
-                var localQueuePath = config["queue-path"].AsText;
-                builder = builder ?? new ContainerBuilder();
-                var retryTime = (config["failed-dispatch-retry"].AsInt ?? 60).Seconds();
-                if(string.IsNullOrEmpty(localQueuePath)) {
-                    _log.Debug("no queue persistent path provided, using memory queues");
-                    builder.Register(new MemoryPubSubDispatchQueueRepository(TimerFactory, retryTime))
-                        .As<IPubSubDispatchQueueRepository>();
-                } else {
-                    builder.Register(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, retryTime))
-                        .As<IPubSubDispatchQueueRepository>();
-                }
-            }
-            if(builder != null) {
-                builder.Build(container);
-            }
 
             // initialize dispatcher
             _dispatcher = container.Resolve<IPubSubDispatcher>(
@@ -289,6 +267,26 @@ namespace MindTouch.Dream.Services {
             _dispatcher = null;
             yield return Coroutine.Invoke(base.Stop, new Result());
             result.Return();
+        }
+
+        protected override void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+
+            // make sure we have an IPubSubDispatcher registered
+            if(!inspector.IsRegistered<IPubSubDispatcher>()) {
+                lifetimeScopeBuilder.RegisterType<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
+            }
+            if(!inspector.IsRegistered<IPubSubDispatchQueueRepository>()) {
+                var localQueuePath = config["queue-path"].AsText;
+                var retryTime = (config["failed-dispatch-retry"].AsInt ?? 60).Seconds();
+                if(string.IsNullOrEmpty(localQueuePath)) {
+                    _log.Debug("no queue persistent path provided, using memory queues");
+                    lifetimeScopeBuilder.RegisterInstance(new MemoryPubSubDispatchQueueRepository(TimerFactory, retryTime))
+                        .As<IPubSubDispatchQueueRepository>();
+                } else {
+                    lifetimeScopeBuilder.RegisterInstance(new PersistentPubSubDispatchQueueRepository(localQueuePath, TimerFactory, retryTime))
+                        .As<IPubSubDispatchQueueRepository>();
+                }
+            }
         }
 
         public override DreamAccess DetermineAccess(DreamContext context, DreamMessage request) {

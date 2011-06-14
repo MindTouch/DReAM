@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -98,6 +98,7 @@
     <Compile Include="dream\DreamServiceConfigurationBuilder.cs" />
     <Compile Include="dream\DreamServiceRegistrationBuilder.cs" />
     <Compile Include="dream\IDreamServiceConfigurationBuilder.cs" />
+    <Compile Include="dream\RegistrationInspector.cs" />
     <Compile Include="dream\services\PubSub\MemoryPubsubDispatchQueue.cs" />
     <Compile Include="dream\services\PubSub\MemoryPubSubDispatchQueueRepository.cs" />
     <Compile Include="dream\services\PubSub\DispatchItemSerializer.cs" />

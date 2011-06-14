@@ -187,7 +187,7 @@ namespace MindTouch.Dream.Services {
         }
 
         //--- Methods ---
-        protected override Yield Start(XDoc config, IContainer container, Result result) {
+        protected override Yield Start(XDoc config, ILifetimeScope container, Result result) {
             yield return Coroutine.Invoke(base.Start, config, new Result());
             _defaultSettings = new SmtpSettings { Host = config["smtp-host"].AsText };
             if(string.IsNullOrEmpty(_defaultSettings.Host)) {
