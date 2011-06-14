@@ -35,6 +35,7 @@ namespace MindTouch.Dream.Test {
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
         private static int _port = 1024;
+        private static Random _random = new Random();
 
         //--- Extension Methods ---
         /// <summary>
@@ -177,11 +178,11 @@ namespace MindTouch.Dream.Test {
         /// <param name="container">IoC Container to use.</param>
         /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
         public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
-                 var path = "/";
-                if(!config["uri.public"].IsEmpty) {
-                    path = config["uri.public"].AsText;
-                }
-           for(var i = 1; i <= 10; i++) {
+            var path = "/";
+            if(!config["uri.public"].IsEmpty) {
+                path = config["uri.public"].AsText;
+            }
+            for(var i = 1; i <= 10; i++) {
                 var port = GetPort();
                 var localhost = string.Format("http://localhost:{0}{1}", port, path);
                 UpdateElement(config, "http-port", port.ToString());
@@ -206,8 +207,12 @@ namespace MindTouch.Dream.Test {
         }
 
         private static int GetPort() {
-            var port = Interlocked.Increment(ref _port);
+            var increment = _random.Next(20);
+            var port = Interlocked.Add(ref _port, increment);
             if(port > 30000) {
+
+                // we don't care if it succeeds or fails, since failure means that someone else
+                // has already succeeded at resetting the port and we can call GetPort again.
                 Interlocked.CompareExchange(ref _port, 1024, port);
                 return GetPort();
             }

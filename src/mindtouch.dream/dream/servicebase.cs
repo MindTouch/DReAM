@@ -399,7 +399,13 @@ namespace MindTouch.Dream {
             InitializeLifetimeScope(registrationInspector, lifetimeScopeBuilder, config);
         }
 
-        protected virtual void InitializeLifetimeScope(IRegistrationInspector rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) { }
+        /// <summary>
+        /// This method is called before the Start method and allows the service container to be modified before it is created.
+        /// </summary>
+        /// <param name="inspector">Utility class for determining what types have already been registered for use by the service scope</param>
+        /// <param name="lifetimeScopeBuilder">Builder instance for registering new types</param>
+        /// <param name="config">Same config document that is later passed to Start</param>
+        protected virtual void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) { }
 
         /// <summary>
         /// <see cref="DreamFeature"/> for deinitializing the service.
@@ -962,5 +968,4 @@ namespace MindTouch.Dream {
             }
         }
     }
-
 }

@@ -269,13 +269,13 @@ namespace MindTouch.Dream.Services {
             result.Return();
         }
 
-        protected override void InitializeLifetimeScope(IRegistrationInspector rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+        protected override void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
 
             // make sure we have an IPubSubDispatcher registered
-            if(!rootContainer.IsRegistered<IPubSubDispatcher>()) {
+            if(!inspector.IsRegistered<IPubSubDispatcher>()) {
                 lifetimeScopeBuilder.RegisterType<Dispatcher>().As<IPubSubDispatcher>().ServiceScoped();
             }
-            if(!rootContainer.IsRegistered<IPubSubDispatchQueueRepository>()) {
+            if(!inspector.IsRegistered<IPubSubDispatchQueueRepository>()) {
                 var localQueuePath = config["queue-path"].AsText;
                 var retryTime = (config["failed-dispatch-retry"].AsInt ?? 60).Seconds();
                 if(string.IsNullOrEmpty(localQueuePath)) {

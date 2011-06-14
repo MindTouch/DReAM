@@ -161,7 +161,6 @@ namespace MindTouch.Dream {
 
         public IEnumerator<Type> GetEnumerator() {
             return (from component in _config["component"]
-                    let implementationTypename = component["@implementation"].AsText
                     select LoadType(component["@type"])
                     ).GetEnumerator();
         }

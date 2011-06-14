@@ -30,6 +30,8 @@ namespace MindTouch.Dream {
     /// </summary>
     public interface IServiceActivator {
 
+        //--- Methods ----
+
         /// <summary>
         /// Create a new <see cref="IDreamService"/> instance.
         /// </summary>
@@ -40,12 +42,14 @@ namespace MindTouch.Dream {
     }
 
     internal class DefaultServiceActivator : IServiceActivator {
+
+        //--- Fields ---
         private readonly ILifetimeScope _lifetimeScope;
 
+        //--- Constructors ---
         public DefaultServiceActivator(ILifetimeScope lifetimeScope) {
             _lifetimeScope = lifetimeScope;
         }
-
         public IDreamService Create(XDoc config, Type type) {
             object service;
             if(!_lifetimeScope.TryResolve(new TypedService(type), new[] { TypedParameter.From(config) }, out service)) {

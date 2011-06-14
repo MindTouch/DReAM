@@ -175,8 +175,8 @@ namespace MindTouch.Dream.Services {
             result.Return();
         }
 
-        protected override void InitializeLifetimeScope(IRegistrationInspector rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
-            if(!rootContainer.IsRegistered<IAmazonS3Client>()) {
+        protected override void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+            if(!inspector.IsRegistered<IAmazonS3Client>()) {
 
                 // Note (arnec): registering the client in the container to hand over disposal control to the container
                 lifetimeScopeBuilder.RegisterType<AmazonS3Client>().As<IAmazonS3Client>();
