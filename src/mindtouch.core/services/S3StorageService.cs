@@ -134,7 +134,7 @@ namespace MindTouch.Dream.Services {
         }
 
         //--- Methods ---
-        protected override Yield Start(XDoc config, IContainer container, Result result) {
+        protected override Yield Start(XDoc config, ILifetimeScope container, Result result) {
             yield return Coroutine.Invoke(base.Start, config, new Result());
 
             // are we a private storage service?
@@ -164,13 +164,6 @@ namespace MindTouch.Dream.Services {
             if(string.IsNullOrEmpty(s3Config.PublicKey)) {
                 throw new ArgumentException("missing configuration parameter 'publickey'");
             }
-            if(!container.IsRegistered(typeof(IAmazonS3Client))) {
-
-                // Note (arnec): registering the client in the container to hand over disposal control to the container
-                var builder = new ContainerBuilder();
-                builder.Register<AmazonS3Client>().As<IAmazonS3Client>();
-                builder.Build(container);
-            }
             _s3Client = container.Resolve<IAmazonS3Client>(TypedParameter.From(s3Config));
             result.Return();
         }
@@ -180,6 +173,14 @@ namespace MindTouch.Dream.Services {
             _s3Client = null;
             yield return Coroutine.Invoke(base.Stop, new Result());
             result.Return();
+        }
+
+        protected override void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+            if(!inspector.IsRegistered<IAmazonS3Client>()) {
+
+                // Note (arnec): registering the client in the container to hand over disposal control to the container
+                lifetimeScopeBuilder.RegisterType<AmazonS3Client>().As<IAmazonS3Client>();
+            }
         }
 
         public override DreamFeatureStage[] Prologues {
