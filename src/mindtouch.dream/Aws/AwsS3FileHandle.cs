@@ -19,51 +19,44 @@
  * limitations under the License.
  */
 using System;
+using System.IO;
+using MindTouch.Dream;
 
-namespace MindTouch.Dream.AmazonS3 {
+namespace MindTouch.Aws {
 
     /// <summary>
-    /// Amazon S3 Client configuration
+    /// File Handle container.
     /// </summary>
-    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3ClientConfig. It will be removed in a future version.</remarks>
-    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3ClientConfig and will be removed in a future version")]
-    public class AmazonS3ClientConfig {
-
-        //--- Properties ---
+    public class AwsS3FileHandle {
 
         /// <summary>
-        /// Base uri for Amazon (default: http://s3.amazonaws.com).
+        /// File modification, if the file was retrieved from S3.
         /// </summary>
-        public XUri S3BaseUri { get; set; }
+        public DateTime Modified { get; set; }
 
         /// <summary>
-        /// Private Key.
+        /// Size of the file.
         /// </summary>
-        public string PrivateKey { get; set; }
+        public long Size { get; set; }
 
         /// <summary>
-        /// Public Key.
+        /// File data stream (null, if this handle refers to a HEAD request.
         /// </summary>
-        public string PublicKey { get; set; }
+        public Stream Stream { get; set; }
 
         /// <summary>
-        /// Amazon S3 bucket.
+        /// File mime type.
         /// </summary>
-        public string Bucket { get; set; }
+        public MimeType MimeType { get; set; }
 
         /// <summary>
-        /// Root Path inside Bucket (can be null).
+        /// File expiration date.
         /// </summary>
-        public string RootPath { get; set; }
-        
-        /// <summary>
-        /// Path delimiter.
-        /// </summary>
-        public string Delimiter { get; set; }
+        public DateTime? Expiration { get; set; }
 
         /// <summary>
-        /// Client call timeout.
+        /// File time-to-live.
         /// </summary>
-        public TimeSpan Timeout { get; set; }
+        public TimeSpan? TimeToLive { get; set; }
     }
 }

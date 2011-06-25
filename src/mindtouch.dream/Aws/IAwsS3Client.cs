@@ -19,16 +19,13 @@
  * limitations under the License.
  */
 using System;
-using MindTouch.Dream.Services;
 
-namespace MindTouch.Dream.AmazonS3 {
+namespace MindTouch.Aws {
 
     /// <summary>
-    /// Amazon S3 Client abstraction for use by <see cref="S3StorageService"/>
+    /// Amazon S3 Client abstraction
     /// </summary>
-    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.IAwsS3Client. It will be removed in a future version.</remarks>
-    [Obsolete("This class has been replaced with MindTouch.Aws.IAwsS3Client and will be removed in a future version")]
-    public interface IAmazonS3Client : IDisposable {
+    public interface IAwsS3Client : IDisposable {
         
         //--- Methods ---
 
@@ -38,14 +35,14 @@ namespace MindTouch.Dream.AmazonS3 {
         /// <param name="path">Path to retrieve.</param>
         /// <param name="head">Perform a HEAD request only.</param>
         /// <returns></returns>
-        AmazonS3DataInfo GetDataInfo(string path, bool head);
+        AwsS3DataInfo GetDataInfo(string path, bool head);
 
         /// <summary>
         /// Store a file at a path.
         /// </summary>
         /// <param name="path">Storage path.</param>
         /// <param name="fileInfo">File to store.</param>
-        void PutFile(string path, AmazonS3FileHandle fileInfo);
+        void PutFile(string path, AwsS3FileHandle fileInfo);
 
         /// <summary>
         /// Delete a file or directory.

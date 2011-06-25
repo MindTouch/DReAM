@@ -18,20 +18,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
 using MindTouch.Xml;
 
-namespace MindTouch.Dream.AmazonS3 {
+namespace MindTouch.Aws {
 
     /// <summary>
-    /// Container for data returned from <see cref="IAmazonS3Client.GetDataInfo"/>.
+    /// Container for data returned from <see cref="IAwsS3Client.GetDataInfo"/>.
     /// </summary>
-    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3DataInfo. It will be removed in a future version.</remarks>
-    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3DataInfo and will be removed in a future version")]
-    public class AmazonS3DataInfo {
+    public class AwsS3DataInfo {
 
         //--- Fields ---
-        private readonly AmazonS3FileHandle _fileHandle;
+        private readonly AwsS3FileHandle _fileHandle;
         private readonly XDoc _directoryDocument;
 
         //--- Constructors ---
@@ -40,7 +37,7 @@ namespace MindTouch.Dream.AmazonS3 {
         /// Create a directory data info instance.
         /// </summary>
         /// <param name="directoryDocument">Directory document.</param>
-        public AmazonS3DataInfo(XDoc directoryDocument) {
+        public AwsS3DataInfo(XDoc directoryDocument) {
             _directoryDocument = directoryDocument;
         }
 
@@ -48,7 +45,7 @@ namespace MindTouch.Dream.AmazonS3 {
         /// Create a file data info instance.
         /// </summary>
         /// <param name="fileHandle">File info instance.</param>
-        public AmazonS3DataInfo(AmazonS3FileHandle fileHandle) {
+        public AwsS3DataInfo(AwsS3FileHandle fileHandle) {
             _fileHandle = fileHandle;
         }
 
@@ -69,7 +66,7 @@ namespace MindTouch.Dream.AmazonS3 {
         /// Return the underlying file handle.
         /// </summary>
         /// <returns>File handle instance.</returns>
-        public AmazonS3FileHandle AsFileHandle() {
+        public AwsS3FileHandle AsFileHandle() {
             return _fileHandle;
         }
     }

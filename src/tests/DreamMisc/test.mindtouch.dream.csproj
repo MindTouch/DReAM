@@ -116,6 +116,7 @@
     <Compile Include="PubSub\MockPubSubDispatchQueueRepository.cs" />
     <Compile Include="PubSub\PersistentPubSubDispatchQueueRespositoryTests.cs" />
     <Compile Include="PubSub\PersistentPubSubDispatchQueueTests.cs" />
+    <Compile Include="PubSub\SqsPubSubPollsterTests.cs" />
     <Compile Include="PubSub\SubscriptionTests.cs" />
     <Compile Include="PubSub\EventTests.cs" />
     <Compile Include="PubSub\PubSubServiceTests.cs" />
@@ -184,6 +185,7 @@
     <EmbeddedResource Include="Resources\xml-utf-8-jp.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Aws\" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

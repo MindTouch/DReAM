@@ -19,15 +19,14 @@
  * limitations under the License.
  */
 using System;
+using MindTouch.Dream;
 
-namespace MindTouch.Dream.AmazonS3 {
+namespace MindTouch.Aws {
 
     /// <summary>
     /// Amazon S3 Client configuration
     /// </summary>
-    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3ClientConfig. It will be removed in a future version.</remarks>
-    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3ClientConfig and will be removed in a future version")]
-    public class AmazonS3ClientConfig {
+    public class AwsS3ClientConfig {
 
         //--- Properties ---
 

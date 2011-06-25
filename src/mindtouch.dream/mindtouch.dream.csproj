@@ -85,6 +85,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Aws\AwsS3Client.cs" />
+    <Compile Include="Aws\AwsS3ClientConfig.cs" />
+    <Compile Include="Aws\AwsS3DataInfo.cs" />
+    <Compile Include="Aws\AwsS3FileHandle.cs" />
+    <Compile Include="Aws\AwsSqsClient.cs" />
+    <Compile Include="Aws\AwsSqsClientConfig.cs" />
+    <Compile Include="Aws\AwsSqsMessage.cs" />
+    <Compile Include="Aws\IAwsS3Client.cs" />
+    <Compile Include="Aws\IAwsSqsClient.cs" />
+    <Compile Include="dream\services\PubSub\ISqsPubSubPollster.cs" />
+    <Compile Include="Aws\S3PlugEx.cs" />
+    <Compile Include="dream\services\PubSub\SqsPubSubPollster.cs" />
     <Compile Include="Data\attributes.cs" />
     <Compile Include="Data\ADataUpdater.cs" />
     <Compile Include="Data\IDataUpdater.cs" />

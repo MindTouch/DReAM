@@ -22,18 +22,16 @@ using System;
 using System.Linq;
 using log4net;
 using MindTouch.Collections;
-using MindTouch.Dream.Services;
+using MindTouch.Dream;
 using MindTouch.Tasking;
 using MindTouch.Xml;
 
-namespace MindTouch.Dream.AmazonS3 {
+namespace MindTouch.Aws {
 
     /// <summary>
-    /// Amazon S3 Client abstraction for use by <see cref="S3StorageService"/>
+    /// Amazon S3 Client abstraction
     /// </summary>
-    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3Client. It will be removed in a future version.</remarks>
-    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3Client and will be removed in a future version")]
-    public class AmazonS3Client : IAmazonS3Client {
+    public class AwsS3Client : IAwsS3Client {
 
         //--- Constants ---
         private const string EXPIRE = "X-Amz-Meta-Expire";
@@ -43,7 +41,7 @@ namespace MindTouch.Dream.AmazonS3 {
         private static readonly ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
-        private readonly AmazonS3ClientConfig _config;
+        private readonly AwsS3ClientConfig _config;
         private readonly Plug _bucketPlug;
         private readonly Plug _rootPlug;
         private readonly ExpiringHashSet<string> _expirationEntries;
@@ -56,7 +54,7 @@ namespace MindTouch.Dream.AmazonS3 {
         /// </summary>
         /// <param name="config">Client configuration.</param>
         /// <param name="timerFactory">Timer factory.</param>
-        public AmazonS3Client(AmazonS3ClientConfig config, TaskTimerFactory timerFactory) {
+        public AwsS3Client(AwsS3ClientConfig config, TaskTimerFactory timerFactory) {
             _config = config;
             _bucketPlug = Plug.New(_config.S3BaseUri)
                 .WithS3Authentication(_config.PrivateKey, _config.PublicKey)
@@ -80,7 +78,7 @@ namespace MindTouch.Dream.AmazonS3 {
         /// <param name="path">Path to retrieve.</param>
         /// <param name="head">Perform a HEAD request only.</param>
         /// <returns></returns>
-        public AmazonS3DataInfo GetDataInfo(string path, bool head) {
+        public AwsS3DataInfo GetDataInfo(string path, bool head) {
             return IsDirectoryPath(path)
                 ? GetDirectory(path, head)
                 : GetFile(path, head);
@@ -91,7 +89,7 @@ namespace MindTouch.Dream.AmazonS3 {
         /// </summary>
         /// <param name="path">Storage path.</param>
         /// <param name="fileHandle">File to store.</param>
-        public void PutFile(string path, AmazonS3FileHandle fileHandle) {
+        public void PutFile(string path, AwsS3FileHandle fileHandle) {
             if(IsDirectoryPath(path)) {
                 throw new InvalidOperationException(string.Format("cannot put a file at a path with a trailing {0}", _config.Delimiter));
             }
@@ -100,7 +98,7 @@ namespace MindTouch.Dream.AmazonS3 {
                 var expiration = fileHandle.Expiration ?? DateTime.UtcNow.Add(fileHandle.TimeToLive.Value);
                 p = p.WithHeader(EXPIRE, expiration.ToEpoch().ToString())
                     .WithHeader(TTL, fileHandle.TimeToLive.Value.TotalSeconds.ToString());
-                _expirationEntries.SetExpiration(path, expiration, fileHandle.TimeToLive.Value);
+                _expirationEntries.SetOrUpdate(path, expiration, fileHandle.TimeToLive.Value);
             }
             var request = DreamMessage.Ok(fileHandle.MimeType, fileHandle.Size, fileHandle.Stream);
             var response = p.Put(request, new Result<DreamMessage>()).Wait();
@@ -130,7 +128,7 @@ namespace MindTouch.Dream.AmazonS3 {
             _expirationEntries.Dispose();
         }
 
-        private AmazonS3DataInfo GetFile(string path, bool head) {
+        private AwsS3DataInfo GetFile(string path, bool head) {
             var response = _rootPlug.AtPath(path).InvokeEx(head ? "HEAD" : "GET", DreamMessage.Ok(), new Result<DreamMessage>()).Wait();
             if(response.Status == DreamStatus.NotFound) {
                 response.Close();
@@ -155,9 +153,9 @@ namespace MindTouch.Dream.AmazonS3 {
                     response.Close();
                     return null;
                 }
-                _expirationEntries.SetExpiration(path, expiration.Value, ttl.Value);
+                _expirationEntries.SetOrUpdate(path, expiration.Value, ttl.Value);
             }
-            var filehandle = new AmazonS3FileHandle {
+            var filehandle = new AwsS3FileHandle {
                 Expiration = expiration,
                 TimeToLive = ttl,
                 Size = response.ContentLength,
@@ -168,10 +166,10 @@ namespace MindTouch.Dream.AmazonS3 {
             if(head) {
                 response.Close();
             }
-            return new AmazonS3DataInfo(filehandle);
+            return new AwsS3DataInfo(filehandle);
         }
 
-        private AmazonS3DataInfo GetDirectory(string path, bool head) {
+        private AwsS3DataInfo GetDirectory(string path, bool head) {
             string marker = null;
             var hasItems = false;
             var doc = new XDoc("files");
@@ -225,7 +223,7 @@ namespace MindTouch.Dream.AmazonS3 {
                     // no items, i.e. no file or directory at path
                     return null;
                 }
-                return new AmazonS3DataInfo(head ? new XDoc("files") : doc);
+                return new AwsS3DataInfo(head ? new XDoc("files") : doc);
             }
         }
 

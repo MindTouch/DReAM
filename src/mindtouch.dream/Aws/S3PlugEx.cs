@@ -22,14 +22,13 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using MindTouch.Dream;
 
-namespace MindTouch.Dream.AmazonS3 {
+namespace MindTouch.Aws {
 
     /// <summary>
     /// Amazon S3 related extension methods for <see cref="Plug"/>
     /// </summary>
-    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.S3PlugEx. It will be removed in a future version.</remarks>
-    [Obsolete("This class has been replaced with MindTouch.Aws.S3PlugEx and will be removed in a future version")]
     public static class S3PlugEx {
 
         //--- Constants ---
