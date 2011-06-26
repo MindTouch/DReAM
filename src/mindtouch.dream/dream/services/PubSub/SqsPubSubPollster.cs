@@ -73,7 +73,7 @@ namespace MindTouch.Dream.Services.PubSub {
             _log.DebugFormat("polling SQS for queu '{0}'", _queue);
             IEnumerable<AwsSqsMessage> messages = null;
             while(true) {
-                yield return _client.Receive(_queue, int.MaxValue, new Result<IEnumerable<AwsSqsMessage>>()).Set(v => messages = v);
+                yield return _client.ReceiveMax(_queue, new Result<IEnumerable<AwsSqsMessage>>()).Set(v => messages = v);
 
                 if(!messages.Any()) {
                     result.Return();

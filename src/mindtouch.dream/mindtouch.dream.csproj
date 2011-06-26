@@ -91,6 +91,8 @@
     <Compile Include="Aws\AwsS3FileHandle.cs" />
     <Compile Include="Aws\AwsSqsClient.cs" />
     <Compile Include="Aws\AwsSqsClientConfig.cs" />
+    <Compile Include="Aws\AwsSqsDefaults.cs" />
+    <Compile Include="Aws\AwsSqsEx.cs" />
     <Compile Include="Aws\AwsSqsMessage.cs" />
     <Compile Include="Aws\IAwsS3Client.cs" />
     <Compile Include="Aws\IAwsSqsClient.cs" />

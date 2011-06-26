@@ -95,11 +95,11 @@ namespace MindTouch.Dream.Test.PubSub {
             }
         }
 
-        public Result<string> Enqueue(string queue, AwsSqsMessage message, Result<string> result) {
+        public Result<string> Send(string queue, AwsSqsMessage message, Result<string> result) {
             throw new NotImplementedException();
         }
 
-        public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, Result<IEnumerable<AwsSqsMessage>> result) {
+        public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
             ReceiveCalled++;
             var r = new Result<IEnumerable<AwsSqsMessage>>();
             var take = Math.Min(10, maxMessages);
@@ -115,6 +115,14 @@ namespace MindTouch.Dream.Test.PubSub {
             _log.DebugFormat("deleting {0}", message.Id);
             Deleted.Add(message);
             return new Result().WithReturn();
+        }
+
+        public Result CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result result) {
+            throw new NotImplementedException();
+        }
+
+        public Result DeleteQueue(string queue, Result result) {
+            throw new NotImplementedException();
         }
     }
 

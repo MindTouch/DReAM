@@ -19,17 +19,13 @@
  * limitations under the License.
  */
 using System;
-using System.Collections.Generic;
-using MindTouch.Tasking;
+using MindTouch.Extensions.Time;
 
 namespace MindTouch.Aws {
-    public interface IAwsSqsClient {
-
-        //--- Methods ---
-        Result<string> Send(string queue, AwsSqsMessage message, Result<string> result);
-        Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result);
-        Result Delete(AwsSqsMessage message, Result result);
-        Result CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result result);
-        Result DeleteQueue(string queue, Result result);
+    public static class AwsSqsDefaults {
+        public const int MAX_MESSAGES = 10;
+        public const int DEFAULT_MESSAGES = -1;
+        public readonly static TimeSpan DEFAULT_VISIBILITY = (-1).Seconds();
+        public readonly static TimeSpan MAX_VISIBILITY = 12.Hours();
     }
 }

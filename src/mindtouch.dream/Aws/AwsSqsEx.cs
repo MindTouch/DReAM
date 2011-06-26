@@ -18,18 +18,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
 using System.Collections.Generic;
 using MindTouch.Tasking;
 
 namespace MindTouch.Aws {
-    public interface IAwsSqsClient {
+    public static class AwsSqsEx {
+        public static Result<IEnumerable<AwsSqsMessage>> Receive(this IAwsSqsClient client, string queue, Result<IEnumerable<AwsSqsMessage>> result) {
+            return client.Receive(queue, AwsSqsDefaults.DEFAULT_MESSAGES, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
+        }
 
-        //--- Methods ---
-        Result<string> Send(string queue, AwsSqsMessage message, Result<string> result);
-        Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result);
-        Result Delete(AwsSqsMessage message, Result result);
-        Result CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result result);
-        Result DeleteQueue(string queue, Result result);
+        public static Result<IEnumerable<AwsSqsMessage>> ReceiveMax(this IAwsSqsClient client, string queue, Result<IEnumerable<AwsSqsMessage>> result) {
+            return client.Receive(queue, AwsSqsDefaults.MAX_MESSAGES, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
+        }
+
+        public static Result CreateQueue(this IAwsSqsClient client, string queue, Result result) {
+            return client.CreateQueue(queue, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
+        }
     }
 }
