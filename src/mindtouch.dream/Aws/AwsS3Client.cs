@@ -56,14 +56,14 @@ namespace MindTouch.Aws {
         /// <param name="timerFactory">Timer factory.</param>
         public AwsS3Client(AwsS3ClientConfig config, TaskTimerFactory timerFactory) {
             _config = config;
-            _bucketPlug = Plug.New(_config.S3BaseUri)
+            _bucketPlug = Plug.New(_config.Endpoint.S3Uri)
                 .WithS3Authentication(_config.PrivateKey, _config.PublicKey)
                 .WithTimeout(_config.Timeout)
                 .At(_config.Bucket);
             _rootPlug = _bucketPlug;
             if(!string.IsNullOrEmpty(_config.RootPath)) {
-                _keyRootParts = _config.RootPath.Split(new[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-                if(_keyRootParts != null && _keyRootParts.Any()) {
+                _keyRootParts = _config.RootPath.Split(new[] { config.Delimiter }, StringSplitOptions.RemoveEmptyEntries);
+                if(_keyRootParts.Any()) {
                     _rootPlug = _rootPlug.At(_keyRootParts);
                 }
             }

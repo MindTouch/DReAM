@@ -23,23 +23,26 @@ using MindTouch.Dream;
 using MindTouch.Xml;
 
 namespace MindTouch.Aws {
-    public class AwsSqsMessage {
+    public class AwsSqsMessage : AwsSqsResponse {
 
         //--- Class Methods ---
         public static AwsSqsMessage FromBodyDocument(XDoc body) {
             return new AwsSqsMessage { Body = body.ToCompactString() };
         }
 
-        internal static IEnumerable<AwsSqsMessage> FromSqsResponse(DreamMessage response) {
+        internal static IEnumerable<AwsSqsMessage> FromSqsResponse(string queue, XDoc doc) {
             var messages = new List<AwsSqsMessage>();
-            foreach(var msgDoc in response.ToDocument()["ReceiveMessageResult/Message"]) {
+            var requestId = doc["sqs:ResponseMetadata/sqs:RequestId"].AsText;
+            foreach(var msgDoc in doc["sqs:ReceiveMessageResult/sqs:Message"]) {
                 var msg = new AwsSqsMessage {
-                    Id = msgDoc["MessageId"].AsText,
-                    ReceiptHandle = msgDoc["ReceiptHandle"].AsText,
-                    MD5OfBody = msgDoc["MD5OfBody"].AsText,
-                    Body = msgDoc["Body"].AsText
+                    Id = msgDoc["sqs:MessageId"].AsText,
+                    OriginQueue = queue,
+                    ReceiptHandle = msgDoc["sqs:ReceiptHandle"].AsText,
+                    MD5OfBody = msgDoc["sqs:MD5OfBody"].AsText,
+                    Body = msgDoc["sqs:Body"].AsText,
+                    RequestId = requestId
                 };
-                foreach(var attr in msgDoc["Attribute"]) {
+                foreach(var attr in msgDoc["sqs:Attribute"]) {
                     msg.Attibutes[attr["Name"].AsText] = attr["Value"].AsText;
                 }
                 messages.Add(msg);
@@ -52,6 +55,7 @@ namespace MindTouch.Aws {
 
         //--- Properties ---
         public string Id { get; protected set; }
+        public string OriginQueue { get; protected set; }
         public string ReceiptHandle { get; protected set; }
         public IDictionary<string, string> Attibutes { get { return _attributes; } }
         public string Body { get; protected set; }

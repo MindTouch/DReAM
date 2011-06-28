@@ -146,7 +146,7 @@ namespace MindTouch.Dream.Services {
 
             // set up S3 client
             var s3Config = new AwsS3ClientConfig() {
-                S3BaseUri = new XUri(config["baseuri"].AsText.IfNullOrEmpty("http://s3.amazonaws.com")),
+                Endpoint = AwsEndpoint.GetEndpoint(config["endpoint"].AsText) ?? AwsEndpoint.Default,
                 Bucket = config["bucket"].AsText,
                 Delimiter = "/",
                 RootPath = config["folder"].AsText,

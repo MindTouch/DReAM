@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2010 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -19,18 +19,32 @@
  * limitations under the License.
  */
 using System;
-using System.Collections.Generic;
-using MindTouch.Tasking;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace MindTouch.Aws {
-    public interface IAwsSqsClient {
+    public sealed class AwsSignature {
+
+        //--- Class Fields ---
+        private const string HASH_METHOD = "HmacSHA1";
+
+        //--- Fields ---
+        private readonly string _privateKey;
+
+        //--- Constructors ---
+        public AwsSignature(string privateKey) {
+            _privateKey = privateKey;
+        }
+
+        //--- Properties ---
+        public static string HashMethod {
+            get { return HASH_METHOD; }
+        }
 
         //--- Methods ---
-        Result<AwsSqsSendReponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendReponse> result);
-        Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result);
-        Result<AwsSqsResponse> Delete(AwsSqsMessage message, Result<AwsSqsResponse> result);
-        Result<AwsSqsResponse> CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result<AwsSqsResponse> result);
-        Result<AwsSqsResponse> DeleteQueue(string queue, Result<AwsSqsResponse> result);
-        Result<IEnumerable<string>> ListQueues(string prefix, Result<IEnumerable<string>> result);
+        public string GetSignature(string request) {
+            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(_privateKey));
+            return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(request)));
+        }
     }
 }

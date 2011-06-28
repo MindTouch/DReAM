@@ -20,7 +20,11 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using MindTouch.Dream;
 using MindTouch.Tasking;
+using MindTouch.Xml;
 
 namespace MindTouch.Aws {
     public class AwsSqsClient : IAwsSqsClient {
@@ -34,24 +38,106 @@ namespace MindTouch.Aws {
         }
 
         //--- Methods ---
-        public Result<string> Send(string queue, AwsSqsMessage message, Result<string> result) {
-            throw new NotImplementedException();
+        public Result<AwsSqsSendReponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendReponse> result) {
+            var parameters = new Dictionary<string, string> {
+                {"MessageBody", message.Body}
+            };
+            return HandleResponse("POST", queue, "SendMessage", parameters, result, 
+                m => new AwsSqsSendReponse(m)
+            );
         }
+
 
         public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
-            throw new NotImplementedException();
+            // CLEANUP: punting on attributes right now
+            var parameters = new Dictionary<string, string> {
+                {"MaxNumberOfMessages", maxMessages.ToString()},
+            };
+            if(visibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
+                parameters.Add("VisibilityTimeout", Math.Floor(visibilityTimeout.TotalSeconds).ToString());
+            }
+            return HandleResponse("GET", queue, "ReceiveMessage", parameters, result, 
+                m => AwsSqsMessage.FromSqsResponse(queue, m)
+            );
         }
 
-        public Result Delete(AwsSqsMessage message, Result result) {
-            throw new NotImplementedException();
+        public Result<AwsSqsResponse> Delete(AwsSqsMessage message, Result<AwsSqsResponse> result) {
+            var parameters = new Dictionary<string, string> {
+                {"ReceiptHandle", message.ReceiptHandle},
+            };
+            return HandleResponse("POST", message.OriginQueue, "DeleteMessage", parameters, result, 
+                m => new AwsSqsResponse(m)
+            );
         }
 
-        public Result CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result result) {
-            throw new NotImplementedException();
+        public Result<AwsSqsResponse> CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result<AwsSqsResponse> result) {
+            var parameters = new Dictionary<string, string> {
+                {"QueueName", queue},
+            };
+            if(defaultVisibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
+                parameters.Add("DefaultVisibilityTimeout", Math.Floor(defaultVisibilityTimeout.TotalSeconds).ToString());
+            }
+            return HandleResponse("POST", null, "CreateQueue", parameters, result, 
+                m => new AwsSqsResponse(m)
+            );
         }
 
-        public Result DeleteQueue(string queue, Result result) {
-            throw new NotImplementedException();
+        public Result<AwsSqsResponse> DeleteQueue(string queue, Result<AwsSqsResponse> result) {
+            return HandleResponse("POST", queue, "DeleteQueue", new Dictionary<string, string>(), result, 
+                m => new AwsSqsResponse(m)
+            );
+        }
+
+        public Result<IEnumerable<string>> ListQueues(string prefix, Result<IEnumerable<string>> result) {
+            var parameters = new Dictionary<string, string>();
+            if(!string.IsNullOrEmpty(prefix)) {
+                parameters.Add("QueueNamePrefix", prefix);
+            }
+            return HandleResponse("GET", null, "ListQueues", parameters, result,
+                m => m["sqs:ListQueuesResult/sqs:QueueUrl"].Select(x => x.AsUri.LastSegment).ToArray()
+            );
+        }
+
+        protected Result<T> HandleResponse<T>(string verb, string queue, string action, Dictionary<string, string> parameters, Result<T> result, Func<XDoc, T> responseHandler) {
+            verb = verb.ToUpperInvariant();
+            var time = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+            parameters.Add("AWSAccessKeyId", _config.PublicKey);
+            parameters.Add("Action", action);
+            parameters.Add("SignatureMethod", AwsSignature.HashMethod);
+            parameters.Add("SignatureVersion", "2");
+            parameters.Add("Version", "2009-02-01");
+            parameters.Add(_config.UseExpires ? "Expires" : "Timestamp", time);
+            var parameterPairs = parameters
+                .OrderBy(param => param.Key, StringComparer.Ordinal)
+                .Select(param => param.Key + "=" + XUri.Encode(param.Value));
+            var query = string.Join("&", parameterPairs.ToArray());
+            var p = Plug.New(_config.Endpoint.SqsUri).WithQuery(query);
+            if(queue != null) {
+                p = p.At(_config.AccountId, "queue");
+            }
+            var request = string.Format("{0}\n{1}\n{2}\n{3}", verb, p.Uri.Host, p.Uri.Path, query);
+            var signature = new AwsSignature(_config.PrivateKey).GetSignature(request);
+            if(verb == "POST") {
+                p = p.WithHeader(DreamHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
+
+            }
+            p.With("Signature", signature).Invoke(verb, DreamMessage.Ok(), new Result<DreamMessage>()).WhenDone(
+                response => {
+                    if(response.HasException) {
+                        result.Throw(response.Exception);
+                        return;
+                    }
+                    if(!response.Value.IsSuccessful) {
+                        result.Throw(new AwsSqsRequestException("Request to service failed", response.Value));
+                    }
+                    try {
+                        result.Return(responseHandler(response.Value.ToDocument().UsePrefix("sqs", "http://queue.amazonaws.com/doc/2009-02-01/")));
+                    } catch(Exception) {
+                        result.Throw(new AwsSqsRequestException("Response document could not be parsed", response.Value));
+                    }
+
+                });
+            return result;
         }
     }
 }

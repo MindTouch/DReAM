@@ -95,7 +95,7 @@ namespace MindTouch.Dream.Test.PubSub {
             }
         }
 
-        public Result<string> Send(string queue, AwsSqsMessage message, Result<string> result) {
+        public Result<AwsSqsSendReponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendReponse> result) {
             throw new NotImplementedException();
         }
 
@@ -111,17 +111,21 @@ namespace MindTouch.Dream.Test.PubSub {
             return r;
         }
 
-        public Result Delete(AwsSqsMessage message, Result result) {
+        public Result<AwsSqsResponse> Delete(AwsSqsMessage message, Result<AwsSqsResponse> result) {
             _log.DebugFormat("deleting {0}", message.Id);
             Deleted.Add(message);
-            return new Result().WithReturn();
+            return new Result<AwsSqsResponse>().WithReturn(null);
         }
 
-        public Result CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result result) {
+        public Result<AwsSqsResponse> CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result<AwsSqsResponse> result) {
             throw new NotImplementedException();
         }
 
-        public Result DeleteQueue(string queue, Result result) {
+        public Result<AwsSqsResponse> DeleteQueue(string queue, Result<AwsSqsResponse> result) {
+            throw new NotImplementedException();
+        }
+
+        public Result<IEnumerable<string>> ListQueues(string prefix, Result<IEnumerable<string>> result) {
             throw new NotImplementedException();
         }
     }

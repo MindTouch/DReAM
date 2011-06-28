@@ -20,6 +20,7 @@
  */
 using System;
 using MindTouch.Dream;
+using MindTouch.Extensions.Time;
 
 namespace MindTouch.Aws {
 
@@ -28,12 +29,24 @@ namespace MindTouch.Aws {
     /// </summary>
     public class AwsS3ClientConfig {
 
+        //--- Class Fields ---
+        private static readonly TimeSpan DEFAULT_TIMEOUT = 30.Seconds();
+
+        //--- Constructors ---
+        
+        /// <summary>
+        /// Create a new configuration instance
+        /// </summary>
+        public AwsS3ClientConfig() {
+            Endpoint = AwsEndpoint.Default;
+            Timeout = DEFAULT_TIMEOUT;
+            RootPath = "/";
+            Delimiter = "/";
+        }
+
         //--- Properties ---
 
-        /// <summary>
-        /// Base uri for Amazon (default: http://s3.amazonaws.com).
-        /// </summary>
-        public XUri S3BaseUri { get; set; }
+        public AwsEndpoint Endpoint { get; set; }
 
         /// <summary>
         /// Private Key.
@@ -51,12 +64,12 @@ namespace MindTouch.Aws {
         public string Bucket { get; set; }
 
         /// <summary>
-        /// Root Path inside Bucket (can be null).
+        /// Root Path inside Bucket (can be null, default: "/").
         /// </summary>
         public string RootPath { get; set; }
         
         /// <summary>
-        /// Path delimiter.
+        /// Path delimiter (default: "/").
         /// </summary>
         public string Delimiter { get; set; }
 

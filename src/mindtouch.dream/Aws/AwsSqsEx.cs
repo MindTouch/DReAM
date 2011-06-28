@@ -31,7 +31,7 @@ namespace MindTouch.Aws {
             return client.Receive(queue, AwsSqsDefaults.MAX_MESSAGES, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
         }
 
-        public static Result CreateQueue(this IAwsSqsClient client, string queue, Result result) {
+        public static Result<AwsSqsResponse> CreateQueue(this IAwsSqsClient client, string queue, Result<AwsSqsResponse> result) {
             return client.CreateQueue(queue, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
         }
     }

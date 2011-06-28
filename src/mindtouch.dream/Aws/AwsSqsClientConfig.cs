@@ -18,6 +18,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+using System;
+using MindTouch.Dream;
 using MindTouch.Xml;
 
 namespace MindTouch.Aws {
@@ -25,8 +27,35 @@ namespace MindTouch.Aws {
         
         //--- Constructors ---
         public AwsSqsClientConfig(XDoc config) {
-            
+            PrivateKey = config["privatekey"].AsText;
+            PublicKey = config["publickey"].AsText;
+            AccountId = config["accountid"].AsText;
+            Endpoint = AwsEndpoint.GetEndpoint(config["endpoint"].AsText ?? "default");
+            UseExpires = config["use-expires"].AsBool ?? false;
         }
-        public AwsSqsClientConfig() { }
+
+        public AwsSqsClientConfig() {
+            Endpoint = AwsEndpoint.Default;
+            UseExpires = false;
+        }
+
+        //--- Properties ---
+
+        public string AccountId { get; set; }
+        public AwsEndpoint Endpoint { get; set; }
+        /// <summary>
+        /// Private Key.
+        /// </summary>
+        public string PrivateKey { get; set; }
+
+        /// <summary>
+        /// Public Key.
+        /// </summary>
+        public string PublicKey { get; set; }
+
+        /// <summary>
+        /// Use Expires parameter instead of Timestamp
+        /// </summary>
+        public bool UseExpires { get; set; }
     }
 }

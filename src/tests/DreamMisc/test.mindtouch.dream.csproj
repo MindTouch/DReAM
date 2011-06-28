@@ -79,6 +79,7 @@
     <Compile Include="ArrayUtilTests.cs" />
     <Compile Include="AutofacTests.cs" />
     <Compile Include="AutoMockPlugTests.cs" />
+    <Compile Include="Aws\AwsSqsClientTests.cs" />
     <Compile Include="BlockingQueueTests.cs" />
     <Compile Include="ChunkedArrayTests.cs" />
     <Compile Include="ChunkedMemoryStreamTest.cs" />
@@ -185,7 +186,6 @@
     <EmbeddedResource Include="Resources\xml-utf-8-jp.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Aws\" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

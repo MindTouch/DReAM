@@ -86,7 +86,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     DreamMessage response = null;
                     yield return _plug.Post(msg.BodyToDocument(), new Result<DreamMessage>()).Set(v => response = v);
                     if(response.IsSuccessful) {
-                        yield return _client.Delete(msg, new Result());
+                        yield return _client.Delete(msg, new Result<AwsSqsResponse>());
                     }
                 }
             }
