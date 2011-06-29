@@ -21,10 +21,10 @@
 
 using System;
 using Autofac;
-using Autofac.Builder;
 using log4net;
-using MindTouch.Dream.AmazonS3;
+using MindTouch.Aws;
 using MindTouch.Dream.Test;
+using MindTouch.Dream.Test.Aws;
 using MindTouch.Tasking;
 using MindTouch.Xml;
 using Moq;
@@ -32,10 +32,8 @@ using NUnit.Framework;
 using MindTouch.Extensions.Time;
 
 namespace MindTouch.Dream.Storage.Test {
-    using Helper = AmazonS3TestHelpers;
-    
     [TestFixture]
-    public class AmazonS3StorageTest {
+    public class AwsS3StorageTest {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
@@ -43,24 +41,24 @@ namespace MindTouch.Dream.Storage.Test {
         //--- Fields ---
         private DreamServiceInfo _storage;
         private DreamHostInfo _hostInfo;
-        private Mock<IAmazonS3Client> _s3ClientMock;
+        private Mock<IAwsS3Client> _s3ClientMock;
 
         [TestFixtureSetUp]
         public void Init() {
             var config = new XDoc("config");
             var builder = new ContainerBuilder();
             builder.Register((c, p) => {
-                var s3Config = p.TypedAs<AmazonS3ClientConfig>();
-                var mock = new Mock<IAmazonS3Client>();
+                var s3Config = p.TypedAs<AwsS3ClientConfig>();
+                var mock = new Mock<IAwsS3Client>();
                 Assert.AreEqual("test", s3Config.RootPath);
-                Assert.AreEqual("http://s3.amazonaws.com",s3Config.S3BaseUri.ToString());
+                Assert.AreEqual("default",s3Config.Endpoint.Name);
                 Assert.AreEqual("test-bucket", s3Config.Bucket);
                 Assert.AreEqual("test-private", s3Config.PrivateKey);
                 Assert.AreEqual("test-public", s3Config.PublicKey);
                 Assert.IsNull(_s3ClientMock, "test storage already resolved");
                 _s3ClientMock = mock;
                 return mock.Object;
-            }).As<IAmazonS3Client>().ServiceScoped();
+            }).As<IAwsS3Client>().ServiceScoped();
             _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build());
         }
 
@@ -88,7 +86,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_put_file_without_expiration_at_path() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AmazonS3FileHandle>(y => Helper.ValidateFileHandle(y, data, null)))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AwsS3FileHandle>(y => AwsTestHelpers.ValidateFileHandle(y, data, null)))).AtMostOnce().Verifiable();
             _storage.AtLocalHost.At("foo", "bar").Put(DreamMessage.Ok(MimeType.TEXT, data));
             _s3ClientMock.VerifyAll();
         }
@@ -96,7 +94,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_put_file_without_expiration_at_root() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo", It.Is<AmazonS3FileHandle>(y => Helper.ValidateFileHandle(y, data, null)))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo", It.Is<AwsS3FileHandle>(y => AwsTestHelpers.ValidateFileHandle(y, data, null)))).AtMostOnce().Verifiable();
             _storage.AtLocalHost.At("foo").Put(DreamMessage.Ok(MimeType.TEXT, data));
             _s3ClientMock.VerifyAll();
         }
@@ -104,7 +102,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_put_file_with_expiration() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AmazonS3FileHandle>(y => Helper.ValidateFileHandle(y, data, 10.Seconds())))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AwsS3FileHandle>(y => AwsTestHelpers.ValidateFileHandle(y, data, 10.Seconds())))).AtMostOnce().Verifiable();
             _storage.AtLocalHost.At("foo", "bar").With("ttl", 10).Put(DreamMessage.Ok(MimeType.TEXT, data));
             _s3ClientMock.VerifyAll();
         }
@@ -112,7 +110,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Put_at_directory_path_fails() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo/bar/", It.IsAny<AmazonS3FileHandle>())).Throws(new Exception("bad puppy")).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo/bar/", It.IsAny<AwsS3FileHandle>())).Throws(new Exception("bad puppy")).AtMostOnce().Verifiable();
             var response = _storage.AtLocalHost.At("foo", "bar").WithTrailingSlash().Put(DreamMessage.Ok(MimeType.TEXT, data), new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             _s3ClientMock.VerifyAll();
@@ -121,7 +119,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_read_file() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar", false)).Returns(Helper.CreateFileInfo(data)).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar", false)).Returns(AwsTestHelpers.CreateFileInfo(data)).AtMostOnce().Verifiable();
             var response = _storage.AtLocalHost.At("foo", "bar").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(data, response.ToText());
@@ -130,7 +128,7 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Can_head_file() {
-            var info = new AmazonS3DataInfo(new AmazonS3FileHandle() {
+            var info = new AwsS3DataInfo(new AwsS3FileHandle() {
                 Expiration = null,
                 TimeToLive = null,
                 MimeType = MimeType.TEXT,
@@ -146,7 +144,7 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Reading_nonexisting_file_returns_Not_Found() {
-            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar", false)).Returns((AmazonS3DataInfo)null).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar", false)).Returns((AwsS3DataInfo)null).AtMostOnce().Verifiable();
             var response = _storage.AtLocalHost.At("foo", "bar").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.NotFound, response.Status);
@@ -156,7 +154,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_list_directory() {
             var doc = new XDoc("files").Elem("x", StringUtil.CreateAlphaNumericKey(10));
-            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar/", false)).Returns(new AmazonS3DataInfo(doc)).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar/", false)).Returns(new AwsS3DataInfo(doc)).AtMostOnce().Verifiable();
             var response = _storage.AtLocalHost.At("foo", "bar").WithTrailingSlash().Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(doc.ToCompactString(), response.ToDocument().ToCompactString());
@@ -165,7 +163,7 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Can_head_directory() {
-            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar/", true)).Returns(new AmazonS3DataInfo(new XDoc("x"))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar/", true)).Returns(new AwsS3DataInfo(new XDoc("x"))).AtMostOnce().Verifiable();
             var response = _storage.AtLocalHost.At("foo", "bar").WithTrailingSlash().Head(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             _s3ClientMock.VerifyAll();
@@ -173,7 +171,7 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Listing_nonexisting_directory_returns_Not_Found() {
-            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar/", false)).Returns((AmazonS3DataInfo)null).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.GetDataInfo("foo/bar/", false)).Returns((AwsS3DataInfo)null).AtMostOnce().Verifiable();
             var response = _storage.AtLocalHost.At("foo", "bar").WithTrailingSlash().Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.NotFound, response.Status);

@@ -67,12 +67,12 @@ namespace MindTouch.Dream.Test.PubSub {
             );
             Assert.AreEqual(15, mockSqsClient.Delivered.Count, "delivered has the wrong number of messages");
             Assert.AreEqual(
-                mockSqsClient.Delivered.Select(x => x.Id).ToArray(),
-                mockSqsClient.Deleted.Select(x => x.Id).ToArray(),
+                mockSqsClient.Delivered.Select(x => x.MessageId).ToArray(),
+                mockSqsClient.Deleted.Select(x => x.MessageId).ToArray(),
                 "delivered and deleted don't match"
             );
             Assert.AreEqual(
-                mockSqsClient.Delivered.Select(x => x.Id).ToArray(),
+                mockSqsClient.Delivered.Select(x => x.MessageId).ToArray(),
                 posted.ToArray(),
                 "delivered and posted don't match"
             );
@@ -112,7 +112,7 @@ namespace MindTouch.Dream.Test.PubSub {
         }
 
         public Result<AwsSqsResponse> Delete(AwsSqsMessage message, Result<AwsSqsResponse> result) {
-            _log.DebugFormat("deleting {0}", message.Id);
+            _log.DebugFormat("deleting {0}", message.MessageId);
             Deleted.Add(message);
             return new Result<AwsSqsResponse>().WithReturn(null);
         }
@@ -133,14 +133,14 @@ namespace MindTouch.Dream.Test.PubSub {
     public class MockMessage : AwsSqsMessage {
         private static int NEXT;
         public MockMessage() {
-            Id = (++NEXT).ToString();
+            MessageId = (++NEXT).ToString();
             ReceiptHandle = Guid.NewGuid().ToString();
-            Body = new XDoc("doc").Elem("id", Id).Elem("receipt-handle", ReceiptHandle).ToCompactString();
+            Body = new XDoc("doc").Elem("id", MessageId).Elem("receipt-handle", ReceiptHandle).ToCompactString();
         }
         public MockMessage(int id) {
-            Id = id.ToString();
+            MessageId = id.ToString();
             ReceiptHandle = Guid.NewGuid().ToString();
-            Body = new XDoc("doc").Elem("id", Id).Elem("receipt-handle", ReceiptHandle).ToCompactString();
+            Body = new XDoc("doc").Elem("id", MessageId).Elem("receipt-handle", ReceiptHandle).ToCompactString();
         }
     }
 }

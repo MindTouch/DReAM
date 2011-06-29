@@ -80,7 +80,7 @@ namespace MindTouch.Dream.Services.PubSub {
                     yield break;
                 }
                 foreach(var msg in messages) {
-                    if(_cache.SetOrUpdate(msg.Id, _cacheTtl)) {
+                    if(_cache.SetOrUpdate(msg.MessageId, _cacheTtl)) {
                         continue;
                     }
                     DreamMessage response = null;

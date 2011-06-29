@@ -50,9 +50,10 @@ namespace MindTouch.Aws {
 
         public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
             // CLEANUP: punting on attributes right now
-            var parameters = new Dictionary<string, string> {
-                {"MaxNumberOfMessages", maxMessages.ToString()},
-            };
+            var parameters = new Dictionary<string, string>();
+            if(maxMessages != AwsSqsDefaults.DEFAULT_MESSAGES) {
+                parameters.Add("MaxNumberOfMessages", maxMessages.ToString());
+            }
             if(visibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
                 parameters.Add("VisibilityTimeout", Math.Floor(visibilityTimeout.TotalSeconds).ToString());
             }

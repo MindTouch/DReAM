@@ -80,6 +80,7 @@
     <Compile Include="ArrayUtilTests.cs" />
     <Compile Include="AutofacTests.cs" />
     <Compile Include="AutoMockPlugTests.cs" />
+    <Compile Include="Aws\AwsS3ClientTests.cs" />
     <Compile Include="Aws\AwsSqsClientTests.cs" />
     <Compile Include="BlockingQueueTests.cs" />
     <Compile Include="ChunkedArrayTests.cs" />

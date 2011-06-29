@@ -30,6 +30,8 @@ namespace MindTouch.Aws {
             MD5OfMessageBody = doc["sqs:SendMessageResult/sqs:MD5OfBody"].AsText;
         }
 
+        protected AwsSqsSendResponse() {}
+
         //--- Properties ---
         public string MD5OfMessageBody { get; protected set; }
         public string MessageId { get; protected set; }

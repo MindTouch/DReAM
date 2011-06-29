@@ -46,7 +46,7 @@ namespace MindTouch.Aws {
         //--- Class Methods ---
         public static AwsEndpoint GetEndpoint(string name) {
             AwsEndpoint endpoint;
-            _endpoints.TryGetValue(name, out endpoint);
+            _endpoints.TryGetValue(name ?? "", out endpoint);
             return endpoint;
         }
 
@@ -66,6 +66,13 @@ namespace MindTouch.Aws {
             SqsUri = new XUri(sqsUri);
             LocationConstraint = locationConstraint;
             Name = LocationConstraint ?? "default";
+        }
+
+        public AwsEndpoint(string locationConstraint, string s3Uri, string sqsUri, string name) {
+            S3Uri = new XUri(s3Uri);
+            SqsUri = new XUri(sqsUri);
+            LocationConstraint = locationConstraint;
+            Name = name;
         }
     }
 }

@@ -18,21 +18,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using MindTouch.Dream.AmazonS3;
+using MindTouch.Aws;
 
-namespace MindTouch.Dream.Storage.Test {
-    public class AmazonS3ClientProxy : IAmazonS3Client {
+namespace MindTouch.Dream.Test.Aws {
+    public class AwsS3ClientProxy : IAwsS3Client {
 
-        public IAmazonS3Client Client;
+        public IAwsS3Client Client;
 
         public void Dispose() {
         }
 
-        public AmazonS3DataInfo GetDataInfo(string path, bool head) {
+        public AwsS3DataInfo GetDataInfo(string path, bool head) {
             return Client.GetDataInfo(path, head);
         }
 
-        public void PutFile(string path, AmazonS3FileHandle fileInfo) {
+        public void PutFile(string path, AwsS3FileHandle fileInfo) {
             Client.PutFile(path, fileInfo);
         }
 

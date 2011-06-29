@@ -30,12 +30,16 @@ namespace MindTouch.Aws {
             return new AwsSqsMessage { Body = body.ToCompactString() };
         }
 
+        public static AwsSqsMessage FromBody(string body) {
+            return new AwsSqsMessage { Body = body };
+        }
+
         internal static IEnumerable<AwsSqsMessage> FromSqsResponse(string queue, XDoc doc) {
             var messages = new List<AwsSqsMessage>();
             var requestId = doc["sqs:ResponseMetadata/sqs:RequestId"].AsText;
             foreach(var msgDoc in doc["sqs:ReceiveMessageResult/sqs:Message"]) {
                 var msg = new AwsSqsMessage {
-                    Id = msgDoc["sqs:MessageId"].AsText,
+                    MessageId = msgDoc["sqs:MessageId"].AsText,
                     OriginQueue = queue,
                     ReceiptHandle = msgDoc["sqs:ReceiptHandle"].AsText,
                     MD5OfBody = msgDoc["sqs:MD5OfBody"].AsText,
@@ -54,7 +58,7 @@ namespace MindTouch.Aws {
         private readonly IDictionary<string, string> _attributes = new Dictionary<string, string>();
 
         //--- Properties ---
-        public string Id { get; protected set; }
+        public string MessageId { get; protected set; }
         public string OriginQueue { get; protected set; }
         public string ReceiptHandle { get; protected set; }
         public IDictionary<string, string> Attibutes { get { return _attributes; } }
