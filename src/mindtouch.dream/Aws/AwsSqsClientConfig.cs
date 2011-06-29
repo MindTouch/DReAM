@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -18,8 +18,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
-using MindTouch.Dream;
 using MindTouch.Xml;
 
 namespace MindTouch.Aws {

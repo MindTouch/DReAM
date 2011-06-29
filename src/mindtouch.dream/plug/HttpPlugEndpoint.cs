@@ -403,14 +403,13 @@ namespace MindTouch.Dream.Http {
             }
 
             // determine response type
-            MimeType contentType;
+            MimeType contentType = string.IsNullOrEmpty(httpResponse.ContentType) ? null : new MimeType(httpResponse.ContentType);
             Stream stream;
             HttpStatusCode statusCode = httpResponse.StatusCode;
             WebHeaderCollection headers = httpResponse.Headers;
             long contentLength = httpResponse.ContentLength;
 
-            if(!string.IsNullOrEmpty(httpResponse.ContentType)) {
-                contentType = new MimeType(httpResponse.ContentType);
+            if(contentType != null || contentLength == -1) {
                 activity("pre new BufferedStream");
                 stream = new BufferedStream(httpResponse.GetResponseStream());
                 activity("post new BufferedStream");

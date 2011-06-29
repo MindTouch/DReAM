@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -38,12 +38,12 @@ namespace MindTouch.Aws {
         }
 
         //--- Methods ---
-        public Result<AwsSqsSendReponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendReponse> result) {
+        public Result<AwsSqsSendResponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendResponse> result) {
             var parameters = new Dictionary<string, string> {
                 {"MessageBody", message.Body}
             };
-            return HandleResponse("POST", queue, "SendMessage", parameters, result, 
-                m => new AwsSqsSendReponse(m)
+            return HandleResponse("POST", queue, "SendMessage", parameters, result,
+                m => new AwsSqsSendResponse(m)
             );
         }
 
@@ -56,7 +56,7 @@ namespace MindTouch.Aws {
             if(visibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
                 parameters.Add("VisibilityTimeout", Math.Floor(visibilityTimeout.TotalSeconds).ToString());
             }
-            return HandleResponse("GET", queue, "ReceiveMessage", parameters, result, 
+            return HandleResponse("GET", queue, "ReceiveMessage", parameters, result,
                 m => AwsSqsMessage.FromSqsResponse(queue, m)
             );
         }
@@ -65,7 +65,7 @@ namespace MindTouch.Aws {
             var parameters = new Dictionary<string, string> {
                 {"ReceiptHandle", message.ReceiptHandle},
             };
-            return HandleResponse("POST", message.OriginQueue, "DeleteMessage", parameters, result, 
+            return HandleResponse("POST", message.OriginQueue, "DeleteMessage", parameters, result,
                 m => new AwsSqsResponse(m)
             );
         }
@@ -77,13 +77,13 @@ namespace MindTouch.Aws {
             if(defaultVisibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
                 parameters.Add("DefaultVisibilityTimeout", Math.Floor(defaultVisibilityTimeout.TotalSeconds).ToString());
             }
-            return HandleResponse("POST", null, "CreateQueue", parameters, result, 
+            return HandleResponse("POST", null, "CreateQueue", parameters, result,
                 m => new AwsSqsResponse(m)
             );
         }
 
         public Result<AwsSqsResponse> DeleteQueue(string queue, Result<AwsSqsResponse> result) {
-            return HandleResponse("POST", queue, "DeleteQueue", new Dictionary<string, string>(), result, 
+            return HandleResponse("POST", queue, "DeleteQueue", new Dictionary<string, string>(), result,
                 m => new AwsSqsResponse(m)
             );
         }
@@ -103,7 +103,7 @@ namespace MindTouch.Aws {
             var time = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
             parameters.Add("AWSAccessKeyId", _config.PublicKey);
             parameters.Add("Action", action);
-            parameters.Add("SignatureMethod", AwsSignature.HashMethod);
+            parameters.Add("SignatureMethod", AwsExtensions.HASH_METHOD);
             parameters.Add("SignatureVersion", "2");
             parameters.Add("Version", "2009-02-01");
             parameters.Add(_config.UseExpires ? "Expires" : "Timestamp", time);
@@ -113,10 +113,10 @@ namespace MindTouch.Aws {
             var query = string.Join("&", parameterPairs.ToArray());
             var p = Plug.New(_config.Endpoint.SqsUri).WithQuery(query);
             if(queue != null) {
-                p = p.At(_config.AccountId, "queue");
+                p = p.At(_config.AccountId, queue);
             }
             var request = string.Format("{0}\n{1}\n{2}\n{3}", verb, p.Uri.Host, p.Uri.Path, query);
-            var signature = new AwsSignature(_config.PrivateKey).GetSignature(request);
+            var signature = request.GetSignature(_config.PrivateKey);
             if(verb == "POST") {
                 p = p.WithHeader(DreamHeaders.CONTENT_TYPE, "application/x-www-form-urlencoded");
 
@@ -128,7 +128,23 @@ namespace MindTouch.Aws {
                         return;
                     }
                     if(!response.Value.IsSuccessful) {
-                        result.Throw(new AwsSqsRequestException("Request to service failed", response.Value));
+                        try {
+                            XDoc doc = null;
+                            if(response.Value.HasDocument) {
+                                doc = response.Value.ToDocument();
+                            } else {
+                                var content = response.Value.ToText();
+                                if(!string.IsNullOrEmpty(content)) {
+                                    doc = XDocFactory.From(content, MimeType.TEXT_XML);
+                                }
+                            }
+                            if(doc != null && doc.Name.EqualsInvariant("ErrorResponse")) {
+                                result.Throw(new AwsSqsRequestException(new AwsSqsError(doc.UsePrefix("sqs", "http://queue.amazonaws.com/doc/2009-02-01/")), response.Value));
+                                return;
+                            }
+                        } catch { }
+                        result.Throw(new AwsSqsRequestException("Server responded with unexpected error", response.Value));
+                        return;
                     }
                     try {
                         result.Return(responseHandler(response.Value.ToDocument().UsePrefix("sqs", "http://queue.amazonaws.com/doc/2009-02-01/")));

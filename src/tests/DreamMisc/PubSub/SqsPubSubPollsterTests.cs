@@ -95,7 +95,7 @@ namespace MindTouch.Dream.Test.PubSub {
             }
         }
 
-        public Result<AwsSqsSendReponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendReponse> result) {
+        public Result<AwsSqsSendResponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendResponse> result) {
             throw new NotImplementedException();
         }
 

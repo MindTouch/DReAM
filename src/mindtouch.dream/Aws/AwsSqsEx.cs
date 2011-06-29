@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -23,6 +23,8 @@ using MindTouch.Tasking;
 
 namespace MindTouch.Aws {
     public static class AwsSqsEx {
+
+        //--- Extension Methods ---
         public static Result<IEnumerable<AwsSqsMessage>> Receive(this IAwsSqsClient client, string queue, Result<IEnumerable<AwsSqsMessage>> result) {
             return client.Receive(queue, AwsSqsDefaults.DEFAULT_MESSAGES, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
         }

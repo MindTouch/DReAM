@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -29,11 +29,18 @@ namespace MindTouch.Aws {
     /// <summary>
     /// Amazon S3 related extension methods for <see cref="Plug"/>
     /// </summary>
-    public static class S3PlugEx {
+    public static class AwsExtensions {
 
         //--- Constants ---
         private const string AWS_DATE = "X-Amz-Date";
+        public const string HASH_METHOD = "HmacSHA1";
 
+        //--- Properties ---
+        public static string HashMethod {
+            get { return HASH_METHOD; }
+        }
+
+        //--- Methods ---
         //--- Extension Methods ---
 
         /// <summary>
@@ -66,12 +73,17 @@ namespace MindTouch.Aws {
                     authString.AppendFormat("{0}:{1}\n", header.Key.ToLowerInvariant(), header.Value);
                 }
                 authString.Append(normalizedUri.Path);
-                var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(privateKey));
-                var signature = Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(authString.ToString())));
+                var signature = authString.ToString().GetSignature(privateKey);
                 message.Headers.Authorization = string.Format("AWS {0}:{1}", publicKey, signature);
                 message.Headers.ContentType = message.ContentType;
                 return message;
             });
         }
-    }
+
+        public static string GetSignature(this string request, string privatekey) {
+            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(privatekey));
+            return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(request)));
+        }
+
+   }
 }

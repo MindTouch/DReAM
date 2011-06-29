@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -18,33 +18,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
-using System.Text;
-using System.Security.Cryptography;
+using MindTouch.Xml;
 
 namespace MindTouch.Aws {
-    public sealed class AwsSignature {
-
-        //--- Class Fields ---
-        private const string HASH_METHOD = "HmacSHA1";
-
-        //--- Fields ---
-        private readonly string _privateKey;
+    public class AwsSqsSendResponse : AwsSqsResponse {
 
         //--- Constructors ---
-        public AwsSignature(string privateKey) {
-            _privateKey = privateKey;
+        public AwsSqsSendResponse(XDoc doc) {
+            MessageId = doc["sqs:SendMessageResult/sqs:MessageId"].AsText;
+            RequestId = doc["sqs:ResponseMetadata/sqs:RequestId"].AsText;
+            MD5OfMessageBody = doc["sqs:SendMessageResult/sqs:MD5OfBody"].AsText;
         }
 
         //--- Properties ---
-        public static string HashMethod {
-            get { return HASH_METHOD; }
-        }
-
-        //--- Methods ---
-        public string GetSignature(string request) {
-            var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(_privateKey));
-            return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(request)));
-        }
+        public string MD5OfMessageBody { get; protected set; }
+        public string MessageId { get; protected set; }
     }
 }

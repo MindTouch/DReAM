@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -18,16 +18,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
-using MindTouch.Extensions.Time;
+using MindTouch.Xml;
 
 namespace MindTouch.Aws {
-    public static class AwsSqsDefaults {
+    public class AwsSqsError : AwsSqsResponse {
 
-        //--- Constants ---
-        public const int MAX_MESSAGES = 10;
-        public const int DEFAULT_MESSAGES = -1;
-        public readonly static TimeSpan DEFAULT_VISIBILITY = (-1).Seconds();
-        public readonly static TimeSpan MAX_VISIBILITY = 12.Hours();
+        //--- Constructors ---
+        public AwsSqsError(XDoc doc) {
+            RequestId = doc["sqs:ResponseMetadata/sqs:RequestId"].AsText;
+            Type = doc["sqs:Error/sqs:Type"].AsText;
+            Code = doc["sqs:Error/sqs:Code"].AsText;
+            Message = doc["sqs:Error/sqs:Message"].AsText;
+            Detail = doc["sqs:Error/sqs:Detail"].AsText;
+        }
+
+        //--- Properties ---
+        public string Type { get; protected set; }
+        public string Code { get; protected set; }
+        public string Message { get; protected set; }
+        public string Detail { get; protected set; }
     }
 }
