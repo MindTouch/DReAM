@@ -20,12 +20,20 @@
  */
 
 using System;
+using System.Diagnostics;
+using System.Linq;
+using log4net;
 using NUnit.Framework;
 
 namespace MindTouch.Dream.Test {
 
     [TestFixture]
     public class ArrayUtilTests {
+
+        //--- Fields ---
+        private ILog _log = LogUtils.CreateLog();
+
+        //--- Methods ---
 
         [Test]
         public void ToDictionary_with_overwriteDuplicate_set_to_false_does_not_throw_on_duplicates() {
@@ -200,10 +208,20 @@ namespace MindTouch.Dream.Test {
                 new Tuplet<ArrayDiffKind, string>(ArrayDiffKind.Same, "d"),
             };
             Assert.AreEqual(manualDiff.Length, diff.Length);
-           for(var i =0;i<diff.Length;i++) {
-               Assert.AreEqual(manualDiff[i].Item1, diff[i].Item1);
-               Assert.AreEqual(manualDiff[i].Item2, diff[i].Item2);
-           }
+            for(var i = 0; i < diff.Length; i++) {
+                Assert.AreEqual(manualDiff[i].Item1, diff[i].Item1);
+                Assert.AreEqual(manualDiff[i].Item2, diff[i].Item2);
+            }
+        }
+
+        [Test, Ignore]
+        public void Diff_performance_test_25000_delta() {
+            var before = "the quick brown fox jumped over the lazy dog".Split(' ');
+            var after = Enumerable.Range(0, 25000).Select(x => StringUtil.CreateAlphaNumericKey(4)).ToArray();
+            var sw = Stopwatch.StartNew();
+            ArrayUtil.Diff(before, after, int.MaxValue, null);
+            sw.Stop();
+            _log.DebugFormat("Time: {0:#,##0.00}s", sw.Elapsed.TotalSeconds);
         }
     }
 }
