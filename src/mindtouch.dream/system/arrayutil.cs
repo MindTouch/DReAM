@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -111,83 +110,6 @@ namespace System {
     /// A static utility class containing helper and extension methods for working with <see cref="Array"/> instances.
     /// </summary>
     public static class ArrayUtil {
-
-        //--- Types ---
-        private class ExceededCapacityException : Exception { }
-
-        private class BoundedList<T> : IList<T> {
-
-            //--- Fields ---
-            private readonly int _capacity;
-            private readonly IList<T> _list;
-
-            //--- Constructors ---
-            public BoundedList(int capacity) {
-                _capacity = capacity;
-                _list = new List<T>(capacity);
-            }
-
-            //--- Properties ---
-            public int Count {
-                get { return _list.Count; }
-            }
-
-            public bool IsReadOnly {
-                get { return _list.IsReadOnly; }
-            }
-
-            public T this[int index] {
-                get { return _list[index]; }
-                set { _list[index] = value; }
-            }
-
-            //--- Methods ---
-            public IEnumerator<T> GetEnumerator() {
-                return _list.GetEnumerator();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator() {
-                return _list.GetEnumerator();
-            }
-
-            public void Add(T item) {
-                if(_list.Count >= _capacity) {
-                    throw new ExceededCapacityException();
-                }
-                _list.Add(item);
-            }
-
-            public void Clear() {
-                _list.Clear();
-            }
-
-            public bool Contains(T item) {
-                return _list.Contains(item);
-            }
-
-            public void CopyTo(T[] array, int arrayIndex) {
-                _list.CopyTo(array, arrayIndex);
-            }
-
-            public bool Remove(T item) {
-                return _list.Remove(item);
-            }
-
-            public int IndexOf(T item) {
-                return _list.IndexOf(item);
-            }
-
-            public void Insert(int index, T item) {
-                if(_list.Count >= _capacity) {
-                    throw new ExceededCapacityException();
-                }
-                _list.Insert(index, item);
-            }
-
-            public void RemoveAt(int index) {
-                _list.RemoveAt(index);
-            }
-        }
 
         //--- Extension Methods ---
 
@@ -567,20 +489,52 @@ namespace System {
             }
 
             // reverse lists for procesing
-            IList<Tuplet<ArrayDiffKind, T>> result = null;
+            List<Tuplet<ArrayDiffKind, T>> result = null;
 
+#if false
+            // skip matching items at the beginning
+            int i_start = 0;
+            int j_start = 0;
+            while((i_start < before.Length) && (j_start < after.Length) && equal(before[i_start], after[j_start])) {
+                ++i_start;
+                ++j_start;
+            }
+
+            // skip matching items at the end
+            int i_end = before.Length - 1;
+            int j_end = after.Length - 1;
+            while((i_end > i_start) && (j_end > j_start) && equal(before[i_end], after[j_end])) {
+                --i_end;
+                --j_end;
+            }
+
+            // check if the table is bigger than what we want
+            if((maxsize <= 0) || ((i_end - i_start + 2) + (j_end - j_start + 2) <= maxsize)) {
+                result = new List<Tuple<ArrayDiffKind, T>>(before.Length + after.Length);
+
+                // copy matching beginning
+                for(int i = 0; i < i_start; ++i) {
+                    result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i]));
+                }
+
+                // check if anything is left to compare
+                if((i_start <= i_end) || (j_start <= j_end)) {
+
+                    // find path of longest common subsequence
+                    HirschbergDiff(before, i_start, i_end, after, j_start, j_end, equal, result);
+
+                    // copy matching ending
+                    for(int i = i_end + 1; i < before.Length; ++i) {
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i]));
+                    }
+                }
+            }
+#else
             // run myers diff algorithm
-            if(maxsize > 0) {
-                result = new BoundedList<Tuplet<ArrayDiffKind, T>>(maxsize);
-            } else {
                 result = new List<Tuplet<ArrayDiffKind, T>>(before.Length + after.Length);
-            }
-            try {
                 MyersDiff(before, after, equal, result);
-            } catch(ExceededCapacityException) {
-                return null;
-            }
-            return result.ToArray();
+#endif
+            return (result != null) ? result.ToArray() : null;
         }
 
         /// <summary>
@@ -991,7 +945,7 @@ namespace System {
             }
         }
 
-        private static void MyersDiff<T>(T[] before, T[] after, Equality<T> equal, IList<Tuplet<ArrayDiffKind, T>> result) where T : class {
+        private static void MyersDiff<T>(T[] before, T[] after, Equality<T> equal, List<Tuplet<ArrayDiffKind, T>> result) where T : class {
 
             // NOTE (steveb): we mark items as 'Added' when they are actually 'Removed' and vice versa; this means the initial 'before' and 'after' arrays must be passed in reversed order as well;
             //                the reason for doing so is that it will show first 'Removed' items, and then the 'Added' ones, which is what the 3-way merge algorithm requires.
@@ -1005,7 +959,7 @@ namespace System {
             MyersDiffRev(after, 0, after.Length - 1, before, 0, before.Length - 1, equal, result, max, down_array, up_array);
         }
 
-        private static void MyersDiffRev<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, IList<Tuplet<ArrayDiffKind, T>> result, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) where T : class {
+        private static void MyersDiffRev<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, List<Tuplet<ArrayDiffKind, T>> result, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) where T : class {
 
             // NOTE (steveb): we mark items as 'Added' when they are actually 'Removed' and vice versa; this means the initial 'before' and 'after' arrays must be passed in reversed order as well;
             //                the reason for doing so is that it will show first 'Removed' items, and then the 'Added' ones, which is what the 3-way merge algorithm requires.
