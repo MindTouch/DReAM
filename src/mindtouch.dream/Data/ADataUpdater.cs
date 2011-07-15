@@ -170,7 +170,7 @@ namespace MindTouch.Data {
                 foreach(var attr in (from m in methodInfo.GetCustomAttributes(false) where m is EffectiveVersionAttribute select m)) {
                     var version = new VersionInfo(((EffectiveVersionAttribute)attr).VersionString);
                     if(version.CompareTo(_targetVersion).Change != VersionChange.Upgrade &&
-                        (_sourceVersion == null || version.CompareTo(_sourceVersion).Change == VersionChange.Upgrade )) {
+                        (_sourceVersion == null || version.CompareTo(_sourceVersion).Change != VersionChange.Downgrade )) {
                         _methodList.Add(new UpdateMethod(methodInfo, version));
                     }
                 }
