@@ -36,12 +36,12 @@ namespace MindTouch.Data {
 
             //--- Fields ---
             private readonly MethodInfo _methodInfo;
-            private readonly VersionInfo _effectiveVersion;
+            private readonly VersionInfo _targetVersion;
 
             //--- Constructors ---
-            public UpdateMethod(MethodInfo methodInfo, VersionInfo effectiveVersion) {
+            public UpdateMethod(MethodInfo methodInfo, VersionInfo targetVersion) {
                 _methodInfo = methodInfo;
-                _effectiveVersion = effectiveVersion;
+                _targetVersion = targetVersion;
             }
 
             //--- Methods ---
@@ -49,14 +49,14 @@ namespace MindTouch.Data {
                 get { return _methodInfo; }
             }
 
-            public VersionInfo GetVersionInfo {
-                get { return _effectiveVersion; }
+            public VersionInfo GetTargetVersion {
+                get { return _targetVersion; }
             }
 
             // Compares by version then by name
             public int CompareTo(UpdateMethod other) {
-                var otherVersion = other.GetVersionInfo;
-                var change = _effectiveVersion.CompareTo(otherVersion).Change;
+                var otherVersion = other.GetTargetVersion;
+                var change = _targetVersion.CompareTo(otherVersion).Change;
                 switch(change) {
                 case VersionChange.None:
                     return _methodInfo.Name.CompareTo(other._methodInfo.Name);
@@ -69,7 +69,8 @@ namespace MindTouch.Data {
         }
 
         //--- Fields ---
-        protected VersionInfo _effectiveVersion = null;
+        protected VersionInfo _targetVersion = null;
+        protected VersionInfo _sourceVersion = null;
         protected List<UpdateMethod> _methodList = null;
         protected Type _dataUpgradeClass = null;
         protected object _dataUpgradeClassInstance = null;
@@ -77,20 +78,39 @@ namespace MindTouch.Data {
         //--- Methods ---
 
         /// <summary>
-        ///  Get or set the effective version
+        ///  Get or set the target version
         /// </summary>
-        /// <returns> The string representation of the effective version</returns>
-        public string EffectiveVersion {
+        /// <returns> The string representation of the target version</returns>
+        public string TargetVersion {
             get {
-                if(_effectiveVersion == null) {
+                if(_targetVersion == null) {
                     return "";
                 }
-                return _effectiveVersion.ToString(); 
+                return _targetVersion.ToString(); 
             }
             set { 
-                _effectiveVersion = new VersionInfo(value);
-                if(!_effectiveVersion.IsValid) {
-                    throw new VersionInfoException(_effectiveVersion);
+                _targetVersion = new VersionInfo(value);
+                if(!_targetVersion.IsValid) {
+                    throw new VersionInfoException(_targetVersion);
+                }
+            }
+        }
+
+        /// <summary>
+        ///  Get or set the source version
+        /// </summary>
+        /// <returns> The string representation of the source version</returns>
+        public string SourceVersion {
+            get {
+                if(_sourceVersion == null) {
+                    return "";
+                }
+                return _sourceVersion.ToString();
+            }
+            set {
+                _sourceVersion = new VersionInfo(value);
+                if(!_sourceVersion.IsValid) {
+                    throw new VersionInfoException(_sourceVersion);
                 }
             }
         }
@@ -125,8 +145,8 @@ namespace MindTouch.Data {
         public virtual void LoadMethods(Assembly updateAssembly) { 
 
             // Make sure we have a defined version
-            if(_effectiveVersion == null) {
-                throw new VersionInfoException(_effectiveVersion);
+            if(_targetVersion == null) {
+                throw new VersionInfoException(_targetVersion);
             }
             
             // get all the members of the Assembly
@@ -149,7 +169,8 @@ namespace MindTouch.Data {
             foreach(var methodInfo in methods) {
                 foreach(var attr in (from m in methodInfo.GetCustomAttributes(false) where m is EffectiveVersionAttribute select m)) {
                     var version = new VersionInfo(((EffectiveVersionAttribute)attr).VersionString);
-                    if(version.CompareTo(_effectiveVersion).Change != VersionChange.Upgrade) {
+                    if(version.CompareTo(_targetVersion).Change != VersionChange.Upgrade &&
+                        (_sourceVersion == null || version.CompareTo(_sourceVersion).Change == VersionChange.Upgrade )) {
                         _methodList.Add(new UpdateMethod(methodInfo, version));
                     }
                 }
