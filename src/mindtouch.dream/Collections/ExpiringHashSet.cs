@@ -205,8 +205,8 @@ namespace MindTouch.Collections {
         /// </summary>
         public void Dispose() {
             _set.CollectionChanged -= OnCollectionChanged;
-            _set.EntriesExpired -= OnEntriesExpired;
             _set.Dispose();
+            _set.EntriesExpired -= OnEntriesExpired;
         }
 
         private void OnEntriesExpired(object sender, ExpiringSet<T, T>.ExpiredArgs e) {
