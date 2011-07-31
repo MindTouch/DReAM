@@ -140,6 +140,8 @@ namespace MindTouch.Collections {
             lock(_expirationLookup) {
                 _expireTimer.Change(DateTime.MaxValue, TaskEnv.None);
                 _expirationLookup.Clear();
+                OnEntriesExpired(_orderedExpirations);
+                _orderedExpirations.Clear();
             }
         }
 
