@@ -158,7 +158,11 @@ namespace MindTouch.Aws {
         private string CreateKeyPair(KeyValuePair<string, string> param) {
 
             // Note (arnec): For proper signature generation, spaces must be in %20 format (where spaces are + after XUri.Encode)
-            return param.Key + "=" + XUri.Encode(param.Value).ReplaceAll("+", "%20");
+            // Note (andyv): Amazon requires * to be encoded, but not ~ as per RFC 1738
+            return param.Key + "=" + XUri.Encode(param.Value)
+                .ReplaceAll("*", "%2A")
+                .ReplaceAll("+", "%20")
+                .ReplaceAll("%7E", "~");
         }
     }
 }
