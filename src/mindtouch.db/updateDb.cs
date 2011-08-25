@@ -29,7 +29,7 @@ namespace MindTouch.Data.Db {
 
         //--- Class Methods ---
         static int Main(string[] args) {
-            string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, targetVersion = null, customMethods = null;
+            string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, targetVersion = null, sourceVersion = null, customMethods = null;
             int dbport = 3306, exit = 0;
             bool showHelp = false, dryrun = false, verbose = false;
 
@@ -37,6 +37,7 @@ namespace MindTouch.Data.Db {
             var options = new Options() {
                 { "p=|dbpassword=", "Database password", p => dbpassword = p},
                 { "v=|version=", "Target Version", v => targetVersion = v},
+                { "b=|sversion=", "Source Version", b => sourceVersion = b},
                 { "u=|dbusername=", "Database user name (default: root)", u => dbusername = u},
                 { "d=|dbname=", "Database name (default: wikidb)", p => dbname = p},
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s},
@@ -82,6 +83,9 @@ namespace MindTouch.Data.Db {
                 MysqlDataUpdater mysqlSchemaUpdater = null;
                 try {
                     mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion);
+                    if(sourceVersion != null) {
+                        mysqlSchemaUpdater.SourceVersion = sourceVersion;
+                    }
                 } catch(VersionInfoException) {
                     PrintErrorAndExit("You entered an incorrect version numner.");
                 }
@@ -128,7 +132,7 @@ namespace MindTouch.Data.Db {
 
         private static void ShowHelp(Options p) {
             var sw = new StringWriter();
-            sw.WriteLine("Usage: updateDb.exe -p password -v version mindtouch.deki.dll");
+            sw.WriteLine("Usage: mindtouch.db.exe -p password -v version mindtouch.deki.db.dll");
             p.WriteOptionDescriptions(sw);
             Console.WriteLine(sw.ToString());
         }

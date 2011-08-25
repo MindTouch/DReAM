@@ -25,10 +25,16 @@ namespace MindTouch.Data {
     interface IDataUpdater {
 
         /// <summary>
-        ///  Get or set the effective version
+        ///  Get or set the target version
         /// </summary>
-        /// <returns> The string representation of the effective version</returns>
-        string EffectiveVersion { get; set; }
+        /// <returns> The string representation of the target version</returns>
+        string TargetVersion { get; set; }
+
+        /// <summary>
+        ///  Get or set the source version
+        /// </summary>
+        /// <returns> The string representation of the source version</returns>
+        string SourceVersion { get; set; }
 
         /// <summary>
         ///  Get a list of methods that will be run

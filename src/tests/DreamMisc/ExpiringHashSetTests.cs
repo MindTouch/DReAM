@@ -136,19 +136,24 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_dispose_set() {
-            var expired = new ManualResetEvent(false);
-            var changed = new ManualResetEvent(false);
-            var i = 42;
+        public void Disposing_set_expires_all_items_before_dispose_returns_but_does_not_trigger_collection_changed() {
+            var expired = false;
+            var changed = false;
+            var expiredEntries = new List<int>();
             var ttl = TimeSpan.FromSeconds(1);
-            ExpiringHashSet<int>.Entry entry = null;
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
-            set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
-            set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, ttl);
+            set.EntryExpired += (s, e) => { expiredEntries.Add(e.Entry.Value); expired = true; };
+            set.CollectionChanged += (s, e) => { changed = true; };
+            set.SetExpiration(12, ttl);
+            set.SetExpiration(21, ttl);
+            Assert.IsFalse(expired, "expired was triggered");
+            Assert.IsTrue(changed, "changed wasn't triggered");
+            changed = false;
             set.Dispose();
-            Assert.IsTrue(changed.WaitOne(2000));
-            Assert.IsFalse(expired.WaitOne(2000));
+            Assert.IsFalse(changed,"changed was triggered");
+            Assert.IsTrue(expired, "expired wasn't triggered");
+            Assert.AreEqual(new[] { 12, 21 },expiredEntries.OrderBy(x =>x).ToArray());
+
         }
 
         [Test]
@@ -268,14 +273,14 @@ namespace MindTouch.Dream.Test {
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
             AssertEx.AreEqual(ttl, entry.TTL);
-            Assert.AreEqual(expireTime,entry.When);
+            Assert.AreEqual(expireTime, entry.When);
         }
 
         [Test]
         public void Access_on_autoRefresh_set_does_reset_expiration() {
             var i = 42;
             var ttl = TimeSpan.FromSeconds(10);
-            var set = new ExpiringHashSet<int>(TaskTimerFactory.Current,true);
+            var set = new ExpiringHashSet<int>(TaskTimerFactory.Current, true);
             var expireTime = DateTime.UtcNow.AddSeconds(10);
             set.SetExpiration(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
@@ -302,7 +307,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Clear_Empty_Set() {
-            
+
             // http://bugs.developer.mindtouch.com/view.php?id=8739
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.Clear();
