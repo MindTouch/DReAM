@@ -29,7 +29,7 @@ namespace MindTouch.Data.Db {
 
         //--- Class Methods ---
         static int Main(string[] args) {
-            string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, targetVersion = null, sourceVersion = null;
+            string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, targetVersion = null, sourceVersion = null, customMethods = null;
             int dbport = 3306, exit = 0;
             bool showHelp = false, dryrun = false, verbose = false;
 
@@ -42,6 +42,7 @@ namespace MindTouch.Data.Db {
                 { "d=|dbname=", "Database name (default: wikidb)", p => dbname = p},
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s},
                 { "n=|port=", "Database port (default: 3306)", n => {dbport = Int32.Parse(n);}},
+                { "c=|custom", "Custom Methods to invoke (comma separated list)", c => {customMethods = c;}},
                 { "i|info", "Display verbose information (default: false)", i => {verbose = true;}},
                 { "f|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true;} },
                 { "h|?|help", "show help text", h => { verbose = true; }},
@@ -69,7 +70,11 @@ namespace MindTouch.Data.Db {
                 // Check Arguments
                 CheckArg(updateDLL, "No DLL file was specified");
                 CheckArg(dbpassword, "No Database password specified");
-                CheckArg(targetVersion, "No version specified");
+
+                // If there are no custom methods specified we need a version number
+                if(customMethods == null) {
+                    CheckArg(targetVersion, "No version specified");
+                }
 
                 // Begin Parsing DLL
                 var dllAssembly = Assembly.LoadFile(updateDLL);
@@ -84,23 +89,40 @@ namespace MindTouch.Data.Db {
                 } catch(VersionInfoException) {
                     PrintErrorAndExit("You entered an incorrect version numner.");
                 }
-                mysqlSchemaUpdater.LoadMethods(dllAssembly);
-                var methods = mysqlSchemaUpdater.GetMethods();
 
-                // Execute each method
-                foreach(var method in methods) {
-                    if(verbose) {
-                        Console.WriteLine(String.Format("Executing Method: {0}", method));
-                    }
-                    if(!dryrun) {
-                        try { mysqlSchemaUpdater.TestConnection(); }
-                        catch (Exception) {
-                            System.Threading.Thread.Sleep(5000);
-                            mysqlSchemaUpdater.TestConnection();
+                // Execute custom methods
+                if(customMethods != null) {
+                    var methods = customMethods.Split(',');
+                    foreach(var method in methods) {
+                        if(verbose) {
+                            Console.WriteLine(String.Format("Executing custom method: {0}", method));
                         }
-                        mysqlSchemaUpdater.ExecuteMethod(method);
+                        if(!dryrun) {
+                            mysqlSchemaUpdater.ExecuteCustomMethod(method.Trim(), dllAssembly);
+                        }
                     }
-                }   
+                }
+
+                // Execute update methods
+                if(targetVersion != null) {
+                    mysqlSchemaUpdater.LoadMethods(dllAssembly);
+                    var methods = mysqlSchemaUpdater.GetMethods();
+
+                    // Execute each method
+                    foreach(var method in methods) {
+                        if(verbose) {
+                            Console.WriteLine(String.Format("Executing method: {0}", method));
+                        }
+                        if(!dryrun) {
+                            try { mysqlSchemaUpdater.TestConnection(); }
+                            catch (Exception) {
+                                System.Threading.Thread.Sleep(5000);
+                                mysqlSchemaUpdater.TestConnection();
+                            }
+                            mysqlSchemaUpdater.ExecuteMethod(method);
+                        }
+                    }
+                }
             }
             else {
                 ShowHelp(options);
