@@ -70,5 +70,13 @@ namespace MindTouch.Data {
         /// <param name="name">Name of the method to execute. Case Sensitive.</param>
         /// </summary>
         void ExecuteMethod(string name);
+
+        /// <summary>
+        /// Execute the method with the exact name, this method
+        /// does not need to be tagged with the appropriate attribute
+        /// </summary>
+        /// <param name="name">Name of the method to execute</param>
+        /// <param name="updateAssembly">Assembly object to perform reflection on</param>
+        void ExecuteCustomMethod(string name, Assembly updateAssembly);
     }
 }

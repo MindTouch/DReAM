@@ -201,6 +201,36 @@ namespace MindTouch.Data {
 
 
         /// <summary>
+        /// Execute the method with the exact name, this method
+        /// does not need to be tagged with the appropriate attribute
+        /// </summary>
+        /// <param name="name">Exact name of the method to be executed</param>
+        /// <param name="updateAssembly">Assembly object to perform reflection on</param>
+        public void ExecuteCustomMethod(string name, Assembly updateAssembly) {
+            if(_dataUpgradeClass == null) {
+                // get all the members of the Assembly
+                var types = updateAssembly.GetTypes();
+
+                // Find the class with attribute "DataUpgrade"
+                var classTypes = from type in types where type.IsClass select type;
+                foreach(var type in from type in classTypes from attribute in (from a in System.Attribute.GetCustomAttributes(type) where a is DataUpgradeAttribute select a) select type) {
+                    _dataUpgradeClass = type;
+                }
+
+                // if no class was found exit 
+                if(_dataUpgradeClass == null) {
+                    throw new NoUpgradeAttributesFound();
+                }
+            }
+            if(_dataUpgradeClassInstance == null) {
+                _dataUpgradeClassInstance = CreateActivatorInstance(_dataUpgradeClass);
+            }
+
+            // Attempt to execute method
+            _dataUpgradeClass.InvokeMember(name, BindingFlags.Default | BindingFlags.InvokeMethod, null, _dataUpgradeClassInstance, null);
+        }
+
+        /// <summary>
         /// Create instance of class defined by the provided Type
         /// <param name="dataUpgradeType">"The Type instance to activate"</param>
         /// </summary>

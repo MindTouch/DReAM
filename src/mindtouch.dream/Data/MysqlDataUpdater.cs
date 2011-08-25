@@ -30,9 +30,13 @@ namespace MindTouch.Data {
         
         //--- Constructors ---
         public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version) {
-            _effectiveVersion = new VersionInfo(version);
-            if(!_effectiveVersion.IsValid) {
-                throw new VersionInfoException(_effectiveVersion);
+            if(version == null) {
+                _effectiveVersion = null;
+            } else {
+                _effectiveVersion = new VersionInfo(version);
+                if(!_effectiveVersion.IsValid) {
+                    throw new VersionInfoException(_effectiveVersion);
+                }
             }
 
             // initialize the data catalog
