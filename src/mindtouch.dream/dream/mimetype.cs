@@ -75,6 +75,16 @@ namespace MindTouch.Dream {
         ResponseDataTransferTimeout = 22,
 
         /// <summary>
+        /// Continue (100)
+        /// </summary>
+        Continue = 100,
+
+        ///<summary>
+        /// Switching Protocols (101)
+        /// </summary>
+        SwitchingProtocols = 101,
+
+        /// <summary>
         /// Ok (200).
         /// </summary>
         Ok = 200,
