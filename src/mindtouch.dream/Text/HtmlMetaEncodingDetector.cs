@@ -25,7 +25,7 @@ using System.Text;
 using log4net;
 
 namespace MindTouch.Text {
-    internal class HtmlMetaEncodingDetector : IEncodingDetector {
+    public class HtmlMetaEncodingDetector : IEncodingDetector {
 
         //--- Constants ---
         private const int NO = 0;
@@ -78,15 +78,12 @@ namespace MindTouch.Text {
         private static readonly ILog _log = LogUtils.CreateLog();
 
         //--- Class Methods ---
-        private static String ExtractCharsetFromContent(string value) {
-
-            // This is a bit ugly. Converting the string to char array in order to
-            // make the portability layer smaller.
-            CharSetStates charsetState = CharSetStates.CHARSET_INITIAL;
-            int start = -1;
-            int end = -1;
-            for(int i = 0; i < value.Length; i++) {
-                char c = value[i];
+        private static string ExtractCharsetFromContent(string value) {
+            var charsetState = CharSetStates.CHARSET_INITIAL;
+            var start = -1;
+            var end = -1;
+            for(var i = 0; i < value.Length; i++) {
+                var c = value[i];
                 switch(charsetState) {
                 case CharSetStates.CHARSET_INITIAL:
                     switch(c) {
@@ -200,7 +197,6 @@ namespace MindTouch.Text {
                     default:
                         continue;
                     }
-                    //goto case CharSetStates.CHARSET_DOUBLE_QUOTED;
                 case CharSetStates.CHARSET_DOUBLE_QUOTED:
                     switch(c) {
                     case '\"':
@@ -209,7 +205,6 @@ namespace MindTouch.Text {
                     default:
                         continue;
                     }
-                    //goto case CharSetStates.CHARSET_UNQUOTED;
                 case CharSetStates.CHARSET_UNQUOTED:
                     switch(c) {
                     case '\t':
@@ -223,10 +218,9 @@ namespace MindTouch.Text {
                     default:
                         continue;
                     }
-                    //break;
                 }
             }
-            charsetloop_done:
+        charsetloop_done:
             string charset = null;
             if(start != -1) {
                 if(end == -1) {
@@ -238,93 +232,97 @@ namespace MindTouch.Text {
         }
 
         //--- Fields ---
-        private Encoding characterEncoding;
-        protected Stream readable;
-        private int metaState = NO;
-        private int contentIndex = -1;
-        private int charsetIndex = -1;
-        protected int stateSave = DATA;
-        private int strBufLen;
-        private char[] strBuf;
-        
+        private Encoding _characterEncoding;
+        protected Stream _stream;
+        private int _metaState;
+        private int _contentIndex;
+        private int _charsetIndex;
+        protected int _stateSave;
+        private int _strBufLen;
+        private char[] _strBuf;
+
         //--- Constructors ---
-        public HtmlMetaEncodingDetector() {
-            this.readable = null;
-            this.metaState = NO;
-            this.contentIndex = -1;
-            this.charsetIndex = -1;
-            this.stateSave = DATA;
-            strBufLen = 0;
-            strBuf = new char[36];
-            this.characterEncoding = null;
+        public Encoding Detect(Stream stream) {
+            _stream = stream;
+
+            // initialize state
+            _characterEncoding = null;
+            _metaState = NO;
+            _contentIndex = -1;
+            _charsetIndex = -1;
+            _stateSave = DATA;
+            _strBufLen = 0;
+            _strBuf = new char[36];
+            StateLoop(_stateSave);
+
+            // release stream state
+            _stream = null;
+            return _characterEncoding;
         }
 
-        protected bool tryCharset(string encodingName) {
+        private bool TryCharset(string encodingName) {
             encodingName = encodingName.ToLowerInvariant();
             try {
-                // XXX spec says only UTF-16
-                if("utf-16" == encodingName || "utf-16be" == encodingName || "utf-16le" == encodingName || "utf-32" == encodingName || "utf-32be" == encodingName || "utf-32le" == encodingName) {
-                    this.characterEncoding = Encoding.UTF8;
-                    _log.Warn("The internal character encoding declaration specified \u201C" + encodingName + "\u201D which is not a rough superset of ASCII. Using \u201CUTF-8\u201D instead.");
+                switch(encodingName) {
+                case "utf-16":
+                case "utf-16be":
+                case "utf-16le":
+                case "utf-32":
+                case "utf-32be":
+                case "utf-32le":
+                    _characterEncoding = Encoding.UTF8;
+                    _log.Debug("The internal character encoding declaration specified \u201C" + encodingName + "\u201D which is not a rough superset of ASCII. Using \u201CUTF-8\u201D instead.");
                     return true;
                 }
-                Encoding cs = Encoding.GetEncoding(encodingName);
-                string canonName = cs.GetCanonicalName();
+                var cs = Encoding.GetEncoding(encodingName);
+                var canonName = cs.GetCanonicalName();
                 if(!cs.IsAsciiSuperset()) {
-                    _log.Warn("The encoding \u201C" + encodingName + "\u201D is not an ASCII superset and, therefore, cannot be used in an internal encoding declaration. Continuing the sniffing algorithm.");
+                    _log.Debug("The encoding \u201C" + encodingName + "\u201D is not an ASCII superset and, therefore, cannot be used in an internal encoding declaration. Continuing the sniffing algorithm.");
                     return false;
                 }
                 if(!cs.IsRegistered()) {
                     if(encodingName.StartsWithInvariant("x-")) {
-                        _log.Warn("The encoding \u201C" + encodingName + "\u201D is not an IANA-registered encoding. (Charmod C022)");
+                        _log.Debug("The encoding \u201C" + encodingName + "\u201D is not an IANA-registered encoding. (Charmod C022)");
                     } else {
-                        _log.Warn("The encoding \u201C" + encodingName + "\u201D is not an IANA-registered encoding and did not use the \u201Cx-\u201D prefix. (Charmod C023)");
+                        _log.Debug("The encoding \u201C" + encodingName + "\u201D is not an IANA-registered encoding and did not use the \u201Cx-\u201D prefix. (Charmod C023)");
                     }
                 } else if(!cs.GetCanonicalName().EqualsInvariant(encodingName)) {
-                    _log.Warn("The encoding \u201C" + encodingName + "\u201D is not the preferred name of the character encoding in use. The preferred name is \u201C" + canonName + "\u201D. (Charmod C024)");
+                    _log.Debug("The encoding \u201C" + encodingName + "\u201D is not the preferred name of the character encoding in use. The preferred name is \u201C" + canonName + "\u201D. (Charmod C024)");
                 }
                 if(cs.IsShouldNot()) {
-                    _log.Warn("Authors should not use the character encoding \u201C" + encodingName + "\u201D. It is recommended to use \u201CUTF-8\u201D.");
+                    _log.Debug("Authors should not use the character encoding \u201C" + encodingName + "\u201D. It is recommended to use \u201CUTF-8\u201D.");
                 } else if(cs.IsObscure()) {
-                    _log.Warn("The character encoding \u201C" + encodingName + "\u201D is not widely supported. Better interoperability may be achieved by using \u201CUTF-8\u201D.");
+                    _log.Debug("The character encoding \u201C" + encodingName + "\u201D is not widely supported. Better interoperability may be achieved by using \u201CUTF-8\u201D.");
                 }
-                Encoding actual = cs.GetActualHtmlEncoding();
+                var actual = cs.GetActualHtmlEncoding();
                 if(actual == null) {
-                    this.characterEncoding = cs;
+                    _characterEncoding = cs;
                 } else {
-                    _log.Warn("Using \u201C" + actual.GetCanonicalName() + "\u201D instead of the declared encoding \u201C" + encodingName + "\u201D.");
-                    this.characterEncoding = actual;
+                    _log.Debug("Using \u201C" + actual.GetCanonicalName() + "\u201D instead of the declared encoding \u201C" + encodingName + "\u201D.");
+                    _characterEncoding = actual;
                 }
                 return true;
             } catch(ArgumentException) {
-                _log.Warn("Unsupported character encoding name: \u201C" + encodingName + "\u201D. Will continue sniffing.");
+                _log.Debug("Unsupported character encoding name: \u201C" + encodingName + "\u201D. Will continue sniffing.");
             }
             return false;
         }
 
-        public Encoding Detect(Stream stream) {
-            this.readable = stream;
-            stateLoop(stateSave);
-            return characterEncoding;
+        private int Read() {
+            return _stream.ReadByte();
         }
 
-        private int read() {
-            return readable.ReadByte();
-        }
-
-        // WARNING When editing this, makes sure the bytecode length shown by javap
-        // stays under 8000 bytes!
-        private void stateLoop(int state) {
-            int c = -1;
-            bool reconsume = false;
-            for(; ; ) {
+        private void StateLoop(int state) {
+            var c = -1;
+            var reconsume = false;
+            for(;;) {
                 switch(state) {
                 case DATA:
-                    for(; ; ) {
+                    for(;;) {
                         if(reconsume) {
                             reconsume = false;
                         } else {
-                            c = read();
+                            c = Read();
                         }
                         switch(c) {
                         case -1:
@@ -337,17 +335,17 @@ namespace MindTouch.Text {
                             continue;
                         }
                     }
-                    dataloop_end:
+                dataloop_end:
                     goto case TAG_OPEN;
                 case TAG_OPEN:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
                         case 'm':
                         case 'M':
-                            metaState = M;
+                            _metaState = M;
                             state = TAG_NAME;
                             goto tagopenloop_end;
                         case '!':
@@ -362,7 +360,7 @@ namespace MindTouch.Text {
                             goto stateloop_continue;
                         default:
                             if((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-                                metaState = NO;
+                                _metaState = NO;
                                 state = TAG_NAME;
                                 goto tagopenloop_end;
                             }
@@ -372,11 +370,10 @@ namespace MindTouch.Text {
                         }
                     }
                     tagopenloop_end:
-                    // FALL THROUGH DON'T REORDER
                     goto case TAG_NAME;
                 case TAG_NAME:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -395,41 +392,29 @@ namespace MindTouch.Text {
                             goto stateloop_continue;
                         case 'e':
                         case 'E':
-                            if(metaState == M) {
-                                metaState = E;
-                            } else {
-                                metaState = NO;
-                            }
+                            _metaState = _metaState == M ? E : NO;
                             continue;
                         case 't':
                         case 'T':
-                            if(metaState == E) {
-                                metaState = T;
-                            } else {
-                                metaState = NO;
-                            }
+                            _metaState = _metaState == E ? T : NO;
                             continue;
                         case 'a':
                         case 'A':
-                            if(metaState == T) {
-                                metaState = A;
-                            } else {
-                                metaState = NO;
-                            }
+                            _metaState = _metaState == T ? A : NO;
                             continue;
                         default:
-                            metaState = NO;
+                            _metaState = NO;
                             continue;
                         }
                     }
                     tagnameloop_end:
                     goto case BEFORE_ATTRIBUTE_NAME;
                 case BEFORE_ATTRIBUTE_NAME:
-                    for(; ; ) {
+                    for(;;) {
                         if(reconsume) {
                             reconsume = false;
                         } else {
-                            c = read();
+                            c = Read();
                         }
                         /*
                          * Consume the next input character:
@@ -450,13 +435,13 @@ namespace MindTouch.Text {
                             goto stateloop_continue;
                         case 'c':
                         case 'C':
-                            contentIndex = 0;
-                            charsetIndex = 0;
+                            _contentIndex = 0;
+                            _charsetIndex = 0;
                             state = ATTRIBUTE_NAME;
                             goto beforeattributenameloop_end;
                         default:
-                            contentIndex = -1;
-                            charsetIndex = -1;
+                            _contentIndex = -1;
+                            _charsetIndex = -1;
                             state = ATTRIBUTE_NAME;
                             goto beforeattributenameloop_end;
                             // goto stateloop_continue;
@@ -465,8 +450,8 @@ namespace MindTouch.Text {
                     beforeattributenameloop_end:
                     goto case ATTRIBUTE_NAME;
                 case ATTRIBUTE_NAME:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -480,7 +465,7 @@ namespace MindTouch.Text {
                             state = SELF_CLOSING_START_TAG;
                             goto stateloop_continue;
                         case '=':
-                            strBufLen = 0;
+                            _strBufLen = 0;
                             state = BEFORE_ATTRIBUTE_VALUE;
                             goto attributenameloop_end;
                             // goto stateloop_continue;
@@ -488,34 +473,33 @@ namespace MindTouch.Text {
                             state = DATA;
                             goto stateloop_continue;
                         default:
-                            if(metaState == A) {
+                            if(_metaState == A) {
                                 if(c >= 'A' && c <= 'Z') {
                                     c += 0x20;
                                 }
-                                if(contentIndex == 6) {
-                                    contentIndex = -1;
-                                } else if(contentIndex > -1
-                                          && contentIndex < 6
-                                          && (c == CONTENT[contentIndex + 1])) {
-                                    contentIndex++;
+                                if(_contentIndex == 6) {
+                                    _contentIndex = -1;
+                                } else if(_contentIndex > -1
+                                          && _contentIndex < 6
+                                          && (c == CONTENT[_contentIndex + 1])) {
+                                    _contentIndex++;
                                 }
-                                if(charsetIndex == 6) {
-                                    charsetIndex = -1;
-                                } else if(charsetIndex > -1
-                                          && charsetIndex < 6
-                                          && (c == CHARSET[charsetIndex + 1])) {
-                                    charsetIndex++;
+                                if(_charsetIndex == 6) {
+                                    _charsetIndex = -1;
+                                } else if(_charsetIndex > -1
+                                          && _charsetIndex < 6
+                                          && (c == CHARSET[_charsetIndex + 1])) {
+                                    _charsetIndex++;
                                 }
                             }
                             continue;
                         }
                     }
                     attributenameloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case BEFORE_ATTRIBUTE_VALUE;
                 case BEFORE_ATTRIBUTE_VALUE:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -535,36 +519,35 @@ namespace MindTouch.Text {
                             state = DATA;
                             goto stateloop_continue;
                         default:
-                            if(charsetIndex == 6 || contentIndex == 6) {
-                                addToBuffer(c);
+                            if(_charsetIndex == 6 || _contentIndex == 6) {
+                                AddToBuffer(c);
                             }
                             state = ATTRIBUTE_VALUE_UNQUOTED;
                             goto stateloop_continue;
                         }
                     }
                     beforeattributevalueloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case ATTRIBUTE_VALUE_DOUBLE_QUOTED;
                 case ATTRIBUTE_VALUE_DOUBLE_QUOTED:
-                    for(; ; ) {
+                    for(;;) {
                         if(reconsume) {
                             reconsume = false;
                         } else {
-                            c = read();
+                            c = Read();
                         }
                         switch(c) {
                         case -1:
                             goto stateloop_end;
                         case '"':
-                            if(tryCharset()) {
+                            if(TryCharset()) {
                                 goto stateloop_end;
                             }
                             state = AFTER_ATTRIBUTE_VALUE_QUOTED;
                             goto attributevaluedoublequotedloop_end;
                             // goto stateloop_continue;
                         default:
-                            if(metaState == A && (contentIndex == 6 || charsetIndex == 6)) {
-                                addToBuffer(c);
+                            if(_metaState == A && (_contentIndex == 6 || _charsetIndex == 6)) {
+                                AddToBuffer(c);
                             }
                             continue;
                         }
@@ -573,8 +556,8 @@ namespace MindTouch.Text {
                     // FALLTHRU DON'T REORDER
                     goto case AFTER_ATTRIBUTE_VALUE_QUOTED;
                 case AFTER_ATTRIBUTE_VALUE_QUOTED:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -598,10 +581,9 @@ namespace MindTouch.Text {
                         }
                     }
                     afterattributevaluequotedloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case SELF_CLOSING_START_TAG;
                 case SELF_CLOSING_START_TAG:
-                    c = read();
+                    c = Read();
                     switch(c) {
                     case -1:
                         goto stateloop_end;
@@ -613,13 +595,12 @@ namespace MindTouch.Text {
                         reconsume = true;
                         goto stateloop_continue;
                     }
-                    // XXX reorder point
                 case ATTRIBUTE_VALUE_UNQUOTED:
-                    for(; ; ) {
+                    for(;;) {
                         if(reconsume) {
                             reconsume = false;
                         } else {
-                            c = read();
+                            c = Read();
                         }
                         switch(c) {
                         case -1:
@@ -629,28 +610,27 @@ namespace MindTouch.Text {
                         case '\n':
 
                         case '\u000C':
-                            if(tryCharset()) {
+                            if(TryCharset()) {
                                 goto stateloop_end;
                             }
                             state = BEFORE_ATTRIBUTE_NAME;
                             goto stateloop_continue;
                         case '>':
-                            if(tryCharset()) {
+                            if(TryCharset()) {
                                 goto stateloop_end;
                             }
                             state = DATA;
                             goto stateloop_continue;
                         default:
-                            if(metaState == A && (contentIndex == 6 || charsetIndex == 6)) {
-                                addToBuffer(c);
+                            if(_metaState == A && (_contentIndex == 6 || _charsetIndex == 6)) {
+                                AddToBuffer(c);
                             }
                             continue;
                         }
                     }
-                    // XXX reorder point
                 case AFTER_ATTRIBUTE_NAME:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -660,7 +640,7 @@ namespace MindTouch.Text {
                         case '\u000C':
                             continue;
                         case '/':
-                            if(tryCharset()) {
+                            if(TryCharset()) {
                                 goto stateloop_end;
                             }
                             state = SELF_CLOSING_START_TAG;
@@ -669,28 +649,27 @@ namespace MindTouch.Text {
                             state = BEFORE_ATTRIBUTE_VALUE;
                             goto stateloop_continue;
                         case '>':
-                            if(tryCharset()) {
+                            if(TryCharset()) {
                                 goto stateloop_end;
                             }
                             state = DATA;
                             goto stateloop_continue;
                         case 'c':
                         case 'C':
-                            contentIndex = 0;
-                            charsetIndex = 0;
+                            _contentIndex = 0;
+                            _charsetIndex = 0;
                             state = ATTRIBUTE_NAME;
                             goto stateloop_continue;
                         default:
-                            contentIndex = -1;
-                            charsetIndex = -1;
+                            _contentIndex = -1;
+                            _charsetIndex = -1;
                             state = ATTRIBUTE_NAME;
                             goto stateloop_continue;
                         }
                     }
-                    // XXX reorder point
                 case MARKUP_DECLARATION_OPEN:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -705,11 +684,10 @@ namespace MindTouch.Text {
                         }
                     }
                     markupdeclarationopenloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case MARKUP_DECLARATION_HYPHEN;
                 case MARKUP_DECLARATION_HYPHEN:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -724,11 +702,10 @@ namespace MindTouch.Text {
                         }
                     }
                     markupdeclarationhyphenloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case COMMENT_START;
                 case COMMENT_START:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -745,11 +722,10 @@ namespace MindTouch.Text {
                         }
                     }
                     commentstartloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case COMMENT;
                 case COMMENT:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -762,11 +738,10 @@ namespace MindTouch.Text {
                         }
                     }
                     commentloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case COMMENT_END_DASH;
                 case COMMENT_END_DASH:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -780,11 +755,10 @@ namespace MindTouch.Text {
                         }
                     }
                     commentenddashloop_end:
-                    // FALLTHRU DON'T REORDER
                     goto case COMMENT_END;
                 case COMMENT_END:
-                    for(; ; ) {
-                        c = read();
+                    for(;;) {
+                        c = Read();
                         switch(c) {
                         case -1:
                             goto stateloop_end;
@@ -798,9 +772,8 @@ namespace MindTouch.Text {
                             goto stateloop_continue;
                         }
                     }
-                    // XXX reorder point
                 case COMMENT_START_DASH:
-                    c = read();
+                    c = Read();
                     switch(c) {
                     case -1:
                         goto stateloop_end;
@@ -814,37 +787,35 @@ namespace MindTouch.Text {
                         state = COMMENT;
                         goto stateloop_continue;
                     }
-                    // XXX reorder point
                 case ATTRIBUTE_VALUE_SINGLE_QUOTED:
-                    for(; ; ) {
+                    for(;;) {
                         if(reconsume) {
                             reconsume = false;
                         } else {
-                            c = read();
+                            c = Read();
                         }
                         switch(c) {
                         case -1:
                             goto stateloop_end;
                         case '\'':
-                            if(tryCharset()) {
+                            if(TryCharset()) {
                                 goto stateloop_end;
                             }
                             state = AFTER_ATTRIBUTE_VALUE_QUOTED;
                             goto stateloop_continue;
                         default:
-                            if(metaState == A && (contentIndex == 6 || charsetIndex == 6)) {
-                                addToBuffer(c);
+                            if(_metaState == A && (_contentIndex == 6 || _charsetIndex == 6)) {
+                                AddToBuffer(c);
                             }
                             continue;
                         }
                     }
-                    // XXX reorder point
                 case SCAN_UNTIL_GT:
-                    for(; ; ) {
+                    for(;;) {
                         if(reconsume) {
                             reconsume = false;
                         } else {
-                            c = read();
+                            c = Read();
                         }
                         switch(c) {
                         case -1:
@@ -857,42 +828,35 @@ namespace MindTouch.Text {
                         }
                     }
                 }
-                stateloop_continue:
-
-                // Note (arnec): the below exist so that stateloop_continue has a place to land and there is no warning about an unused variable
-                var x = 0;
-                x++;
+            stateloop_continue:
+                // Note (arnec): the below exist so that stateloop_continue has a place to land and there is no warning
+                continue;
             }
-            stateloop_end:
-            stateSave = state;
+        stateloop_end:
+            _stateSave = state;
         }
 
-        private void addToBuffer(int c) {
-            if(strBufLen == strBuf.Length) {
-                char[] newBuf = new char[strBuf.Length + (strBuf.Length << 1)];
-                Array.Copy(strBuf, 0, newBuf, 0, strBuf.Length);
-                strBuf = newBuf;
+        private void AddToBuffer(int c) {
+            if(_strBufLen == _strBuf.Length) {
+                char[] newBuf = new char[_strBuf.Length + (_strBuf.Length << 1)];
+                Array.Copy(_strBuf, 0, newBuf, 0, _strBuf.Length);
+                _strBuf = newBuf;
             }
-            strBuf[strBufLen++] = (char)c;
+            _strBuf[_strBufLen++] = (char)c;
         }
 
-        private bool tryCharset() {
-            if(metaState != A || !(contentIndex == 6 || charsetIndex == 6)) {
+        private bool TryCharset() {
+            if(_metaState != A || !(_contentIndex == 6 || _charsetIndex == 6)) {
                 return false;
             }
-            string attVal = new string(strBuf, 0, strBufLen);
-            string candidateEncoding;
-            if(contentIndex == 6) {
-                candidateEncoding = ExtractCharsetFromContent(attVal);
-            } else {
-                candidateEncoding = attVal;
-            }
+            var attVal = new string(_strBuf, 0, _strBufLen);
+            var candidateEncoding = _contentIndex == 6 ? ExtractCharsetFromContent(attVal) : attVal;
             if(candidateEncoding == null) {
                 return false;
             }
-            bool success = tryCharset(candidateEncoding);
-            contentIndex = -1;
-            charsetIndex = -1;
+            var success = TryCharset(candidateEncoding);
+            _contentIndex = -1;
+            _charsetIndex = -1;
             return success;
         }
     }
