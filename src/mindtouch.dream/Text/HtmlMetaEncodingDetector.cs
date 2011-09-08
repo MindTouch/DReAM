@@ -829,6 +829,7 @@ namespace MindTouch.Text {
                     }
                 }
             stateloop_continue:
+
                 // Note (arnec): the below exist so that stateloop_continue has a place to land and there is no warning
                 continue;
             }
