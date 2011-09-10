@@ -29,7 +29,7 @@ namespace MindTouch.Text {
 
         //--- Types ---
         private class Meta {
-            
+
             //--- Properties ---
             public string CanonicalName { get; set; }
             public Encoding Encoding { get; set; }
@@ -91,10 +91,9 @@ namespace MindTouch.Text {
                 }
             }
 
-            // Overwrite possible overlapping aliases with the real things--just in
-            // case
+            // Overwrite possible overlapping aliases with the real things--just in case
             foreach(var meta in _encodingMeta.Values) {
-                _encodingByCanonicalName.Add(NormalizeName(meta.CanonicalName), meta);
+                _encodingByCanonicalName[NormalizeName(meta.CanonicalName)] = meta;
             }
             try {
                 Find("iso-8859-1").ActualHtmlEncoding = Find("windows-1252");
@@ -150,7 +149,8 @@ namespace MindTouch.Text {
         }
 
         internal static Encoding GetActualHtmlEncoding(this Encoding encoding) {
-            return _encodingMeta[encoding.CodePage].ActualHtmlEncoding.Encoding;
+            var actual = _encodingMeta[encoding.CodePage].ActualHtmlEncoding;
+            return (actual != null) ? actual.Encoding : null;
         }
 
         //--- Class Methods ---

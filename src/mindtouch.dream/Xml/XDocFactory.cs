@@ -67,6 +67,17 @@ namespace MindTouch.Xml {
         /// <param name="mime">Document mime-type.</param>
         /// <returns>New document instance.</returns>
         public static XDoc From(Stream stream, MimeType mime) {
+            return From(stream, mime, false);
+        }
+
+        /// <summary>
+        /// Create a document from a stream.
+        /// </summary>
+        /// <param name="stream">Document stream.</param>
+        /// <param name="mime">Document mime-type.</param>
+        /// <param name="detectEncoding">Detect character encoding in stream.</param>
+        /// <returns>New document instance.</returns>
+        public static XDoc From(Stream stream, MimeType mime, bool detectEncoding) {
             if(stream == null) {
                 throw new ArgumentNullException("stream");
             }
@@ -76,7 +87,8 @@ namespace MindTouch.Xml {
             if(!stream.CanSeek && !(stream is BufferedStream)) {
                 stream = new BufferedStream(stream);
             }
-            using(TextReader reader = new StreamReader(stream, mime.CharSet)) {
+            var encoding = detectEncoding ? stream.DetectEncoding() : mime.CharSet;
+            using(TextReader reader = new StreamReader(stream, encoding ?? mime.CharSet)) {
                 return From(reader, mime);
             }
         }
