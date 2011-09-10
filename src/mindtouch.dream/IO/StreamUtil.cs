@@ -533,8 +533,7 @@ namespace MindTouch.IO {
         /// <returns>Encoding type detected or null</returns>
         public static Encoding DetectEncoding(this Stream stream) {
             return new BOMEncodingDetector().Detect(stream)
-
-                // TODO (steveb): add <meta> tag detector here
+                ?? new HtmlMetaEncodingDetector().Detect(stream)
                 ?? new CharacterEncodingDetector().Detect(stream);
         }
 
