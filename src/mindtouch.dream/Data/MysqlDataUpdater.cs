@@ -26,7 +26,7 @@ namespace MindTouch.Data {
     public class MysqlDataUpdater : ADataUpdater {
 
         //--- Fields ---
-        private readonly DataCatalog _dataCatalog;
+        private DataCatalog _dataCatalog;
         
         //--- Constructors ---
         public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version) {
@@ -48,6 +48,13 @@ namespace MindTouch.Data {
 
         //--- Methods---
         public override void TestConnection() {
+            _dataCatalog.TestConnection();
+        }
+
+        public void ChangeDatabase(string server, int port, string dbname, string dbuser, string dbpassword) {
+            var dataFactory = new DataFactory("Mysql.Data", "?");
+            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword);
+            _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
         }
 
