@@ -37,24 +37,24 @@ namespace MindTouch.Data {
             //--- Fields ---
             private readonly MethodInfo _methodInfo;
             private readonly VersionInfo _targetVersion;
-            private readonly bool _isUpdateMethod;
+            private readonly MethodType _methodType;
 
             //--- Constructors ---
             public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion) {
                 _methodInfo = methodInfo;
                 _targetVersion = targetVersion;
-                _isUpdateMethod = true;
+                _methodType = MethodType.Update;
             }
 
-            public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion, bool isUpdateMethod) {
+            public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion, MethodType methodType) {
                 _methodInfo = methodInfo;
                 _targetVersion = targetVersion;
-                _isUpdateMethod = isUpdateMethod;
+                _methodType = methodType;
             }
 
             //--- Methods ---
-            public bool IsUpdateMethod {
-                get { return _isUpdateMethod; }
+            public MethodType MethodType {
+                get{ return _methodType; }
             }
 
             public MethodInfo GetMethodInfo {
@@ -86,6 +86,7 @@ namespace MindTouch.Data {
         protected List<DbMethod> _methodList = null;
         protected Type _dataUpgradeClass = null;
         protected object _dataUpgradeClassInstance = null;
+        protected enum MethodType { Update, DataIntegrity };
 
         //--- Methods ---
 
@@ -137,7 +138,7 @@ namespace MindTouch.Data {
             if(_methodList == null) {
                 return null;
             }
-            var list = (from method in _methodList where method.IsUpdateMethod == true select method.GetMethodInfo.Name).ToList();
+            var list = (from method in _methodList where method.MethodType == MethodType.Update select method.GetMethodInfo.Name).ToList();
             return list;
         }
 
@@ -151,7 +152,7 @@ namespace MindTouch.Data {
             if(_methodList == null) {
                 return null;
             }
-            var list = (from method in _methodList where method.IsUpdateMethod == false select method.GetMethodInfo.Name).ToList();
+            var list = (from method in _methodList where method.MethodType == MethodType.DataIntegrity select method.GetMethodInfo.Name).ToList();
             return list;
         }
 
@@ -195,19 +196,18 @@ namespace MindTouch.Data {
             foreach(var methodInfo in methods) {
                 foreach(var attr in (from m in methodInfo.GetCustomAttributes(false) select m)) {
                     VersionInfo version;
-                    bool isUpdateMethod;
+                    var type = MethodType.Update;
                     if(attr.IsA<EffectiveVersionAttribute>()) {
                         version = new VersionInfo(((EffectiveVersionAttribute)attr).VersionString);
-                        isUpdateMethod = true;
                     } else if(attr.IsA<DataIntegrityCheck>()) {
                         version = new VersionInfo(((DataIntegrityCheck)attr).VersionString);
-                        isUpdateMethod = false;
+                        type = MethodType.DataIntegrity;
                     } else {
                         continue;
                     }
                     if(version.CompareTo(_targetVersion).Change != VersionChange.Upgrade &&
                         (_sourceVersion == null || version.CompareTo(_sourceVersion).Change != VersionChange.Downgrade )) {
-                        _methodList.Add(new DbMethod(methodInfo, version, isUpdateMethod));
+                        _methodList.Add(new DbMethod(methodInfo, version, type));
                     }
                 }
             }
