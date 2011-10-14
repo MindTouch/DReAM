@@ -74,7 +74,7 @@ namespace MindTouch.Data.Db {
             string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, 
                    targetVersion = null, sourceVersion = null, customMethods = null;
             int dbport = 3306, exit = 0, errors = 0;
-            bool showHelp = false, dryrun = false, verbose = false, listDatabases = false;
+            bool showHelp = false, dryrun = false, verbose = false, listDatabases = false, checkDb = false;
             var errorStrings = new List<string>();
 
             // set command line options
@@ -90,6 +90,7 @@ namespace MindTouch.Data.Db {
                 { "i|info", "Display verbose information (default: false)", i => {verbose = true;}},
                 { "f|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true;}},
                 { "l|listdb" , "List of databases separated by EOF", l => { listDatabases = true; }},
+                { "t|checkdb", "Run database tests and nothing else", t => { checkDb = true; } },
                 { "h|?|help", "show help text", h => { verbose = true; }},
             };
             if(args == null || args.Length == 0) {
@@ -172,7 +173,7 @@ namespace MindTouch.Data.Db {
                         }
                         
                         // Run methods on database
-                        RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethods, targetVersion, verbose, dryrun);
+                        RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethods, targetVersion, verbose, dryrun, checkDb);
                     }
                 } else {
                     try {
@@ -185,7 +186,7 @@ namespace MindTouch.Data.Db {
                     }
 
                     // Run update
-                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethods, targetVersion, verbose, dryrun);
+                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethods, targetVersion, verbose, dryrun, checkDb);
                 }
             }
             else {
@@ -201,9 +202,10 @@ namespace MindTouch.Data.Db {
             return exit;
         }
 
-        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethods,string targetVersion, bool verbose, bool dryrun) {
+        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethods,string targetVersion, bool verbose, bool dryrun, bool checkdb) {
+            
             // Execute custom methods
-            if(customMethods != null) {
+            if(customMethods != null && !checkdb) {
                 var methods = customMethods.Split(',');
                 foreach(var method in methods) {
                     if(verbose) {
@@ -218,7 +220,12 @@ namespace MindTouch.Data.Db {
             // Execute update methods
             if(targetVersion != null) {
                 site.LoadMethods(dllAssembly);
-                var methods = site.GetMethods();
+                List<string> methods;
+                if(checkdb) {
+                    methods = site.GetDataIntegrityMethods();
+                } else {
+                    methods = site.GetMethods();
+                }
 
                 // Execute each method
                 foreach(var method in methods) {
@@ -230,7 +237,16 @@ namespace MindTouch.Data.Db {
                             System.Threading.Thread.Sleep(5000);
                             site.TestConnection();
                         }
-                        site.ExecuteMethod(method);
+                        try {
+                                site.ExecuteMethod(method);
+                        } catch(Exception ex) {
+                            Console.WriteLine(string.Format("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace));
+                            if(checkdb) {
+                                continue;
+                            } else {
+                                break;
+                            }
+                        }
                     }
                 }
             }

@@ -78,4 +78,24 @@ namespace MindTouch.Data {
             get { return _version; }
         }
     }
+
+    /// <summary>
+    /// This attribute is used to mark methods that check the integrity of data
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    public class DataIntegrityCheck : Attribute {
+
+        //--- Fields ---
+        private string _version;
+
+        //--- Constructors ---
+        public DataIntegrityCheck(string version) {
+            _version = version;
+        }
+
+        //--- Methods ---
+        public string VersionString {
+            get { return _version; }
+        }
+    }
 }

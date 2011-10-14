@@ -69,6 +69,7 @@ namespace MindTouch.Data {
             connectionString.AppendFormat("Database={0};", dbname);
             connectionString.AppendFormat("User Id={0};", dbuser);
             connectionString.AppendFormat("Password={0};", dbpassword);
+            connectionString.Append("charset=utf8;");
             return connectionString.ToString();
         }
     }
