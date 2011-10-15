@@ -187,10 +187,10 @@ namespace MindTouch.Dream {
                 // check if user prescribed a set of IP addresses to use
                 if(addresses != null) {
 
-                    // listen to custom addresses (don't use the supplied port info, we expect that to be part of the address)
+                    // listen to custom addresses
                     foreach(string address in addresses) {
                         if(!StringUtil.EqualsInvariantIgnoreCase(address, "localhost")) {
-                            AddListener(new XUri(String.Format("http://{0}/", address)), authenticationScheme);
+                            AddListener(new XUri(String.Format("http://{0}:{1}/", address, httpPort)), authenticationScheme);
                         }
                     }
                 } else {
