@@ -45,6 +45,12 @@ namespace MindTouch.Data {
         List<string> GetMethods();
 
         /// <summary>
+        /// Get a list of methods that only check data integrity
+        /// </summary>
+        /// <returns></returns>
+        List<string> GetDataIntegrityMethods(); 
+
+        /// <summary>
         /// Tests the connection with the Data Store 
         /// that is to be updated. Throws an Exception 
         /// if an error occurs.

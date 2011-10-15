@@ -32,19 +32,31 @@ namespace MindTouch.Data {
     public abstract class ADataUpdater : IDataUpdater {
 
         //--- Types ---
-        protected class UpdateMethod : IComparable<UpdateMethod> {
+        protected class DbMethod : IComparable<DbMethod> {
 
             //--- Fields ---
             private readonly MethodInfo _methodInfo;
             private readonly VersionInfo _targetVersion;
+            private readonly MethodType _methodType;
 
             //--- Constructors ---
-            public UpdateMethod(MethodInfo methodInfo, VersionInfo targetVersion) {
+            public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion) {
                 _methodInfo = methodInfo;
                 _targetVersion = targetVersion;
+                _methodType = MethodType.Update;
+            }
+
+            public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion, MethodType methodType) {
+                _methodInfo = methodInfo;
+                _targetVersion = targetVersion;
+                _methodType = methodType;
             }
 
             //--- Methods ---
+            public MethodType MethodType {
+                get{ return _methodType; }
+            }
+
             public MethodInfo GetMethodInfo {
                 get { return _methodInfo; }
             }
@@ -54,7 +66,7 @@ namespace MindTouch.Data {
             }
 
             // Compares by version then by name
-            public int CompareTo(UpdateMethod other) {
+            public int CompareTo(DbMethod other) {
                 var otherVersion = other.GetTargetVersion;
                 var change = _targetVersion.CompareTo(otherVersion).Change;
                 switch(change) {
@@ -71,9 +83,10 @@ namespace MindTouch.Data {
         //--- Fields ---
         protected VersionInfo _targetVersion = null;
         protected VersionInfo _sourceVersion = null;
-        protected List<UpdateMethod> _methodList = null;
+        protected List<DbMethod> _methodList = null;
         protected Type _dataUpgradeClass = null;
         protected object _dataUpgradeClassInstance = null;
+        protected enum MethodType { Update, DataIntegrity };
 
         //--- Methods ---
 
@@ -125,7 +138,21 @@ namespace MindTouch.Data {
             if(_methodList == null) {
                 return null;
             }
-            var list = (from method in _methodList select method.GetMethodInfo.Name).ToList();
+            var list = (from method in _methodList where method.MethodType == MethodType.Update select method.GetMethodInfo.Name).ToList();
+            return list;
+        }
+
+        /// <summary>
+        /// Get a list of methods that only check data integrity
+        /// </summary>
+        /// <returns>
+        ///  List of method names
+        /// </returns>
+        public List<string> GetDataIntegrityMethods() {
+            if(_methodList == null) {
+                return null;
+            }
+            var list = (from method in _methodList where method.MethodType == MethodType.DataIntegrity select method.GetMethodInfo.Name).ToList();
             return list;
         }
 
@@ -163,15 +190,24 @@ namespace MindTouch.Data {
                 throw new NoUpgradeAttributesFound();
             }
 
-            // search the class for methods labeled with Attribute "EffectiveVersion("version")"
+            // search the class for methods labeled with Attribute "EffectiveVersion("version")" and "CheckDataIntegrity("version")"
             var methods = _dataUpgradeClass.GetMethods();
-            _methodList = new List<UpdateMethod>();
+            _methodList = new List<DbMethod>();
             foreach(var methodInfo in methods) {
-                foreach(var attr in (from m in methodInfo.GetCustomAttributes(false) where m is EffectiveVersionAttribute select m)) {
-                    var version = new VersionInfo(((EffectiveVersionAttribute)attr).VersionString);
+                foreach(var attr in (from m in methodInfo.GetCustomAttributes(false) select m)) {
+                    VersionInfo version;
+                    var type = MethodType.Update;
+                    if(attr.IsA<EffectiveVersionAttribute>()) {
+                        version = new VersionInfo(((EffectiveVersionAttribute)attr).VersionString);
+                    } else if(attr.IsA<DataIntegrityCheck>()) {
+                        version = new VersionInfo(((DataIntegrityCheck)attr).VersionString);
+                        type = MethodType.DataIntegrity;
+                    } else {
+                        continue;
+                    }
                     if(version.CompareTo(_targetVersion).Change != VersionChange.Upgrade &&
                         (_sourceVersion == null || version.CompareTo(_sourceVersion).Change != VersionChange.Downgrade )) {
-                        _methodList.Add(new UpdateMethod(methodInfo, version));
+                        _methodList.Add(new DbMethod(methodInfo, version, type));
                     }
                 }
             }
