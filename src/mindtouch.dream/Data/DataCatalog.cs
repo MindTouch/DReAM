@@ -21,7 +21,7 @@
 
 using System;
 using System.Data;
-
+using MindTouch.Dream;
 using MindTouch.Xml;
 
 namespace MindTouch.Data {
@@ -181,6 +181,9 @@ namespace MindTouch.Data {
         /// <param name="readonly"><see langword="True"/> if the query is read-only.</param>
         /// <returns>New Query instance.</returns>
         public DataCommand NewQuery(string query, bool @readonly) {
+            if(@readonly && string.IsNullOrEmpty(_readonlyconnection)) {
+                throw new DreamException("No read-only connection string has been defined.");
+            }
             return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateQuery(query));
         }
 
