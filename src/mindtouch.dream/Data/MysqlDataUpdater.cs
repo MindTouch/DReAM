@@ -26,15 +26,19 @@ namespace MindTouch.Data {
     public class MysqlDataUpdater : ADataUpdater {
 
         //--- Fields ---
-        private readonly DataCatalog _dataCatalog;
+        private DataCatalog _dataCatalog;
         
         //--- Constructors ---
         public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version) {
-            _effectiveVersion = new VersionInfo(version);
-            if(!_effectiveVersion.IsValid) {
-                throw new VersionInfoException(_effectiveVersion);
+            if(string.IsNullOrEmpty(version)) {
+                _targetVersion = null;
+            } else {
+                _targetVersion = new VersionInfo(version);
+                if(!_targetVersion.IsValid) {
+                    throw new VersionInfoException(_targetVersion);
+                }
             }
-
+            
             // initialize the data catalog
             var dataFactory = new DataFactory("MySql.Data", "?");
             var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword);
@@ -44,6 +48,13 @@ namespace MindTouch.Data {
 
         //--- Methods---
         public override void TestConnection() {
+            _dataCatalog.TestConnection();
+        }
+
+        public void ChangeDatabase(string server, int port, string dbname, string dbuser, string dbpassword) {
+            var dataFactory = new DataFactory("Mysql.Data", "?");
+            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword);
+            _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
         }
 
@@ -58,6 +69,7 @@ namespace MindTouch.Data {
             connectionString.AppendFormat("Database={0};", dbname);
             connectionString.AppendFormat("User Id={0};", dbuser);
             connectionString.AppendFormat("Password={0};", dbpassword);
+            connectionString.Append("charset=utf8;");
             return connectionString.ToString();
         }
     }

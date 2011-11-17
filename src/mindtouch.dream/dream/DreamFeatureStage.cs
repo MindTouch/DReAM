@@ -246,6 +246,8 @@ namespace MindTouch.Dream {
                     for(int i = 0; i < _plan.Count; ++i) {
                         try {
                             arguments[i] = _plan[i].Invoke(context, request, response);
+                        } catch(DreamException e) {
+                            throw e;
                         } catch(Exception e) {
                             throw new FeatureArgumentParseException(_plan[i].ArgumentName, e);
                         }
@@ -353,9 +355,12 @@ namespace MindTouch.Dream {
             return new DreamFeatureAdapter(name, (context, request, response) => {
                 object value = context.GetParam(name, null);
                 if(value != null) {
-                    value = SysUtil.ChangeType(value, type);
+                    return SysUtil.ChangeType(value, type);
                 }
-                return value ?? (type.IsValueType ? Activator.CreateInstance(type) : null);
+                if(!type.IsValueType || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))) {
+                    return null;
+                }
+                throw new DreamAbortException(DreamMessage.BadRequest(string.Format("invalid value for feature parameter '{0}'", name)));
             });
         }
 

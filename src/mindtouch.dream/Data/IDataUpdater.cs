@@ -25,10 +25,16 @@ namespace MindTouch.Data {
     interface IDataUpdater {
 
         /// <summary>
-        ///  Get or set the effective version
+        ///  Get or set the target version
         /// </summary>
-        /// <returns> The string representation of the effective version</returns>
-        string EffectiveVersion { get; set; }
+        /// <returns> The string representation of the target version</returns>
+        string TargetVersion { get; set; }
+
+        /// <summary>
+        ///  Get or set the source version
+        /// </summary>
+        /// <returns> The string representation of the source version</returns>
+        string SourceVersion { get; set; }
 
         /// <summary>
         ///  Get a list of methods that will be run
@@ -37,6 +43,12 @@ namespace MindTouch.Data {
         ///  List of method names
         /// </returns>
         List<string> GetMethods();
+
+        /// <summary>
+        /// Get a list of methods that only check data integrity
+        /// </summary>
+        /// <returns></returns>
+        List<string> GetDataIntegrityMethods(); 
 
         /// <summary>
         /// Tests the connection with the Data Store 
@@ -70,5 +82,13 @@ namespace MindTouch.Data {
         /// <param name="name">Name of the method to execute. Case Sensitive.</param>
         /// </summary>
         void ExecuteMethod(string name);
+
+        /// <summary>
+        /// Execute the method with the exact name, this method
+        /// does not need to be tagged with the appropriate attribute
+        /// </summary>
+        /// <param name="name">Name of the method to execute</param>
+        /// <param name="updateAssembly">Assembly object to perform reflection on</param>
+        void ExecuteCustomMethod(string name, Assembly updateAssembly);
     }
 }

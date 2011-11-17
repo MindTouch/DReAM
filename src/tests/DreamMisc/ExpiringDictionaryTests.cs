@@ -155,20 +155,23 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_dispose_set() {
-            var expired = new ManualResetEvent(false);
-            var changed = new ManualResetEvent(false);
-            var k = 42;
-            var v = "foo";
+        public void Disposing_set_expires_all_items_before_dispose_returns_but_does_not_trigger_collection_changed() {
+            var expired = false;
+            var changed = false;
+            var expiredEntries = new List<string>();
             var ttl = TimeSpan.FromSeconds(1);
-            ExpiringDictionary<int, string>.Entry entry = null;
             var set = new ExpiringDictionary<int, string>(TaskTimerFactory.Current);
-            set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
-            set.CollectionChanged += (s, e) => changed.Set();
-            set.Set(k, v, ttl);
+            set.EntryExpired += (s, e) => { expiredEntries.Add(e.Entry.Key + ":" + e.Entry.Value); expired = true; };
+            set.CollectionChanged += (s, e) => { changed = true; };
+            set.Set(12, "foo", ttl);
+            set.Set(21, "bar", ttl);
+            Assert.IsFalse(expired, "expired was triggered");
+            Assert.IsTrue(changed, "changed wasn't triggered");
+            changed = false;
             set.Dispose();
-            Assert.IsTrue(changed.WaitOne(2000));
-            Assert.IsFalse(expired.WaitOne(2000));
+            Assert.IsFalse(changed, "changed was triggered");
+            Assert.IsTrue(expired, "expired wasn't triggered");
+            Assert.AreEqual(new[] { "12:foo", "21:bar" }, expiredEntries.OrderBy(x => x).ToArray());
         }
 
         [Test]
@@ -396,7 +399,7 @@ namespace MindTouch.Dream.Test {
             Assert.IsNull(set[2]);
             Assert.IsTrue(expired.WaitOne(2000));
             Assert.IsNull(set[1]);
-            set.Set(3,"a",500.Milliseconds());
+            set.Set(3, "a", 500.Milliseconds());
             Assert.IsTrue(expired.WaitOne(2000));
             Assert.IsNull(set[3]);
         }

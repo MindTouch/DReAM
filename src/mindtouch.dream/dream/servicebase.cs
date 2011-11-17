@@ -809,7 +809,7 @@ namespace MindTouch.Dream {
                 .Elem("uri.owner", Self.Uri.ToString())
 
                 // add 'internal' access key
-                .Add(DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri).AsSetCookieDocument)
+                .Add(DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri).AsInternalSetCookieDocument)
 
                 // add optional 'service-license' token
                 .Elem("service-license", serviceLicense);
