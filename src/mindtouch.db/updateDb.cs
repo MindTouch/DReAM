@@ -87,7 +87,7 @@ namespace MindTouch.Data.Db {
                 { "d=|dbname=", "Database name (default: wikidb)", p => dbname = p },
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s },
                 { "n=|port=", "Database port (default: 3306)", n => {dbport = Int32.Parse(n);}},
-                { "o=|timeout=", "Sets the database's Default Command Timeout", o => { if(!UInt32.TryParse(o, out timeout)) { timeout = UInt32.MaxValue;} }},
+                { "o=|timeout=", "Sets the database's Default Command Timeout", o => { timeout = UInt32.Parse(o); }},
                 { "c=|custom", "Custom Methods to invoke (comma separated list)", c => {customMethods = c;}},
                 { "i|info", "Display verbose information (default: false)", i => {verbose = true;}},
                 { "f|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true;}},
