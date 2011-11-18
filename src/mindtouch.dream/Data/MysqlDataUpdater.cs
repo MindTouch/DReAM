@@ -29,7 +29,7 @@ namespace MindTouch.Data {
         private DataCatalog _dataCatalog;
         
         //--- Constructors ---
-        public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version) {
+        public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version, uint timeout) {
             if(string.IsNullOrEmpty(version)) {
                 _targetVersion = null;
             } else {
@@ -41,7 +41,7 @@ namespace MindTouch.Data {
             
             // initialize the data catalog
             var dataFactory = new DataFactory("MySql.Data", "?");
-            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword);
+            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword, timeout);
             _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
         }
@@ -51,9 +51,9 @@ namespace MindTouch.Data {
             _dataCatalog.TestConnection();
         }
 
-        public void ChangeDatabase(string server, int port, string dbname, string dbuser, string dbpassword) {
+        public void ChangeDatabase(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
             var dataFactory = new DataFactory("Mysql.Data", "?");
-            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword);
+            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword, timeout);
             _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
         }
@@ -62,7 +62,7 @@ namespace MindTouch.Data {
             return Activator.CreateInstance(dataUpgradeType, _dataCatalog);
         }
 
-        private string BuildConnectionString(string server, int port, string dbname, string dbuser, string dbpassword) {
+        private string BuildConnectionString(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
             StringBuilder connectionString = new StringBuilder();
             connectionString.AppendFormat("Server={0};", server);
             connectionString.AppendFormat("Port={0};", port);
@@ -70,6 +70,7 @@ namespace MindTouch.Data {
             connectionString.AppendFormat("User Id={0};", dbuser);
             connectionString.AppendFormat("Password={0};", dbpassword);
             connectionString.Append("charset=utf8;");
+            connectionString.AppendFormat("Default Command Timeout={0};", timeout);
             return connectionString.ToString();
         }
     }
