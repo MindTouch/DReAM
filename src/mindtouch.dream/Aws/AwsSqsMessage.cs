@@ -47,7 +47,7 @@ namespace MindTouch.Aws {
                     RequestId = requestId
                 };
                 foreach(var attr in msgDoc["sqs:Attribute"]) {
-                    msg.Attibutes[attr["Name"].AsText] = attr["Value"].AsText;
+                    msg.Attributes[attr["Name"].AsText] = attr["Value"].AsText;
                 }
                 messages.Add(msg);
             }
@@ -55,13 +55,13 @@ namespace MindTouch.Aws {
         }
 
         //--- Fields ---
-        private readonly IDictionary<string, string> _attributes = new Dictionary<string, string>();
+        protected readonly IDictionary<string, string> _attributes = new Dictionary<string, string>();
 
         //--- Properties ---
         public string MessageId { get; protected set; }
         public string OriginQueue { get; protected set; }
         public string ReceiptHandle { get; protected set; }
-        public IDictionary<string, string> Attibutes { get { return _attributes; } }
+        public IDictionary<string, string> Attributes { get { return _attributes; } }
         public string Body { get; protected set; }
         public string MD5OfBody { get; protected set; }
 
