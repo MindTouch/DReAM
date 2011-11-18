@@ -244,6 +244,7 @@ namespace MindTouch.Text {
         //--- Constructors ---
         public Encoding Detect(Stream stream) {
             _stream = stream;
+            var position = stream.Position;
 
             // initialize state
             _characterEncoding = null;
@@ -256,6 +257,7 @@ namespace MindTouch.Text {
             StateLoop(_stateSave);
 
             // release stream state
+            _stream.Position = position;
             _stream = null;
             return _characterEncoding;
         }
