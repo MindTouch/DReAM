@@ -101,9 +101,9 @@
     <Compile Include="Aws\AwsSqsSendResponse.cs" />
     <Compile Include="Aws\IAwsS3Client.cs" />
     <Compile Include="Aws\IAwsSqsClient.cs" />
-    <Compile Include="dream\services\PubSub\ISqsPubSubPollster.cs" />
+    <Compile Include="Aws\ISqsPollClient.cs" />
+    <Compile Include="Aws\SqsPollClient.cs" />
     <Compile Include="Aws\AwsExtensions.cs" />
-    <Compile Include="dream\services\PubSub\SqsPubSubPollster.cs" />
     <Compile Include="Data\attributes.cs" />
     <Compile Include="Data\ADataUpdater.cs" />
     <Compile Include="Data\IDataUpdater.cs" />

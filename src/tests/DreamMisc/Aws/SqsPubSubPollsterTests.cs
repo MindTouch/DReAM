@@ -27,7 +27,6 @@ using System.Linq;
 using Autofac;
 using log4net;
 using MindTouch.Aws;
-using MindTouch.Dream.Services.PubSub;
 using MindTouch.Extensions.Time;
 using MindTouch.Tasking;
 using MindTouch.Xml;
@@ -36,34 +35,20 @@ using NUnit.Framework;
 namespace MindTouch.Dream.Test.PubSub {
 
     [TestFixture]
-    public class SqsPubSubPollsterTests {
+    public class SqsPollClientTests {
 
         [Test]
-        public void Pollster_pulls_from_sqs_and_posts_to_plug() {
+        public void Poll_client_pulls_from_sqs_and_calls_callback() {
             var mockSqsClient = new MockSqsClient();
-            var builder = new ContainerBuilder();
-            builder.Register(c => mockSqsClient).As<IAwsSqsClient>();
-            var container = builder.Build();
             mockSqsClient.FillQueue(15);
-            var pollster = new SqsPubSubPollster(
-                new XDoc("config")
-                    .Elem("queue", "foo")
-                    .Elem("poll-interval", 300)
-                    .Elem("cache-ttl", 300),
-                container
-            );
+            var pollster = new SqsPollClient(mockSqsClient, TaskTimerFactory.Current);
             Assert.AreEqual(15, mockSqsClient.Queued.Count, "queue was accessed prematurely");
-            var destination = new XUri("mock://endpoint");
-            var posted = new List<string>();
-            MockPlug.Register(destination, (plug, verb, uri, request, response) => {
-                posted.Add(request.ToDocument()["id"].AsText);
-                response.Return(DreamMessage.Ok());
-            });
-            pollster.RegisterEndPoint(Plug.New(destination), TaskTimerFactory.Current);
+            var posted = new List<AwsSqsMessage>();
+            pollster.Listen("foo", 300.Seconds(), posted.Add);
             Assert.IsTrue(Wait.For(() => mockSqsClient.Queued.Count == 0, 10.Seconds()), "queue did not get depleted in time");
             Assert.IsTrue(
                 Wait.For(() => mockSqsClient.ReceiveCalled == 3, 5.Seconds()),
-                string.Format("receive called the wrong number of times: {0} != {1}",3,mockSqsClient.ReceiveCalled)
+                string.Format("receive called the wrong number of times: {0} != {1}", 3, mockSqsClient.ReceiveCalled)
             );
             Assert.AreEqual(15, mockSqsClient.Delivered.Count, "delivered has the wrong number of messages");
             Assert.AreEqual(
@@ -73,7 +58,7 @@ namespace MindTouch.Dream.Test.PubSub {
             );
             Assert.AreEqual(
                 mockSqsClient.Delivered.Select(x => x.MessageId).ToArray(),
-                posted.ToArray(),
+                posted.Select(x => x.MessageId).ToArray(),
                 "delivered and posted don't match"
             );
         }

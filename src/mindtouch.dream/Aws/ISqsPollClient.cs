@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Core - open source enterprise collaborative networking
  * Copyright (c) 2006-2010 MindTouch Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -22,12 +22,9 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 using System;
-using MindTouch.Tasking;
 
-namespace MindTouch.Dream.Services.PubSub {
-    public interface ISqsPubSubPollster : IDisposable {
-
-        //--- Methods ---
-        void RegisterEndPoint(Plug plug, TaskTimerFactory taskTimerFactory);
+namespace MindTouch.Aws {
+    public interface ISqsPollClient : IDisposable {
+        void Listen(string queuename, TimeSpan pollInterval, Action<AwsSqsMessage> callback);
     }
 }

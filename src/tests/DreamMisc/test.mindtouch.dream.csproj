@@ -119,7 +119,7 @@
     <Compile Include="PubSub\MockPubSubDispatchQueueRepository.cs" />
     <Compile Include="PubSub\PersistentPubSubDispatchQueueRespositoryTests.cs" />
     <Compile Include="PubSub\PersistentPubSubDispatchQueueTests.cs" />
-    <Compile Include="PubSub\SqsPubSubPollsterTests.cs" />
+    <Compile Include="Aws\SqsPubSubPollsterTests.cs" />
     <Compile Include="PubSub\SubscriptionTests.cs" />
     <Compile Include="PubSub\EventTests.cs" />
     <Compile Include="PubSub\PubSubServiceTests.cs" />
