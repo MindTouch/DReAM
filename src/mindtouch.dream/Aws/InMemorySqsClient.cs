@@ -31,7 +31,6 @@ using MindTouch.Extensions.Time;
 namespace MindTouch.Aws {
     public class InMemorySqsClient : IAwsSqsClient {
 
-
         //--- Types ---
         private class Response : AwsSqsResponse {
 
@@ -85,6 +84,9 @@ namespace MindTouch.Aws {
             }
         }
 
+        //--- Class Fields ---
+        public static readonly InMemorySqsClient Instance = new InMemorySqsClient();
+
         //--- Fields ---
         private readonly Dictionary<string, List<QueueEntry>> _queues = new Dictionary<string, List<QueueEntry>>();
 
@@ -95,10 +97,11 @@ namespace MindTouch.Aws {
             if(msgQueue == null) {
                 throw new AwsSqsRequestException("AWS.SimpleQueueService.NonExistentQueue", DreamMessage.InternalError());
             }
+            var enqueued = new QueueEntry(message, queue);
             lock(msgQueue) {
-                msgQueue.Add(new QueueEntry(message, queue));
+                msgQueue.Add(enqueued);
             }
-            result.Return(new SendResponse(message));
+            result.Return(new SendResponse(enqueued.Message));
             return result;
         }
 

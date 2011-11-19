@@ -21,6 +21,7 @@
  * 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  * http://www.gnu.org/copyleft/gpl.html
  */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MindTouch.Aws;
@@ -78,6 +79,31 @@ namespace MindTouch.Dream.Test.Aws {
             Assert.AreEqual(1, msgs.Count());
             var received = msgs.First();
             Assert.AreEqual(sent.Body, received.Body);
+        }
+
+        [Test]
+        public void Can_see_messages_with_visibility_zero() {
+            var sqs = new InMemorySqsClient();
+            sqs.CreateQueue("bar", new Result<AwsSqsResponse>()).Wait();
+            var sent = sqs.Send("bar", AwsSqsMessage.FromBody("foo"), new Result<AwsSqsSendResponse>()).Wait();
+            var received1 = sqs.Receive("bar", 10, TimeSpan.Zero, new Result<IEnumerable<AwsSqsMessage>>()).Wait();
+            var received2 = sqs.Receive("bar", 10, TimeSpan.Zero, new Result<IEnumerable<AwsSqsMessage>>()).Wait();
+            Assert.AreEqual(1,received1.Count());
+            Assert.AreEqual(1, received2.Count());
+            Assert.AreEqual(sent.MessageId, received1.First().MessageId);
+            Assert.AreEqual(sent.MessageId, received2.First().MessageId);
+        }
+
+        [Test]
+        public void Can_delete_message_from_queue() {
+            var sqs = new InMemorySqsClient();
+            sqs.CreateQueue("bar", new Result<AwsSqsResponse>()).Wait();
+            var sent = AwsSqsMessage.FromBody("foo");
+            sqs.Send("bar", sent, new Result<AwsSqsSendResponse>()).Wait();
+            var received = sqs.Receive("bar", 10, TimeSpan.Zero, new Result<IEnumerable<AwsSqsMessage>>()).Wait().First();
+            sqs.Delete(received, new Result<AwsSqsResponse>()).Wait();
+            var remaining = sqs.Receive("bar", 10, TimeSpan.Zero, new Result<IEnumerable<AwsSqsMessage>>()).Wait();
+            Assert.IsFalse(remaining.Any());
         }
     }
 }
