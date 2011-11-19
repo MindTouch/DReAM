@@ -32,6 +32,13 @@ namespace MindTouch.Aws {
             Detail = doc["sqs:Error/sqs:Detail"].AsText;
         }
 
+        public AwsSqsError(string type, string code, string message, string detail) {
+            Type = type;
+            Code = code;
+            Message = message;
+            Detail = detail;
+        }
+
         //--- Properties ---
         public string Type { get; protected set; }
         public string Code { get; protected set; }

@@ -82,6 +82,7 @@
     <Compile Include="AutoMockPlugTests.cs" />
     <Compile Include="Aws\AwsS3ClientTests.cs" />
     <Compile Include="Aws\AwsSqsClientTests.cs" />
+    <Compile Include="Aws\InMemorySqsClientTests.cs" />
     <Compile Include="Aws\MockMessage.cs" />
     <Compile Include="Aws\MockSqsClient.cs" />
     <Compile Include="BlockingQueueTests.cs" />

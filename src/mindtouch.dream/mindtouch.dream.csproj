@@ -101,7 +101,7 @@
     <Compile Include="Aws\AwsSqsSendResponse.cs" />
     <Compile Include="Aws\IAwsS3Client.cs" />
     <Compile Include="Aws\IAwsSqsClient.cs" />
-    <Compile Include="Aws\InMemorySQSClient.cs" />
+    <Compile Include="Aws\InMemorySqsClient.cs" />
     <Compile Include="Aws\ISqsPollClient.cs" />
     <Compile Include="Aws\SqsPollClient.cs" />
     <Compile Include="Aws\AwsExtensions.cs" />
