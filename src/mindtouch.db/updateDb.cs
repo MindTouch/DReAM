@@ -74,6 +74,7 @@ namespace MindTouch.Data.Db {
             string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, 
                    targetVersion = null, sourceVersion = null, customMethods = null;
             int dbport = 3306, exit = 0, errors = 0;
+            uint timeout = UInt32.MaxValue;
             bool showHelp = false, dryrun = false, verbose = false, listDatabases = false, checkDb = false;
             var errorStrings = new List<string>();
 
@@ -86,6 +87,7 @@ namespace MindTouch.Data.Db {
                 { "d=|dbname=", "Database name (default: wikidb)", p => dbname = p },
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s },
                 { "n=|port=", "Database port (default: 3306)", n => {dbport = Int32.Parse(n);}},
+                { "o=|timeout=", "Sets the database's Default Command Timeout", o => { timeout = UInt32.Parse(o); }},
                 { "c=|custom", "Custom Methods to invoke (comma separated list)", c => {customMethods = c;}},
                 { "i|info", "Display verbose information (default: false)", i => {verbose = true;}},
                 { "f|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true;}},
@@ -146,7 +148,7 @@ namespace MindTouch.Data.Db {
                     foreach(var db in databaseList) {
                         if(mysqlSchemaUpdater == null) {
                             try {
-                                mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion);
+                                mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
                                 if(sourceVersion != null) {
                                     mysqlSchemaUpdater.SourceVersion = sourceVersion;
                                 }
@@ -161,7 +163,7 @@ namespace MindTouch.Data.Db {
                             }
                         } else {
                             try {
-                                mysqlSchemaUpdater.ChangeDatabase(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword);
+                                mysqlSchemaUpdater.ChangeDatabase(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, timeout);
                             } catch (Exception ex) {
                                 errors++;
                                 errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
@@ -177,7 +179,7 @@ namespace MindTouch.Data.Db {
                     }
                 } else {
                     try {
-                        mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion);
+                        mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
                         if(sourceVersion != null) {
                             mysqlSchemaUpdater.SourceVersion = sourceVersion;
                         }
