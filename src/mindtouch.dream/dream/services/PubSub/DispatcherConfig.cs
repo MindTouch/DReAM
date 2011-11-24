@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System;
 using MindTouch.Web;
 using MindTouch.Xml;
 
