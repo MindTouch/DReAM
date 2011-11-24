@@ -89,6 +89,18 @@ namespace MindTouch.Aws {
 
         //--- Fields ---
         private readonly Dictionary<string, List<QueueEntry>> _queues = new Dictionary<string, List<QueueEntry>>();
+        private ulong _messageCounter;
+
+        //--- Properties ---
+        public ulong TotalMessagesReceived { get { return _messageCounter; } }
+
+        public IEnumerable<KeyValuePair<string,int>> QueueSizes {
+            get {
+                lock(_queues) {
+                    return _queues.Select(x => new KeyValuePair<string, int>(x.Key, x.Value.Count)).ToArray();
+                }        
+            }
+        }
 
         //--- Methods ---
         public Result<AwsSqsSendResponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendResponse> result) {
@@ -101,6 +113,7 @@ namespace MindTouch.Aws {
             lock(msgQueue) {
                 msgQueue.Add(enqueued);
             }
+            _messageCounter++;
             result.Return(new SendResponse(enqueued.Message));
             return result;
         }

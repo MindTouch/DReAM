@@ -47,10 +47,15 @@ namespace MindTouch.Dream.Services {
 
         //--- Fields ---
         protected IPubSubDispatcher _dispatcher;
+        private bool _warnedAboutDeprecation = false;
 
         //--- Features ---
         [DreamFeature("POST:publish", "Publish an event")]
         internal Yield PublishEvent(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            if(!_warnedAboutDeprecation) {
+                _warnedAboutDeprecation = true;
+                _log.Warn("The DReAM PubSub subsystem has been deprecated as of v2.3.2 and will be removed in v3.0");
+            }
             DispatcherEvent ev;
             try {
                 ev = new DispatcherEvent(request);
@@ -69,6 +74,10 @@ namespace MindTouch.Dream.Services {
 
         [DreamFeature("POST:subscribers", "Intialize a set of subscriptions")]
         internal Yield CreateSubscriptionSet(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            if(!_warnedAboutDeprecation) {
+                _warnedAboutDeprecation = true;
+                _log.Warn("The DReAM PubSub subsystem has been deprecated as of v2.3.2 and will be removed in v3.0");
+            }
             var subscriptionSet = request.ToDocument();
             var location = request.Headers["X-Set-Location-Key"] ?? StringUtil.CreateAlphaNumericKey(8);
             var accessKey = request.Headers["X-Set-Access-Key"] ?? StringUtil.CreateAlphaNumericKey(8);
@@ -164,7 +173,6 @@ namespace MindTouch.Dream.Services {
         //--- Methods ---
         protected override Yield Start(XDoc config, ILifetimeScope container, Result result) {
             yield return Coroutine.Invoke(base.Start, config, container, new Result());
-            _log.Warn("The DReAM PubSub subsystem has been deprecated as of v2.3.2 and will be removed in v3.0");
             _log.DebugFormat("starting {0}", Self.Uri);
 
             // initialize dispatcher
