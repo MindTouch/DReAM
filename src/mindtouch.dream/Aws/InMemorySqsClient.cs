@@ -29,7 +29,7 @@ using MindTouch.Tasking;
 using MindTouch.Extensions.Time;
 
 namespace MindTouch.Aws {
-    public class InMemorySqsClient : IAwsSqsClient {
+    public class InMemorySqsClient : IAwsSqsClient, IDisposable {
 
         //--- Types ---
         private class Response : AwsSqsResponse {
@@ -85,24 +85,66 @@ namespace MindTouch.Aws {
         }
 
         //--- Class Fields ---
-        public static readonly InMemorySqsClient Instance = new InMemorySqsClient();
+        private static readonly object _synclock = new object();
+        private static InMemorySqsClient _instance = new InMemorySqsClient();
+
+        //--- Class Properties
+        public static InMemorySqsClient Instance {
+            get { var instance = _instance;
+                if(!instance.IsDisposed) {
+                    return instance;
+                }
+                lock(_synclock) {
+                    if(_instance.IsDisposed) {
+                        _instance = new InMemorySqsClient();
+                    }
+                    return _instance;
+                }
+            }
+        }
 
         //--- Fields ---
         private readonly Dictionary<string, List<QueueEntry>> _queues = new Dictionary<string, List<QueueEntry>>();
         private ulong _messageCounter;
+        private bool _isDisposed;
 
         //--- Properties ---
         public ulong TotalMessagesReceived { get { return _messageCounter; } }
-
-        public IEnumerable<KeyValuePair<string,int>> QueueSizes {
+        public bool IsDisposed { get { return _isDisposed; } }
+               
+        public IEnumerable<KeyValuePair<string, int>> QueueSizes {
             get {
                 lock(_queues) {
                     return _queues.Select(x => new KeyValuePair<string, int>(x.Key, x.Value.Count)).ToArray();
-                }        
+                }
             }
         }
 
         //--- Methods ---
+        public IEnumerable<AwsSqsMessage> InspectQueue(string queue) {
+            lock(_queues) {
+                var msgQueue = GetQueue(queue);
+                if(msgQueue == null) {
+                    return new AwsSqsMessage[0];
+                }
+                lock(msgQueue) {
+                    return msgQueue.Select(x => x.Message).ToArray();
+                }
+            }
+        }
+
+        public void ClearQueue(string queue) {
+            lock(_queues) {
+                var msgQueue = GetQueue(queue);
+                if(msgQueue == null) {
+                    return;
+                }
+                lock(msgQueue) {
+                    msgQueue.Clear();
+                }
+            }
+        }
+
         public Result<AwsSqsSendResponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendResponse> result) {
             var msgQueue = GetQueue(queue);
             ThrowIfQueueIsNull(msgQueue);
@@ -194,8 +236,15 @@ namespace MindTouch.Aws {
 
         private void ThrowIfQueueIsNull(List<QueueEntry> msgQueue) {
             if(msgQueue == null) {
-                throw new AwsSqsRequestException(new AwsSqsError("Sender", "AWS.SimpleQueueService.NonExistentQueue", "", ""), new DreamMessage(DreamStatus.BadRequest, null));
+                throw new AwsSqsRequestException(new AwsSqsError("Sender", "AWS.SimpleQueueService.NonExistentQueue", "AWS.SimpleQueueService.NonExistentQueue", ""), new DreamMessage(DreamStatus.BadRequest, null));
             }
+        }
+
+        public void Dispose() {
+            if(_isDisposed) {
+                return;
+            }
+            _isDisposed = true;
         }
     }
 }

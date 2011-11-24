@@ -51,14 +51,13 @@ namespace MindTouch.Dream.Test.Aws {
 
         public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
             ReceiveCalled++;
-            var r = new Result<IEnumerable<AwsSqsMessage>>();
             var take = Math.Min(10, maxMessages);
             var taken = Queued.Take(take).ToArray();
             _log.DebugFormat("receive returning {0} messages", taken.Length);
             Delivered.AddRange(taken);
-            r.Return(taken);
+            result.Return(taken);
             Queued.RemoveRange(0, taken.Length);
-            return r;
+            return result;
         }
 
         public Result<AwsSqsResponse> Delete(AwsSqsMessage message, Result<AwsSqsResponse> result) {

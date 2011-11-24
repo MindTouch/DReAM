@@ -36,6 +36,9 @@ namespace MindTouch.Aws {
         //--- Types ---
         private class Listener : IDisposable {
 
+            //--- Class Fields ---
+            private static readonly ILog _log = LogUtils.CreateLog();
+
             //--- Fields ---
             private readonly string _queuename;
             private readonly Action<AwsSqsMessage> _callback;
@@ -66,16 +69,20 @@ namespace MindTouch.Aws {
                         result.Return();
                         yield break;
                     }
-                    foreach(var msg in messages) {
-                        if(_cache.SetOrUpdate(msg.MessageId, _cacheTimer)) {
-
-                            // we've recently seen this message, so ignore it
-                            continue;
-                        }
+                    foreach(var msg in messages.Where(msg => !_cache.SetOrUpdate(msg.MessageId, _cacheTimer))) {
                         try {
+                            _log.DebugFormat("dispatching message '{0}' from queue '{1}'", msg.MessageId, _queuename);
                             _callback(msg);
-                        } catch {
-                            _log.Warn("");
+                        } catch(Exception e) {
+                            _log.Warn(
+                                string.Format("dispatching message '{0}' from queue '{1}' threw '{2}': {3}",
+                                    msg.MessageId,
+                                    _queuename,
+                                    e,
+                                    e.Message
+                                ),
+                                e
+                            );
                             continue;
                         }
                         yield return _client.Delete(msg, new Result<AwsSqsResponse>());
