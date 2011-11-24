@@ -264,6 +264,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// <see cref="Plug"/> for PubSub Service.
         /// </summary>
+        [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
         public Plug PubSub {
             get { return _pubsub; }
             protected set { _pubsub = value; }

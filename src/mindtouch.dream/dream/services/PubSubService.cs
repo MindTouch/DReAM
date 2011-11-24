@@ -39,6 +39,7 @@ namespace MindTouch.Dream.Services {
     [DreamService("MindTouch Publication and Subscription Service", "Copyright (c) 2006-2011 MindTouch, Inc.",
         SID = new[] { "sid://mindtouch.com/dream/2008/10/pubsub" }
     )]
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     internal class PubSubService : DreamService {
 
         //--- Class Fields ---

@@ -25,6 +25,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Dispatch Queue used by <see cref="Dispatcher"/> for events with applicable subscription.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public interface IPubSubDispatchQueue : IDisposable {
 
         //--- Properties ---

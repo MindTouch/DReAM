@@ -27,6 +27,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Configuration class that may be injected into <see cref="IPubSubDispatcher"/> instances if a matching constructor is found.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class DispatcherConfig {
 
         //--- Fields ---
