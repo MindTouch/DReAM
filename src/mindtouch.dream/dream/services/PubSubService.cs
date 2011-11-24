@@ -164,8 +164,8 @@ namespace MindTouch.Dream.Services {
         //--- Methods ---
         protected override Yield Start(XDoc config, ILifetimeScope container, Result result) {
             yield return Coroutine.Invoke(base.Start, config, container, new Result());
+            _log.Warn("The DReAM PubSub subsystem has been deprecated as of v2.3.2 and will be removed in v3.0");
             _log.DebugFormat("starting {0}", Self.Uri);
-
 
             // initialize dispatcher
             _dispatcher = container.Resolve<IPubSubDispatcher>(
