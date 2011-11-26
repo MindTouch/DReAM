@@ -64,7 +64,25 @@ namespace MindTouch.Aws {
                 _log.DebugFormat("polling SQS queue '{0}'", _queuename);
                 IEnumerable<AwsSqsMessage> messages = null;
                 while(!_isDisposed) {
-                    yield return _client.ReceiveMax(_queuename, new Result<IEnumerable<AwsSqsMessage>>()).Set(v => messages = v);
+                    Result<IEnumerable<AwsSqsMessage>> messageResult;
+                    yield return messageResult = _client.ReceiveMax(_queuename, new Result<IEnumerable<AwsSqsMessage>>()).Catch();
+                    if(messageResult.HasException) {
+                        if(messageResult.Exception.GetType().IsA<AwsSqsRequestException>()) {
+                            var awsException = messageResult.Exception as AwsSqsRequestException;
+                            if(awsException.IsSqsError) {
+                                _log.WarnFormat("fetching messages resulted in AWS error {0}/{1}: {2}",
+                                                awsException.Error.Code,
+                                                awsException.Error.Type,
+                                                awsException.Error.Message
+                                    );
+                                result.Return();
+                                yield break;
+                            }
+                        }
+                        _log.Warn(string.Format("fetching messages resulted in non-AWS exception: {0}", messageResult.Exception.Message), messageResult.Exception);
+                        result.Return();
+                        yield break;
+                    }
                     if(!messages.Any()) {
                         result.Return();
                         yield break;
