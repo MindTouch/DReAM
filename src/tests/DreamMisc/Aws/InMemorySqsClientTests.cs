@@ -105,5 +105,26 @@ namespace MindTouch.Dream.Test.Aws {
             var remaining = sqs.Receive("bar", 10, TimeSpan.Zero, new Result<IEnumerable<AwsSqsMessage>>()).Wait();
             Assert.IsFalse(remaining.Any());
         }
+
+        [Test]
+        public void Receiving_from_non_existent_queue_sets_exception_in_result() {
+            var sqs = new InMemorySqsClient();
+            var r = sqs.Receive("foo", new Result<IEnumerable<AwsSqsMessage>>()).Block();
+            Assert.IsTrue(r.HasException);
+        }
+
+        [Test]
+        public void Sending_to_non_existent_queue_sets_exception_in_result() {
+            var sqs = new InMemorySqsClient();
+            var r = sqs.Send("foo", AwsSqsMessage.FromBody("foo"), new Result<AwsSqsSendResponse>()).Block();
+            Assert.IsTrue(r.HasException);
+        }
+
+        [Test]
+        public void Delete_failure_sets_exception_in_result() {
+            var sqs = new InMemorySqsClient();
+            var r = sqs.Delete(null, new Result<AwsSqsResponse>()).Block();
+            Assert.IsTrue(r.HasException);
+        }
     }
 }

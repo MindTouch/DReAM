@@ -62,27 +62,15 @@ namespace MindTouch.Aws {
             //--- Methods ---
             private IEnumerator<IYield> PollSqs(Result result) {
                 _log.DebugFormat("polling SQS queue '{0}'", _queuename);
-                IEnumerable<AwsSqsMessage> messages = null;
                 while(!_isDisposed) {
                     Result<IEnumerable<AwsSqsMessage>> messageResult;
                     yield return messageResult = _client.ReceiveMax(_queuename, new Result<IEnumerable<AwsSqsMessage>>()).Catch();
                     if(messageResult.HasException) {
-                        if(messageResult.Exception.GetType().IsA<AwsSqsRequestException>()) {
-                            var awsException = messageResult.Exception as AwsSqsRequestException;
-                            if(awsException.IsSqsError) {
-                                _log.WarnFormat("fetching messages resulted in AWS error {0}/{1}: {2}",
-                                                awsException.Error.Code,
-                                                awsException.Error.Type,
-                                                awsException.Error.Message
-                                    );
-                                result.Return();
-                                yield break;
-                            }
-                        }
-                        _log.Warn(string.Format("fetching messages resulted in non-AWS exception: {0}", messageResult.Exception.Message), messageResult.Exception);
+                        LogError(messageResult.Exception, "fetching messages");
                         result.Return();
                         yield break;
                     }
+                    var messages = messageResult.Value;
                     if(!messages.Any()) {
                         result.Return();
                         yield break;
@@ -103,9 +91,31 @@ namespace MindTouch.Aws {
                             );
                             continue;
                         }
-                        yield return _client.Delete(msg, new Result<AwsSqsResponse>());
+                        Result<AwsSqsResponse> deleteResult;
+                        yield return deleteResult = _client.Delete(msg, new Result<AwsSqsResponse>()).Catch();
+                        if(deleteResult.HasException) {
+                            LogError(deleteResult.Exception, string.Format("deleting message '{0}'", msg.MessageId));
+                        } else {
+                            _cache.SetOrUpdate(msg.MessageId, _cacheTimer);
+                        }
                     }
                 }
+            }
+
+            private void LogError(Exception e, string prefix) {
+                if(e.GetType().IsA<AwsSqsRequestException>()) {
+                    var awsException = e as AwsSqsRequestException;
+                    if(awsException.IsSqsError) {
+                        _log.WarnFormat("{0} resulted in AWS error {1}/{2}: {3}",
+                            prefix,
+                            awsException.Error.Code,
+                            awsException.Error.Type,
+                            awsException.Error.Message
+                        );
+                        return;
+                    }
+                }
+                _log.Warn(string.Format("{0} resulted in non-AWS exception: {1}", prefix, e.Message), e);
             }
 
             public void Dispose() {

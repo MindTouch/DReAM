@@ -90,7 +90,8 @@ namespace MindTouch.Aws {
 
         //--- Class Properties
         public static InMemorySqsClient Instance {
-            get { var instance = _instance;
+            get {
+                var instance = _instance;
                 if(!instance.IsDisposed) {
                     return instance;
                 }
@@ -111,7 +112,7 @@ namespace MindTouch.Aws {
         //--- Properties ---
         public ulong TotalMessagesReceived { get { return _messageCounter; } }
         public bool IsDisposed { get { return _isDisposed; } }
-               
+
         public IEnumerable<KeyValuePair<string, int>> QueueSizes {
             get {
                 lock(_queues) {
@@ -146,84 +147,114 @@ namespace MindTouch.Aws {
         }
 
         public Result<AwsSqsSendResponse> Send(string queue, AwsSqsMessage message, Result<AwsSqsSendResponse> result) {
-            var msgQueue = GetQueue(queue);
-            ThrowIfQueueIsNull(msgQueue);
-            if(msgQueue == null) {
-                throw new AwsSqsRequestException("AWS.SimpleQueueService.NonExistentQueue", DreamMessage.InternalError());
+            try {
+                var msgQueue = GetQueue(queue);
+                ThrowIfQueueIsNull(msgQueue);
+                if(msgQueue == null) {
+                    throw new AwsSqsRequestException("AWS.SimpleQueueService.NonExistentQueue", DreamMessage.InternalError());
+                }
+                var enqueued = new QueueEntry(message, queue);
+                lock(msgQueue) {
+                    msgQueue.Add(enqueued);
+                }
+                _messageCounter++;
+                result.Return(new SendResponse(enqueued.Message));
+                return result;
+            } catch(Exception e) {
+                result.Throw(e);
+                return result;
             }
-            var enqueued = new QueueEntry(message, queue);
-            lock(msgQueue) {
-                msgQueue.Add(enqueued);
-            }
-            _messageCounter++;
-            result.Return(new SendResponse(enqueued.Message));
-            return result;
         }
 
         public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
-            if(maxMessages == AwsSqsDefaults.DEFAULT_MESSAGES) {
-                maxMessages = 1;
-            }
-            if(visibilityTimeout == AwsSqsDefaults.DEFAULT_VISIBILITY) {
-                visibilityTimeout = 30.Seconds();
-            }
-            var msgQueue = GetQueue(queue);
-            ThrowIfQueueIsNull(msgQueue);
-            QueueEntry[] entries;
-            var now = DateTime.UtcNow;
-            lock(msgQueue) {
-                entries = msgQueue
-                    .Where(x => x.VisibleTime <= now)
-                    .Take(maxMessages)
-                    .ToArray();
-                foreach(var entry in entries) {
-                    entry.VisibleTime = now + visibilityTimeout;
+            try {
+                if(maxMessages == AwsSqsDefaults.DEFAULT_MESSAGES) {
+                    maxMessages = 1;
                 }
+                if(visibilityTimeout == AwsSqsDefaults.DEFAULT_VISIBILITY) {
+                    visibilityTimeout = 30.Seconds();
+                }
+                var msgQueue = GetQueue(queue);
+                ThrowIfQueueIsNull(msgQueue);
+                QueueEntry[] entries;
+                var now = DateTime.UtcNow;
+                lock(msgQueue) {
+                    entries = msgQueue
+                        .Where(x => x.VisibleTime <= now)
+                        .Take(maxMessages)
+                        .ToArray();
+                    foreach(var entry in entries) {
+                        entry.VisibleTime = now + visibilityTimeout;
+                    }
+                }
+                result.Return(entries.Select(x => x.Message.WithNewRequestId()));
+                return result;
+            } catch(Exception e) {
+                result.Throw(e);
+                return result;
             }
-            result.Return(entries.Select(x => x.Message.WithNewRequestId()));
-            return result;
         }
 
         public Result<AwsSqsResponse> Delete(AwsSqsMessage message, Result<AwsSqsResponse> result) {
-            var queue = message.OriginQueue;
-            var msgQueue = GetQueue(queue);
-            if(msgQueue != null) {
-                lock(msgQueue) {
-                    var entry = msgQueue.FirstOrDefault(x => x.Message.ReceiptHandle == message.ReceiptHandle);
-                    if(entry != null) {
-                        msgQueue.Remove(entry);
+            try {
+                var queue = message.OriginQueue;
+                var msgQueue = GetQueue(queue);
+                if(msgQueue != null) {
+                    lock(msgQueue) {
+                        var entry = msgQueue.FirstOrDefault(x => x.Message.ReceiptHandle == message.ReceiptHandle);
+                        if(entry != null) {
+                            msgQueue.Remove(entry);
+                        }
                     }
                 }
+                result.Return(new SendResponse(message));
+                return result;
+            } catch(Exception e) {
+                result.Throw(e);
+                return result;
             }
-            result.Return(new SendResponse(message));
-            return result;
         }
 
         public Result<AwsSqsResponse> CreateQueue(string queue, TimeSpan defaultVisibilityTimeout, Result<AwsSqsResponse> result) {
-            lock(_queues) {
-                if(!_queues.ContainsKey(queue)) {
-                    _queues[queue] = new List<QueueEntry>();
+            try {
+                lock(_queues) {
+                    if(!_queues.ContainsKey(queue)) {
+                        _queues[queue] = new List<QueueEntry>();
+                    }
                 }
+                result.Return(new Response());
+                return result;
+            } catch(Exception e) {
+                result.Throw(e);
+                return result;
             }
-            result.Return(new Response());
-            return result;
         }
 
         public Result<AwsSqsResponse> DeleteQueue(string queue, Result<AwsSqsResponse> result) {
-            lock(_queues) {
-                _queues.Remove(queue);
+            try {
+                lock(_queues) {
+                    _queues.Remove(queue);
+                }
+                result.Return(new Response());
+                return result;
+            } catch(Exception e) {
+                result.Throw(e);
+                return result;
             }
-            result.Return(new Response());
-            return result;
         }
 
         public Result<IEnumerable<string>> ListQueues(string prefix, Result<IEnumerable<string>> result) {
-            string[] queues;
-            lock(_queues) {
-                queues = _queues.Keys.Where(x => x.StartsWith(prefix ?? "")).ToArray();
+            try {
+                string[] queues;
+                lock(_queues) {
+                    queues = _queues.Keys.Where(x => x.StartsWith(prefix ?? "")).ToArray();
+                }
+                result.Return(queues);
+                return result;
+            } catch(Exception e) {
+                result.Throw(e);
+                return result;
             }
-            result.Return(queues);
-            return result;
         }
 
         private List<QueueEntry> GetQueue(string queue) {
