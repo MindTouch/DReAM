@@ -103,7 +103,7 @@ namespace MindTouch.IO {
         /// <param name="stream">Target <see cref="Stream"/></param>
         /// <returns><see langword="true"/> If the <see cref="Stream"/> contents are in memory</returns>
         public static bool IsStreamMemorized(this Stream stream) {
-            return (stream is ChunkedMemoryStream) || (stream is MemoryStream);
+            return (stream is MemoryStream);
         }
 
         /// <summary>
@@ -505,24 +505,6 @@ namespace MindTouch.IO {
                     result.Throw
                 );
             }
-            return result;
-        }
-
-#if WARN_ON_SYNC
-        [Obsolete("This method is thread-blocking.  Please avoid using it if possible.")]
-#endif
-        /// <summary>
-        /// WARNING: This method is thread-blocking.  Please avoid using it if possible.
-        /// </summary>
-        public static Result<ChunkedMemoryStream> ToChunkedMemoryStream(this Stream stream, long length, Result<ChunkedMemoryStream> result) {
-            var copy = new ChunkedMemoryStream();
-            stream.CopyTo(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(
-                v => {
-                    copy.Position = 0;
-                    result.Return(copy);
-                },
-                result.Throw
-            );
             return result;
         }
 

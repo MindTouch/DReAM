@@ -127,8 +127,8 @@ namespace MindTouch.Aws {
                         return;
                     }
                     if(!response.Value.IsSuccessful) {
+                        XDoc doc = null;
                         try {
-                            XDoc doc = null;
                             if(response.Value.HasDocument) {
                                 doc = response.Value.ToDocument();
                             } else {
@@ -137,11 +137,11 @@ namespace MindTouch.Aws {
                                     doc = XDocFactory.From(content, MimeType.TEXT_XML);
                                 }
                             }
-                            if(doc != null && doc.Name.EqualsInvariant("ErrorResponse")) {
-                                result.Throw(new AwsSqsRequestException(new AwsSqsError(doc.UsePrefix("sqs", "http://queue.amazonaws.com/doc/2009-02-01/")), response.Value));
-                                return;
-                            }
                         } catch { }
+                        if(doc != null && doc.Name.EqualsInvariant("ErrorResponse")) {
+                            result.Throw(new AwsSqsRequestException(new AwsSqsError(doc.UsePrefix("sqs", "http://queue.amazonaws.com/doc/2009-02-01/")), response.Value));
+                            return;
+                        }
                         result.Throw(new AwsSqsRequestException("Server responded with unexpected error", response.Value));
                         return;
                     }

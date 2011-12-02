@@ -18,6 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+using System;
 using System.Collections.Generic;
 using MindTouch.Tasking;
 
@@ -29,8 +30,20 @@ namespace MindTouch.Aws {
             return client.Receive(queue, AwsSqsDefaults.DEFAULT_MESSAGES, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
         }
 
+        public static Result<IEnumerable<AwsSqsMessage>> Receive(this IAwsSqsClient client, string queue, int maxMessages, Result<IEnumerable<AwsSqsMessage>> result) {
+            return client.Receive(queue, maxMessages, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
+        }
+
+        public static Result<IEnumerable<AwsSqsMessage>> Receive(this IAwsSqsClient client, string queue, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
+            return client.Receive(queue, AwsSqsDefaults.DEFAULT_MESSAGES, visibilityTimeout, result);
+        }
+
         public static Result<IEnumerable<AwsSqsMessage>> ReceiveMax(this IAwsSqsClient client, string queue, Result<IEnumerable<AwsSqsMessage>> result) {
             return client.Receive(queue, AwsSqsDefaults.MAX_MESSAGES, AwsSqsDefaults.DEFAULT_VISIBILITY, result);
+        }
+
+        public static Result<IEnumerable<AwsSqsMessage>> ReceiveMax(this IAwsSqsClient client, string queue, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
+            return client.Receive(queue, AwsSqsDefaults.MAX_MESSAGES, visibilityTimeout, result);
         }
 
         public static Result<AwsSqsResponse> CreateQueue(this IAwsSqsClient client, string queue, Result<AwsSqsResponse> result) {

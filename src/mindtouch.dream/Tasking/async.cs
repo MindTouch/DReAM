@@ -268,8 +268,8 @@ namespace MindTouch.Tasking {
         /// <param name="result">The Result instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the process execution, providing the application's exit code, output Stream and error Stream</returns>
         public static Result<Tuplet<int, Stream, Stream>> ExecuteProcess(string application, string cmdline, Stream input, Result<Tuplet<int, Stream, Stream>> result) {
-            Stream output = new ChunkedMemoryStream();
-            Stream error = new ChunkedMemoryStream();
+            Stream output = new MemoryStream();
+            Stream error = new MemoryStream();
             Result<int> innerResult = new Result<int>(result.Timeout);
             Coroutine.Invoke(ExecuteProcess_Helper, application, cmdline, input, output, error, innerResult).WhenDone(delegate(Result<int> _unused) {
                 if(innerResult.HasException) {

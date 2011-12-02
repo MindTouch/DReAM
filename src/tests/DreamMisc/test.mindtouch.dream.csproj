@@ -87,7 +87,6 @@
     <Compile Include="Aws\MockSqsClient.cs" />
     <Compile Include="BlockingQueueTests.cs" />
     <Compile Include="ChunkedArrayTests.cs" />
-    <Compile Include="ChunkedMemoryStreamTest.cs" />
     <Compile Include="ContainerTests.cs" />
     <Compile Include="Collections\LockFreeItemConsumerQueueTests.cs" />
     <Compile Include="Collections\LockFreeQueueTests.cs" />

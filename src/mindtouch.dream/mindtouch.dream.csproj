@@ -240,7 +240,6 @@
     <Compile Include="IO\StreamUtil.cs" />
     <Compile Include="IO\TrimmingStringReader.cs" />
     <Compile Include="IO\TrimmingTextReader.cs" />
-    <Compile Include="IO\ChunkedMemoryStream.cs" />
     <Compile Include="IO\TrimmingTextReaderUtil.cs" />
     <Compile Include="plug\HttpPlugEndpoint.cs" />
     <Compile Include="Security\Cryptography\CryptoEx.cs" />
