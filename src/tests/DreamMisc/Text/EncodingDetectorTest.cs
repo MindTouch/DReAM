@@ -62,6 +62,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(2, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -82,6 +83,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(2, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -102,6 +104,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(3, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -122,6 +125,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -142,6 +146,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -162,6 +167,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -185,6 +191,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -205,6 +212,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -225,6 +233,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -245,6 +254,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -265,6 +275,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -285,6 +296,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -305,6 +317,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNotNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
 
                 string text;
                 using(var reader = new StreamReader(stream, encoding)) {
@@ -325,6 +338,7 @@ namespace MindTouch.Dream.Test.Text {
                 var encoding = detector.Detect(stream);
                 var offset = stream.Position;
                 Assert.IsNull(encoding, "encoding detection failed");
+                Assert.AreEqual(0, offset, "wrong stream position");
             }
         }
     }
