@@ -73,7 +73,7 @@ namespace MindTouch.Dream.Http {
 
         //--- Class Fields ---
         private static log4net.ILog _log = LogUtils.CreateLog();
-        private static Dictionary<Guid, List<Result<DreamMessage>>> _requests = new Dictionary<Guid, List<Result<DreamMessage>>>();
+        //private static Dictionary<Guid, List<Result<DreamMessage>>> _requests = new Dictionary<Guid, List<Result<DreamMessage>>>();
 
         //--- Class Constructor ---
         static HttpPlugEndpoint() {
@@ -143,80 +143,6 @@ namespace MindTouch.Dream.Http {
             // add cookies to request
             if(request.HasCookies) {
                 request.Headers[DreamHeaders.COOKIE] = DreamCookie.RenderCookieHeader(request.Cookies);
-            }
-
-            // check if we can pool the request with an existing one
-            if((plug.Credentials == null) && StringUtil.ContainsInvariantIgnoreCase(verb, "GET")) {
-
-                // create the request hashcode
-                StringBuilder buffer = new StringBuilder();
-                buffer.AppendLine(uri.ToString());
-                foreach(KeyValuePair<string, string> header in request.Headers) {
-                    buffer.Append(header.Key).Append(": ").Append(header.Value).AppendLine();
-                }
-                Guid hash = new Guid(StringUtil.ComputeHash(buffer.ToString()));
-
-                // check if an active connection exists
-                Result<DreamMessage> relay = null;
-                lock(_requests) {
-                    List<Result<DreamMessage>> pending;
-                    if(_requests.TryGetValue(hash, out pending)) {
-                        relay = new Result<DreamMessage>(response.Timeout);
-                        pending.Add(relay);
-                    } else {
-                        pending = new List<Result<DreamMessage>>();
-                        pending.Add(response);
-                        _requests[hash] = pending;
-                    }
-                }
-
-                // check if we're pooling a request
-                if(relay != null) {
-
-                    // wait for the relayed response
-                    yield return relay;
-                    response.Return(relay);
-                    yield break;
-                } else {
-
-                    // NOTE (steveb): we use TaskEnv.Instantaneous so that we don't exit the current stack frame before we've executed the continuation;
-                    //                otherwise, we'll trigger an exception because our result object may not be set.
-
-                    // create new handler to multicast the response to the relays
-                    response = new Result<DreamMessage>(response.Timeout, TaskEnv.Instantaneous);
-                    response.WhenDone(_ => {
-                        List<Result<DreamMessage>> pending;
-                        lock(_requests) {
-                            _requests.TryGetValue(hash, out pending);
-                            _requests.Remove(hash);
-                        }
-
-                        // this check should never fail!
-                        if(response.HasException) {
-
-                            // send the exception to all relays
-                            foreach(Result<DreamMessage> result in pending) {
-                                result.Throw(response.Exception);
-                            }
-                        } else {
-                            DreamMessage original = response.Value;
-
-                            // only memorize the message if it needs to be cloned
-                            if(pending.Count > 1) {
-
-                                // clone the message to all relays
-                                original.Memorize(new Result()).Wait();
-                                foreach(var result in pending) {
-                                    result.Return(original.Clone());
-                                }
-                            } else {
-
-                                // relay the original message
-                                pending[0].Return(original);
-                            }
-                        }
-                    });
-                }
             }
 
             // initialize request

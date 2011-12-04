@@ -121,6 +121,110 @@ namespace MindTouch.Dream.Test.Aws {
             }
         }
 
+        [Test, Ignore("slow test")]
+        public void LIVE_LONGTEST_Produce_Consume() {
+            var client = CreateLiveClient();
+            var queue = "test-" + StringUtil.CreateAlphaNumericKey(8);
+            client.CreateQueue(queue, new Result<AwsSqsResponse>()).Wait();
+            try {
+                var n = 500;
+                var productions = new List<Result<Production>>();
+                var producer = new Producer(queue, GetConfig());
+                for(var i = 0; i < 6; i++) {
+                    productions.Add(producer.Produce(n));
+                }
+                var r = productions.Join(new Result());
+                var consumers = new List<Consumer>();
+                for(var i = 0; i < 4; i++) {
+                    var consumer = new Consumer(queue, CreateLiveClient());
+                    consumer.Consume();
+                    consumers.Add(consumer);
+                }
+                while(!r.HasFinished) {
+                    Thread.Sleep(5000);
+                    _log.DebugFormat("received {0} messages", consumers.Sum(x => x.Received));
+                }
+                var totalMessages = productions.Count * n;
+                Assert.IsTrue(
+                    Wait.For(() => consumers.Sum(x => x.Received) == totalMessages, (totalMessages * 0.1).Seconds()),
+                    string.Format("got {0} instead of the expected {1} messages", consumers.Sum(x => x.Received), totalMessages)
+                );
+            } finally {
+                _log.DebugFormat("cleaning up queue '{0}'", queue);
+                client.DeleteQueue(queue, new Result<AwsSqsResponse>()).Wait();
+            }
+        }
+
+        [Test, Ignore("stress test")]
+        public void LIVE_STRESS_TEST_multiple_producers_multiple_queues_one_consumer_per_queue() {
+            var messagesPerProducer = 100;
+            var producerCount = 1;
+            var client = CreateLiveClient();
+            var queues = new List<string>();
+            foreach(var x in new[] { "a", "b", "c", "d" }) {
+                var queue = "test-" + x + "-" + StringUtil.CreateAlphaNumericKey(4);
+                client.CreateQueue(queue, new Result<AwsSqsResponse>()).Wait();
+                queues.Add(queue);
+            }
+            try {
+                var producers = new List<Result<List<string>>>();
+                for(var i = 0; i < producerCount; i++) {
+                    var producer = i;
+                    producers.Add(Async.Fork(() => {
+                        _log.DebugFormat("producer {0} started", producer);
+                        var c = CreateLiveClient();
+                        var msgs = new List<string>();
+                        for(var j = 0; j < messagesPerProducer; j++) {
+                            var msg = StringUtil.CreateAlphaNumericKey(1024);
+                            foreach(var queue in queues) {
+                                c.Send(queue, AwsSqsMessage.FromBody(msg), new Result<AwsSqsSendResponse>()).Wait();
+                            }
+                            msgs.Add(msg);
+                            if(msgs.Count % 10 == 0) {
+                                _log.DebugFormat("producer {0} sent {1}/{2} msgs", producer, msgs.Count, messagesPerProducer);
+                            }
+                        }
+                        _log.DebugFormat("producer {0} finished", producer);
+                        return msgs;
+                    }, new Result<List<string>>()));
+                }
+                var consumers = queues.ToDictionary(queue => queue, queue => Async.Fork(() => {
+                    _log.DebugFormat("consumer {0} started", queue);
+                    var c = CreateLiveClient();
+                    var msgs = new List<string>();
+                    var expected = messagesPerProducer * producerCount;
+                    var lastReport = 0;
+                    while(msgs.Count < expected) {
+                        var received = c.ReceiveMax(queue, new Result<IEnumerable<AwsSqsMessage>>()).Wait();
+                        var count = 0;
+                        foreach(var msg in received) {
+                            count++;
+                            msgs.Add(msg.Body);
+                            c.Delete(msg, new Result<AwsSqsResponse>()).Wait();
+                        }
+                        if(count > 0 && msgs.Count > lastReport + 10) {
+                            _log.DebugFormat("consumer '{0}' received: {1}/{2}", queue, msgs.Count, expected);
+                            lastReport = msgs.Count;
+                        }
+                    }
+                    return msgs;
+                }, new Result<List<string>>()));
+                producers.Join(new Result()).Wait();
+                consumers.Values.Join(new Result()).Wait();
+                var allMessages = producers.SelectMany(x => x.Value).OrderBy(x => x).ToArray();
+                foreach(var consumed in consumers) {
+                    var queue = consumed.Key;
+                    var messages = consumed.Value.Value.OrderBy(x => x).ToArray();
+                    Assert.AreEqual(allMessages, messages, string.Format("message list for queue '{0}' is wrong", queue));
+                }
+            } finally {
+                foreach(var queue in queues) {
+                    _log.DebugFormat("cleaning up queue '{0}'", queue);
+                    client.DeleteQueue(queue, new Result<AwsSqsResponse>()).Wait();
+                }
+            }
+        }
+
         [Test, Ignore]
         public void LIVE_Send_one_for_inspection() {
             var client = CreateLiveClient();
@@ -236,7 +340,6 @@ namespace MindTouch.Dream.Test.Aws {
         }
 
         private void Receive() {
-            _log.DebugFormat("{0}: receiving messages", Id);
             if(_stopped) {
                 return;
             }
@@ -300,7 +403,7 @@ namespace MindTouch.Dream.Test.Aws {
 
         private readonly string _queue;
         private readonly AwsSqsClientConfig _clientConfig;
-
+        private readonly Random _random = new Random();
         public Producer(string queue, AwsSqsClientConfig clientConfig) {
             _queue = queue;
             _clientConfig = clientConfig;
@@ -308,36 +411,42 @@ namespace MindTouch.Dream.Test.Aws {
 
         public Result<Production> Produce(int messages) {
             var production = new Production();
-            _log.DebugFormat("{0}: Producing {1} messages", production.Id, messages);
-            var responses = new List<Result<string>>();
-            var client = new AwsSqsClient(_clientConfig);
-            for(var i = 0; i < messages; i++) {
-                var result = new Result<string>();
-                responses.Add(result);
-                var msg = production.Id + ":" + messages;
-                client.Send(_queue, AwsSqsMessage.FromBody(msg), new Result<AwsSqsSendResponse>()).WhenDone(r => {
-                    if(r.HasException) {
-                        result.Throw(r.Exception);
-                        return;
-                    }
-                    result.Return(msg);
-                });
-            }
             var final = new Result<Production>();
-            responses.Join(new Result()).WhenDone(r => {
-                if(r.HasException) {
-                    final.Throw(r.Exception);
-                    return;
+            Async.Fork(() => {
+                try {
+                    _log.DebugFormat("{0}: Producing {1} messages", production.Id, messages);
+                    var responses = new List<Result<string>>();
+                    var client = new AwsSqsClient(_clientConfig);
+                    for(var i = 0; i < messages; i++) {
+                        var result = new Result<string>();
+                        responses.Add(result);
+                        var msg = production.Id + ":" + messages;
+                        client.Send(_queue, AwsSqsMessage.FromBody(msg), new Result<AwsSqsSendResponse>()).WhenDone(r => {
+                            if(r.HasException) {
+                                result.Throw(r.Exception);
+                                return;
+                            }
+                            result.Return(msg);
+                        });
+                    }
+                    responses.Join(new Result()).WhenDone(r => {
+                        if(r.HasException) {
+                            final.Throw(r.Exception);
+                            return;
+                        }
+                        production.Stopwatch.Stop();
+                        production.Sent.AddRange(responses.Select(x => x.Value));
+                        _log.DebugFormat("{0}: Sent {1} messages in {2:0.00}s @ {3:0.00}msg/sec",
+                            production.Id,
+                            production.Sent.Count,
+                            production.Stopwatch.Elapsed.TotalSeconds,
+                            production.Sent.Count / production.Stopwatch.Elapsed.TotalSeconds
+                        );
+                        final.Return(production);
+                    });
+                } catch(Exception e) {
+                    final.Throw(e);
                 }
-                production.Stopwatch.Stop();
-                production.Sent.AddRange(responses.Select(x => x.Value));
-                _log.DebugFormat("{0}: Sent {1} messages in {2:0.00}s @ {3:0.00}msg/sec",
-                    production.Id,
-                    production.Sent.Count,
-                    production.Stopwatch.Elapsed.TotalSeconds,
-                    production.Sent.Count / production.Stopwatch.Elapsed.TotalSeconds
-                );
-                final.Return(production);
             });
             return final;
         }
