@@ -130,12 +130,12 @@ namespace MindTouch.Dream.Test.Aws {
                 var n = 500;
                 var productions = new List<Result<Production>>();
                 var producer = new Producer(queue, GetConfig());
-                for(var i = 0; i < 6; i++) {
+                for(var i = 0; i < 2; i++) {
                     productions.Add(producer.Produce(n));
                 }
                 var r = productions.Join(new Result());
                 var consumers = new List<Consumer>();
-                for(var i = 0; i < 4; i++) {
+                for(var i = 0; i < 3; i++) {
                     var consumer = new Consumer(queue, CreateLiveClient());
                     consumer.Consume();
                     consumers.Add(consumer);
@@ -315,6 +315,7 @@ namespace MindTouch.Dream.Test.Aws {
         private readonly string _queue;
         private readonly IAwsSqsClient _client;
         private readonly List<string> _received = new List<string>();
+        private readonly List<double> _receives = new List<double>();
         private bool _stopped;
 
         public Consumer(string queue, IAwsSqsClient client) {
@@ -343,6 +344,7 @@ namespace MindTouch.Dream.Test.Aws {
             if(_stopped) {
                 return;
             }
+            var t = Stopwatch.StartNew();
             _client.ReceiveMax(_queue, 10.Minutes(), new Result<IEnumerable<AwsSqsMessage>>()).WhenDone(r => {
                 if(r.HasException) {
                     Exception = r.Exception;
@@ -358,32 +360,34 @@ namespace MindTouch.Dream.Test.Aws {
                     return;
                 }
                 _log.DebugFormat("{0}: received {1} messages", Id, received.Count);
-                var deleted = r.Value.Select(x => {
-                    var deleteResult = new Result<string>();
-                    _client.Delete(x, new Result<AwsSqsResponse>()).WhenDone(r2 => {
-                        if(r2.HasException) {
-                            deleteResult.Throw(r2.Exception);
-                            return;
-                        }
-                        deleteResult.Return(x.Body);
-                    });
-                    return deleteResult;
-                }).ToList();
-                deleted.Join(new Result()).WhenDone(r2 => {
-                    if(r2.HasException) {
-                        _log.DebugFormat("one or more deletes failed");
-                        Exception = r2.Exception;
-                        return;
-                    }
-                    if(_stopped) {
-                        return;
-                    }
-                    lock(_received) {
-                        _received.AddRange(deleted.Select(x => x.Value));
-                    }
-                    Receive();
-                });
+                Delete(received, 0, t);
             });
+        }
+
+        private void Delete(List<AwsSqsMessage> messages, int idx, Stopwatch stopwatch) {
+            if(idx == messages.Count) {
+                stopwatch.Stop();
+                lock(_received) {
+                    _receives.Add(stopwatch.Elapsed.TotalSeconds);
+                    _received.AddRange(messages.Select(x => x.Body));
+                    _log.DebugFormat("consumed {0} at rate of {1:0.0}/s", _received.Count, _received.Count / _receives.Sum());
+                }
+                Receive();
+                return;
+            }
+            var toBeDeleted = messages[idx];
+            _client.Delete(toBeDeleted, new Result<AwsSqsResponse>()).WhenDone(r => {
+                if(r.HasException) {
+                    Exception = r.Exception;
+                    return;
+                }
+                if(_stopped) {
+                    return;
+                }
+                idx++;
+                Delete(messages, idx, stopwatch);
+            });
+
         }
 
         public List<string> Stop() {
