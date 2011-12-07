@@ -86,7 +86,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_put_file_without_expiration_at_path() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AwsS3FileHandle>(y => AwsTestHelpers.ValidateFileHandle(y, data, null)))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AwsS3FileHandle>(y => y.ValidateFileHandle(data, null)))).AtMostOnce().Verifiable();
             _storage.AtLocalHost.At("foo", "bar").Put(DreamMessage.Ok(MimeType.TEXT, data));
             _s3ClientMock.VerifyAll();
         }
@@ -94,7 +94,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_put_file_without_expiration_at_root() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo", It.Is<AwsS3FileHandle>(y => AwsTestHelpers.ValidateFileHandle(y, data, null)))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo", It.Is<AwsS3FileHandle>(y => y.ValidateFileHandle(data, null)))).AtMostOnce().Verifiable();
             _storage.AtLocalHost.At("foo").Put(DreamMessage.Ok(MimeType.TEXT, data));
             _s3ClientMock.VerifyAll();
         }
@@ -102,7 +102,7 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Can_put_file_with_expiration() {
             var data = StringUtil.CreateAlphaNumericKey(10);
-            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AwsS3FileHandle>(y => AwsTestHelpers.ValidateFileHandle(y, data, 10.Seconds())))).AtMostOnce().Verifiable();
+            _s3ClientMock.Setup(x => x.PutFile("foo/bar", It.Is<AwsS3FileHandle>(y => y.ValidateFileHandle(data, 10.Seconds())))).AtMostOnce().Verifiable();
             _storage.AtLocalHost.At("foo", "bar").With("ttl", 10).Put(DreamMessage.Ok(MimeType.TEXT, data));
             _s3ClientMock.VerifyAll();
         }

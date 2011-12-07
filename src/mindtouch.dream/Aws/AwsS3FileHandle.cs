@@ -29,6 +29,8 @@ namespace MindTouch.Aws {
     /// </summary>
     public class AwsS3FileHandle {
 
+        //--- Properties ---
+
         /// <summary>
         /// File modification, if the file was retrieved from S3.
         /// </summary>

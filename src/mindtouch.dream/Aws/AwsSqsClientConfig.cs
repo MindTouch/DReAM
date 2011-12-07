@@ -39,8 +39,16 @@ namespace MindTouch.Aws {
 
         //--- Properties ---
 
+        /// <summary>
+        /// Amazon Account id.
+        /// </summary>
         public string AccountId { get; set; }
+
+        /// <summary>
+        /// Amazon Endpoint to use (default: AwsEndpoint.Default)
+        /// </summary>
         public AwsEndpoint Endpoint { get; set; }
+        
         /// <summary>
         /// Private Key.
         /// </summary>

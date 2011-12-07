@@ -45,6 +45,9 @@ namespace MindTouch.Aws {
 
         //--- Properties ---
 
+        /// <summary>
+        /// Amazon Endpoint to use (default: AwsEndpoint.Default)
+        /// </summary>
         public AwsEndpoint Endpoint { get; set; }
 
         /// <summary>
@@ -73,7 +76,7 @@ namespace MindTouch.Aws {
         public string Delimiter { get; set; }
 
         /// <summary>
-        /// Client call timeout.
+        /// Client call timeout (default: 30 seconds)
         /// </summary>
         public TimeSpan Timeout { get; set; }
     }

@@ -63,7 +63,8 @@ namespace MindTouch.Dream.Test.Aws {
         static AwsTestHelpers() {
             AwsEndpoint.AddEndpoint(AWS);
         }
-        //--- Class Methods ---
+
+        //--- Extension Methods Methods ---
         public static DreamMessage CallStorage(this MockServiceInfo mock, Func<Plug, Result<DreamMessage>> mockCall) {
             mock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
                 var storage = (context.Service as MockService).Storage;
@@ -72,7 +73,7 @@ namespace MindTouch.Dream.Test.Aws {
             return mock.AtLocalMachine.Get(new Result<DreamMessage>()).Wait();
         }
 
-        public static bool ValidateFileHandle(AwsS3FileHandle handle, string data, TimeSpan? ttl) {
+        public static bool ValidateFileHandle(this AwsS3FileHandle handle, string data, TimeSpan? ttl) {
             using(var reader = new StreamReader(handle.Stream)) {
                 var read = reader.ReadToEnd();
                 if(data != read) {
@@ -87,6 +88,11 @@ namespace MindTouch.Dream.Test.Aws {
             return true;
         }
 
+        public static string[] RootedPath(this AwsS3ClientConfig config, params string[] path) {
+            return ArrayUtil.Concat(new[] { config.Bucket }, config.RootPath.Split('/'), path);
+        }
+
+        //--- Class Methods ---
         public static AwsS3DataInfo CreateFileInfo(string data) {
             var stream = new MemoryStream();
             var writer = new StreamWriter(stream);
@@ -105,10 +111,6 @@ namespace MindTouch.Dream.Test.Aws {
 
         public static XDoc CreateRandomDocument() {
             return new XDoc("doc").Elem("x", StringUtil.CreateAlphaNumericKey(10));
-        }
-
-        public static string[] RootedPath(this AwsS3ClientConfig config, params string[] path) {
-            return ArrayUtil.Concat(new[] { config.Bucket }, config.RootPath.Split('/'), path);
         }
 
         public static AwsS3FileHandle CreateFileHandle(XDoc data, TimeSpan? ttl) {

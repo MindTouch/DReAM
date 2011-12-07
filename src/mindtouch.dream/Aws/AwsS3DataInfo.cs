@@ -49,6 +49,8 @@ namespace MindTouch.Aws {
             _fileHandle = fileHandle;
         }
 
+        //--- Methods ---
+
         /// <summary>
         /// True if the data info refers to directory
         /// </summary>

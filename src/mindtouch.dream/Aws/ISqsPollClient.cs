@@ -25,6 +25,8 @@ using System;
 
 namespace MindTouch.Aws {
     public interface ISqsPollClient : IDisposable {
+
+        //--- Methods ---
         void Listen(string queuename, TimeSpan pollInterval, Action<AwsSqsMessage> callback);
     }
 }

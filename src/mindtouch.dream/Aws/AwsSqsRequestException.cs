@@ -30,13 +30,11 @@ namespace MindTouch.Aws {
         public readonly bool IsSqsError;
 
         //--- Constructors ---
-        public AwsSqsRequestException(string message, DreamMessage request)
-            : base(message) {
+        public AwsSqsRequestException(string message, DreamMessage request) : base(message) {
             Request = request;
         }
 
-        public AwsSqsRequestException(AwsSqsError error,  DreamMessage request)
-            : base(error.Message) {
+        public AwsSqsRequestException(AwsSqsError error, DreamMessage request) : base(error.Message) {
             Request = request;
             Error = error;
             IsSqsError = true;

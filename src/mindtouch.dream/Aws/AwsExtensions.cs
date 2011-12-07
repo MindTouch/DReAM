@@ -40,7 +40,6 @@ namespace MindTouch.Aws {
             get { return HASH_METHOD; }
         }
 
-        //--- Methods ---
         //--- Extension Methods ---
 
         /// <summary>
@@ -80,6 +79,12 @@ namespace MindTouch.Aws {
             });
         }
 
+        /// <summary>
+        /// Calculate the Aws Secure signature for a request string
+        /// </summary>
+        /// <param name="request">Request string to sign.</param>
+        /// <param name="privatekey">Amazon S3 private key.</param>
+        /// <returns></returns>
         public static string GetSignature(this string request, string privatekey) {
             var hmac = new HMACSHA1(Encoding.UTF8.GetBytes(privatekey));
             return Convert.ToBase64String(hmac.ComputeHash(Encoding.UTF8.GetBytes(request)));

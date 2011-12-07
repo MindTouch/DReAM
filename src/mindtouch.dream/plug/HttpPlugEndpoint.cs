@@ -73,7 +73,6 @@ namespace MindTouch.Dream.Http {
 
         //--- Class Fields ---
         private static log4net.ILog _log = LogUtils.CreateLog();
-        //private static Dictionary<Guid, List<Result<DreamMessage>>> _requests = new Dictionary<Guid, List<Result<DreamMessage>>>();
 
         //--- Class Constructor ---
         static HttpPlugEndpoint() {

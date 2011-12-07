@@ -27,6 +27,7 @@ namespace MindTouch.Aws {
         public AwsSqsResponse(XDoc doc) {
             RequestId = doc["sqs:ResponseMetadata/sqs:RequestId"].AsText;
         }
+
         protected AwsSqsResponse() { }
 
         //--- Properties ---

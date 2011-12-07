@@ -23,8 +23,10 @@ using MindTouch.Aws;
 namespace MindTouch.Dream.Test.Aws {
     public class AwsS3ClientProxy : IAwsS3Client {
 
+        //--- Fields ---
         public IAwsS3Client Client;
 
+        //--- Methods ---
         public void Dispose() {
         }
 

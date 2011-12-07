@@ -47,7 +47,6 @@ namespace MindTouch.Aws {
             );
         }
 
-
         public Result<IEnumerable<AwsSqsMessage>> Receive(string queue, int maxMessages, TimeSpan visibilityTimeout, Result<IEnumerable<AwsSqsMessage>> result) {
             // CLEANUP: punting on attributes right now
             var parameters = new Dictionary<string, string>();

@@ -72,6 +72,7 @@ namespace MindTouch.Aws {
         }
 
         //--- Methods ---
+
         /// <summary>
         /// Retrieve file or directory information at given path.
         /// </summary>

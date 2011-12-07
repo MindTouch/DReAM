@@ -25,9 +25,25 @@ namespace MindTouch.Aws {
     public static class AwsSqsDefaults {
 
         //--- Constants ---
+
+        /// <summary>
+        /// Maximum Messages that can be received at one time.
+        /// </summary>
         public const int MAX_MESSAGES = 10;
+
+        /// <summary>
+        /// Tells Amazon to use its default for message receive count.
+        /// </summary>
         public const int DEFAULT_MESSAGES = -1;
+
+        /// <summary>
+        /// Tells Amazon to use the queue's default message visibility.
+        /// </summary>
         public readonly static TimeSpan DEFAULT_VISIBILITY = (-1).Seconds();
+
+        /// <summary>
+        /// Maximum visibility timeout for received messages.
+        /// </summary>
         public readonly static TimeSpan MAX_VISIBILITY = 12.Hours();
     }
 }
