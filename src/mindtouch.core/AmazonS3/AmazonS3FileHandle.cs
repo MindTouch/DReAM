@@ -26,6 +26,8 @@ namespace MindTouch.Dream.AmazonS3 {
     /// <summary>
     /// File Handle container.
     /// </summary>
+    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3FileHandle. It will be removed in a future version.</remarks>
+    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3FileHandle and will be removed in a future version")]
     public class AmazonS3FileHandle {
 
         /// <summary>

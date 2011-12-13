@@ -19,11 +19,14 @@
  * limitations under the License.
  */
 
+using System;
+
 namespace MindTouch.Dream.Services.PubSub {
 
     /// <summary>
     /// Serializable container for an <see cref="DispatcherEvent"/> for a specific <see cref="PubSubSubscriptionSet"/> identified by its location.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class DispatchItem {
 
         //--- Fields ---

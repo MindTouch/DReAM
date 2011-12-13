@@ -42,7 +42,7 @@ namespace MindTouch.IO {
         /// <param name="doc">An <see cref="XDoc"/> document</param>
         /// <returns>A <see cref="Stream"/></returns>
         public Stream ToStream(XDoc doc) {
-            var data = new ChunkedMemoryStream();
+            var data = new MemoryStream();
             doc.WriteTo(data);
             data.Position = 0;
             return data;

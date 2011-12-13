@@ -1,4 +1,4 @@
-/*
+﻿/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2011 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -18,26 +18,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using MindTouch.Dream.AmazonS3;
+using System;
+using MindTouch.Extensions.Time;
 
-namespace MindTouch.Dream.Storage.Test {
-    public class AmazonS3ClientProxy : IAmazonS3Client {
+namespace MindTouch.Aws {
+    public static class AwsSqsDefaults {
 
-        public IAmazonS3Client Client;
+        //--- Constants ---
 
-        public void Dispose() {
-        }
+        /// <summary>
+        /// Maximum Messages that can be received at one time.
+        /// </summary>
+        public const int MAX_MESSAGES = 10;
 
-        public AmazonS3DataInfo GetDataInfo(string path, bool head) {
-            return Client.GetDataInfo(path, head);
-        }
+        /// <summary>
+        /// Tells Amazon to use its default for message receive count.
+        /// </summary>
+        public const int DEFAULT_MESSAGES = -1;
 
-        public void PutFile(string path, AmazonS3FileHandle fileInfo) {
-            Client.PutFile(path, fileInfo);
-        }
+        /// <summary>
+        /// Tells Amazon to use the queue's default message visibility.
+        /// </summary>
+        public readonly static TimeSpan DEFAULT_VISIBILITY = (-1).Seconds();
 
-        public void Delete(string path) {
-            Client.Delete(path);
-        }
+        /// <summary>
+        /// Maximum visibility timeout for received messages.
+        /// </summary>
+        public readonly static TimeSpan MAX_VISIBILITY = 12.Hours();
     }
 }

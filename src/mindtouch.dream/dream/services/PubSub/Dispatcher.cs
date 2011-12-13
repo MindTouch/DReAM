@@ -34,6 +34,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Default implementation of <see cref="IPubSubDispatcher"/> with extension points for sub-classing.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class Dispatcher : IPubSubDispatcher, IDisposable {
 
         //--- Class Fields ---

@@ -29,6 +29,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Event processed and sent by the <see cref="IPubSubDispatcher"/>.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class DispatcherEvent {
 
         //--- Class Fields ---
