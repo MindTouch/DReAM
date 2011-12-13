@@ -30,6 +30,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Provides an object model for a pub sub subscription.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class PubSubSubscription {
 
         //--- Class Fields ---

@@ -85,6 +85,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Aws\AwsS3Client.cs" />
+    <Compile Include="Aws\AwsS3ClientConfig.cs" />
+    <Compile Include="Aws\AwsS3DataInfo.cs" />
+    <Compile Include="Aws\AwsEndpoint.cs" />
+    <Compile Include="Aws\AwsS3FileHandle.cs" />
+    <Compile Include="Aws\AwsSqsClient.cs" />
+    <Compile Include="Aws\AwsSqsClientConfig.cs" />
+    <Compile Include="Aws\AwsSqsDefaults.cs" />
+    <Compile Include="Aws\AwsSqsError.cs" />
+    <Compile Include="Aws\AwsSqsEx.cs" />
+    <Compile Include="Aws\AwsSqsMessage.cs" />
+    <Compile Include="Aws\AwsSqsResponse.cs" />
+    <Compile Include="Aws\AwsSqsRequestException.cs" />
+    <Compile Include="Aws\AwsSqsSendResponse.cs" />
+    <Compile Include="Aws\IAwsS3Client.cs" />
+    <Compile Include="Aws\IAwsSqsClient.cs" />
+    <Compile Include="Aws\InMemorySqsClient.cs" />
+    <Compile Include="Aws\ISqsPollClient.cs" />
+    <Compile Include="Aws\SqsPollClient.cs" />
+    <Compile Include="Aws\AwsExtensions.cs" />
     <Compile Include="Data\attributes.cs" />
     <Compile Include="Data\ADataUpdater.cs" />
     <Compile Include="Data\IDataUpdater.cs" />
@@ -109,6 +129,7 @@
     <Compile Include="dream\services\PubSub\IPubSubDispatchQueue.cs" />
     <Compile Include="dream\services\PubSub\PersistentPubSubDispatchQueueRepository.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
+    <Compile Include="IO\ChunkedMemoryStream.cs" />
     <Compile Include="Numeric.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />
     <Compile Include="system\GitRevisionAttribute.cs" />
@@ -220,7 +241,6 @@
     <Compile Include="IO\StreamUtil.cs" />
     <Compile Include="IO\TrimmingStringReader.cs" />
     <Compile Include="IO\TrimmingTextReader.cs" />
-    <Compile Include="IO\ChunkedMemoryStream.cs" />
     <Compile Include="IO\TrimmingTextReaderUtil.cs" />
     <Compile Include="plug\HttpPlugEndpoint.cs" />
     <Compile Include="Security\Cryptography\CryptoEx.cs" />

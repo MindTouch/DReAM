@@ -22,6 +22,7 @@ using System;
 using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Services.PubSub {
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class ImmediatePubSubDispatchQueue : IPubSubDispatchQueue {
 
         //--- Fields ---

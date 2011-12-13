@@ -28,6 +28,8 @@ namespace MindTouch.Dream.AmazonS3 {
     /// <summary>
     /// Amazon S3 related extension methods for <see cref="Plug"/>
     /// </summary>
+    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsExtensions. It will be removed in a future version.</remarks>
+    [Obsolete("This class has been replaced with MindTouch.Aws.AwsExtensions and will be removed in a future version")]
     public static class S3PlugEx {
 
         //--- Constants ---

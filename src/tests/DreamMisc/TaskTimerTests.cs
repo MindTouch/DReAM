@@ -69,7 +69,7 @@ namespace MindTouch.Dream.Test {
             var neverFires = new ManualResetEvent(false);
             TaskTimer.New(
                 TimeSpan.FromSeconds(2),
-                delegate(TaskTimer tt) {
+                delegate {
                     _log.DebugFormat("this task timer should never have fired");
                     neverFires.Set();
                 },
@@ -77,7 +77,7 @@ namespace MindTouch.Dream.Test {
                 TaskEnv.None);
             TaskTimer.New(
                 TimeSpan.FromSeconds(1),
-                delegate(TaskTimer tt) {
+                delegate {
                     _log.DebugFormat("this task timer should fire before we try shutdown");
                     shouldFire.Set();
                 },
@@ -86,7 +86,7 @@ namespace MindTouch.Dream.Test {
             _log.DebugFormat("waiting for first task");
             Assert.IsTrue(shouldFire.WaitOne(2000, false));
             _log.DebugFormat("starting shutdown");
-            TaskTimer.Shutdown();
+            TaskTimerFactory.Current.Dispose();
             _log.DebugFormat("shutdown complete");
             Assert.IsFalse(neverFires.WaitOne(2000, false));
         }

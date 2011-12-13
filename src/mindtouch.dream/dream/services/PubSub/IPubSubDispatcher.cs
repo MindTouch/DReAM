@@ -31,6 +31,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <remarks>
     /// The default implementation is <see cref="Dispatcher"/>.
     /// </remarks>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public interface IPubSubDispatcher {
 
         //--- Properties ---

@@ -164,7 +164,7 @@ namespace MindTouch.Cache {
             if(ttl == TimeSpan.MinValue) {
                 ttl = TimeSpan.MaxValue;
             }
-            Stream stream = new ChunkedMemoryStream();
+            Stream stream = new MemoryStream();
             _serializer.Serialize(stream, value);
             int size = (int)stream.Length;
             Entry oldValue;

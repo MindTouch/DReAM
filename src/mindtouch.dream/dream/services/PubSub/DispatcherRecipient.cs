@@ -28,6 +28,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// A <see cref="DispatcherEvent"/> recipient.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class DispatcherRecipient : IComparable<DispatcherRecipient> {
 
         //--- Class Fields ---

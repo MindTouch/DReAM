@@ -31,6 +31,7 @@ namespace MindTouch.Dream.Services.PubSub {
     /// <summary>
     /// Provides a <see cref="PubSubSubscription"/> collection.
     /// </summary>
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class PubSubSubscriptionSet {
 
         //--- Class Fields ---

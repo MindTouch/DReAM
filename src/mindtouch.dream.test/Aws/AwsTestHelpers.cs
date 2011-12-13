@@ -21,19 +21,50 @@
 using System;
 using System.IO;
 using log4net;
-using MindTouch.Dream.AmazonS3;
-using MindTouch.Dream.Test;
+using MindTouch.Aws;
 using MindTouch.Tasking;
 using MindTouch.Xml;
 
-namespace MindTouch.Dream.Storage.Test {
-    public static class AmazonS3TestHelpers {
+namespace MindTouch.Dream.Test.Aws {
+    public static class AwsTestHelpers {
+
+        //--- Types ---
+        private class FakeAwsResponse : AwsSqsResponse {
+            public FakeAwsResponse() {
+                RequestId = Guid.NewGuid().ToString();
+            }
+        }
+
+        private class FakeSqsSendResponse : AwsSqsSendResponse {
+            public FakeSqsSendResponse() {
+                RequestId = Guid.NewGuid().ToString();
+                MessageId = Guid.NewGuid().ToString();
+            }
+        }
+
+        public class FakeSqsMessage : AwsSqsMessage {
+            public FakeSqsMessage(string body, string queue) {
+                RequestId = Guid.NewGuid().ToString();
+                MessageId = Guid.NewGuid().ToString();
+                ReceiptHandle = Guid.NewGuid().ToString();
+                OriginQueue = queue;
+                Body = body;
+            }
+        }
+
+        //--- Constants ---
+        public const string SQS_NS = "http://queue.amazonaws.com/doc/2009-02-01/";
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
-        public static readonly XUri AWS = new XUri("http://s3.amazonaws.com");
+        public static readonly AwsEndpoint AWS = new AwsEndpoint(null, "mock://s3/", "mock://sqs/", "mock");
 
-        //--- Class Methods ---
+        //--- Class Constructor ---
+        static AwsTestHelpers() {
+            AwsEndpoint.AddEndpoint(AWS);
+        }
+
+        //--- Extension Methods Methods ---
         public static DreamMessage CallStorage(this MockServiceInfo mock, Func<Plug, Result<DreamMessage>> mockCall) {
             mock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
                 var storage = (context.Service as MockService).Storage;
@@ -42,7 +73,7 @@ namespace MindTouch.Dream.Storage.Test {
             return mock.AtLocalMachine.Get(new Result<DreamMessage>()).Wait();
         }
 
-        public static bool ValidateFileHandle(AmazonS3FileHandle handle, string data, TimeSpan? ttl) {
+        public static bool ValidateFileHandle(this AwsS3FileHandle handle, string data, TimeSpan? ttl) {
             using(var reader = new StreamReader(handle.Stream)) {
                 var read = reader.ReadToEnd();
                 if(data != read) {
@@ -57,13 +88,18 @@ namespace MindTouch.Dream.Storage.Test {
             return true;
         }
 
-        public static AmazonS3DataInfo CreateFileInfo(string data) {
+        public static string[] RootedPath(this AwsS3ClientConfig config, params string[] path) {
+            return ArrayUtil.Concat(new[] { config.Bucket }, config.RootPath.Split('/'), path);
+        }
+
+        //--- Class Methods ---
+        public static AwsS3DataInfo CreateFileInfo(string data) {
             var stream = new MemoryStream();
             var writer = new StreamWriter(stream);
             writer.Write(data);
             writer.Flush();
             stream.Position = 0;
-            return new AmazonS3DataInfo(new AmazonS3FileHandle() {
+            return new AwsS3DataInfo(new AwsS3FileHandle() {
                 Expiration = null,
                 TimeToLive = null,
                 MimeType = MimeType.TEXT,
@@ -77,16 +113,12 @@ namespace MindTouch.Dream.Storage.Test {
             return new XDoc("doc").Elem("x", StringUtil.CreateAlphaNumericKey(10));
         }
 
-        public static string[] RootedPath(this AmazonS3ClientConfig config, params string[] path) {
-            return ArrayUtil.Concat(new[] { config.Bucket }, config.RootPath.Split('/'), path);
-        }
-
-        public static AmazonS3FileHandle CreateFileHandle(XDoc data, TimeSpan? ttl) {
+        public static AwsS3FileHandle CreateFileHandle(XDoc data, TimeSpan? ttl) {
             var stream = new MemoryStream();
             var writer = new StreamWriter(stream);
             data.WriteTo(stream);
             stream.Position = 0;
-            return new AmazonS3FileHandle {
+            return new AwsS3FileHandle {
                 Expiration = null,
                 TimeToLive = ttl,
                 MimeType = MimeType.TEXT_XML,
@@ -96,5 +128,16 @@ namespace MindTouch.Dream.Storage.Test {
             };
         }
 
+        public static AwsSqsResponse CreateResponse() {
+            return new FakeAwsResponse();
+        }
+
+        public static AwsSqsSendResponse CreateSendResponse() {
+            return new FakeSqsSendResponse();
+        }
+
+        public static AwsSqsMessage CreateMessage(string body, string queue) {
+            return new FakeSqsMessage(body, queue);
+        }
     }
 }

@@ -31,6 +31,8 @@ namespace MindTouch.Dream.AmazonS3 {
     /// <summary>
     /// Amazon S3 Client abstraction for use by <see cref="S3StorageService"/>
     /// </summary>
+    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3Client. It will be removed in a future version.</remarks>
+    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3Client and will be removed in a future version")]
     public class AmazonS3Client : IAmazonS3Client {
 
         //--- Constants ---
