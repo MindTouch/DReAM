@@ -19,23 +19,17 @@
  * limitations under the License.
  */
 
-using System;
-using Autofac;
-using Autofac.Builder;
 using log4net;
-using MindTouch.Dream.AmazonS3;
+using MindTouch.Aws;
 using MindTouch.Dream.Test;
+using MindTouch.Dream.Test.Aws;
 using MindTouch.Tasking;
 using MindTouch.Xml;
-using Moq;
 using NUnit.Framework;
-using MindTouch.Extensions.Time;
 
 namespace MindTouch.Dream.Storage.Test {
-    using Helper = AmazonS3TestHelpers;
-
     [TestFixture]
-    public class AmazonS3WireupTests {
+    public class AwsS3WireupTests {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
@@ -43,12 +37,12 @@ namespace MindTouch.Dream.Storage.Test {
         //--- Fields ---
         private DreamServiceInfo _storage;
         private DreamHostInfo _hostInfo;
-        private AmazonS3ClientConfig _config;
+        private AwsS3ClientConfig _config;
 
         [TestFixtureSetUp]
         public void Init() {
-            _config = new AmazonS3ClientConfig {
-                S3BaseUri = new XUri("http://s3.amazonaws.com"),
+            _config = new AwsS3ClientConfig {
+                Endpoint = AwsTestHelpers.AWS,
                 Bucket = "bucket",
                 RootPath = "root/path",
                 PrivateKey = "private",
@@ -75,8 +69,8 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Can_init_and_read_file() {
-            var data = Helper.CreateRandomDocument();
-            MockPlug.Setup(Helper.AWS)
+            var data = AwsTestHelpers.CreateRandomDocument();
+            MockPlug.Setup(AwsTestHelpers.AWS.S3Uri)
                 .Verb("GET")
                 .At(_config.RootedPath("foo", "bar"))
                 .Returns(DreamMessage.Ok(data))
@@ -88,7 +82,7 @@ namespace MindTouch.Dream.Storage.Test {
 
         private void CreateStorageService() {
             var config = new XDoc("config")
-                    .Elem("baseuri", _config.S3BaseUri)
+                    .Elem("endpoint", _config.Endpoint.Name)
                     .Elem("folder", _config.RootPath)
                     .Elem("bucket", _config.Bucket)
                     .Elem("privatekey", _config.PrivateKey)

@@ -170,7 +170,7 @@ namespace MindTouch.IO {
                 throw new InvalidOperationException("unable to access stream for head file");
             }
             streamInfo.Stream.Seek(next.Position + HEADER_SIZE, SeekOrigin.Begin);
-            var data = new ChunkedMemoryStream();
+            var data = new MemoryStream();
             var copied = streamInfo.Stream.CopyTo(data, next.Length);
             if(copied != next.Length) {
                 _log.WarnFormat("reached EOF in the middle of the record");

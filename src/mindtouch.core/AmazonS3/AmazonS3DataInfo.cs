@@ -18,6 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+using System;
 using MindTouch.Xml;
 
 namespace MindTouch.Dream.AmazonS3 {
@@ -25,6 +26,8 @@ namespace MindTouch.Dream.AmazonS3 {
     /// <summary>
     /// Container for data returned from <see cref="IAmazonS3Client.GetDataInfo"/>.
     /// </summary>
+    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3DataInfo. It will be removed in a future version.</remarks>
+    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3DataInfo and will be removed in a future version")]
     public class AmazonS3DataInfo {
 
         //--- Fields ---

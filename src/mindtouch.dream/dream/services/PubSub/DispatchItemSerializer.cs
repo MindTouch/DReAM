@@ -25,6 +25,7 @@ using MindTouch.IO;
 
 namespace MindTouch.Dream.Services.PubSub {
 
+    [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
     public class DispatchItemSerializer : IQueueItemSerializer<DispatchItem> {
 
         //--- Constants ---

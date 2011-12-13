@@ -53,6 +53,8 @@ namespace MindTouch.IO {
     /// Provides an altnerate implementation of <see cref="MemoryStream"/> that keeps its internal data buffers in several chunks to avoid
     /// memory fragmenation.
     /// </summary>
+    /// <remarks>ChunkedMemoryStream has been deprecated and will be removed in DReAM 3.0</remarks>
+    [Obsolete("ChunkedMemoryStream has been deprecated and will be removed in DReAM 3.0")]
     public class ChunkedMemoryStream : Stream {
         
         //--- Constants ---

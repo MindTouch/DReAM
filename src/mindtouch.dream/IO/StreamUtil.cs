@@ -508,12 +508,11 @@ namespace MindTouch.IO {
             return result;
         }
 
-#if WARN_ON_SYNC
-        [Obsolete("This method is thread-blocking.  Please avoid using it if possible.")]
-#endif
         /// <summary>
         /// WARNING: This method is thread-blocking.  Please avoid using it if possible.
         /// </summary>
+        /// <remarks>ChunkedMemoryStream has been deprecated and will be removed in DReAM 3.0</remarks>
+        [Obsolete("ChunkedMemoryStream has been deprecated and will be removed in DReAM 3.0")]
         public static Result<ChunkedMemoryStream> ToChunkedMemoryStream(this Stream stream, long length, Result<ChunkedMemoryStream> result) {
             var copy = new ChunkedMemoryStream();
             stream.CopyTo(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(

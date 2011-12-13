@@ -53,6 +53,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -79,9 +80,13 @@
     <Compile Include="ArrayUtilTests.cs" />
     <Compile Include="AutofacTests.cs" />
     <Compile Include="AutoMockPlugTests.cs" />
+    <Compile Include="Aws\AwsS3ClientTests.cs" />
+    <Compile Include="Aws\AwsSqsClientTests.cs" />
+    <Compile Include="Aws\InMemorySqsClientTests.cs" />
+    <Compile Include="Aws\MockMessage.cs" />
+    <Compile Include="Aws\MockSqsClient.cs" />
     <Compile Include="BlockingQueueTests.cs" />
     <Compile Include="ChunkedArrayTests.cs" />
-    <Compile Include="ChunkedMemoryStreamTest.cs" />
     <Compile Include="ContainerTests.cs" />
     <Compile Include="Collections\LockFreeItemConsumerQueueTests.cs" />
     <Compile Include="Collections\LockFreeQueueTests.cs" />
@@ -108,17 +113,7 @@
     <Compile Include="MysqlDocStoreManagerTests.cs" />
     <Compile Include="NumericTests.cs" />
     <Compile Include="PlugTests.cs" />
-    <Compile Include="PubSub\MemoryPubSubDispatchQueueRespositoryTests.cs" />
-    <Compile Include="PubSub\MemoryPubSubDispatchQueueTests.cs" />
-    <Compile Include="PubSub\DispatcherTests.cs" />
-    <Compile Include="PubSub\DispatchItemSerializerTests.cs" />
-    <Compile Include="PubSub\MockDispatcher.cs" />
-    <Compile Include="PubSub\MockPubSubDispatchQueueRepository.cs" />
-    <Compile Include="PubSub\PersistentPubSubDispatchQueueRespositoryTests.cs" />
-    <Compile Include="PubSub\PersistentPubSubDispatchQueueTests.cs" />
-    <Compile Include="PubSub\SubscriptionTests.cs" />
-    <Compile Include="PubSub\EventTests.cs" />
-    <Compile Include="PubSub\PubSubServiceTests.cs" />
+    <Compile Include="Aws\SqsPollClientTests.cs" />
     <Compile Include="ResultTest.cs" />
     <Compile Include="SampleService.cs" />
     <Compile Include="Service2ServiceTests.cs" />

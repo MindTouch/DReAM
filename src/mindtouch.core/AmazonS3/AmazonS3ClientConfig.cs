@@ -25,6 +25,8 @@ namespace MindTouch.Dream.AmazonS3 {
     /// <summary>
     /// Amazon S3 Client configuration
     /// </summary>
+    /// <remarks>This class is deprecated and has been replaced with MindTouch.Aws.AwsS3ClientConfig. It will be removed in a future version.</remarks>
+    [Obsolete("This class has been replaced with MindTouch.Aws.AwsS3ClientConfig and will be removed in a future version")]
     public class AmazonS3ClientConfig {
 
         //--- Properties ---

@@ -678,7 +678,7 @@ namespace MindTouch.Dream {
                 result = new DreamMessage(Status, Headers, _doc.Clone());
             } else if(_stream == Stream.Null || (_stream != null && _stream.IsStreamMemorized())) {
                 _stream.Position = 0;
-                var copy = new ChunkedMemoryStream((int)_stream.Length);
+                var copy = new MemoryStream((int)_stream.Length);
                 _stream.CopyTo(copy, _stream.Length);
                 _stream.Position = 0;
                 copy.Position = 0;
@@ -767,7 +767,7 @@ namespace MindTouch.Dream {
             // NOTE: the content-length and body length may differ (e.g. HEAD verb)
 
             // copy contents asynchronously
-            var buffer = new ChunkedMemoryStream();
+            var buffer = new MemoryStream();
             Result<long> res;
 
             // TODO (steveb): use WithCleanup() to dispose of resources in case of failure
@@ -826,7 +826,7 @@ namespace MindTouch.Dream {
                 if(_bytes != null) {
                     _stream = new MemoryStream(_bytes, 0, _bytes.Length, true, true);
                 } else {
-                    var stream = new ChunkedMemoryStream();
+                    var stream = new MemoryStream();
                     _doc.WriteTo(stream, ContentType.CharSet);
                     stream.Position = 0;
                     _stream = stream;
@@ -850,8 +850,8 @@ namespace MindTouch.Dream {
                 if(_stream == null) {
                     Encoding encoding = ContentType.CharSet;
                     _bytes = encoding.GetBytes(_doc.ToString(encoding));
-                } else if(_stream is ChunkedMemoryStream) {
-                    _bytes = ((ChunkedMemoryStream)_stream).ToArray();
+                } else if(_stream is MemoryStream) {
+                    _bytes = ((MemoryStream)_stream).ToArray();
                     _stream = null;
                     _streamOpen = false;
                 } else if(_stream is MemoryStream) {
