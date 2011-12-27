@@ -447,13 +447,27 @@ namespace MindTouch.Xml {
                     List<XmlNode> list = null;
                     XPathNavigator navigator = _root.CreateNavigator();
                     if(navigator != null) {
-                        XPathExpression expr = XPathExpression.Compile(path, namespaces);
-                        XPathNodeIterator iterator = navigator.Select(expr);
-                        foreach(XPathNavigator nav in iterator) {
-                            if(list == null) {
-                                list = new List<XmlNode>();
+                        string defaultPrefix = XPathUtils.GetDefaultPrefix(namespaces);
+                        try
+                        {
+                            XPathExpression expr;
+                            if (defaultPrefix != null)                            
+                                expr = XPathExpression.Compile(XPathUtils.GetPrefixedPath(path, defaultPrefix), namespaces);                            
+                            else                            
+                                expr = XPathExpression.Compile(path, namespaces);                            
+                            XPathNodeIterator iterator = navigator.Select(expr);
+                            foreach (XPathNavigator nav in iterator)
+                            {
+                                if (list == null)
+                                {
+                                    list = new List<XmlNode>();
+                                }
+                                list.Add(((IHasXmlNode)nav).GetNode());
                             }
-                            list.Add(((IHasXmlNode)nav).GetNode());
+                        }
+                        finally
+                        {
+                            XPathUtils.RemoveDefaultPrefix(defaultPrefix, namespaces);
                         }
                     }
                     if((list != null) && (list.Count > 0)) {
