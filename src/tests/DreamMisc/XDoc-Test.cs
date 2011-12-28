@@ -92,7 +92,38 @@ namespace MindTouch.Xml.Test {
         public void ElementAccessXPathWithIndex() {
             Test("element access (xpath with index)", _doc["bold[2]"].Contents, "Cool");
         }
-
+		
+        
+		[Test]
+		public void ElementAccessXPathWithoutNamespace ()
+		{
+			XDoc xdoc = new XDoc ("example");			
+			xdoc.Start ("element")
+			 .Start ("subelem").Attr ("id", "777").End ().End ();
+			XDoc subdoc = xdoc ["element/subelem/@id"];			
+			Assert.AreEqual ("777", subdoc.Contents);						            			
+		}
+		
+		[Test]
+		public void ElementAccessXPathWithDefaultNamespace ()
+		{			
+			XDoc xdoc = new XDoc ("example", "http://www.example.org/namespace");
+			xdoc.Start ("element")
+			 .Start ("subelem").Attr ("id", "777").End ().End ();
+			XDoc subdoc = xdoc ["element/subelem/@id"];			
+			Assert.AreEqual ("777", subdoc.Contents);						            			
+		}
+		
+		[Test]
+		public void ElementAccessXPathWithPrefix ()
+		{			
+			XDoc xdoc = new XDoc ("pref" ,"example", "http://www.example.org/namespace");
+			xdoc.Start ("pref:element")
+			 .Start ("pref:subelem").Attr ("id", "777").End ().End ();
+			XDoc subdoc = xdoc ["pref:element/pref:subelem/@id"];			
+			Assert.AreEqual ("777", subdoc.Contents);						            			
+		}
+		
         [Test]
         public void JsonSerialization() {
             Test("json serialization", JsonUtil.ToJson(_doc), "{\"@source\":\"http://www.mindtouch.com\",\"#text\":[\"Hello \",\"!\"],\"bold\":[{\"@style\":\"blinking\",\"#text\":\"World\"},\"Cool\"],\"br\":\"\",\"span\":\"Ce\\u00e7i est \\\"une\\\" id\\u00e9e\",\"struct\":{\"last\":\"Doe\",\"name\":\"John\"}}");

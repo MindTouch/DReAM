@@ -300,6 +300,7 @@
     <Compile Include="Xml\XHtmlTextWriter.cs" />
     <Compile Include="Xml\XDocRecursiveEnumerable.cs" />
     <Compile Include="Xml\XDocRecursiveEnumerator.cs" />
+    <Compile Include="Xml\XPathUtils.cs" />
     <Compile Include="Xml\XSoap.cs" />
     <Compile Include="Xml\XTypes.cs" />
   </ItemGroup>
