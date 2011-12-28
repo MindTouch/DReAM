@@ -1,7 +1,4 @@
-﻿// this code is obtained from
-// http://stackoverflow.com/a/2054877/19046
-
-using System;
+﻿using System;
 using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +25,9 @@ namespace MindTouch.Xml
             namespaces.AddNamespace(pref, namespaces.LookupNamespace(string.Empty));
             return pref;
         }
-
+				
+		// this code is obtained from
+		// http://stackoverflow.com/a/2054877/19046
         public static string GetPrefixedPath(string xPath, string prefix)
         {
             char[] validLeadCharacters = "@/".ToCharArray();
