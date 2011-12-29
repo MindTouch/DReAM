@@ -52,7 +52,7 @@ namespace MindTouch.Data {
         }
 
         public void ChangeDatabase(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
-            var dataFactory = new DataFactory("Mysql.Data", "?");
+            var dataFactory = new DataFactory("MySql.Data", "?");
             var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword, timeout);
             _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
