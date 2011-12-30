@@ -71,8 +71,9 @@ namespace MindTouch.Data.Db {
 
         //--- Class Methods ---
         static int Main(string[] args) {
-            string dbusername = "root", dbname = "wikidb", dbserver = "localhost", dbpassword = null, updateDLL = null, 
-                   targetVersion = null, sourceVersion = null, customMethods = null;
+            string dbusername = "root", dbname = "", dbserver = "localhost", dbpassword = null, updateDLL = null, 
+                   targetVersion = null, sourceVersion = null, customMethod = null;
+            string[] param = null;
             int dbport = 3306, exit = 0, errors = 0;
             uint timeout = UInt32.MaxValue;
             bool showHelp = false, dryrun = false, verbose = false, listDatabases = false, checkDb = false;
@@ -88,7 +89,7 @@ namespace MindTouch.Data.Db {
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s },
                 { "n=|port=", "Database port (default: 3306)", n => {dbport = Int32.Parse(n);}},
                 { "o=|timeout=", "Sets the database's Default Command Timeout", o => { timeout = UInt32.Parse(o); }},
-                { "c=|custom", "Custom Methods to invoke (comma separated list)", c => {customMethods = c;}},
+                { "c=|custom", "Custom method to invoke", c => {customMethod = c;}},
                 { "i|info", "Display verbose information (default: false)", i => {verbose = true;}},
                 { "f|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true;}},
                 { "l|listdb" , "List of databases separated by EOF", l => { listDatabases = true; }},
@@ -102,10 +103,11 @@ namespace MindTouch.Data.Db {
                     var trailingOptions = options.Parse(args).ToArray();
 
                     // if there are more trailing arguments display help
-                    if(trailingOptions.Length != 1) {
+                    if(trailingOptions.Length < 1) {
                         showHelp = true;
                     } else {
                         updateDLL = Path.GetFullPath(trailingOptions.First());
+                        param = trailingOptions.SubArray<string>(1);
                     }
                 } catch(InvalidOperationException) {
                     exit = -3;
@@ -122,7 +124,7 @@ namespace MindTouch.Data.Db {
                 }
 
                 // If there are no custom methods specified we need a version number
-                if(customMethods == null) {
+                if(customMethod == null) {
                     CheckArg(targetVersion, "No version specified");
                 }
 
@@ -175,7 +177,7 @@ namespace MindTouch.Data.Db {
                         }
                         
                         // Run methods on database
-                        RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethods, targetVersion, verbose, dryrun, checkDb);
+                        RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, targetVersion, verbose, dryrun, checkDb);
                     }
                 } else {
                     try {
@@ -188,7 +190,7 @@ namespace MindTouch.Data.Db {
                     }
 
                     // Run update
-                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethods, targetVersion, verbose, dryrun, checkDb);
+                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, targetVersion, verbose, dryrun, checkDb);
                 }
             }
             else {
@@ -204,18 +206,15 @@ namespace MindTouch.Data.Db {
             return exit;
         }
 
-        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethods,string targetVersion, bool verbose, bool dryrun, bool checkdb) {
+        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethod, string[] param, string targetVersion, bool verbose, bool dryrun, bool checkdb) {
             
             // Execute custom methods
-            if(customMethods != null && !checkdb) {
-                var methods = customMethods.Split(',');
-                foreach(var method in methods) {
-                    if(verbose) {
-                        Console.WriteLine(String.Format("Executing custom method: {0}", method));
-                    }
-                    if(!dryrun) {
-                        site.ExecuteCustomMethod(method.Trim(), dllAssembly);
-                    }
+            if(customMethod != null && !checkdb) {
+                if(verbose) {
+                    Console.WriteLine(String.Format("Executing custom method: {0}", customMethod));
+                }
+                if(!dryrun) {
+                    site.ExecuteCustomMethod(customMethod.Trim(), dllAssembly, param);
                 }
             }
 
