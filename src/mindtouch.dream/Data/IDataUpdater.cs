@@ -89,6 +89,7 @@ namespace MindTouch.Data {
         /// </summary>
         /// <param name="name">Name of the method to execute</param>
         /// <param name="updateAssembly">Assembly object to perform reflection on</param>
-        void ExecuteCustomMethod(string name, Assembly updateAssembly);
+        /// <param name="param">Parameter array to pass to custom method</param>
+        void ExecuteCustomMethod(string name, Assembly updateAssembly, params object[] param);
     }
 }
