@@ -263,7 +263,8 @@ namespace MindTouch.Data {
         /// </summary>
         /// <param name="name">Exact name of the method to be executed</param>
         /// <param name="updateAssembly">Assembly object to perform reflection on</param>
-        public void ExecuteCustomMethod(string name, Assembly updateAssembly) {
+        /// <param name="param">Parameter array to pass to custom method</param>
+        public void ExecuteCustomMethod(string name, Assembly updateAssembly, params object[] param) {
             if(_dataUpgradeClass == null) {
                 // get all the members of the Assembly
                 var types = updateAssembly.GetTypes();
@@ -284,7 +285,7 @@ namespace MindTouch.Data {
             }
 
             // Attempt to execute method
-            _dataUpgradeClass.InvokeMember(name, BindingFlags.Default | BindingFlags.InvokeMethod, null, _dataUpgradeClassInstance, null);
+            _dataUpgradeClass.InvokeMember(name, BindingFlags.Default | BindingFlags.InvokeMethod, null, _dataUpgradeClassInstance, param);
         }
 
         /// <summary>
