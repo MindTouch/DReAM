@@ -770,6 +770,8 @@ namespace MindTouch.Dream {
             var buffer = new MemoryStream();
             Result<long> res;
 
+            // Create BufferedStream
+            _stream = new BufferedStream(_stream);
             // TODO (steveb): use WithCleanup() to dispose of resources in case of failure
             yield return res = _stream.CopyTo(buffer, Math.Min(length, max + 1), new Result<long>(TimeSpan.MaxValue)).Catch();
 
