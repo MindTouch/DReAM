@@ -36,6 +36,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.db", "mindtouch.db\mindtouch.db.csproj", "{F9999307-4356-4EFC-AEC7-FF6D1D692618}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -140,6 +142,14 @@ Global
 		{66E62AB7-D8A5-494A-970F-AA6705E33361}.Release|Any CPU.Build.0 = Release|Any CPU
 		{66E62AB7-D8A5-494A-970F-AA6705E33361}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
 		{66E62AB7-D8A5-494A-970F-AA6705E33361}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Documentation|Any CPU.Build.0 = Debug|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -152,5 +162,6 @@ Global
 		{E23ADD96-5514-449A-8FD9-1BC0B0177146} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}
 		{DCF830D7-F840-41B3-A89A-4145DAEB9744} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}
 		{74182840-62F6-4587-8FA8-88C4D57598AE} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}
+		{F9999307-4356-4EFC-AEC7-FF6D1D692618} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}
 	EndGlobalSection
 EndGlobal

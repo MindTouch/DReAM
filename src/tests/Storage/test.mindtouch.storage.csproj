@@ -71,14 +71,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AmazonS3ClientProxy.cs" />
-    <Compile Include="AmazonS3ClientTests.cs" />
-    <Compile Include="AmazonS3TestHelpers.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="AmazonS3PrivateStorageTests.cs" />
-    <Compile Include="AmazonS3PublicStorageTests.cs" />
-    <Compile Include="AmazonS3StorageTest.cs" />
-    <Compile Include="AmazonS3WireupTests.cs" />
+    <Compile Include="AwsS3PrivateStorageTests.cs" />
+    <Compile Include="AwsS3PublicStorageTests.cs" />
+    <Compile Include="AwsS3StorageTest.cs" />
+    <Compile Include="AwsS3WireupTests.cs" />
     <Compile Include="DefaultPublicStorageTests.cs" />
     <Compile Include="PrivateStorageTests.cs" />
     <Compile Include="StorageTests.cs" />

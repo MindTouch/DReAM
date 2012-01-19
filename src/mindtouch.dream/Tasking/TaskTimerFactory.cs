@@ -77,7 +77,7 @@ namespace MindTouch.Tasking {
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private static readonly HashSet<TaskTimerFactory> _factories = new HashSet<TaskTimerFactory>();
-        private static readonly TaskTimerFactory _defaultFactory = new TaskTimerFactory();
+        private static TaskTimerFactory _defaultFactory = new TaskTimerFactory();
 
         //--- Class Constructor ---
         static TaskTimerFactory() {
@@ -89,7 +89,18 @@ namespace MindTouch.Tasking {
         /// <summary>
         /// The global default factory.
         /// </summary>
-        public static TaskTimerFactory Default { get { return _defaultFactory; } }
+        public static TaskTimerFactory Default {
+            get {
+                lock(_factories) {
+                    if(!_defaultFactory._running) {
+                        _log.Debug("creating a new default task timer, since current was shut down");
+                        _defaultFactory = new TaskTimerFactory();
+                        _factories.Add(_defaultFactory);
+                    }
+                    return _defaultFactory;
+                }
+            }
+        }
 
         /// <summary>
         /// The currently active factory.
@@ -97,7 +108,7 @@ namespace MindTouch.Tasking {
         public static TaskTimerFactory Current {
             get {
                 var env = TaskEnv.CurrentOrNull;
-                return env == null ? _defaultFactory : env.TimerFactory;
+                return env == null ? Default : env.TimerFactory;
             }
         }
 
@@ -173,6 +184,7 @@ namespace MindTouch.Tasking {
         private volatile bool _running = true;
         private int _counter;
         private DateTime _last = DateTime.UtcNow;
+        private volatile bool _shutdown;
 
         //--- Constructors ---
         private TaskTimerFactory() {
@@ -286,6 +298,7 @@ namespace MindTouch.Tasking {
             List<KeyValuePair<TaskTimer, TaskEnv>> timers = null;
 
             // stop the thread timer
+            _shutdown = true;
             GlobalClock.RemoveCallback(Tick);
             _owner.Target = null;
 
@@ -322,6 +335,11 @@ namespace MindTouch.Tasking {
         }
 
         private void Tick(DateTime now, TimeSpan elapsed) {
+
+            // ignore ticks that come in after we've initialized a shutdown
+            if(_shutdown) {
+                return;
+            }
 
             // check if some timers are ready
             List<KeyValuePair<TaskTimer, TaskEnv>> timers = null;

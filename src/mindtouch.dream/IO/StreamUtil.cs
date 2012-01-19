@@ -103,7 +103,7 @@ namespace MindTouch.IO {
         /// <param name="stream">Target <see cref="Stream"/></param>
         /// <returns><see langword="true"/> If the <see cref="Stream"/> contents are in memory</returns>
         public static bool IsStreamMemorized(this Stream stream) {
-            return (stream is ChunkedMemoryStream) || (stream is MemoryStream);
+            return (stream is MemoryStream);
         }
 
         /// <summary>
@@ -508,24 +508,6 @@ namespace MindTouch.IO {
             return result;
         }
 
-#if WARN_ON_SYNC
-        [Obsolete("This method is thread-blocking.  Please avoid using it if possible.")]
-#endif
-        /// <summary>
-        /// WARNING: This method is thread-blocking.  Please avoid using it if possible.
-        /// </summary>
-        public static Result<ChunkedMemoryStream> ToChunkedMemoryStream(this Stream stream, long length, Result<ChunkedMemoryStream> result) {
-            var copy = new ChunkedMemoryStream();
-            stream.CopyTo(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(
-                v => {
-                    copy.Position = 0;
-                    result.Return(copy);
-                },
-                result.Throw
-            );
-            return result;
-        }
-
         /// <summary>
         /// Detect stream encoding.
         /// </summary>
@@ -533,8 +515,7 @@ namespace MindTouch.IO {
         /// <returns>Encoding type detected or null</returns>
         public static Encoding DetectEncoding(this Stream stream) {
             return new BOMEncodingDetector().Detect(stream)
-
-                // TODO (steveb): add <meta> tag detector here
+                ?? new HtmlMetaEncodingDetector().Detect(stream)
                 ?? new CharacterEncodingDetector().Detect(stream);
         }
 

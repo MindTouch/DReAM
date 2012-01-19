@@ -137,9 +137,9 @@ namespace MindTouch.Collections {
         /// </summary>
         /// <param name="value">The value in the set</param>
         /// <param name="ttl">The time-to-live from right now</param>
-        public void SetExpiration(T value, TimeSpan ttl) {
+        public bool SetOrUpdate(T value, TimeSpan ttl) {
             var when = DateTime.UtcNow + ttl;
-            _set.SetExpiration(value, value, when, ttl, true);
+            return _set.SetExpiration(value, value, when, ttl, true);
         }
 
         /// <summary>
@@ -147,9 +147,9 @@ namespace MindTouch.Collections {
         /// </summary>
         /// <param name="value">The value in the set</param>
         /// <param name="when">The absolute expiration time of the item</param>
-        public void SetExpiration(T value, DateTime when) {
+        public bool SetOrUpdate(T value, DateTime when) {
             var ttl = when - DateTime.UtcNow;
-            _set.SetExpiration(value, value, when, ttl, true);
+            return _set.SetExpiration(value, value, when, ttl, true);
         }
 
         /// <summary>
@@ -162,6 +162,43 @@ namespace MindTouch.Collections {
         /// <param name="value"></param>
         /// <param name="when"></param>
         /// <param name="ttl"></param>
+        public bool SetOrUpdate(T value, DateTime when, TimeSpan ttl) {
+            return _set.SetExpiration(value, value, when, ttl, true);
+        }
+
+        /// <summary>
+        /// Obsolete: The method <see cref="SetExpiration(T,System.TimeSpan)"/> has been deprecated. Use <see cref="SetOrUpdate(T,System.TimeSpan)"/> instead.
+        /// </summary>
+        /// <param name="value">The value in the set</param>
+        /// <param name="ttl">The time-to-live from right now</param>
+        [Obsolete("The method SetExpiration(T value, TimeSpan ttl) has been deprecated. Use SetOrUpdate(T value, TimeSpan ttl) instead.")]
+        public void SetExpiration(T value, TimeSpan ttl) {
+            var when = DateTime.UtcNow + ttl;
+            _set.SetExpiration(value, value, when, ttl, true);
+        }
+
+        /// <summary>
+        /// Obsolete: The method <see cref="SetExpiration(T,System.DateTime)"/> has been deprecated. Use <see cref="SetOrUpdate(T,System.DateTime)"/> instead.
+        /// </summary>
+        /// <param name="value">The value in the set</param>
+        /// <param name="when">The absolute expiration time of the item</param>
+        [Obsolete("The method SetExpiration(T value, DateTime when) has been deprecated. Use SetOrUpdate(T valu, DateTime whene) instead.")]
+        public void SetExpiration(T value, DateTime when) {
+            var ttl = when - DateTime.UtcNow;
+            _set.SetExpiration(value, value, when, ttl, true);
+        }
+
+        /// <summary>
+        /// Obsolete: The method <see cref="SetExpiration(T,System.DateTime,System.TimeSpan)"/> has been deprecated. Use <see cref="SetOrUpdate(T,System.DateTime,System.TimeSpan)"/> instead.
+        /// </summary>
+        /// <remarks>
+        /// Thie overload takes both the when and ttl. The <paramref name="when"/> is authoritative for expiration,
+        /// but <paramref name="ttl"/> is used for <see cref="RefreshExpiration"/>
+        /// </remarks>
+        /// <param name="value"></param>
+        /// <param name="when"></param>
+        /// <param name="ttl"></param>
+        [Obsolete("The method SetExpiration(T value, DateTime when, TimeSpan ttl) has been deprecated. Use SetOrUpdate(T value, DateTime when, TimeSpan ttl) instead.")]
         public void SetExpiration(T value, DateTime when, TimeSpan ttl) {
             _set.SetExpiration(value, value, when, ttl, true);
         }
@@ -205,8 +242,8 @@ namespace MindTouch.Collections {
         /// </summary>
         public void Dispose() {
             _set.CollectionChanged -= OnCollectionChanged;
-            _set.EntriesExpired -= OnEntriesExpired;
             _set.Dispose();
+            _set.EntriesExpired -= OnEntriesExpired;
         }
 
         private void OnEntriesExpired(object sender, ExpiringSet<T, T>.ExpiredArgs e) {

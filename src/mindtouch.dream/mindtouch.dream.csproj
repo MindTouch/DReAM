@@ -85,13 +85,42 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Aws\AwsS3Client.cs" />
+    <Compile Include="Aws\AwsS3ClientConfig.cs" />
+    <Compile Include="Aws\AwsS3DataInfo.cs" />
+    <Compile Include="Aws\AwsEndpoint.cs" />
+    <Compile Include="Aws\AwsS3FileHandle.cs" />
+    <Compile Include="Aws\AwsSqsClient.cs" />
+    <Compile Include="Aws\AwsSqsClientConfig.cs" />
+    <Compile Include="Aws\AwsSqsDefaults.cs" />
+    <Compile Include="Aws\AwsSqsError.cs" />
+    <Compile Include="Aws\AwsSqsEx.cs" />
+    <Compile Include="Aws\AwsSqsMessage.cs" />
+    <Compile Include="Aws\AwsSqsResponse.cs" />
+    <Compile Include="Aws\AwsSqsRequestException.cs" />
+    <Compile Include="Aws\AwsSqsSendResponse.cs" />
+    <Compile Include="Aws\IAwsS3Client.cs" />
+    <Compile Include="Aws\IAwsSqsClient.cs" />
+    <Compile Include="Aws\InMemorySqsClient.cs" />
+    <Compile Include="Aws\ISqsPollClient.cs" />
+    <Compile Include="Aws\SqsPollClient.cs" />
+    <Compile Include="Aws\AwsExtensions.cs" />
+    <Compile Include="Data\attributes.cs" />
+    <Compile Include="Data\ADataUpdater.cs" />
+    <Compile Include="Data\IDataUpdater.cs" />
+    <Compile Include="Data\MysqlDataUpdater.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Data\VersionInfo.cs" />
     <Compile Include="dream\AutoFacEx.cs" />
     <Compile Include="dream\DreamContainerScope.cs" />
     <Compile Include="dream\DreamFeatureStage.cs" />
     <Compile Include="dream\DreamServiceConfigurationBuilder.cs" />
     <Compile Include="dream\DreamServiceRegistrationBuilder.cs" />
     <Compile Include="dream\IDreamServiceConfigurationBuilder.cs" />
+    <Compile Include="dream\RegistrationInspector.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
+    <Compile Include="Numeric.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />
     <Compile Include="system\GitRevisionAttribute.cs" />
     <Compile Include="system\GitUriAttribute.cs" />
@@ -110,13 +139,6 @@
     <Compile Include="Collections\ExpiringDictionary.cs" />
     <Compile Include="Collections\ExpiringHashSet.cs" />
     <Compile Include="Collections\ITransactionalQueue.cs" />
-    <Compile Include="dream\services\PubSub\Dispatcher.cs" />
-    <Compile Include="dream\services\PubSub\DispatcherConfig.cs" />
-    <Compile Include="dream\services\PubSub\DispatcherEvent.cs" />
-    <Compile Include="dream\services\PubSub\DispatcherRecipient.cs" />
-    <Compile Include="dream\services\PubSub\IPubSubDispatcher.cs" />
-    <Compile Include="dream\services\PubSub\PubSubSubscription.cs" />
-    <Compile Include="dream\services\PubSub\PubSubSubscriptionSet.cs" />
     <Compile Include="dream\XDocAutofacContainerConfigurator.cs" />
     <Compile Include="Collections\LockFreeItemConsumerQueue.cs" />
     <Compile Include="Collections\ProcessingQueue.cs" />
@@ -138,7 +160,6 @@
     <Compile Include="IO\SkipWriteStream.cs" />
     <Compile Include="IO\XDocQueueItemSerializer.cs" />
     <Compile Include="Data\DataCatalog.cs" />
-    <Compile Include="Data\DataColumnAttribute.cs" />
     <Compile Include="Data\DataCommand.cs" />
     <Compile Include="Data\DataFactory.cs" />
     <Compile Include="Data\IDataCommand.cs" />
@@ -193,7 +214,6 @@
     <Compile Include="dream\dreamutil.cs" />
     <Compile Include="dream\exceptions.cs" />
     <Compile Include="dream\mimetype.cs" />
-    <Compile Include="dream\services\PubSubService.cs" />
     <Compile Include="dream\XUriChildMap.cs" />
     <Compile Include="IO\MultiFileQueueStream.cs" />
     <Compile Include="IO\IQueueStream.cs" />
@@ -203,7 +223,6 @@
     <Compile Include="IO\StreamUtil.cs" />
     <Compile Include="IO\TrimmingStringReader.cs" />
     <Compile Include="IO\TrimmingTextReader.cs" />
-    <Compile Include="IO\ChunkedMemoryStream.cs" />
     <Compile Include="IO\TrimmingTextReaderUtil.cs" />
     <Compile Include="plug\HttpPlugEndpoint.cs" />
     <Compile Include="Security\Cryptography\CryptoEx.cs" />

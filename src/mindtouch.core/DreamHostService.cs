@@ -227,17 +227,22 @@ namespace MindTouch.Dream {
 
         //--- Fields ---
         private readonly IContainer _container;
-        private readonly Dictionary<IDreamService, IContainer> _serviceContainers = new Dictionary<IDreamService, IContainer>();
+        private readonly ILifetimeScope _hostLifetimeScope;
+        private readonly Dictionary<IDreamService, ILifetimeScope> _serviceLifetimeScopes = new Dictionary<IDreamService, ILifetimeScope>();
+        private readonly XUriMap<XUri> _aliases = new XUriMap<XUri>();
+        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
+        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
+        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
+        private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
+        private readonly DateTime _created = DateTime.UtcNow;
         private IServiceActivator _serviceActivator;
         private DreamFeatureStage[] _defaultPrologues;
         private DreamFeatureStage[] _defaultEpilogues;
         private Guid _id;
         private bool _running;
-        private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         private DreamFeatureDirectory _features = new DreamFeatureDirectory();
-        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
-        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private Dictionary<string, XDoc> _blueprints;
         private string _storageType;
         private XDoc _storageConfig;
@@ -245,27 +250,24 @@ namespace MindTouch.Dream {
         private Plug _storage;
         private ManualResetEvent _shutdown;
         private XUri _localMachineUri;
-        private XUriMap<XUri> _aliases = new XUriMap<XUri>();
         private XUri _publicUri;
-        private readonly DateTime _created = DateTime.UtcNow;
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
-        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
         private long _responseCacheHits;
         private long _responseCacheMisses;
         private Plug _hostpubsub;
-        private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
         private int _reentrancyLimit;
         private string _rootRedirect;
         private string _debugMode;
+        private bool _memorizeAliases;
 
         //--- Constructors ---
         public DreamHostService() : this(null) { }
 
         public DreamHostService(IContainer container) {
-            _container = container == null ? new ContainerBuilder().Build() : container.CreateInnerContainer();
-            _container.TagWith(DreamContainerScope.Host);
+            _container = (container ?? new ContainerBuilder().Build());
+            _hostLifetimeScope = _container.BeginLifetimeScope(DreamContainerScope.Host);
         }
 
         //--- Properties ---
@@ -969,7 +971,7 @@ namespace MindTouch.Dream {
             _features = new DreamFeatureDirectory();
             _services.Clear();
             _responseCache.Clear();
-            _aliases = new XUriMap<XUri>();
+            _aliases.Clear();
 
             // mark host as not running
             Plug.RemoveEndpoint(this);
@@ -990,20 +992,21 @@ namespace MindTouch.Dream {
                     _log.Debug("registering host level module");
                     var builder = new ContainerBuilder();
                     builder.RegisterModule(new XDocAutofacContainerConfigurator(containerConfig, DreamContainerScope.Host));
-                    builder.Build(_container);
+                    builder.Update(_container);
                 }
 
                 // make sure we have an IServiceActivator
                 if(!_container.IsRegistered<IServiceActivator>()) {
                     var builder = new ContainerBuilder();
-                    builder.Register<DefaultServiceActivator>().As<IServiceActivator>();
-                    builder.Build(_container);
+                    builder.RegisterType<DefaultServiceActivator>().As<IServiceActivator>();
+                    builder.Update(_container);
                 }
                 _serviceActivator = _container.Resolve<IServiceActivator>();
                 _running = true;
                 _shutdown = new ManualResetEvent(false);
                 _rootRedirect = config["root-redirect"].AsText;
                 _debugMode = config["debug"].AsText.IfNullOrEmpty("false").ToLowerInvariant();
+                _memorizeAliases = config["memorize-aliases"].AsBool ?? true;
 
                 // add default prologues/epilogues
                 _defaultPrologues = new[] { 
@@ -1084,11 +1087,11 @@ namespace MindTouch.Dream {
                     Self.WithTimeout(TimeSpan.MaxValue).With("apikey", PrivateAccessKey).At("@config").Delete();
                 }
             } finally {
-                lock(_serviceContainers) {
-                    foreach(var serviceContainer in _serviceContainers.Values) {
+                lock(_serviceLifetimeScopes) {
+                    foreach(var serviceContainer in _serviceLifetimeScopes.Values) {
                         serviceContainer.Dispose();
                     }
-                    _serviceContainers.Clear();
+                    _serviceLifetimeScopes.Clear();
                 }
                 _container.Dispose();
             }
@@ -1345,13 +1348,15 @@ namespace MindTouch.Dream {
                 }
 
                 // add uri to aliases list
-                lock(_aliases) {
-                    _aliases[transport] = transport;
-                    _aliases[publicUri] = publicUri;
+                if(_memorizeAliases) {
+                    lock(_aliases) {
+                        _aliases[transport] = transport;
+                        _aliases[publicUri] = publicUri;
+                    }
                 }
 
                 // create context
-                DreamContext context = new DreamContext(this, verb, localFeatureUri, feature, publicUri, _publicUri, request, CultureInfo.InvariantCulture, GetRequestContainerFactory(feature.Service));
+                DreamContext context = new DreamContext(this, verb, localFeatureUri, feature, publicUri, _publicUri, request, CultureInfo.InvariantCulture, GetRequestLifetimeScopeFactory(feature.Service));
 
                 // attach request id to the context
                 context.SetState(DreamHeaders.DREAM_REQUEST_ID, request.Headers.DreamRequestId);
@@ -1381,7 +1386,7 @@ namespace MindTouch.Dream {
                         // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal
                         //                representation to a byte array, which is better for cloning.
                         result.Value.ToBytes();
-                        
+
                         DreamMessage reply = result.Value.Clone();
                         Dictionary<object, DreamMessage> cache;
                         lock(_responseCache) {
@@ -1443,27 +1448,26 @@ namespace MindTouch.Dream {
             return response;
         }
 
-        public IContainer CreateServiceContainer(IDreamService service) {
-            lock(_serviceContainers) {
-                if(_serviceContainers.ContainsKey(service)) {
-                    throw new InvalidOperationException(string.Format("Service container for service  '{0}' at '{1}' has already been created.", service, service.Self.Uri));
+        public ILifetimeScope CreateServiceLifetimeScope(IDreamService service, Action<IContainer, ContainerBuilder> registrationCallback) {
+            lock(_serviceLifetimeScopes) {
+                if(_serviceLifetimeScopes.ContainsKey(service)) {
+                    throw new InvalidOperationException(string.Format("LifetimeScope for service  '{0}' at '{1}' has already been created.", service, service.Self.Uri));
                 }
-                var serviceContainer = _container.CreateInnerContainer();
-                serviceContainer.TagWith(DreamContainerScope.Service);
-                _serviceContainers[service] = serviceContainer;
-                return serviceContainer;
+                var serviceLifetimeScope = _hostLifetimeScope.BeginLifetimeScope(DreamContainerScope.Service, b => registrationCallback(_container, b));
+                _serviceLifetimeScopes[service] = serviceLifetimeScope;
+                return serviceLifetimeScope;
             }
         }
 
         public void DisposeServiceContainer(IDreamService service) {
-            lock(_serviceContainers) {
-                IContainer serviceContainer;
-                if(!_serviceContainers.TryGetValue(service, out serviceContainer)) {
-                    _log.WarnFormat("Service container for service '{0}' at '{1}' already gone.", service, service.Self.Uri);
+            lock(_serviceLifetimeScopes) {
+                ILifetimeScope serviceLifetimeScope;
+                if(!_serviceLifetimeScopes.TryGetValue(service, out serviceLifetimeScope)) {
+                    _log.WarnFormat("LifetimeScope for service '{0}' at '{1}' already gone.", service, service.Self.Uri);
                     return;
                 }
-                serviceContainer.Dispose();
-                _serviceContainers.Remove(service);
+                serviceLifetimeScope.Dispose();
+                _serviceLifetimeScopes.Remove(service);
             }
         }
 
@@ -1530,17 +1534,16 @@ namespace MindTouch.Dream {
             }
         }
 
-        private Func<IContainer> GetRequestContainerFactory(IDreamService service) {
-            return () => {
-                IContainer serviceContainer;
-                lock(_serviceContainers) {
-                    if(!_serviceContainers.TryGetValue(service, out serviceContainer)) {
+        private Func<Action<ContainerBuilder>, ILifetimeScope> GetRequestLifetimeScopeFactory(IDreamService service) {
+            return buildAction => {
+                ILifetimeScope serviceLifetimeScope;
+                lock(_serviceLifetimeScopes) {
+                    if(!_serviceLifetimeScopes.TryGetValue(service, out serviceLifetimeScope)) {
                         throw new InvalidOperationException(string.Format("Cannot create a request container for service  '{0}' at '{1}'. This error  normally occurs if DreamContext.Container is invoked in Service Start or Shutdown", service, service.Self.Uri));
                     }
                 }
-                var requestContainer = serviceContainer.CreateInnerContainer();
-                requestContainer.TagWith(DreamContainerScope.Request);
-                return requestContainer;
+                var requestLifetimeScope = serviceLifetimeScope.BeginLifetimeScope(DreamContainerScope.Request, buildAction);
+                return requestLifetimeScope;
             };
         }
 
@@ -1693,15 +1696,25 @@ namespace MindTouch.Dream {
         }
 
         private void StopService(XUri uri) {
-            _log.TraceMethodCall("StopService", uri);
+            string path = uri.Path.ToLowerInvariant();
 
             // remove service from services table
             ServiceEntry service;
             lock(_services) {
-                string path = uri.Path.ToLowerInvariant();
                 if(_services.TryGetValue(path, out service)) {
                     _services.Remove(path);
                 }
+            }
+            if(_log.IsDebugEnabled) {
+                string sid = "<UNKNOWN>";
+                string type = "<UNKNOWN>";
+                if(service != null) {
+                    sid = service.SID.ToString();
+                    if(service.Service != null) {
+                        type = service.Service.GetType().ToString();
+                    }
+                }
+                _log.DebugMethodCall("stop", path, sid, type);
             }
 
             // deactivate service
@@ -1888,7 +1901,7 @@ namespace MindTouch.Dream {
             } else {
                 normalized = null;
             }
-            return result;
+            return (result > 0) ? result + Plug.BASE_ENDPOINT_SCORE : 0;
         }
 
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {

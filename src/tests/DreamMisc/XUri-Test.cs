@@ -300,7 +300,7 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual("/c=GB", uri.Path);
             Assert.AreEqual(1, uri.Segments.Length);
             Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual("objectClass%3fone", uri.Query);
+            Assert.AreEqual("objectClass%3Fone", uri.Query);
             Assert.AreEqual(null, uri.Fragment);
         }
 
@@ -490,12 +490,27 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Square_brackets_in_parsed_query_are_encoded_on_render() {
-            Assert.AreEqual("http://host/foo?bar%5b123%5d=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
+            Assert.AreEqual("http://host/foo?bar%5B123%5D=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
         }
 
         [Test]
-        public void Cannot_parse_uri_with_curly_brackest_in_query() {
-            Assert.IsNull(XUri.TryParse("http://host/foo?bar{123}=abc"));
+        public void Can_parse_curly_brackets_in_query() {
+            Assert.IsNotNull(XUri.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"));
+        }
+
+        [Test]
+        public void Can_parse_curly_brackets_in_segment() {
+            Assert.IsNotNull(XUri.TryParse("http://test.com/{xyz}/foo"));
+        }
+
+        [Test]
+        public void Can_parse_curly_brackets_in_fragment() {
+            Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"));
+        }
+
+        [Test]
+        public void Curly_brackets_in_parsed_query_are_encoded_on_render() {
+            Assert.AreEqual("http://test.com/AllItems.aspx?RootFolder=%7Bxyz%7D", new XUri("http://test.com/AllItems.aspx?RootFolder={xyz}").ToString());
         }
 
         [Test]

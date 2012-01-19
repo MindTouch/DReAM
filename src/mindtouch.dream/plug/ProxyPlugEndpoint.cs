@@ -75,7 +75,7 @@ namespace MindTouch.Dream {
                     return 0;
                 }
             }
-            return uri.MaxSimilarity;
+            return uri.MaxSimilarity > 0 ? uri.MaxSimilarity + Plug.BASE_ENDPOINT_SCORE : 0;
         }
 
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {

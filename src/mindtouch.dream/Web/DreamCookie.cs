@@ -639,7 +639,7 @@ namespace MindTouch.Web {
         public string Domain {
             get { return Uri == null ? null : Uri.HostPort; }
         }
-        
+
         /// <summary>
         /// Cookie Path.
         /// </summary>
@@ -726,6 +726,32 @@ namespace MindTouch.Web {
                     .Attr("version", 1)
                     .Elem("name", Name)
                     .Elem("uri", Uri)
+                    .Elem("value", Value);
+                if(Expires < DateTime.MaxValue) {
+                    result.Elem("expires", Expires);
+                }
+                if(!string.IsNullOrEmpty(Comment)) {
+                    result.Elem("comment", Comment);
+                }
+                if(CommentUri != null) {
+                    result.Elem("uri.comment", CommentUri.ToString());
+                }
+                if(Discard) {
+                    result.Attr("discard", true);
+                }
+                if(Secure) {
+                    result.Attr("secure", true);
+                }
+                return result;
+            }
+        }
+
+        internal XDoc AsInternalSetCookieDocument {
+            get {
+                XDoc result = new XDoc("set-cookie")
+                    .Attr("version", 1)
+                    .Elem("name", Name)
+                    .Elem("uri", Uri.AsLocalUri().ToString())
                     .Elem("value", Value);
                 if(Expires < DateTime.MaxValue) {
                     result.Elem("expires", Expires);

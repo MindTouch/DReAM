@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Net.Mail;
+using Autofac;
 using Autofac.Builder;
 using log4net;
 using MindTouch.Dream;
@@ -109,8 +110,8 @@ namespace MindTouch.Core.Test.Services {
             var response = _plug.At("message").Post(email, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DEFAULT_HOST, _smtpClientFactory.Settings.Host);
-            Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
-            Assert.AreEqual("to@bar.com", _smtpClientFactory.Client.Message.To.First().ToString());
+            Assert.AreEqual("\"from@bar.com\" <from@bar.com>", _smtpClientFactory.Client.Message.From.ToString());
+            Assert.AreEqual("\"to@bar.com\" <to@bar.com>", _smtpClientFactory.Client.Message.To.First().ToString());
             Assert.AreEqual("subject", _smtpClientFactory.Client.Message.Subject);
             Assert.AreEqual("body", _smtpClientFactory.Client.Message.Body);
         }
@@ -155,7 +156,7 @@ namespace MindTouch.Core.Test.Services {
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DEFAULT_HOST, _smtpClientFactory.Settings.Host);
             Assert.IsNotNull(_smtpClientFactory.Client.Message);
-            Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
+            Assert.AreEqual("\"from@bar.com\" <from@bar.com>", _smtpClientFactory.Client.Message.From.ToString());
         }
 
         [Test]
@@ -178,7 +179,7 @@ namespace MindTouch.Core.Test.Services {
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual("customhost", _smtpClientFactory.Settings.Host);
             Assert.IsNotNull(_smtpClientFactory.Client.Message);
-            Assert.AreEqual("from@bar.com", _smtpClientFactory.Client.Message.From.ToString());
+            Assert.AreEqual("\"from@bar.com\" <from@bar.com>", _smtpClientFactory.Client.Message.From.ToString());
         }
     }
 }

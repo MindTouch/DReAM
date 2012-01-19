@@ -171,7 +171,7 @@ namespace MindTouch.IO {
             var next = _recordQueue.Dequeue();
             var recordLength = _recordMap[next];
             _stream.Seek(next + HEADER_SIZE, SeekOrigin.Begin);
-            var data = new ChunkedMemoryStream();
+            var data = new MemoryStream();
             var copied = _stream.CopyTo(data, recordLength);
             if(copied != recordLength) {
                 _log.WarnFormat("reached EOF in the middle of the record");

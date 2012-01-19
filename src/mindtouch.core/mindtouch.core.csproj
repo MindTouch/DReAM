@@ -81,9 +81,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AmazonS3\AmazonS3Client.cs" />
-    <Compile Include="AmazonS3\AmazonS3DataInfo.cs" />
-    <Compile Include="AmazonS3\S3PlugEx.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="DreamApplicationConfiguration.cs" />
     <Compile Include="DreamApplicationConfigurationBuilder.cs" />
@@ -99,10 +96,7 @@
     <Compile Include="http\httptransport.cs" />
     <Compile Include="ioformatter.cs" />
     <Compile Include="serviceactivator.cs" />
-    <Compile Include="AmazonS3\AmazonS3ClientConfig.cs" />
-    <Compile Include="AmazonS3\AmazonS3FileHandle.cs" />
     <Compile Include="services\atomservice.cs" />
-    <Compile Include="AmazonS3\IAmazonS3Client.cs" />
     <Compile Include="services\S3StorageService.cs" />
     <Compile Include="services\directoryservice.cs" />
     <Compile Include="services\EmailService.cs" />

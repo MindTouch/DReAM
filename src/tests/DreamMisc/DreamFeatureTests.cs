@@ -107,10 +107,10 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Auto_casting_path_parameter_with_invalid_value_returns_informative_500() {
             var response = _plug.At("sync", "noattr", "int", "abc").Get(new Result<DreamMessage>()).Wait();
-            Assert.AreEqual(DreamStatus.InternalError,response.Status);
+            Assert.AreEqual(DreamStatus.InternalError, response.Status);
             var exception = response.ToDocument();
-            Assert.AreEqual("MindTouch.Dream.FeatureArgumentParseException",exception["type"].AsText);
-            Assert.AreEqual("Cannot parse feature argument 'x'",exception["message"].AsText);
+            Assert.AreEqual("MindTouch.Dream.FeatureArgumentParseException", exception["type"].AsText);
+            Assert.AreEqual("Cannot parse feature argument 'x'", exception["message"].AsText);
         }
 
         [Test]
@@ -178,6 +178,14 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Can_ommit_injectable_string_query_args_without_attribute() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr",
+                _plug.At("sync", "queryargs", "noattr"),
+                new XDoc("r").Elem("x", "null").Elem("y", "null"));
+        }
+
+        [Test]
         public void Can_inject_list_query_args() {
             AssertFeature(
                 "GET:sync/multiqueryargs",
@@ -210,6 +218,30 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Ommitting_injectable_int_query_args_throws() {
+            var response = _plug.At("sync", "queryargs", "noattr", "int").Get(new Result<DreamMessage>()).Wait();
+            Assert.AreEqual(DreamStatus.BadRequest, response.Status);
+            var exception = response.ToDocument();
+            Assert.AreEqual("invalid value for feature parameter 'x'", exception["message"].AsText);
+        }
+
+        [Test]
+        public void Can_inject_query_args_and_cast_to_nullable_int_without_attribute() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr/nullableint",
+                _plug.At("sync", "queryargs", "noattr", "nullableint").With("x", "123"),
+                new XDoc("r").Elem("x", "123"));
+        }
+
+        [Test]
+        public void Can_ommit_nullable_int_query_arg() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr/nullableint",
+                _plug.At("sync", "queryargs", "noattr", "nullableint"),
+                new XDoc("r").Elem("x", "null"));
+        }
+
+        [Test]
         public void Can_inject_query_args_and_cast_to_bool() {
             AssertFeature(
                 "GET:sync/queryargs/bool",
@@ -226,6 +258,30 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Ommitting_injectable_bool_query_args_throws() {
+            var response = _plug.At("sync", "queryargs", "noattr", "bool").Get(new Result<DreamMessage>()).Wait();
+            Assert.AreEqual(DreamStatus.BadRequest, response.Status);
+            var exception = response.ToDocument();
+            Assert.AreEqual("invalid value for feature parameter 'x'", exception["message"].AsText);
+        }
+
+        [Test]
+        public void Can_inject_query_args_and_cast_to_nullable_bool_without_attribute() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr/nullablebool",
+                _plug.At("sync", "queryargs", "noattr", "nullablebool").With("x", "true"),
+                new XDoc("r").Elem("x", "True"));
+        }
+
+        [Test]
+        public void Can_ommit_nullable_bool_query_arg() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr/nullablebool",
+                _plug.At("sync", "queryargs", "noattr", "nullablebool"),
+                new XDoc("r").Elem("x", "null"));
+        }
+
+        [Test]
         public void Can_inject_query_args_and_cast_to_enum() {
             AssertFeature(
                 "GET:sync/queryargs/enum",
@@ -239,6 +295,30 @@ namespace MindTouch.Dream.Test {
                 "GET:sync/queryargs/noattr/enum",
                 _plug.At("sync", "queryargs", "noattr", "enum").With("x", DreamStatus.SeeOther.ToString()),
                 new XDoc("r").Elem("x", DreamStatus.SeeOther));
+        }
+
+        [Test]
+        public void Ommitting_injectable_enum_query_args_throws() {
+            var response = _plug.At("sync", "queryargs", "noattr", "enum").Get(new Result<DreamMessage>()).Wait();
+            Assert.AreEqual(DreamStatus.BadRequest, response.Status);
+            var exception = response.ToDocument();
+            Assert.AreEqual("invalid value for feature parameter 'x'", exception["message"].AsText);
+        }
+
+        [Test]
+        public void Can_inject_query_args_and_cast_to_nullable_enum_without_attribute() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr/nullableenum",
+                _plug.At("sync", "queryargs", "noattr", "nullableenum").With("x", DreamStatus.SeeOther.ToString()),
+                new XDoc("r").Elem("x", DreamStatus.SeeOther));
+        }
+
+        [Test]
+        public void Can_ommit_nullable_enum_query_arg() {
+            AssertFeature(
+                "GET:sync/queryargs/noattr/nullableenum",
+                _plug.At("sync", "queryargs", "noattr", "nullableenum"),
+                new XDoc("r").Elem("x", "null"));
         }
 
         [Test]
@@ -586,6 +666,8 @@ namespace MindTouch.Dream.Test {
                 string x,
                 string y
             ) {
+                if(x == null) { x = "null"; }
+                if(y == null) { y = "null"; }
                 return Response(new XDoc("r").Elem("x", x).Elem("y", y));
             }
 
@@ -603,6 +685,14 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", x));
             }
 
+            [DreamFeature("GET:sync/queryargs/noattr/nullableint", "")]
+            public DreamMessage SyncQueryargsNullableIntPathArgNoAttr(
+                int? x
+            ) {
+                var v = x.HasValue ? x.ToString() : "null";
+                return Response(new XDoc("r").Elem("x", v));
+            }
+
             [DreamFeature("GET:sync/queryargs/bool", "")]
             public DreamMessage SyncQueryargsBoolPathArg(
                 [Query] bool x
@@ -617,6 +707,14 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", x));
             }
 
+            [DreamFeature("GET:sync/queryargs/noattr/nullablebool", "")]
+            public DreamMessage SyncQueryargsNullableBoolPathArgNoAttr(
+                bool? x
+            ) {
+                var v = x.HasValue ? x.ToString() : "null";
+                return Response(new XDoc("r").Elem("x", v));
+            }
+
             [DreamFeature("GET:sync/queryargs/enum", "")]
             public DreamMessage SyncQueryargsEnumPathArg(
                 [Query] DreamStatus x
@@ -629,6 +727,14 @@ namespace MindTouch.Dream.Test {
                 DreamStatus x
             ) {
                 return Response(new XDoc("r").Elem("x", x));
+            }
+
+            [DreamFeature("GET:sync/queryargs/noattr/nullableenum", "")]
+            public DreamMessage SyncQueryargsNullableEnumPathArgNoAttr(
+                DreamStatus? x
+            ) {
+                var v = x.HasValue ? x.ToString() : "null";
+                return Response(new XDoc("r").Elem("x", v));
             }
 
             [DreamFeature("GET:sync/queryargs/mixed", "")]

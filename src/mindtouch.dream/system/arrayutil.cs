@@ -111,6 +111,9 @@ namespace System {
     /// </summary>
     public static class ArrayUtil {
 
+        //--- Types ---
+        private class ExceededDeltaException : Exception { }
+
         //--- Extension Methods ---
 
         /// <summary>
@@ -136,6 +139,20 @@ namespace System {
                 return result;
             }
             return collection.ToDictionary(keySelector);
+        }
+
+        /// <summary>
+        /// Get a value from a dictionary or a default value if not found
+        /// </summary>
+        /// <typeparam name="TKey">Dictionary key type</typeparam>
+        /// <typeparam name="TValue">Dictionary value type</typeparam>
+        /// <param name="dictionary">The dictionary to operate on</param>
+        /// <param name="key">Key to try to retrieve a value for</param>
+        /// <param name="default">Default value to return should the key not exist</param>
+        /// <returns>Either the value for the given key, or the default</returns>
+        public static TValue TryGetValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue @default) {
+            TValue value;
+            return dictionary.TryGetValue(key, out value) ? value : @default;
         }
 
         /// <summary>
@@ -460,10 +477,10 @@ namespace System {
         /// <typeparam name="T">Type of input array items.</typeparam>
         /// <param name="before">Array of original values.</param>
         /// <param name="after">Array of values after modification.</param>
-        /// <param name="maxsize">Deprecated parameter, no longer used.</param>
+        /// <param name="maxDelta">Maximum size for a diff.  If this exceeded, the method will return null.</param>
         /// <param name="equal">Delegate for value comparison.</param>
         /// <returns>Array of difference kind and value tuples.</returns>
-        public static Tuplet<ArrayDiffKind, T>[] Diff<T>(T[] before, T[] after, int maxsize, Equality<T> equal) where T : class {
+        public static Tuplet<ArrayDiffKind, T>[] Diff<T>(T[] before, T[] after, int maxDelta, Equality<T> equal) where T : class {
             if(before == null) {
                 throw new ArgumentNullException("before");
             }
@@ -477,50 +494,14 @@ namespace System {
             // reverse lists for procesing
             List<Tuplet<ArrayDiffKind, T>> result = null;
 
-#if false
-            // skip matching items at the beginning
-            int i_start = 0;
-            int j_start = 0;
-            while((i_start < before.Length) && (j_start < after.Length) && equal(before[i_start], after[j_start])) {
-                ++i_start;
-                ++j_start;
-            }
-
-            // skip matching items at the end
-            int i_end = before.Length - 1;
-            int j_end = after.Length - 1;
-            while((i_end > i_start) && (j_end > j_start) && equal(before[i_end], after[j_end])) {
-                --i_end;
-                --j_end;
-            }
-
-            // check if the table is bigger than what we want
-            if((maxsize <= 0) || ((i_end - i_start + 2) + (j_end - j_start + 2) <= maxsize)) {
-                result = new List<Tuple<ArrayDiffKind, T>>(before.Length + after.Length);
-
-                // copy matching beginning
-                for(int i = 0; i < i_start; ++i) {
-                    result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i]));
-                }
-
-                // check if anything is left to compare
-                if((i_start <= i_end) || (j_start <= j_end)) {
-
-                    // find path of longest common subsequence
-                    HirschbergDiff(before, i_start, i_end, after, j_start, j_end, equal, result);
-
-                    // copy matching ending
-                    for(int i = i_end + 1; i < before.Length; ++i) {
-                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i]));
-                    }
-                }
-            }
-#else
             // run myers diff algorithm
             result = new List<Tuplet<ArrayDiffKind, T>>(before.Length + after.Length);
-            MyersDiff(before, after, equal, result);
-#endif
-            return (result != null) ? result.ToArray() : null;
+            try {
+                MyersDiff(before, after, equal, maxDelta, result);
+            } catch(ExceededDeltaException) {
+                return null;
+            }
+            return result.ToArray();
         }
 
         /// <summary>
@@ -870,68 +851,8 @@ namespace System {
             return cur;
         }
 
-        private static void HirschbergDiff<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, List<Tuplet<ArrayDiffKind, T>> result) where T : class {
-            if(j_start > j_end) {
 
-                // 'after' is empty, so 'before' was removed
-                for(int i = i_start; i <= i_end; ++i) {
-                    result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Removed, before[i]));
-                }
-            } else if(i_start > i_end) {
-
-                // 'before' is empty, so 'after' was added
-                for(int j = j_start; j <= j_end; ++j) {
-                    result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, after[j]));
-                }
-            } else if(i_start == i_end) {
-                bool found = false;
-                List<Tuplet<ArrayDiffKind, T>> accumulator = new List<Tuplet<ArrayDiffKind, T>>();
-
-                // check if the single 'before' element occurs in the 'after' sequence
-                for(int j = j_end; j >= j_start; --j) {
-                    if(equal(before[i_start], after[j])) {
-
-                        // found a common element
-                        found = true;
-                        accumulator.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Same, after[j]));
-                    } else {
-                        accumulator.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, after[j]));
-                    }
-                }
-
-                // add missing 'before' element as removed
-                if(!found) {
-                    accumulator.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Removed, before[i_start]));
-                }
-
-                // reverse list (we want the removed element always at the beginning) and add it to the result
-                accumulator.Reverse();
-                result.AddRange(accumulator);
-            } else {
-
-                // compute possible solutions for sub-quadrants
-                int i_mid = i_start + (i_end - i_start + 1) / 2 - 1;
-                uint[] l1 = FrontToBackMaxLCS(before, i_start, i_mid, after, j_start, j_end, equal);
-                uint[] l2 = BackToFrontMaxLCS(before, i_mid + 1, i_end, after, j_start, j_end, equal);
-
-                // find optimal partitioning of sub-quadrants
-                uint max = 0;
-                int j_mid = 0;
-                for(int j = l1.Length - 1; j >= 0; --j) {
-                    uint value = l1[j] + l2[(l1.Length - 1) - j];
-                    if(value >= max) {
-                        max = value;
-                        j_mid = j_start + j - 1;
-                    }
-                }
-
-                // recurse into optimal sub-quadrants
-                HirschbergDiff(before, i_start, i_mid, after, j_start, j_mid, equal, result);
-                HirschbergDiff(before, i_mid + 1, i_end, after, j_mid + 1, j_end, equal, result);
-            }
-        }
-
-        private static void MyersDiff<T>(T[] before, T[] after, Equality<T> equal, List<Tuplet<ArrayDiffKind, T>> result) where T : class {
+        private static void MyersDiff<T>(T[] before, T[] after, Equality<T> equal, int maxdelta, IList<Tuplet<ArrayDiffKind, T>> result) where T : class {
 
             // NOTE (steveb): we mark items as 'Added' when they are actually 'Removed' and vice versa; this means the initial 'before' and 'after' arrays must be passed in reversed order as well;
             //                the reason for doing so is that it will show first 'Removed' items, and then the 'Added' ones, which is what the 3-way merge algorithm requires.
@@ -942,10 +863,10 @@ namespace System {
             var up_array = new ChunkedArray<int>(2 * max + 2);
 
             // run myers diff algorithm
-            MyersDiffRev(after, 0, after.Length - 1, before, 0, before.Length - 1, equal, result, max, down_array, up_array);
+            MyersDiffRev(after, 0, after.Length - 1, before, 0, before.Length - 1, equal, maxdelta, result, max, down_array, up_array);
         }
 
-        private static void MyersDiffRev<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, List<Tuplet<ArrayDiffKind, T>> result, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) where T : class {
+        private static void MyersDiffRev<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, int maxdelta, IList<Tuplet<ArrayDiffKind, T>> result, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) where T : class {
 
             // NOTE (steveb): we mark items as 'Added' when they are actually 'Removed' and vice versa; this means the initial 'before' and 'after' arrays must be passed in reversed order as well;
             //                the reason for doing so is that it will show first 'Removed' items, and then the 'Added' ones, which is what the 3-way merge algorithm requires.
@@ -991,11 +912,11 @@ namespace System {
                 // find the optimal path
                 int i_split;
                 int j_split;
-                ComputeMyersSplit(before, i_start, i_end, out i_split, after, j_start, j_end, out j_split, equal, max, down_array, up_array);
+                ComputeMyersSplit(before, i_start, i_end, out i_split, after, j_start, j_end, out j_split, equal, maxdelta, max, down_array, up_array);
 
                 // solve sub-problem
-                MyersDiffRev(before, i_start, i_split - 1, after, j_start, j_split - 1, equal, result, max, down_array, up_array);
-                MyersDiffRev(before, i_split, i_end, after, j_split, j_end, equal, result, max, down_array, up_array);
+                MyersDiffRev(before, i_start, i_split - 1, after, j_start, j_split - 1, equal, maxdelta, result, max, down_array, up_array);
+                MyersDiffRev(before, i_split, i_end, after, j_split, j_end, equal, maxdelta, result, max, down_array, up_array);
             }
 
             // add tail items
@@ -1004,7 +925,7 @@ namespace System {
             }
         }
 
-        private static void ComputeMyersSplit<T>(T[] before, int i_start, int i_end, out int i_split, T[] after, int j_start, int j_end, out int j_split, Equality<T> equal, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) {
+        private static void ComputeMyersSplit<T>(T[] before, int i_start, int i_end, out int i_split, T[] after, int j_start, int j_end, out int j_split, Equality<T> equal, int maxdelta, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) {
 
             // check if problem space is odd or even sized
             bool odd = (((i_end - i_start + 1) - (j_end - j_start + 1)) & 1) != 0;
@@ -1026,6 +947,9 @@ namespace System {
 
             // find furthest reaching D-path
             int d_max = (((i_end - i_start + 1) + (j_end - j_start + 1) + 1) / 2);
+            if(d_max >= maxdelta) {
+                throw new ExceededDeltaException();
+            }
             for(int d = 0; d <= d_max; ++d) {
 
                 // search forward

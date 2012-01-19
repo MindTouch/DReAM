@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using log4net;
 
 using MindTouch.Tasking;
+using MindTouch.Web;
 using MindTouch.Xml;
 
 using NUnit.Framework;
@@ -39,7 +40,84 @@ namespace MindTouch.Dream.Test {
         public void Init() {
             _hostInfo = DreamTestHelper.CreateRandomPortHost();
             _hostInfo.Host.Self.At("load").With("name", "test.mindtouch.dream").Post(DreamMessage.Ok());
+        }
 
+        [Test]
+        public void Public_features_are_accessible_without_access_cookie() {
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "access");
+            service.WithoutKeys().AtLocalHost.At("public").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access without keys failed");
+            service.WithInternalKey().AtLocalHost.At("public").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access with internal key failed");
+            service.WithPrivateKey().AtLocalHost.At("public").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access with private key failed");
+        }
+
+        [Test]
+        public void Internal_features_require_internal_or_private_key() {
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "access");
+            service.WithoutKeys().AtLocalHost.At("internal").Get(new Result<DreamMessage>()).Wait()
+                .AssertStatus(DreamStatus.Forbidden, "access without succeeded unexpectedly");
+            service.WithInternalKey().AtLocalHost.At("internal").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access with internal key failed");
+            service.WithPrivateKey().AtLocalHost.At("internal").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access with private key failed");
+        }
+
+        [Test]
+        public void Protected_features_require_private_key() {
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "access");
+            service.WithoutKeys().AtLocalHost.At("protected").Get(new Result<DreamMessage>()).Wait()
+                .AssertStatus(DreamStatus.Forbidden, "access without succeeded unexpectedly");
+            service.WithInternalKey().AtLocalHost.At("protected").Get(new Result<DreamMessage>()).Wait()
+                .AssertStatus(DreamStatus.Forbidden, "access with internal key succeeded unexpectedly");
+            service.WithPrivateKey().AtLocalHost.At("protected").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access with private key failed");
+        }
+
+        [Test]
+        public void Private_features_require_private_key() {
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "access");
+            service.WithoutKeys().AtLocalHost.At("private").Get(new Result<DreamMessage>()).Wait()
+                .AssertStatus(DreamStatus.Forbidden, "access without succeeded unexpectedly");
+            service.WithInternalKey().AtLocalHost.At("private").Get(new Result<DreamMessage>()).Wait()
+                .AssertStatus(DreamStatus.Forbidden, "access with internal key succeeded unexpectedly");
+            service.WithPrivateKey().AtLocalHost.At("private").Get(new Result<DreamMessage>()).Wait()
+                .AssertSuccess("access with private key failed");
+        }
+
+        [Test]
+        public void Can_specify_internal_key_for_service() {
+            var key = StringUtil.CreateAlphaNumericKey(4);
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "customkeys", new XDoc("config").Elem("internal-service-key", key));
+            var keys = service.AtLocalHost.At("keys").Get().ToDocument();
+            Assert.AreEqual(key, keys["internal-service-key"].AsText, "internal service key was wrong");
+            Assert.AreNotEqual(key, keys["private-service-key"].AsText, "private service key should not be the same as internal key");
+            var cookiejar = new DreamCookieJar();
+            cookiejar.Update(DreamCookie.NewSetCookie("service-key", key, service.AtLocalHost.Uri), service.AtLocalHost.Uri);
+            service.WithoutKeys().AtLocalHost
+                .WithCookieJar(cookiejar)
+                .At("internal")
+                .Get(new Result<DreamMessage>())
+                .Wait()
+                .AssertSuccess("access with internal key failed");
+        }
+
+        [Test]
+        public void Can_specify_private_key_for_service() {
+            var key = StringUtil.CreateAlphaNumericKey(4);
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "customkeys", new XDoc("config").Elem("private-service-key", key));
+            var keys = service.AtLocalHost.At("keys").Get().ToDocument();
+            Assert.AreEqual(key, keys["private-service-key"].AsText, "private service key was wrong");
+            Assert.AreNotEqual(key, keys["internal-service-key"].AsText, "internal service key should not be the same as private key");
+            var cookiejar = new DreamCookieJar();
+            cookiejar.Update(DreamCookie.NewSetCookie("service-key", key, service.AtLocalHost.Uri), service.AtLocalHost.Uri);
+            service.WithoutKeys().AtLocalHost
+                .WithCookieJar(cookiejar)
+                .At("private")
+                .Get(new Result<DreamMessage>())
+                .Wait()
+                .AssertSuccess("access with private key failed");
         }
 
         [Test]
@@ -189,9 +267,54 @@ namespace MindTouch.Dream.Test {
             response = parent.At("createchild").GetAsync().Wait();
             Assert.IsFalse(response.IsSuccessful, response.ToText());
         }
+
+        [Test]
+        public void Child_that_fails_first_time_around_can_still_be_created() {
+            XDoc config = new XDoc("config")
+                 .Elem("path", "empty")
+                 .Elem("sid", "sid://mindtouch.com/TestParentService");
+            var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
+            Plug parent = serviceInfo.WithPrivateKey().AtLocalHost;
+            var response = parent.At("createandretychild").GetAsync().Wait();
+            Assert.IsTrue(response.IsSuccessful, response.ToText());
+        }
     }
 
-    [DreamService("TestParentService", "Copyright (c) 2008 MindTouch, Inc.",
+    [DreamService("TestService", "Copyright (c) 2011 MindTouch, Inc.",
+        Info = "",
+        SID = new[] { "sid://mindtouch.com/AccessTestService" }
+    )]
+    public class AccessTestService : DreamService {
+
+        [DreamFeature("GET:keys", "")]
+        public XDoc GetKeys() {
+            return new XDoc("keys")
+                .Elem("private-service-key", PrivateAccessKey)
+                .Elem("internal-service-key", InternalAccessKey);
+        }
+
+        [DreamFeature("GET:public", "")]
+        public DreamMessage GetPublic() {
+            return DreamMessage.Ok();
+        }
+
+        [DreamFeature("GET:internal", "")]
+        internal DreamMessage GetInternal() {
+            return DreamMessage.Ok();
+        }
+
+        [DreamFeature("GET:protected", "")]
+        protected DreamMessage GetProtected() {
+            return DreamMessage.Ok();
+        }
+
+        [DreamFeature("GET:private", "")]
+        private DreamMessage GetPrivate() {
+            return DreamMessage.Ok();
+        }
+    }
+
+    [DreamService("TestParentService", "Copyright (c) 2011 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestParentService" }
     )]
@@ -219,6 +342,27 @@ namespace MindTouch.Dream.Test {
             yield break;
         }
 
+        [DreamFeature("*:createandretychild", "test")]
+        public Yield CreateStartChildWithRetry(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+            Result<Plug> r;
+            _log.Debug("first create attempt");
+            yield return r = CreateService(
+                "retrychild",
+                "sid://mindtouch.com/TestBadStartService",
+                new XDoc("config").Elem("throw", true),
+                new Result<Plug>()).Catch();
+            _log.DebugFormat("first attempt result: {0}", r.Exception.Message);
+            _log.Debug("second create attempt");
+            yield return CreateService(
+                "retrychild",
+                "sid://mindtouch.com/TestBadStartService",
+                new XDoc("config").Elem("throw", context.GetParam("throw", "false")),
+                new Result<Plug>());
+            response.Return(DreamMessage.Ok());
+            yield break;
+        }
+
+
         [DreamFeature("*:createbadchild", "test")]
         public Yield CreateBadChild(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             yield return CreateService("badchild", "sid://mindtouch.com/TestBadStopService", null, new Result<Plug>()).Set(v => _badChild = v);
@@ -241,7 +385,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestChildService", "Copyright (c) 2008 MindTouch, Inc.",
+    [DreamService("TestChildService", "Copyright (c) 2011 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestChildService" }
     )]

@@ -24,9 +24,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Autofac;
-using Autofac.Builder;
 using log4net;
-using MindTouch.Dream.AmazonS3;
+using MindTouch.Aws;
 using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
@@ -58,7 +57,7 @@ namespace MindTouch.Dream.Services {
         //--- Fields ---
         private bool _private;
         private bool _privateRoot;
-        private IAmazonS3Client _s3Client;
+        private IAwsS3Client _s3Client;
 
         //--- Features ---
         [DreamFeature("GET://*", "Retrieve a file or a list of all files and folders at the specified path")]
@@ -112,7 +111,7 @@ namespace MindTouch.Dream.Services {
                 timeToLive = TimeSpan.FromSeconds(ttl);
             }
             try {
-                _s3Client.PutFile(filepath, new AmazonS3FileHandle {
+                _s3Client.PutFile(filepath, new AwsS3FileHandle {
                     Stream = request.ToStream(),
                     Size = request.ContentLength,
                     MimeType = request.ContentType,
@@ -134,7 +133,7 @@ namespace MindTouch.Dream.Services {
         }
 
         //--- Methods ---
-        protected override Yield Start(XDoc config, IContainer container, Result result) {
+        protected override Yield Start(XDoc config, ILifetimeScope container, Result result) {
             yield return Coroutine.Invoke(base.Start, config, new Result());
 
             // are we a private storage service?
@@ -146,8 +145,8 @@ namespace MindTouch.Dream.Services {
             _log.DebugFormat("storage root is {0}accessible", _privateRoot ? "not " : "");
 
             // set up S3 client
-            var s3Config = new AmazonS3ClientConfig() {
-                S3BaseUri = new XUri(config["baseuri"].AsText.IfNullOrEmpty("http://s3.amazonaws.com")),
+            var s3Config = new AwsS3ClientConfig() {
+                Endpoint = AwsEndpoint.GetEndpoint(config["endpoint"].AsText) ?? AwsEndpoint.Default,
                 Bucket = config["bucket"].AsText,
                 Delimiter = "/",
                 RootPath = config["folder"].AsText,
@@ -164,14 +163,7 @@ namespace MindTouch.Dream.Services {
             if(string.IsNullOrEmpty(s3Config.PublicKey)) {
                 throw new ArgumentException("missing configuration parameter 'publickey'");
             }
-            if(!container.IsRegistered(typeof(IAmazonS3Client))) {
-
-                // Note (arnec): registering the client in the container to hand over disposal control to the container
-                var builder = new ContainerBuilder();
-                builder.Register<AmazonS3Client>().As<IAmazonS3Client>();
-                builder.Build(container);
-            }
-            _s3Client = container.Resolve<IAmazonS3Client>(TypedParameter.From(s3Config));
+            _s3Client = container.Resolve<IAwsS3Client>(TypedParameter.From(s3Config));
             result.Return();
         }
 
@@ -180,6 +172,14 @@ namespace MindTouch.Dream.Services {
             _s3Client = null;
             yield return Coroutine.Invoke(base.Stop, new Result());
             result.Return();
+        }
+
+        protected override void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+            if(!inspector.IsRegistered<IAwsS3Client>()) {
+
+                // Note (arnec): registering the client in the container to hand over disposal control to the container
+                lifetimeScopeBuilder.RegisterType<AwsS3Client>().As<IAwsS3Client>();
+            }
         }
 
         public override DreamFeatureStage[] Prologues {

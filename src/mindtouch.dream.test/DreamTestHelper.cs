@@ -35,7 +35,141 @@ namespace MindTouch.Dream.Test {
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
         private static int _port = 1024;
-        //--- Static Methods ---
+        private static Random _random = new Random();
+
+        //--- Extension Methods ---
+        /// <summary>
+        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
+        /// </summary>
+        /// <typeparam name="T">The <see cref="IDreamService"/> to create.</typeparam>
+        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
+        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
+        /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
+        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
+        public static DreamServiceInfo CreateService<T>(this DreamHostInfo hostInfo, string pathPrefix, XDoc extraConfig) where T : IDreamService {
+            return CreateService(hostInfo, typeof(T), pathPrefix, extraConfig);
+        }
+
+        /// <summary>
+        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
+        /// </summary>
+        /// <typeparam name="T">The <see cref="IDreamService"/> to create.</typeparam>
+        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
+        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
+        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
+        public static DreamServiceInfo CreateService<T>(this DreamHostInfo hostInfo, string pathPrefix) where T : IDreamService {
+            return CreateService(hostInfo, typeof(T), pathPrefix);
+        }
+
+        /// <summary>
+        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
+        /// </summary>
+        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
+        /// <param name="serviceType">Type of the <see cref="IDreamService"/> to create.</param>
+        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
+        /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
+        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, Type serviceType, string pathPrefix, XDoc extraConfig) {
+            string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
+            XDoc config = new XDoc("config")
+                .Elem("class", serviceType.FullName)
+                .Elem("path", path);
+            if(extraConfig != null) {
+                foreach(XDoc extra in extraConfig["*"]) {
+                    config.Add(extra);
+                }
+            }
+            return CreateService(hostInfo, config);
+        }
+
+        /// <summary>
+        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
+        /// </summary>
+        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
+        /// <param name="sid">Service Identifier</param>
+        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
+        /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
+        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, string sid, string pathPrefix, XDoc extraConfig) {
+            string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
+            XDoc config = new XDoc("config")
+                .Elem("sid", sid)
+                .Elem("path", path);
+            if(extraConfig != null) {
+                foreach(XDoc extra in extraConfig["*"]) {
+                    config.Add(extra);
+                }
+            }
+            return CreateService(hostInfo, config);
+        }
+
+        /// <summary>
+        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
+        /// </summary>
+        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
+        /// <param name="serviceType">Type of the <see cref="IDreamService"/> to create.</param>
+        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
+        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, Type serviceType, string pathPrefix) {
+            string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
+            XDoc config = new XDoc("config")
+                .Elem("class", serviceType.FullName)
+                .Elem("path", path);
+            return CreateService(hostInfo, config);
+        }
+
+        /// <summary>
+        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
+        /// </summary>
+        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
+        /// <param name="config">Configuration to use for service instantiation.</param>
+        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
+        public static DreamServiceInfo CreateService(this DreamHostInfo hostInfo, XDoc config) {
+            string path = config["path"].AsText;
+            DreamMessage result = hostInfo.Host.Self.At("services").Post(config, new Result<DreamMessage>()).Wait();
+            if(!result.IsSuccessful) {
+                throw new Exception(string.Format(
+                    "Unable to start service with config:\r\n{0}\r\n{1}",
+                    config.ToPrettyString(),
+                    result.HasDocument
+                        ? string.Format("{0}: {1}", result.Status, result.ToDocument()["message"].AsText)
+                        : result.Status.ToString()));
+            }
+            return new DreamServiceInfo(hostInfo, path, result.ToDocument());
+
+        }
+
+        /// <summary>
+        /// Create a new mock service instance.
+        /// </summary>
+        /// <param name="hostInfo">Host info.</param>
+        /// <returns>New mock service info instance.</returns>
+        public static MockServiceInfo CreateMockService(this DreamHostInfo hostInfo) {
+            return MockService.CreateMockService(hostInfo);
+        }
+
+        /// <summary>
+        /// Create a new mock service instance.
+        /// </summary>
+        /// <param name="hostInfo">Host info.</param>
+        /// <param name="extraConfig">Additional service configuration.</param>
+        /// <returns>New mock service info instance.</returns>
+        public static MockServiceInfo CreateMockService(this DreamHostInfo hostInfo, XDoc extraConfig) {
+            return MockService.CreateMockService(hostInfo, extraConfig);
+        }
+
+        /// <summary>
+        /// Create a new mock service instance.
+        /// </summary>
+        /// <param name="hostInfo">Host info.</param>
+        /// <param name="extraConfig">Additional service configuration.</param>
+        /// <param name="privateStorage">Use private storage</param>
+        /// <returns>New mock service info instance.</returns>
+        public static MockServiceInfo CreateMockService(this DreamHostInfo hostInfo, XDoc extraConfig, bool privateStorage) {
+            return MockService.CreateMockService(hostInfo, extraConfig, privateStorage);
+        }
+
+        //--- Class Methods ---
 
         /// <summary>
         /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
@@ -44,29 +178,41 @@ namespace MindTouch.Dream.Test {
         /// <param name="container">IoC Container to use.</param>
         /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
         public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
-            var port = GetPort();
             var path = "/";
             if(!config["uri.public"].IsEmpty) {
                 path = config["uri.public"].AsText;
             }
-            var localhost = string.Format("http://localhost:{0}{1}", port, path);
-            UpdateElement(config, "http-port", port.ToString());
-            UpdateElement(config, "uri.public", localhost);
-            var apikey = config["apikey"].Contents;
-            if(string.IsNullOrEmpty(apikey)) {
-                apikey = StringUtil.CreateAlphaNumericKey(32); //generate a random api key
-                config.Elem("apikey", apikey);
+            for(var i = 1; i <= 10; i++) {
+                var port = GetPort();
+                var localhost = string.Format("http://localhost:{0}{1}", port, path);
+                UpdateElement(config, "http-port", port.ToString());
+                UpdateElement(config, "uri.public", localhost);
+                var apikey = config["apikey"].Contents;
+                if(string.IsNullOrEmpty(apikey)) {
+                    apikey = StringUtil.CreateAlphaNumericKey(32); //generate a random api key
+                    config.Elem("apikey", apikey);
+                }
+                _log.DebugFormat("api key: {0}", apikey);
+                _log.DebugFormat("port:    {0}", port);
+                _log.DebugFormat("config:\r\n{0}", config.ToPrettyString());
+                try {
+                    var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
+                    host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
+                    return new DreamHostInfo(Plug.New(localhost), host, apikey);
+                } catch(Exception e) {
+                    _log.DebugFormat("Failed attempt {0} of creating a host: {1}", i, e.Message);
+                }
             }
-            _log.DebugFormat("api key: {0}", apikey);
-            _log.DebugFormat("port:    {0}", port);
-            var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
-            host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
-            return new DreamHostInfo(Plug.New(localhost), host, apikey);
+            throw new InvalidOperationException("Unable to create a new host after 10 attempts");
         }
 
         private static int GetPort() {
-            var port = Interlocked.Increment(ref _port);
+            var increment = _random.Next(20);
+            var port = Interlocked.Add(ref _port, increment);
             if(port > 30000) {
+
+                // we don't care if it succeeds or fails, since failure means that someone else
+                // has already succeeded at resetting the port and we can call GetPort again.
                 Interlocked.CompareExchange(ref _port, 1024, port);
                 return GetPort();
             }
@@ -88,107 +234,6 @@ namespace MindTouch.Dream.Test {
         /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
         public static DreamHostInfo CreateRandomPortHost() {
             return CreateRandomPortHost(new XDoc("config"));
-        }
-
-        /// <summary>
-        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
-        /// </summary>
-        /// <typeparam name="T">The <see cref="IDreamService"/> to create.</typeparam>
-        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
-        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
-        /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
-        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService<T>(DreamHostInfo hostInfo, string pathPrefix, XDoc extraConfig) where T : IDreamService {
-            return CreateService(hostInfo, typeof(T), pathPrefix, extraConfig);
-        }
-
-        /// <summary>
-        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
-        /// </summary>
-        /// <typeparam name="T">The <see cref="IDreamService"/> to create.</typeparam>
-        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
-        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
-        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService<T>(DreamHostInfo hostInfo, string pathPrefix) where T : IDreamService {
-            return CreateService(hostInfo, typeof(T), pathPrefix);
-        }
-
-        /// <summary>
-        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
-        /// </summary>
-        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
-        /// <param name="serviceType">Type of the <see cref="IDreamService"/> to create.</param>
-        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
-        /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
-        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, Type serviceType, string pathPrefix, XDoc extraConfig) {
-            string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
-            XDoc config = new XDoc("config")
-                .Elem("class", serviceType.FullName)
-                .Elem("path", path);
-            if(extraConfig != null) {
-                foreach(XDoc extra in extraConfig["*"]) {
-                    config.Add(extra);
-                }
-            }
-            return CreateService(hostInfo, config);
-        }
-
-        /// <summary>
-        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
-        /// </summary>
-        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
-        /// <param name="sid">Service Identifier</param>
-        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
-        /// <param name="extraConfig">Additional configuration to use for service instantiation.</param>
-        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, string sid, string pathPrefix, XDoc extraConfig) {
-            string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
-            XDoc config = new XDoc("config")
-                .Elem("sid", sid)
-                .Elem("path", path);
-            if(extraConfig != null) {
-                foreach(XDoc extra in extraConfig["*"]) {
-                    config.Add(extra);
-                }
-            }
-            return CreateService(hostInfo, config);
-        }
-
-        /// <summary>
-        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
-        /// </summary>
-        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
-        /// <param name="serviceType">Type of the <see cref="IDreamService"/> to create.</param>
-        /// <param name="pathPrefix">Path prefix to use for randomly generated path (primarily used to more easily recognize the service in logs).</param>
-        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, Type serviceType, string pathPrefix) {
-            string path = (string.IsNullOrEmpty(pathPrefix)) ? StringUtil.CreateAlphaNumericKey(6).ToLower() : pathPrefix + "_" + StringUtil.CreateAlphaNumericKey(3).ToLower();
-            XDoc config = new XDoc("config")
-                .Elem("class", serviceType.FullName)
-                .Elem("path", path);
-            return CreateService(hostInfo, config);
-        }
-
-        /// <summary>
-        /// Create a <see cref="IDreamService"/> on a given <see cref="DreamHost"/>.
-        /// </summary>
-        /// <param name="hostInfo">The info instance for the target <see cref="DreamHost"/>.</param>
-        /// <param name="config">Configuration to use for service instantiation.</param>
-        /// <returns>An instance of <see cref="DreamServiceInfo"/> for easy service access</returns>
-        public static DreamServiceInfo CreateService(DreamHostInfo hostInfo, XDoc config) {
-            string path = config["path"].AsText;
-            DreamMessage result = hostInfo.Host.Self.At("services").Post(config, new Result<DreamMessage>()).Wait();
-            if(!result.IsSuccessful) {
-                throw new Exception(string.Format(
-                    "Unable to start service with config:\r\n{0}\r\n{1}",
-                    config.ToPrettyString(),
-                    result.HasDocument
-                        ? string.Format("{0}: {1}", result.Status, result.ToDocument()["message"].AsText)
-                        : result.Status.ToString()));
-            }
-            return new DreamServiceInfo(hostInfo, path, result.ToDocument());
-
         }
 
         private static void UpdateElement(XDoc config, string element, string value) {

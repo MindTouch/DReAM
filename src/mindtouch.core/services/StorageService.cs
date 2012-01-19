@@ -359,7 +359,7 @@ namespace MindTouch.Dream.Services {
                 if(expire.HasValue) {
 
                     // set up expiration
-                    _expirationEntries.SetExpiration(filePath, expire.Value, ttl);
+                    _expirationEntries.SetOrUpdate(filePath, expire.Value, ttl);
                 } else {
 
                     // no expiration anymore, so expiration needs to be removed
@@ -376,9 +376,9 @@ namespace MindTouch.Dream.Services {
 
                     // set up expiration and write to meta file
                     if(when.HasValue) {
-                        _expirationEntries.SetExpiration(filePath, when.Value, ttl.Value);
+                        _expirationEntries.SetOrUpdate(filePath, when.Value, ttl.Value);
                     } else {
-                        _expirationEntries.SetExpiration(filePath, ttl.Value);
+                        _expirationEntries.SetOrUpdate(filePath, ttl.Value);
                         when = _expirationEntries[filePath].When;
                     }
                     var meta = new XDoc("meta")

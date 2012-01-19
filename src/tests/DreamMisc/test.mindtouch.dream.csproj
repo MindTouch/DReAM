@@ -53,6 +53,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -73,10 +74,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArrayUtilTests.cs" />
+    <Compile Include="AutofacTests.cs" />
     <Compile Include="AutoMockPlugTests.cs" />
+    <Compile Include="Aws\AwsS3ClientTests.cs" />
+    <Compile Include="Aws\AwsSqsClientTests.cs" />
+    <Compile Include="Aws\InMemorySqsClientTests.cs" />
+    <Compile Include="Aws\MockMessage.cs" />
+    <Compile Include="Aws\MockSqsClient.cs" />
     <Compile Include="BlockingQueueTests.cs" />
     <Compile Include="ChunkedArrayTests.cs" />
-    <Compile Include="ChunkedMemoryStreamTest.cs" />
     <Compile Include="ContainerTests.cs" />
     <Compile Include="Collections\LockFreeItemConsumerQueueTests.cs" />
     <Compile Include="Collections\LockFreeQueueTests.cs" />
@@ -85,6 +91,7 @@
     <Compile Include="CookieTests.cs" />
     <Compile Include="DreamFeatureTests.cs" />
     <Compile Include="DreamHeadersTests.cs" />
+    <Compile Include="DreamHostAliasesTests.cs" />
     <Compile Include="ExpiringDictionaryTests.cs" />
     <Compile Include="CoroutineTests.cs" />
     <Compile Include="CultureUtilTests.cs" />
@@ -95,12 +102,14 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ExpiringHashSetTests.cs" />
     <Compile Include="InMemoryKeyValueCacheTests.cs" />
+    <Compile Include="JsonUtilTests.cs" />
     <Compile Include="LockTests.cs" />
     <Compile Include="MockDataCatalogTests.cs" />
     <Compile Include="MockPlugTests.cs" />
     <Compile Include="MysqlDocStoreManagerTests.cs" />
+    <Compile Include="NumericTests.cs" />
     <Compile Include="PlugTests.cs" />
-    <Compile Include="PubSubTests.cs" />
+    <Compile Include="Aws\SqsPollClientTests.cs" />
     <Compile Include="ResultTest.cs" />
     <Compile Include="SampleService.cs" />
     <Compile Include="Service2ServiceTests.cs" />
@@ -164,6 +173,9 @@
     <EmbeddedResource Include="Resources\xml-shift-jis.txt" />
     <EmbeddedResource Include="Resources\xml-utf-16-jp.txt" />
     <EmbeddedResource Include="Resources\xml-utf-8-jp.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\html-meta-windows-1252.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

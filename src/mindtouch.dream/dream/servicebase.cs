@@ -47,7 +47,7 @@ namespace MindTouch.Dream {
     public abstract class DreamService : IDreamService {
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Class Methods ---
 
@@ -122,7 +122,6 @@ namespace MindTouch.Dream {
                 if(method.IsGenericMethod || method.IsGenericMethodDefinition) {
                     throw new NotSupportedException(string.Format("generic methods are not supported ({0})", method.Name));
                 }
-                ParameterInfo[] parameters = method.GetParameters();
 
                 // determine access level
                 string access;
@@ -212,8 +211,8 @@ namespace MindTouch.Dream {
         private Plug _owner;
         private XDoc _blueprint;
         private readonly DreamCookieJar _cookies = new DreamCookieJar();
-        private readonly string _privateAccessKey;
-        private readonly string _internalAccessKey;
+        private string _privateAccessKey;
+        private string _internalAccessKey;
         private string _apikey;
         private string _license;
         private TaskTimerFactory _timerFactory;
@@ -265,6 +264,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// <see cref="Plug"/> for PubSub Service.
         /// </summary>
+        [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
         public Plug PubSub {
             get { return _pubsub; }
             protected set { _pubsub = value; }
@@ -369,21 +369,13 @@ namespace MindTouch.Dream {
             _timerFactory = TaskTimerFactory.Create(this);
 
             // configure service container
-            var components = config["components"];
-            var servicecontainer = _env.CreateServiceContainer(this);
-            var builder = new ContainerBuilder();
-            builder.Register(_timerFactory).ExternallyOwned();
-            if(!components.IsEmpty) {
-                _log.Debug("registering service level module");
-                builder.RegisterModule(new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service));
-            }
-            builder.Build(servicecontainer);
+            var lifetimeScope = _env.CreateServiceLifetimeScope(this, (c, b) => PreInitializeLifetimeScope(c, b, config));
 
             // call container-less start (which contains shared start logic)
             yield return Coroutine.Invoke(Start, request.ToDocument(), new Result());
 
             // call start with container for sub-classes that want to resolve instances at service start
-            yield return Coroutine.Invoke(Start, config, servicecontainer, new Result());
+            yield return Coroutine.Invoke(Start, config, lifetimeScope, new Result());
 
             response.Return(DreamMessage.Ok(new XDoc("service-info")
                 .Start("private-key")
@@ -394,6 +386,27 @@ namespace MindTouch.Dream {
                 .End()
                ));
         }
+
+        private void PreInitializeLifetimeScope(IContainer rootContainer, ContainerBuilder lifetimeScopeBuilder, XDoc config) {
+            var components = config["components"];
+            lifetimeScopeBuilder.RegisterInstance(_timerFactory).ExternallyOwned();
+            var registrationInspector = new RegistrationInspector(rootContainer);
+            if(!components.IsEmpty) {
+                _log.Debug("registering service level module");
+                var module = new XDocAutofacContainerConfigurator(components, DreamContainerScope.Service);
+                registrationInspector.Register(module);
+                lifetimeScopeBuilder.RegisterModule(module);
+            }
+            InitializeLifetimeScope(registrationInspector, lifetimeScopeBuilder, config);
+        }
+
+        /// <summary>
+        /// This method is called before the Start method and allows the service container to be modified before it is created.
+        /// </summary>
+        /// <param name="inspector">Utility class for determining what types have already been registered for use by the service scope</param>
+        /// <param name="lifetimeScopeBuilder">Builder instance for registering new types</param>
+        /// <param name="config">Same config document that is later passed to Start</param>
+        protected virtual void InitializeLifetimeScope(IRegistrationInspector inspector, ContainerBuilder lifetimeScopeBuilder, XDoc config) { }
 
         /// <summary>
         /// <see cref="DreamFeature"/> for deinitializing the service.
@@ -474,13 +487,13 @@ namespace MindTouch.Dream {
 
                 // sort features by signature then verb
                 blueprint["features"].Sort(delegate(XDoc first, XDoc second) {
-                    string[] firstPattern = first["pattern"].Contents.Split(new char[] { ':' }, 2);
-                    string[] secondPattern = second["pattern"].Contents.Split(new char[] { ':' }, 2);
-                    int cmp = StringUtil.CompareInvariantIgnoreCase(firstPattern[1], secondPattern[1]);
+                    string[] firstPattern = first["pattern"].Contents.Split(new[] { ':' }, 2);
+                    string[] secondPattern = second["pattern"].Contents.Split(new[] { ':' }, 2);
+                    int cmp = firstPattern[1].CompareInvariantIgnoreCase(secondPattern[1]);
                     if(cmp != 0) {
                         return cmp;
                     }
-                    return StringUtil.CompareInvariant(firstPattern[0], secondPattern[0]);
+                    return firstPattern[0].CompareInvariant(secondPattern[0]);
                 });
 
                 // display features
@@ -489,11 +502,10 @@ namespace MindTouch.Dream {
                     result.Elem("h2", "Features");
                     List<string> modifiers = new List<string>();
                     foreach(XDoc feature in features) {
-                        string modifier;
                         modifiers.Clear();
 
                         // add modifiers
-                        modifier = feature["access"].AsText;
+                        string modifier = feature["access"].AsText;
                         if(modifier != null) {
                             modifiers.Add(modifier);
                         }
@@ -509,8 +521,8 @@ namespace MindTouch.Dream {
 
                         // check if feature has GET verb and no path parameters
                         string pattern = feature["pattern"].Contents;
-                        if(StringUtil.StartsWithInvariantIgnoreCase(pattern, Verb.GET + ":") && (pattern.IndexOfAny(new char[] { '{', '*', '?' }) == -1)) {
-                            string[] parts = pattern.Split(new char[] { ':' }, 2);
+                        if(pattern.StartsWithInvariantIgnoreCase(Verb.GET + ":") && (pattern.IndexOfAny(new[] { '{', '*', '?' }) == -1)) {
+                            string[] parts = pattern.Split(new[] { ':' }, 2);
                             result.Start("h3")
                                 .Start("a").Attr("href", context.AsPublicUri(Self.Uri.AtPath(parts[1])))
                                     .Value(feature["pattern"].Contents)
@@ -595,10 +607,10 @@ namespace MindTouch.Dream {
         /// Should not be manually invoked and should only be overridden if <see cref="Start(MindTouch.Xml.XDoc,MindTouch.Tasking.Result)"/> isn't already overriden.
         /// </remarks>
         /// <param name="config">Service configuration.</param>
-        /// <param name="serviceContainer">Service level IoC container</param>
+        /// <param name="serviceLifetimeScope">Service level IoC container</param>
         /// <param name="result">Synchronization handle for coroutine invocation.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> execution environment.</returns>
-        protected virtual Yield Start(XDoc config, IContainer serviceContainer, Result result) {
+        protected virtual Yield Start(XDoc config, ILifetimeScope serviceLifetimeScope, Result result) {
             result.Return();
             yield break;
         }
@@ -607,7 +619,7 @@ namespace MindTouch.Dream {
         /// Perform startup configuration of a service instance.
         /// </summary>
         /// <remarks>
-        /// Should not be manually invoked and should only be overridden if <see cref="Start(MindTouch.Xml.XDoc,Autofac.IContainer,MindTouch.Tasking.Result)"/> isn't already overriden.
+        /// Should not be manually invoked and should only be overridden if <see cref="Start(MindTouch.Xml.XDoc,Autofac.ILifetimeScope,MindTouch.Tasking.Result)"/> isn't already overriden.
         /// </remarks>
         /// <param name="config">Service configuration.</param>
         /// <param name="result">Synchronization handle for coroutine invocation.</param>
@@ -619,23 +631,31 @@ namespace MindTouch.Dream {
             _config = config;
             _self = Plug.New(config["uri.self"].AsUri);
             if(_self == null) {
-                throw new ArgumentNullException("uri.self");
+                throw new ArgumentNullException("config", "Missing element'uri.self'");
             }
             _owner = Plug.New(config["uri.owner"].AsUri);
+
+            // check for service access keys
+            var internalAccessKey = config["internal-service-key"].AsText;
+            if(!string.IsNullOrEmpty(internalAccessKey)) {
+                _internalAccessKey = internalAccessKey;
+            }
+            var privateAccessKey = config["private-service-key"].AsText;
+            if(!string.IsNullOrEmpty(privateAccessKey)) {
+                _privateAccessKey = privateAccessKey;
+            }
 
             // check for api-key settings
             _apikey = config["apikey"].AsText;
 
             // process 'set-cookie' entries
-            List<DreamCookie> setCookies = DreamCookie.ParseAllSetCookieNodes(config["set-cookie"]);
+            var setCookies = DreamCookie.ParseAllSetCookieNodes(config["set-cookie"]);
             if(setCookies.Count > 0) {
                 Cookies.Update(setCookies, null);
             }
 
             // grant private access key to self, host, and owner
-            //string privateAcccessCookie = HttpUtil.RenderSetCookieHeader(HttpUtil.SetCookie("service-key", PrivateAccessKey, Self.Uri.Path, Self.Uri.Host, DateTime.MaxValue));
-            //Cookies.Update(HttpUtil.ParseSetCookieHeader(privateAcccessCookie), null);
-            DreamCookie privateAcccessCookie = DreamCookie.NewSetCookie("service-key", PrivateAccessKey, Self.Uri);
+            var privateAcccessCookie = DreamCookie.NewSetCookie("service-key", PrivateAccessKey, Self.Uri);
             Cookies.Update(privateAcccessCookie, null);
             yield return Env.At("@grants").Post(DreamMessage.Ok(privateAcccessCookie.AsSetCookieDocument), new Result<DreamMessage>(TimeSpan.MaxValue));
             if(Owner != null) {
@@ -660,50 +680,46 @@ namespace MindTouch.Dream {
 
                 // validate the service-license
                 _license = null;
-                if(service_license != null) {
-                    Dictionary<string, string> values;
+                Dictionary<string, string> values;
+                try {
+
+                    // parse service-license
+                    values = HttpUtil.ParseNameValuePairs(service_license);
+                    if(!Encoding.UTF8.GetBytes(service_license.Substring(0, service_license.LastIndexOf(','))).VerifySignature(values["dsig"], public_key)) {
+                        throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (1)"));
+                    }
+
+                    // check if the SID matches
+                    string sid;
+                    if(!values.TryGetValue("sid", out sid) || !SID.HasPrefix(XUri.TryParse(sid), true)) {
+                        throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (2)"));
+                    }
+                    _license = service_license;
+                } catch(Exception e) {
+
+                    // unexpected error, blame it on the license
+                    if(e is DreamAbortException) {
+                        throw;
+                    }
+                    throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (1)"));
+                }
+
+                // validate expiration date
+                string expirationtext;
+                if(values.TryGetValue("expire", out expirationtext)) {
                     try {
-
-                        // parse service-license
-                        values = HttpUtil.ParseNameValuePairs(service_license);
-                        if(!Encoding.UTF8.GetBytes(service_license.Substring(0, service_license.LastIndexOf(','))).VerifySignature(values["dsig"], public_key)) {
-                            throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (1)"));
+                        DateTime expiration = DateTime.Parse(expirationtext);
+                        if(expiration < DateTime.UtcNow) {
+                            _license = null;
                         }
-
-                        // check if the SID matches
-                        string sid;
-                        if(!values.TryGetValue("sid", out sid) || !SID.HasPrefix(XUri.TryParse(sid), true)) {
-                            throw new DreamAbortException(DreamMessage.InternalError("invalid service-license (2)"));
-                        }
-                        _license = service_license;
                     } catch(Exception e) {
+                        _license = null;
 
                         // unexpected error, blame it on the license
                         if(e is DreamAbortException) {
                             throw;
-                        } else {
-                            throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (1)"));
                         }
-                    }
-
-                    // validate expiration date
-                    string expirationtext;
-                    if(values.TryGetValue("expire", out expirationtext)) {
-                        try {
-                            DateTime expiration = DateTime.Parse(expirationtext);
-                            if(expiration < DateTime.UtcNow) {
-                                _license = null;
-                            }
-                        } catch(Exception e) {
-                            _license = null;
-
-                            // unexpected error, blame it on the license
-                            if(e is DreamAbortException) {
-                                throw;
-                            } else {
-                                throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (2)"));
-                            }
-                        }
+                        throw new DreamAbortException(DreamMessage.InternalError("corrupt service-license (2)"));
                     }
                 }
 
@@ -794,7 +810,7 @@ namespace MindTouch.Dream {
                 .Elem("uri.owner", Self.Uri.ToString())
 
                 // add 'internal' access key
-                .Add(DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri).AsSetCookieDocument)
+                .Add(DreamCookie.NewSetCookie("service-key", InternalAccessKey, Self.Uri).AsInternalSetCookieDocument)
 
                 // add optional 'service-license' token
                 .Elem("service-license", serviceLicense);
@@ -803,6 +819,7 @@ namespace MindTouch.Dream {
             if(config["apikey"].IsEmpty) {
                 config.Root.Elem("apikey", _apikey);
             }
+
             // post to host to create service
             Result<DreamMessage> res;
             yield return res = Env.At("services").Post(config, new Result<DreamMessage>(TimeSpan.MaxValue));
@@ -810,9 +827,8 @@ namespace MindTouch.Dream {
                 if(res.Value.HasDocument) {
                     string message = res.Value.ToDocument()[".//message"].AsText.IfNullOrEmpty("unknown error");
                     throw new DreamResponseException(res.Value, string.Format("unable to initialize service ({0})", message));
-                } else {
-                    throw new DreamResponseException(res.Value, string.Format("unable to initialize service ({0})", res.Value.ToText()));
                 }
+                throw new DreamResponseException(res.Value, string.Format("unable to initialize service ({0})", res.Value.ToText()));
             }
             result.Return(plug);
             yield break;
@@ -876,7 +892,7 @@ namespace MindTouch.Dream {
             XUri uri = Self.AtPath(path);
             DreamContext current = DreamContext.Current;
             Exception e = TaskEnv.ExecuteNew(delegate {
-                DreamFeatureStage[] stages = new DreamFeatureStage[] {
+                DreamFeatureStage[] stages = new[] {
                     new DreamFeatureStage("InServiceInvokeHandler", InServiceInvokeHandler, DreamAccess.Private)
                 };
 
@@ -925,7 +941,7 @@ namespace MindTouch.Dream {
             if(_env.IsDebugEnv) {
                 return DreamAccess.Private;
             }
-            if(!string.IsNullOrEmpty(key) && (StringUtil.EqualsInvariant(key, _apikey))) {
+            if(!string.IsNullOrEmpty(key) && (key.EqualsInvariant(_apikey))) {
                 return DreamAccess.Private;
             }
             if(key == InternalAccessKey) {

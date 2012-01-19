@@ -125,7 +125,7 @@ namespace MindTouch.Dream.IO {
         }
 
         public Stream Format(XDoc doc) {
-            var stream = new ChunkedMemoryStream();
+            var stream = new MemoryStream();
             PhpUtil.WritePhp(doc, stream, MimeType.PHP.CharSet);
             stream.Position = 0;
             return stream;
