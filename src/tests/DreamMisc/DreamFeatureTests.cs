@@ -348,6 +348,19 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Can_inject_mixed_type_query_args_and_path_parameters_and_cast_appropriately_under_non_us_locale() {
+            System.Globalization.CultureInfo old = System.Threading.Thread.CurrentThread.CurrentCulture;
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("FR-fr");
+            AssertFeature(
+                "GET:sync/mixed/{x}/{z}",
+                _plug.At("sync", "mixed", "123", DreamStatus.SeeOther.ToString())
+                    .With("y", "true")
+                    .With("v", 1.2),
+                new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther).Elem("v", "1.2"));
+            System.Threading.Thread.CurrentThread.CurrentCulture = old;
+        }
+
+        [Test]
         public void Can_inject_headers() {
             AssertFeature(
                 "GET:sync/headers",
