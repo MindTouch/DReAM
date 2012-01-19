@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <assemblies
-    major="2"
-    minor="3"
-    release="2"
+    major="3"
+    minor="0"
+    release="0"
     revision="0">
     <assembly
       name="mindtouch.dream"
