@@ -333,7 +333,7 @@ namespace MindTouch.Dream.Http {
             // Let's default to TEXT if the ContentType is invalid
             if(!string.IsNullOrEmpty(httpResponse.ContentType) && !MimeType.TryParse(httpResponse.ContentType, out contentType)) {
                _log.WarnFormat("Invalid Content Type : '{0}', using plain/text as default",httpResponse.ContentType);
-               contentType = MimeType.TEXT;
+               contentType = MimeType.DefaultMimeType;
             }
 
             Stream stream;
