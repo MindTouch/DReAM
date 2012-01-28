@@ -927,7 +927,7 @@ namespace MindTouch.Xml {
                     return this;
                 }
                 doc = (XmlDocument)_root.ParentNode.Clone();
-            } else {
+                } else {
                 doc = NewXmlDocument();
                 XmlNode node = doc.ImportNode(_root, true);
                 doc.AppendChild(node);
@@ -1094,7 +1094,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, float value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
         }
 
         /// <summary>
@@ -1104,7 +1104,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, double value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
         }
 
         /// <summary>
@@ -1239,6 +1239,51 @@ namespace MindTouch.Xml {
                 return this;
             }
             return Start(tag).Value(value).End();
+        }
+        /// <summary>
+        /// Adds a complete child.
+        /// </summary>
+        /// <param name="tag">Element name</param>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Elem(string tag, int value) {
+            return Elem(tag,value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
+        }
+        /// <summary>
+        /// Adds a complete child.
+        /// </summary>
+        /// <param name="tag">Element name</param>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Elem(string tag, long value) {
+            return Elem(tag,value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
+        }
+        /// <summary>
+        /// Adds a complete child.
+        /// </summary>
+        /// <param name="tag">Element name</param>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Elem(string tag, float value) {
+            return Elem(tag,value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
+        }
+        /// <summary>
+        /// Adds a complete child.
+        /// </summary>
+        /// <param name="tag">Element name</param>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Elem(string tag, double value) {
+            return Elem(tag,value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
+        }
+        /// <summary>
+        /// Adds a complete child.
+        /// </summary>
+        /// <param name="tag">Element name</param>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Elem(string tag, decimal value) {
+            return Elem(tag,value.ToString(System.Globalization.CultureInfo.InvariantCulture.NumberFormat));
         }
 
         /// <summary>

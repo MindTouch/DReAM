@@ -992,6 +992,16 @@ namespace MindTouch.Xml.Test {
             Assert.IsNull(XDoc.Empty.AsInnerText);
         }
 
+        [Test]
+        public void AttributeMustBeEncodedAsInvariant(){
+            System.Globalization.CultureInfo old = System.Threading.Thread.CurrentThread.CurrentCulture;
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("FR-fr");
+            XDoc result = new XDoc("test").Attr("testdouble",(double)1.5).Attr("testfloat",(float)1.15);
+            Assert.AreEqual(1.5,result["@testdouble"].AsDouble);
+            Assert.AreEqual(1.15F,result["@testfloat"].AsFloat);
+            System.Threading.Thread.CurrentThread.CurrentCulture = old;
+        }
+
         [TearDown]
         public void TearDown() {
         }
