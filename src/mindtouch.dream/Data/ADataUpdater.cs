@@ -26,67 +26,67 @@ using System.Reflection;
 
 namespace MindTouch.Data {
 
+    public enum MethodType { Update, DataIntegrity };
+
+    public class DbMethod : IComparable<DbMethod> {
+
+        //--- Fields ---
+        private readonly MethodInfo _methodInfo;
+        private readonly VersionInfo _targetVersion;
+        private readonly MethodType _methodType;
+
+        //--- Constructors ---
+        public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion) {
+            _methodInfo = methodInfo;
+            _targetVersion = targetVersion;
+            _methodType = MethodType.Update;
+        }
+
+        public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion, MethodType methodType) {
+            _methodInfo = methodInfo;
+            _targetVersion = targetVersion;
+            _methodType = methodType;
+        }
+
+        //--- Methods ---
+        public MethodType GetMethodType {
+            get { return _methodType; }
+        }
+
+        public MethodInfo GetMethodInfo {
+            get { return _methodInfo; }
+        }
+
+        public VersionInfo GetTargetVersion {
+            get { return _targetVersion; }
+        }
+
+        // Compares by version then by name
+        public int CompareTo(DbMethod other) {
+            var otherVersion = other.GetTargetVersion;
+            var change = _targetVersion.CompareTo(otherVersion).Change;
+            switch(change) {
+            case VersionChange.None:
+                return _methodInfo.Name.CompareTo(other._methodInfo.Name);
+            case VersionChange.Upgrade:
+                return 1;
+            default:
+                return -1;
+            }
+        }
+    }
+
     /// <summary>
     /// Provides an interface for updating Data in Dream Applications
     /// </summary>
     public abstract class ADataUpdater : IDataUpdater {
-
-        //--- Types ---
-        protected class DbMethod : IComparable<DbMethod> {
-
-            //--- Fields ---
-            private readonly MethodInfo _methodInfo;
-            private readonly VersionInfo _targetVersion;
-            private readonly MethodType _methodType;
-
-            //--- Constructors ---
-            public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion) {
-                _methodInfo = methodInfo;
-                _targetVersion = targetVersion;
-                _methodType = MethodType.Update;
-            }
-
-            public DbMethod(MethodInfo methodInfo, VersionInfo targetVersion, MethodType methodType) {
-                _methodInfo = methodInfo;
-                _targetVersion = targetVersion;
-                _methodType = methodType;
-            }
-
-            //--- Methods ---
-            public MethodType MethodType {
-                get{ return _methodType; }
-            }
-
-            public MethodInfo GetMethodInfo {
-                get { return _methodInfo; }
-            }
-
-            public VersionInfo GetTargetVersion {
-                get { return _targetVersion; }
-            }
-
-            // Compares by version then by name
-            public int CompareTo(DbMethod other) {
-                var otherVersion = other.GetTargetVersion;
-                var change = _targetVersion.CompareTo(otherVersion).Change;
-                switch(change) {
-                case VersionChange.None:
-                    return _methodInfo.Name.CompareTo(other._methodInfo.Name);
-                case VersionChange.Upgrade:
-                    return 1;
-                default:
-                    return -1;
-                }
-            }
-        }
-
+       
         //--- Fields ---
         protected VersionInfo _targetVersion = null;
         protected VersionInfo _sourceVersion = null;
         protected List<DbMethod> _methodList = null;
         protected Type _dataUpgradeClass = null;
         protected object _dataUpgradeClassInstance = null;
-        protected enum MethodType { Update, DataIntegrity };
 
         //--- Methods ---
 
@@ -138,7 +138,7 @@ namespace MindTouch.Data {
             if(_methodList == null) {
                 return null;
             }
-            var list = (from method in _methodList where method.MethodType == MethodType.Update select method.GetMethodInfo.Name).ToList();
+            var list = (from method in _methodList where method.GetMethodType == MethodType.Update select method.GetMethodInfo.Name).ToList();
             return list;
         }
 
@@ -152,7 +152,7 @@ namespace MindTouch.Data {
             if(_methodList == null) {
                 return null;
             }
-            var list = (from method in _methodList where method.MethodType == MethodType.DataIntegrity select method.GetMethodInfo.Name).ToList();
+            var list = (from method in _methodList where method.GetMethodType == MethodType.DataIntegrity select method.GetMethodInfo.Name).ToList();
             return list;
         }
 
@@ -294,6 +294,19 @@ namespace MindTouch.Data {
         /// </summary>
         protected virtual object CreateActivatorInstance(Type dataUpgradeType) {
             return Activator.CreateInstance(dataUpgradeType);
+        }
+
+        /// <summary>
+        /// Get the Method details of a method
+        /// </summary>
+        /// <param name="name">Name of the Method</param>
+        /// <returns>Object of type DbMethod</returns>
+        public virtual DbMethod GetMethodInfo(string name) {
+            if(_methodList.Count == 0) {
+                throw new NoMethodsLoaded();
+            }
+            var methods = (from method in _methodList where method.GetMethodInfo.Name.EqualsInvariant(name) select method);
+            return methods.First();
         }
     }
 
