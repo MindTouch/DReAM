@@ -126,6 +126,7 @@ namespace MindTouch.Data.Db {
                 // If there are no custom methods specified we need a version number
                 if(customMethod == null) {
                     CheckArg(targetVersion, "No version specified");
+                    CheckArg(dbname, "No Database was specified");
                 }
 
                 // Begin Parsing DLL
