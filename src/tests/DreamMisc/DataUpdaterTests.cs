@@ -179,6 +179,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void load_and_execute() {
             _dataUpdater.LoadMethodsAndExecute(_testAssembly);
+            Assert.IsTrue(DummyUpgradeClass.ExecutedMethods.Count > 0, "No Methods were executed");
         }
 
         [Test]
@@ -192,6 +193,7 @@ namespace MindTouch.Dream.Test {
             }
 
             // Check that methods were executed in proper order
+            Assert.IsTrue(DummyUpgradeClass.ExecutedMethods.Count > 0, "No Methods were executed");
             for(int i = 1; i < DummyUpgradeClass.ExecutedMethods.Count; i++) {
                 Assert.IsTrue(DummyUpgradeClass.ExecutedMethods[i].CompareTo(DummyUpgradeClass.ExecutedMethods[i - 1]) == 1, "Ordering of methods is wrong.");
             }
@@ -217,6 +219,7 @@ namespace MindTouch.Dream.Test {
             var maxVersion = new VersionInfo(version);
             var dataUpdater = new TestDataUpdater(version);
             dataUpdater.LoadMethodsAndExecute(_testAssembly);
+            Assert.IsTrue(DummyUpgradeClass.ExecutedMethods.Count > 0, "No Methods were executed");
             foreach(var method in DummyUpgradeClass.ExecutedMethods) { 
                 var maxCompare = method._version.CompareTo(maxVersion).Change;
                 Assert.IsTrue(maxCompare == VersionChange.Downgrade || maxCompare == VersionChange.None, string.Format("Version is larger than {0}", version));
@@ -232,6 +235,7 @@ namespace MindTouch.Dream.Test {
             var dataUpdater = new TestDataUpdater(targetVersion);
             dataUpdater.SourceVersion = sourceVersion;
             dataUpdater.LoadMethodsAndExecute(_testAssembly);
+            Assert.IsTrue(DummyUpgradeClass.ExecutedMethods.Count > 0, "No Methods were executed");
             foreach(var method in DummyUpgradeClass.ExecutedMethods) {
                 var maxCompare = method._version.CompareTo(maxVersion).Change;
                 var minCompare = method._version.CompareTo(minVersion).Change;
