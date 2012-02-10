@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using MindTouch.Dream;
 using MindTouch.Tasking;
 using MindTouch.Xml;
@@ -29,7 +30,10 @@ using MindTouch.Xml;
 namespace MindTouch.Aws {
     public class AwsSqsClient : IAwsSqsClient {
 
-        //--- Fields ---
+        //--- Class Fields ---
+        private static readonly HashSet<char> VALID_URL_CHARS = new HashSet<char>("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~".ToCharArray());
+
+            //--- Fields ---
         private readonly AwsSqsClientConfig _config;
 
         //--- Constructors ---
@@ -155,13 +159,11 @@ namespace MindTouch.Aws {
         }
 
         private string CreateKeyPair(KeyValuePair<string, string> param) {
+            return param.Key + "=" + UrlEncode(param.Value);
+        }
 
-            // Note (arnec): For proper signature generation, spaces must be in %20 format (where spaces are + after XUri.Encode)
-            // Note (andyv): Amazon requires * to be encoded, but not ~ as per RFC 1738
-            return param.Key + "=" + XUri.Encode(param.Value)
-                .ReplaceAll("*", "%2A")
-                .ReplaceAll("+", "%20")
-                .ReplaceAll("%7E", "~");
+        private string UrlEncode(string data) {
+            return string.Join("", data.Select(c => VALID_URL_CHARS.Contains(c) ? c.ToString() : string.Format("%{0:X2}", (int)c)).ToArray());
         }
     }
 }
