@@ -34,8 +34,10 @@ namespace MindTouch.Dream.Test.Aws {
                         .Elem("baz", StringUtil.CreateAlphaNumericKey(100))
                     .End()
                     .Elem("bing", StringUtil.CreateAlphaNumericKey(100));
-                var body2 = "<deki-event wikiid=\"default\" event-time=\"2011-06-30T16:16:36Z\"><channel>event://default/deki/pages/dependentschanged/properties/update</channel><uri>http://ariel.mindtouch.com/@api/deki/pages/22?redirects=0</uri><pageid>22</pageid><user id=\"1\" anonymous=\"false\"><uri>http://ariel.mindtouch.com/@api/deki/users/1</uri></user><content.uri type=\"application/xml\">http://ariel.mindtouch.com/@api/deki/pages/22/contents?redirects=0&amp;revision=45&amp;format=xhtml</content.uri><revision.uri>http://ariel.mindtouch.com/@api/deki/pages/22/revisions?redirects=0&amp;revision=45</revision.uri><tags.uri>http://ariel.mindtouch.com/@api/deki/pages/22/tags?redirects=0</tags.uri><comments.uri>http://ariel.mindtouch.com/@api/deki/pages/22/comments?redirects=0</comments.uri><path></path><frommove>false</frommove></deki-event>";
-                var r2 = client.Send(queue, AwsSqsMessage.FromBody(body2), new Result<AwsSqsSendResponse>()).Wait();
+                var body2Str = "<deki-event wikiid=\"default\" event-time=\"2011-06-30T16:16:36Z\"><channel>event://default/deki/pages/dependentschanged/properties/update</channel><uri>http://ariel.mindtouch.com/@api/deki/pages/22?redirects=0</uri><pageid>22</pageid><user id=\"1\" anonymous=\"false\"><uri>http://ariel.mindtouch.com/@api/deki/users/1</uri></user><content.uri type=\"application/xml\">http://ariel.mindtouch.com/@api/deki/pages/22/contents?redirects=0&amp;revision=45&amp;format=xhtml</content.uri><revision.uri>http://ariel.mindtouch.com/@api/deki/pages/22/revisions?redirects=0&amp;revision=45</revision.uri><tags.uri>http://ariel.mindtouch.com/@api/deki/pages/22/tags?redirects=0</tags.uri><comments.uri>http://ariel.mindtouch.com/@api/deki/pages/22/comments?redirects=0</comments.uri><path>Announcements/2008-10-03_-_Slide_Show_of_T2's_Big_Give</path><frommove>false</frommove></deki-event>";
+                var body2Doc = XDocFactory.From(body2Str, MimeType.TEXT_XML);
+                var body2 = body2Doc.ToCompactString();
+                var r2 = client.Send(queue, AwsSqsMessage.FromBodyDocument(body2Doc), new Result<AwsSqsSendResponse>()).Wait();
                 _log.DebugFormat("created message {0}", r2.MessageId);
                 var messages = new List<AwsSqsMessage>();
                 Assert.IsTrue(
