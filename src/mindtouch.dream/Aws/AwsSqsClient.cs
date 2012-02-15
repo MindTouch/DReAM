@@ -30,10 +30,7 @@ using MindTouch.Xml;
 namespace MindTouch.Aws {
     public class AwsSqsClient : IAwsSqsClient {
 
-        //--- Class Fields ---
-        private static readonly HashSet<char> VALID_URL_CHARS = new HashSet<char>("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~".ToCharArray());
-
-            //--- Fields ---
+        //--- Fields ---
         private readonly AwsSqsClientConfig _config;
 
         //--- Constructors ---
@@ -162,8 +159,47 @@ namespace MindTouch.Aws {
             return param.Key + "=" + UrlEncode(param.Value);
         }
 
-        private string UrlEncode(string data) {
-            return string.Join("", data.Select(c => VALID_URL_CHARS.Contains(c) ? c.ToString() : string.Format("%{0:X2}", (int)c)).ToArray());
+        private static bool IsValidAwsChar(char c) {
+            return (((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9')) || (c == '-') || (c == '_') || (c == '.') || (c == '~'));
+        }
+
+        private static string UrlEncode(string data) {
+            var i = 0;
+            var len = data.Length;
+
+            // check if string contains characters that require encoding
+            for(; i < len; ++i) {
+                if(!IsValidAwsChar(data[i])) {
+                    break;
+                }
+            }
+            if(i == len) {
+
+                // none of the characters require encoding
+                return data;
+            }
+
+            // first encode data using UTF-8 encoding to ensure all fit within the byte range
+            var bytes = Encoding.UTF8.GetBytes(data);
+            len = bytes.Length;
+
+            // loop over UTF-8 bytes and either copy or encode them
+            var result = new StringBuilder();
+            for(i = 0; i < len; ++i) {
+                var c = (char)bytes[i];
+                if(IsValidAwsChar(c)) {
+                    result.Append(c);
+                } else {
+                    var low = (c & 0xF);
+                    var high = (c >> 4);
+                    result.Append('%');
+                    result.Append((char)((high >= 10) ? ('A' + (high - 10)) : ('0' + high)));
+                    result.Append((char)((low >= 10) ? ('A' + (low - 10)) : ('0' + low)));
+                }
+            }
+
+            // allocate final string from char array
+            return result.ToString();
         }
     }
 }
