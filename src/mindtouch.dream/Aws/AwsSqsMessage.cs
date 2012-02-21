@@ -67,7 +67,7 @@ namespace MindTouch.Aws {
 
         //--- Methods ---
         public XDoc BodyToDocument() {
-            return XDocFactory.From(Body, MimeType.TEXT_XML);
+            return XDocFactory.From(Body, MimeType.XML);
         }
     }
 }
