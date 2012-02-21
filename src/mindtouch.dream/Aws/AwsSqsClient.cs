@@ -134,7 +134,7 @@ namespace MindTouch.Aws {
                             } else {
                                 var content = response.Value.ToText();
                                 if(!string.IsNullOrEmpty(content)) {
-                                    doc = XDocFactory.From(content, MimeType.TEXT_XML);
+                                    doc = XDocFactory.From(content, MimeType.XML);
                                 }
                             }
                         } catch { }
