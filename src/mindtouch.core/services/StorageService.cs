@@ -352,7 +352,7 @@ namespace MindTouch.Dream.Services {
                 var ttl = TimeSpan.Zero;
                 var metaPath = GetMetaPath(filePath);
                 if(File.Exists(metaPath)) {
-                    var meta = XDocFactory.LoadFrom(metaPath, MimeType.TEXT_XML);
+                    var meta = XDocFactory.LoadFrom(metaPath, MimeType.XML);
                     expire = meta["expire.date"].AsDate;
                     ttl = TimeSpan.FromSeconds(meta["expire.ttl"].AsDouble ?? 0);
                 }
