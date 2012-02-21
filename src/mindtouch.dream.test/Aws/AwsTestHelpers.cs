@@ -121,7 +121,7 @@ namespace MindTouch.Dream.Test.Aws {
             return new AwsS3FileHandle {
                 Expiration = null,
                 TimeToLive = ttl,
-                MimeType = MimeType.TEXT_XML,
+                MimeType = MimeType.XML,
                 Modified = DateTime.UtcNow,
                 Size = stream.Length,
                 Stream = stream
