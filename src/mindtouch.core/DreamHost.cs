@@ -111,6 +111,7 @@ namespace MindTouch.Dream {
             if(!string.IsNullOrEmpty(_dreamInParamAuthtoken)) {
                 _log.Debug("Host is configured in dream.in param authorizing mode");
             }
+
             // read ip-addresses
             var addresses = new List<string>();
             foreach(XDoc ip in config["host|ip"]) {
