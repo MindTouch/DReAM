@@ -321,6 +321,11 @@ namespace MindTouch.Dream {
         /// </summary>
         public const string DREAM_REQUEST_ID = "X-Dream-Request-Id";
 
+        /// <summary>
+        /// 'X-Dream-In-Auth' Dream Header.
+        /// </summary>
+        public const string DREAM_IN_AUTH = "X-Dream-In-Auth";
+
         //___ Application-specific Headers ___
 
         /// <summary>
@@ -993,6 +998,15 @@ namespace MindTouch.Dream {
         public string DreamRequestId {
             get { return this[DREAM_REQUEST_ID]; }
             set { this[DREAM_REQUEST_ID] = value; }
+        }
+
+
+        /// <summary>
+        /// 'X-Dream-In-Auth' Header.
+        /// </summary>
+        public string DreamInAuth {
+            get { return this[DREAM_IN_AUTH]; }
+            set { this[DREAM_IN_AUTH] = value; }
         }
 
         /// <summary>
