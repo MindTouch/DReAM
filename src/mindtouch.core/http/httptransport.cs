@@ -83,9 +83,10 @@ namespace MindTouch.Dream.Http {
         private string _sourceExternal;
         private string _serverSignature;
         private AuthenticationSchemes _authenticationSheme;
+        private readonly string _dreamInParamAuthtoken;
 
         //--- Constructors ---
-        public HttpTransport(IDreamEnvironment env, XUri uri, AuthenticationSchemes authenticationSheme){
+        public HttpTransport(IDreamEnvironment env, XUri uri, AuthenticationSchemes authenticationSheme, string dreamInParamAuthtoken) {
             if(env == null) {
                 throw new ArgumentNullException("env");
             }
@@ -98,6 +99,7 @@ namespace MindTouch.Dream.Http {
             _sourceInternal = _uri + " (internal)";
             _sourceExternal = _uri.ToString();
             _authenticationSheme = authenticationSheme;
+            _dreamInParamAuthtoken = dreamInParamAuthtoken;
         }
 
         //--- Properties ---
@@ -111,7 +113,7 @@ namespace MindTouch.Dream.Http {
         }
 
         //--- Methods ---
-        public void Startup(){
+        public void Startup() {
             _log.InfoMethodCall("Startup", _uri);
 
             // create listener and make it listen to the uri
@@ -141,7 +143,7 @@ namespace MindTouch.Dream.Http {
             try {
                 _listener.Stop();
             } catch(Exception e) {
-                _log.Debug("Shutdown",e);
+                _log.Debug("Shutdown", e);
             }
         }
 
@@ -185,6 +187,7 @@ namespace MindTouch.Dream.Http {
                 // create request message
                 request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
                 DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
+                requestUri = requestUri.AuthorizeDreamInParams(request, _dreamInParamAuthtoken);
 
                 // check if the request was forwarded through Apache mod_proxy
                 string hostname = requestUri.GetParam(DreamInParam.HOST, null) ?? request.Headers.ForwardedHost ?? request.Headers.Host ?? requestUri.HostPort;
