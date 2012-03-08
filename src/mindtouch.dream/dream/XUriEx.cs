@@ -97,5 +97,25 @@ namespace MindTouch.Dream {
             }
             return uri;
         }
+
+        /// <summary>
+        /// If an authtoken is provied and does not match the one in the <see cref="DreamHeaders.DreamInAuth"/> header, remove <see cref="DreamInParam.URI"/>, <see cref="DreamInParam.ORIGIN"/>, <see cref="DreamInParam.ROOT"/> and <see cref="DreamInParam.HOST"/> from the uri.
+        /// </summary>
+        /// <param name="uri">Input uri.</param>
+        /// <param name="request">Request message associated with the uri.</param>
+        /// <param name="authtoken">Expected authtoken.</param>
+        /// <returns></returns>
+        public static XUri AuthorizeDreamInParams(this XUri uri, DreamMessage request, string authtoken) {
+            if(string.IsNullOrEmpty(authtoken)) {
+                return uri;
+            }
+            if(authtoken.EqualsInvariant(request.Headers.DreamInAuth)) {
+                return uri;
+            }
+            return uri.WithoutParams(DreamInParam.URI)
+                .WithoutParams(DreamInParam.ORIGIN)
+                .WithoutParams(DreamInParam.ROOT)
+                .WithoutParams(DreamInParam.HOST);
+        }
     }
 }

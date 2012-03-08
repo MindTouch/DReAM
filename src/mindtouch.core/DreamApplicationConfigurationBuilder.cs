@@ -77,6 +77,7 @@ namespace MindTouch.Dream {
             var guid = settings["dream.guid"] ?? settings["guid"];
             var hostPath = settings["dream.host.path"] ?? settings["host-path"];
             config.Apikey = settings["dream.apikey"] ?? settings["apikey"] ?? StringUtil.CreateAlphaNumericKey(8);
+            config.DreamInParamAuthToken = settings["dream.in.authtoken"];
             config.HostConfig = new XDoc("config")
                 .Elem("guid", guid)
                 .Elem("storage-dir", storagePath)
@@ -122,6 +123,16 @@ namespace MindTouch.Dream {
         /// <returns>Current builder instance.</returns>
         public DreamApplicationConfigurationBuilder WithApikey(string apikey) {
             _configuration.Apikey = apikey;
+            return this;
+        }
+
+        /// <summary>
+        /// Define the authtoken expected via 'X-Dream-In-Auth' to allow dream.im.* query args through. If ommitted, any call may pass dream.in.* args
+        /// </summary>
+        /// <param name="apikey">Api key</param>
+        /// <returns>Current builder instance.</returns>
+        public DreamApplicationConfigurationBuilder WithDreamInParamAuthtoken(string authtoken) {
+            _configuration.DreamInParamAuthToken = authtoken;
             return this;
         }
 

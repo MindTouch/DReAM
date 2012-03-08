@@ -66,6 +66,7 @@ namespace MindTouch.Dream.Http {
                 // create request message
                 request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength, httpContext.Request.InputStream);
                 DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, string.Format("{0}://{1}{2}", httpContext.Request.Url.Scheme, httpContext.Request.Url.Authority, httpContext.Request.ApplicationPath), httpContext.Request.UserHostAddress, httpContext.Request.UserAgent);
+                requestUri = requestUri.AuthorizeDreamInParams(request, _handler.AppConfig.DreamInParamAuthToken);
 
                 // TODO (arnec): should this happen before PrepareIncomingMessage?
                 request.Headers.DreamTransport = _handler.GetRequestBaseUri(httpContext.Request).ToString();

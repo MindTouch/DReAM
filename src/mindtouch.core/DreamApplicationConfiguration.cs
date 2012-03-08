@@ -53,5 +53,9 @@ namespace MindTouch.Dream {
         /// Host script.
         /// </summary>
         internal XDoc Script;
+
+        /// <summary>
+        /// Expected Authtoken for whitelist behavior for dream.in.* parameters.
+        public string DreamInParamAuthToken;
     }
 }
