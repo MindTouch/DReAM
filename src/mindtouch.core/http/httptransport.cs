@@ -187,16 +187,7 @@ namespace MindTouch.Dream.Http {
                 // create request message
                 request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
                 DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
-
-                // filter dream in params if we don't have authorization
-                if(!string.IsNullOrEmpty(_dreamInParamAuthtoken)) {
-                    if(!_dreamInParamAuthtoken.EqualsInvariant(request.Headers.DreamInAuth)) {
-                        requestUri = requestUri
-                            .WithoutParams(DreamInParam.URI)
-                            .WithoutParams(DreamInParam.ORIGIN)
-                            .WithoutParams(DreamInParam.ROOT);
-                    }
-                }
+                requestUri = requestUri.AuthorizeDreamInParams(request, _dreamInParamAuthtoken);
 
                 // check if the request was forwarded through Apache mod_proxy
                 string hostname = requestUri.GetParam(DreamInParam.HOST, null) ?? request.Headers.ForwardedHost ?? request.Headers.Host ?? requestUri.HostPort;

@@ -108,7 +108,9 @@ namespace MindTouch.Dream {
 
             // get the authtoken for whitelisting dream.in.* query args
             _dreamInParamAuthtoken = config["dream.in.authtoken"].AsText;
-
+            if(!string.IsNullOrEmpty(_dreamInParamAuthtoken)) {
+                _log.Debug("Host is configured in dream.in param authorizing mode");
+            }
             // read ip-addresses
             var addresses = new List<string>();
             foreach(XDoc ip in config["host|ip"]) {
