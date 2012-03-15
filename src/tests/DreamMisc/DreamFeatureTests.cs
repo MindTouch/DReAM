@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Autofac;
 using log4net;
 using MindTouch.Tasking;
 using MindTouch.Web;
@@ -40,9 +41,14 @@ namespace MindTouch.Dream.Test {
         private Plug _plug;
         private XDoc _blueprint;
 
+        public interface IFoo {}
+        public class Foo : IFoo { }
+
         [TestFixtureSetUp]
         public void Init() {
-            _hostInfo = DreamTestHelper.CreateRandomPortHost();
+            var builder = new ContainerBuilder();
+            builder.RegisterType<Foo>().As<IFoo>().RequestScoped();
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"),builder.Build());
             _hostInfo.Host.Self.At("load").With("name", "test.mindtouch.dream").Post(DreamMessage.Ok());
             var config = new XDoc("config")
                .Elem("path", "test")
@@ -517,6 +523,15 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual(msg.ToCompactString(), response.ToDocument().ToCompactString());
         }
 
+        [Test]
+        public void Can_resolve_instance_from_the_context_container() {
+            AssertFeature(
+                "GET:sync/inject/instance",
+                _plug.At("sync", "inject","instance"),
+                new XDoc("body").Elem("class", typeof(Foo).FullName)
+            );
+        }
+
         private void AssertFeature(string pattern, Plug plug) {
             AssertFeature(pattern, plug, null);
         }
@@ -857,6 +872,11 @@ namespace MindTouch.Dream.Test {
             [DreamFeature("POST:xdoc", "")]
             public XDoc XDoc(XDoc body) {
                 return body;
+            }
+
+            [DreamFeature("GET:sync/inject/instance", "")]
+            public DreamMessage SyncInjectInstance(IFoo foo) {
+                return Response(new XDoc("body").Elem("class", foo.GetType().FullName));
             }
 
             //--- Methods ---
