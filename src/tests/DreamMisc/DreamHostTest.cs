@@ -43,7 +43,7 @@ namespace MindTouch.Dream.Test {
 
         [SetUp]
         public void Init() {
-            _hostinfo = DreamTestHelper.CreateRandomPortHost();
+            _hostinfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config").Elem("dream.in.authtoken", "abc"));
             _host = _hostinfo.LocalHost.At("host").With("apikey", _hostinfo.ApiKey);
         }
 
@@ -250,9 +250,9 @@ namespace MindTouch.Dream.Test {
         [Test]
         [ExpectedException(typeof(DreamResponseException))]
         public void BadHostRequest() {
-			
-			// TODO (steveb): test fails under Mono 2.8.2
-			
+
+            // TODO (steveb): test fails under Mono 2.8.2
+
             Plug plug = Plug.New("http://nowhere/foo");
             plug.Get();
         }
@@ -294,6 +294,74 @@ namespace MindTouch.Dream.Test {
             Assert.IsTrue(captured.IsClosed, "captured message was not closed");
             Assert.IsTrue(requestMsg.IsClosed, "sent message is not closed");
         }
+
+        [Test]
+        public void DreamIn_Origin_Host_and_Uri_are_stripped_if_DreamInAuth_header_is_not_set_on_host_requiring_DreamIn_Auth() {
+            var recipient = _hostinfo.CreateMockService();
+            XUri incomingUri = null;
+            recipient.Service.CatchAllCallback = (context, request, response) => {
+                incomingUri = context.Uri;
+                response.Return(DreamMessage.Ok());
+            };
+            var recipientUri = recipient.AtLocalHost.Uri.WithScheme("ext-http");
+            Plug.New(recipientUri)
+                .With(DreamInParam.ROOT, "root")
+                .With(DreamInParam.ORIGIN, "origin")
+                .With(DreamInParam.HOST, "host")
+                .With(DreamInParam.URI, "http://uri")
+                .Get();
+            Assert.IsNotNull(incomingUri);
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.ROOT));
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.ORIGIN));
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.HOST));
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.URI));
+        }
+
+        [Test]
+        public void DreamIn_Origin_Host_and_Uri_are_stripped_if_DreamInAuth_header_is_incorrect_on_host_requiring_DreamIn_Auth() {
+            var recipient = _hostinfo.CreateMockService();
+            XUri incomingUri = null;
+            recipient.Service.CatchAllCallback = (context, request, response) => {
+                incomingUri = context.Uri;
+                response.Return(DreamMessage.Ok());
+            };
+            var recipientUri = recipient.AtLocalHost.Uri.WithScheme("ext-http");
+            Plug.New(recipientUri)
+                .With(DreamInParam.ROOT, "root")
+                .With(DreamInParam.ORIGIN, "origin")
+                .With(DreamInParam.HOST, "host")
+                .With(DreamInParam.URI, "http://uri")
+                .WithHeader(DreamHeaders.DREAM_IN_AUTH, "yyz")
+                .Get();
+            Assert.IsNotNull(incomingUri);
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.ROOT));
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.ORIGIN));
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.HOST));
+            Assert.IsNull(incomingUri.GetParam(DreamInParam.URI));
+        }
+
+        [Test]
+        public void DreamIn_Origin_Host_and_Uri_are_not_stripped_if_DreamInAuth_header_is_set_on_host_requiring_DreamIn_Auth() {
+            var recipient = _hostinfo.CreateMockService();
+            XUri incomingUri = null;
+            recipient.Service.CatchAllCallback = (context, request, response) => {
+                incomingUri = context.Uri;
+                response.Return(DreamMessage.Ok());
+            };
+            var recipientUri = recipient.AtLocalHost.Uri.WithScheme("ext-http");
+            Plug.New(recipientUri)
+                .With(DreamInParam.ROOT, "root")
+                .With(DreamInParam.ORIGIN, "origin")
+                .With(DreamInParam.HOST, "host")
+                .With(DreamInParam.URI, "http://uri")
+                .WithHeader(DreamHeaders.DREAM_IN_AUTH, "abc")
+                .Get();
+            Assert.IsNotNull(incomingUri);
+            Assert.AreEqual("root", incomingUri.GetParam(DreamInParam.ROOT));
+            Assert.AreEqual("origin", incomingUri.GetParam(DreamInParam.ORIGIN));
+            Assert.AreEqual("host", incomingUri.GetParam(DreamInParam.HOST));
+            Assert.AreEqual("http://uri", incomingUri.GetParam(DreamInParam.URI));
+        }
     }
 
     [TestFixture]
@@ -305,9 +373,9 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Hitting_connect_limit_returns_service_unavailable() {
-			
-			// TODO (steveb): test fails under Mono 2.8.2
-			
+
+            // TODO (steveb): test fails under Mono 2.8.2
+
             int connectLimit = 5;
             using(var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config").Elem("connect-limit", connectLimit))) {
                 var mockService = MockService.CreateMockService(hostInfo);
@@ -334,5 +402,30 @@ namespace MindTouch.Dream.Test {
                 Assert.LessOrEqual(hitCounter, connectLimit);
             }
         }
+
+        [Test]
+        public void DreamIn_Origin_Host_and_Uri_are_not_stripped_if_the_host_doesn_not_require_DreamIn_Auth() {
+            using(var hostinfo = DreamTestHelper.CreateRandomPortHost()) {
+                var recipient = hostinfo.CreateMockService();
+                XUri incomingUri = null;
+                recipient.Service.CatchAllCallback = (context, request, response) => {
+                    incomingUri = context.Uri;
+                    response.Return(DreamMessage.Ok());
+                };
+                var recipientUri = recipient.AtLocalHost.Uri.WithScheme("ext-http");
+                Plug.New(recipientUri)
+                    .With(DreamInParam.ROOT, "root")
+                    .With(DreamInParam.ORIGIN, "origin")
+                    .With(DreamInParam.HOST, "host")
+                    .With(DreamInParam.URI, "http://uri")
+                    .Get();
+                Assert.IsNotNull(incomingUri);
+                Assert.AreEqual("root", incomingUri.GetParam(DreamInParam.ROOT));
+                Assert.AreEqual("origin", incomingUri.GetParam(DreamInParam.ORIGIN));
+                Assert.AreEqual("host", incomingUri.GetParam(DreamInParam.HOST));
+                Assert.AreEqual("http://uri", incomingUri.GetParam(DreamInParam.URI));
+            }
+        }
+
     }
 }

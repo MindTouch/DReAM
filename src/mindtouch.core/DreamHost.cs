@@ -63,6 +63,7 @@ namespace MindTouch.Dream {
         private Plug _host;
         private List<HttpTransport> _transports = new List<HttpTransport>();
         private bool _disposed;
+        private string _dreamInParamAuthtoken;
 
         //--- Constructors ---
 
@@ -104,6 +105,13 @@ namespace MindTouch.Dream {
                     _log.Warn(String.Format("invalid authetication scheme specified :{0}", authShemes), e);
                 }
             }
+
+            // get the authtoken for whitelisting dream.in.* query args
+            _dreamInParamAuthtoken = config["dream.in.authtoken"].AsText;
+            if(!string.IsNullOrEmpty(_dreamInParamAuthtoken)) {
+                _log.Debug("Host is configured in dream.in param authorizing mode");
+            }
+
             // read ip-addresses
             var addresses = new List<string>();
             foreach(XDoc ip in config["host|ip"]) {
@@ -369,7 +377,7 @@ namespace MindTouch.Dream {
             switch(uri.Scheme.ToLowerInvariant()) {
             case Scheme.HTTP:
             case Scheme.HTTPS: {
-                    HttpTransport transport = new Http.HttpTransport(_env, uri, authenticationSheme);
+                    HttpTransport transport = new HttpTransport(_env, uri, authenticationSheme, _dreamInParamAuthtoken);
                     transport.Startup();
                     _transports.Add(transport);
                 }

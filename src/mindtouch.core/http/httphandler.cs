@@ -47,6 +47,7 @@ namespace MindTouch.Dream.Http {
         private static IDreamEnvironment _env;
         private static XUri _uri;
         private static int _minSimilarity;
+        private string _dreamInParamAuthtoken;
 
         //--- Constructors ---
 
@@ -75,6 +76,7 @@ namespace MindTouch.Dream.Http {
                             string apikey = settings["apikey"];
                             _uri = new XUri(settings["public-uri"] ?? settings["root-uri"] ?? "http://localhost/@api");
                             _minSimilarity = _uri.MaxSimilarity;
+                            _dreamInParamAuthtoken = settings["dream.in.authtoken"];
 
                             // start dreamhost
                             XDoc config = new XDoc("config")
@@ -154,6 +156,7 @@ namespace MindTouch.Dream.Http {
                 // create request message
                 request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength, httpContext.Request.InputStream);
                 DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, string.Format("{0}://{1}{2}", httpContext.Request.Url.Scheme, httpContext.Request.Url.Authority, httpContext.Request.ApplicationPath), httpContext.Request.UserHostAddress, httpContext.Request.UserAgent);
+                requestUri = requestUri.AuthorizeDreamInParams(request, _dreamInParamAuthtoken);
 
                 // process message
                 Result<DreamMessage> response = _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue)).Block();

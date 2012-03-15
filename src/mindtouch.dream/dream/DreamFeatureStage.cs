@@ -30,6 +30,7 @@ using MindTouch.Extensions;
 using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
+using Autofac;
 
 namespace MindTouch.Dream {
     using Yield = IEnumerator<IYield>;
@@ -354,6 +355,12 @@ namespace MindTouch.Dream {
         private static DreamFeatureAdapter MakeConvertingContextParamGetter(string name, Type type) {
             return new DreamFeatureAdapter(name, (context, request, response) => {
                 object value = context.GetParam(name, null);
+                if(value == null && type.IsInterface) {
+                    object resolvedInstance;
+                    if(context.Container.TryResolve(type, out resolvedInstance)) {
+                        return resolvedInstance;
+                    }
+                }
                 if(value != null) {
                     return SysUtil.ChangeType(value, type);
                 }
