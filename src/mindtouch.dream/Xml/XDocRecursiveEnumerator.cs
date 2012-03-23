@@ -94,7 +94,7 @@ namespace MindTouch.Xml {
             // check if we can move to the next node
             while(true) {
                 if(_nodeExitCallback != null) {
-                    _nodeExitCallback(new XDoc(new[] { node }, 0, _start, _nsManager));
+                    _nodeExitCallback(new XDoc(new[] { node }, 0, node, _nsManager));
                 }
                 if(node == _start) {
                     break;
@@ -116,7 +116,7 @@ namespace MindTouch.Xml {
         }
 
         private void SetCurrent(XmlNode node) {
-            _current = new XDoc(new[] { node }, 0, _start, _nsManager);
+            _current = new XDoc(new[] { node }, 0, node, _nsManager);
             _enumerateCurrentChildren = ((_enumerateChildren == null) || _enumerateChildren(_current));
         }
 
