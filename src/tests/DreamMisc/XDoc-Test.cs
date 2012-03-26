@@ -1002,6 +1002,41 @@ namespace MindTouch.Xml.Test {
             System.Threading.Thread.CurrentThread.CurrentCulture = old;
         }
 
+        [Test]
+        public void VisitAllMakesReturnedNodesRoot_with_nested_image() {
+            var doc = new XDoc("html")
+                .Start("body")
+                    .Start("div")
+                        .Start("a").Attr("href", "http://dummy/a/b/c")
+                            .Start("img").Attr("src", "http://dummy/123.png").End()
+                        .End()
+                    .End()
+                .End();
+            bool foundImage = false;
+            foreach(var item in doc.VisitAll().Where(node => node.HasName("a"))) {
+                foundImage = foundImage || !item[".//img"].IsEmpty;
+            }
+            Assert.IsTrue(foundImage, "<img> NOT found");
+        }
+
+        [Test]
+        public void VisitAllMakesReturnedNodesRoot_without_nested_image() {
+            var doc = new XDoc("html")
+                .Start("body")
+                    .Start("div")
+                        .Start("a").Attr("href", "http://dummy/a/b/c")
+                            .Value("hello world")
+                        .End()
+                    .End()
+                    .Start("img").Attr("src", "http://dummy/123.png").End()
+                .End();
+            bool foundImage = false;
+            foreach(var item in doc.VisitAll().Where(node => node.HasName("a"))) {
+                foundImage = foundImage || !item[".//img"].IsEmpty;
+            }
+            Assert.IsFalse(foundImage, "<img> should NOT have been found");
+        }
+
         [TearDown]
         public void TearDown() {
         }
