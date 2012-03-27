@@ -115,7 +115,6 @@ namespace MindTouch.Dream.Test.Aws {
 
         public static AwsS3FileHandle CreateFileHandle(XDoc data, TimeSpan? ttl) {
             var stream = new MemoryStream();
-            var writer = new StreamWriter(stream);
             data.WriteTo(stream);
             stream.Position = 0;
             return new AwsS3FileHandle {
