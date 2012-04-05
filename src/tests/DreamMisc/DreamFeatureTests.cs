@@ -24,6 +24,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Autofac;
+using Autofac.Builder;
 using log4net;
 using MindTouch.Tasking;
 using MindTouch.Web;
@@ -48,7 +49,7 @@ namespace MindTouch.Dream.Test {
         public void Init() {
             var builder = new ContainerBuilder();
             builder.RegisterType<Foo>().As<IFoo>().RequestScoped();
-            _hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"),builder.Build());
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder.Build(ContainerBuildOptions.Default));
             _hostInfo.Host.Self.At("load").With("name", "test.mindtouch.dream").Post(DreamMessage.Ok());
             var config = new XDoc("config")
                .Elem("path", "test")
