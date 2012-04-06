@@ -62,6 +62,9 @@
   <ItemGroup>
     <None Include="App.config">
     </None>
+    <None Include="log4net.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="mindtouch.env.xml">
