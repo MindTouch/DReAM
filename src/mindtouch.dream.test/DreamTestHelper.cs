@@ -178,7 +178,7 @@ namespace MindTouch.Dream.Test {
         /// <param name="config">Additional configuration for the host.</param>
         /// <param name="container">IoC Container to use.</param>
         /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost(XDoc config, ContainerBuilder builder) {
+        public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
             var path = "/";
             if(!config["uri.public"].IsEmpty) {
                 path = config["uri.public"].AsText;
@@ -197,7 +197,7 @@ namespace MindTouch.Dream.Test {
                 _log.DebugFormat("port:    {0}", port);
                 _log.DebugFormat("config:\r\n{0}", config.ToPrettyString());
                 try {
-                    var host = builder == null ? new DreamHost(config) : new DreamHost(config, builder.Build(ContainerBuildOptions.Default));
+                    var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
                     host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
                     return new DreamHostInfo(Plug.New(localhost), host, apikey);
                 } catch(Exception e) {

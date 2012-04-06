@@ -1093,7 +1093,7 @@ namespace MindTouch.Dream {
                     }
                     _serviceLifetimeScopes.Clear();
                 }
-                _container.Dispose();
+                _hostLifetimeScope.Dispose();
             }
         }
 

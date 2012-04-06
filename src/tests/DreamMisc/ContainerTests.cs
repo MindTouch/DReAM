@@ -38,7 +38,7 @@ namespace MindTouch.Dream.Test {
         public void Can_set_request_scope_registration_on_provided_container() {
             var builder = new ContainerBuilder();
             builder.RegisterType<Foo>().As<IFoo>().InScope(DreamContainerScope.Request);
-            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder);
+            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder.Build(ContainerBuildOptions.Default));
             var service = hostInfo.CreateService(typeof(ContainerTestService), "test");
             CheckResponse(service.AtLocalHost.At("scope").Get(new Result<DreamMessage>()).Wait());
             var requestScope1 = ContainerTestService.Scoped;
@@ -53,7 +53,7 @@ namespace MindTouch.Dream.Test {
         public void Can_set_service_scope_registration_on_provided_container() {
             var builder = new ContainerBuilder();
             builder.RegisterType<Foo>().As<IFoo>().InScope(DreamContainerScope.Service);
-            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder);
+            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder.Build(ContainerBuildOptions.Default));
             var service = hostInfo.CreateService(typeof(ContainerTestService), "test");
             CheckResponse(service.AtLocalHost.At("scope").Get(new Result<DreamMessage>()).Wait());
             var serviceScope1 = ContainerTestService.Scoped;
@@ -68,7 +68,7 @@ namespace MindTouch.Dream.Test {
         public void Can_set_service_scope_registration_on_provided_container2() {
             var builder = new ContainerBuilder();
             builder.RegisterType<Foo>().As<IFoo>().InScope(DreamContainerScope.Service);
-            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder);
+            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder.Build(ContainerBuildOptions.Default));
             var service1 = hostInfo.CreateService(typeof(ContainerTestService), "test");
             var service2 = hostInfo.CreateService(typeof(ContainerTestService), "test");
             CheckResponse(service1.AtLocalHost.At("scope").Get(new Result<DreamMessage>()).Wait());
@@ -84,7 +84,7 @@ namespace MindTouch.Dream.Test {
         public void Can_set_host_scope_registration_on_provided_container() {
             var builder = new ContainerBuilder();
             builder.RegisterType<Foo>().As<IFoo>().InScope(DreamContainerScope.Host);
-            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder);
+            var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder.Build(ContainerBuildOptions.Default));
             var service1 = hostInfo.CreateService(typeof(ContainerTestService), "test");
             var service2 = hostInfo.CreateService(typeof(ContainerTestService), "test");
             CheckResponse(service1.AtLocalHost.At("scope").Get(new Result<DreamMessage>()).Wait());
