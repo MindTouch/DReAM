@@ -49,7 +49,7 @@ namespace MindTouch.Dream.Test {
         public void Init() {
             var builder = new ContainerBuilder();
             builder.RegisterType<Foo>().As<IFoo>().RequestScoped();
-            _hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder.Build(ContainerBuildOptions.Default));
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config"), builder);
             _hostInfo.Host.Self.At("load").With("name", "test.mindtouch.dream").Post(DreamMessage.Ok());
             var config = new XDoc("config")
                .Elem("path", "test")

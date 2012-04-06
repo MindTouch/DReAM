@@ -67,7 +67,7 @@ namespace MindTouch.Dream.Storage.Test {
                 _s3ClientMock = new Mock<IAwsS3Client>();
                 return _s3ClientMock.Object;
             }).As<IAwsS3Client>().ServiceScoped();
-            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build(ContainerBuildOptions.Default));
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder);
         }
 
         [SetUp]
