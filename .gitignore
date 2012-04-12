@@ -24,3 +24,5 @@ src/*/*/test-results/*.xml
 *.cache
 *.pidb
 *~
+*.dotCover
+*.Resharper
