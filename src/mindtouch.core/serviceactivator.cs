@@ -52,7 +52,7 @@ namespace MindTouch.Dream {
         }
         public IDreamService Create(XDoc config, Type type) {
             object service;
-            if(!_lifetimeScope.TryResolve(new TypedService(type), new[] { TypedParameter.From(config) }, out service)) {
+            if(!_lifetimeScope.TryResolveService(new TypedService(type), new[] { TypedParameter.From(config) }, out service)) {
                 service = Activator.CreateInstance(type);
             }
             return (IDreamService)service;
