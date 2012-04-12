@@ -21,6 +21,7 @@
 using System;
 using System.Threading;
 using Autofac;
+using Autofac.Builder;
 using log4net;
 using MindTouch.Tasking;
 using MindTouch.Xml;

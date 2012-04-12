@@ -21,6 +21,7 @@
 
 using System;
 using Autofac;
+using Autofac.Builder;
 using log4net;
 using MindTouch.Aws;
 using MindTouch.Dream.Test;
@@ -59,7 +60,7 @@ namespace MindTouch.Dream.Storage.Test {
                 _s3ClientMock = mock;
                 return mock.Object;
             }).As<IAwsS3Client>().ServiceScoped();
-            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build());
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build(ContainerBuildOptions.Default));
         }
 
         [SetUp]

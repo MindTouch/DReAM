@@ -266,7 +266,7 @@ namespace MindTouch.Dream {
         public DreamHostService() : this(null) { }
 
         public DreamHostService(IContainer container) {
-            _container = (container ?? new ContainerBuilder().Build());
+            _container = (container ?? new ContainerBuilder().Build(ContainerBuildOptions.Default));
             _hostLifetimeScope = _container.BeginLifetimeScope(DreamContainerScope.Host);
         }
 
@@ -1093,7 +1093,7 @@ namespace MindTouch.Dream {
                     }
                     _serviceLifetimeScopes.Clear();
                 }
-                _container.Dispose();
+                _hostLifetimeScope.Dispose();
             }
         }
 
