@@ -21,6 +21,7 @@
 
 using System;
 using Autofac;
+using Autofac.Builder;
 using Autofac.Core;
 using Autofac.Core.Registration;
 using MindTouch.Xml;
@@ -38,7 +39,7 @@ namespace MindTouch.Dream.Test {
 
         [SetUp]
         public void Setup() {
-            _hostContainer = new ContainerBuilder().Build().BeginLifetimeScope(DreamContainerScope.Host);
+            _hostContainer = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
             _serviceContainer = _hostContainer.BeginLifetimeScope(DreamContainerScope.Service);
             _requestContainer = _serviceContainer.BeginLifetimeScope(DreamContainerScope.Request);
         }
@@ -140,27 +141,27 @@ namespace MindTouch.Dream.Test {
                 break;
             case DreamContainerScope.Host:
                 Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
-                Assert.IsTrue(_hostContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in host");
-                Assert.IsTrue(_serviceContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in service");
-                Assert.IsTrue(_requestContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in request");
+                Assert.IsTrue(_hostContainer.TryResolveService(new TypedService(type), out instance), "unable to resolve in host");
+                Assert.IsTrue(_serviceContainer.TryResolveService(new TypedService(type), out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolveService(new TypedService(type), out instance), "unable to resolve in request");
                 break;
             case DreamContainerScope.Service:
                 Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
                 try {
-                    Assert.IsFalse(_hostContainer.TryResolve(new TypedService(type), out instance), "able to resolve in host");
+                    Assert.IsFalse(_hostContainer.TryResolveService(new TypedService(type), out instance), "able to resolve in host");
                 } catch(DependencyResolutionException) {}
-                Assert.IsTrue(_serviceContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in service");
-                Assert.IsTrue(_requestContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in request");
+                Assert.IsTrue(_serviceContainer.TryResolveService(new TypedService(type), out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolveService(new TypedService(type), out instance), "unable to resolve in request");
                 break;
             case DreamContainerScope.Request:
                 Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
                 try {
-                    Assert.IsFalse(_hostContainer.TryResolve(new TypedService(type), out instance), "able to resolve in host");
+                    Assert.IsFalse(_hostContainer.TryResolveService(new TypedService(type), out instance), "able to resolve in host");
                 } catch(DependencyResolutionException) {}
                 try {
-                    Assert.IsFalse(_serviceContainer.TryResolve(new TypedService(type), out instance), "able to resolve in service");
+                    Assert.IsFalse(_serviceContainer.TryResolveService(new TypedService(type), out instance), "able to resolve in service");
                 } catch(DependencyResolutionException) {}
-                Assert.IsTrue(_requestContainer.TryResolve(new TypedService(type), out instance), "unable to resolve in request");
+                Assert.IsTrue(_requestContainer.TryResolveService(new TypedService(type), out instance), "unable to resolve in request");
                 break;
             }
         }
@@ -168,7 +169,7 @@ namespace MindTouch.Dream.Test {
 
         private void IsRegisteredInScopeWithName(Type type, DreamContainerScope scope, string name) {
             IComponentRegistration registration;
-            Assert.IsTrue(_serviceContainer.ComponentRegistry.TryGetRegistration(new NamedService(name, type), out registration),
+            Assert.IsTrue(_serviceContainer.ComponentRegistry.TryGetRegistration(new KeyedService(name, type), out registration),
                           string.Format("no registration found for type '{0}' with name '{1}'", typeof(Foo), "fooz"));
             Assert.AreEqual(InstanceOwnership.OwnedByLifetimeScope, registration.Ownership);
             object instance;
@@ -178,27 +179,27 @@ namespace MindTouch.Dream.Test {
                 break;
             case DreamContainerScope.Host:
                 Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
-                Assert.IsTrue(_hostContainer.TryResolve(name, type, out instance), "unable to resolve in host");
-                Assert.IsTrue(_serviceContainer.TryResolve(name, type, out instance), "unable to resolve in service");
-                Assert.IsTrue(_requestContainer.TryResolve(name, type, out instance), "unable to resolve in request");
+                Assert.IsTrue(_hostContainer.TryResolveNamed(name, type, out instance), "unable to resolve in host");
+                Assert.IsTrue(_serviceContainer.TryResolveNamed(name, type, out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolveNamed(name, type, out instance), "unable to resolve in request");
                 break;
             case DreamContainerScope.Service:
                 Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
                 try {
-                    Assert.IsFalse(_hostContainer.TryResolve(name, type, out instance), "able to resolve in host");
+                    Assert.IsFalse(_hostContainer.TryResolveNamed(name, type, out instance), "able to resolve in host");
                 } catch(DependencyResolutionException) {}
-                Assert.IsTrue(_serviceContainer.TryResolve(name, type, out instance), "unable to resolve in service");
-                Assert.IsTrue(_requestContainer.TryResolve(name, type, out instance), "unable to resolve in request");
+                Assert.IsTrue(_serviceContainer.TryResolveNamed(name, type, out instance), "unable to resolve in service");
+                Assert.IsTrue(_requestContainer.TryResolveNamed(name, type, out instance), "unable to resolve in request");
                 break;
             case DreamContainerScope.Request:
                 Assert.AreEqual(InstanceSharing.Shared, registration.Sharing);
                 try {
-                    Assert.IsFalse(_hostContainer.TryResolve(name, type, out instance), "able to resolve in host");
+                    Assert.IsFalse(_hostContainer.TryResolveNamed(name, type, out instance), "able to resolve in host");
                 } catch(DependencyResolutionException) {}
                 try {
-                    Assert.IsFalse(_serviceContainer.TryResolve(name, type, out instance), "able to resolve in service");
+                    Assert.IsFalse(_serviceContainer.TryResolveNamed(name, type, out instance), "able to resolve in service");
                 } catch(DependencyResolutionException) {}
-                Assert.IsTrue(_requestContainer.TryResolve(name, type, out instance), "unable to resolve in request");
+                Assert.IsTrue(_requestContainer.TryResolveNamed(name, type, out instance), "unable to resolve in request");
                 break;
             }
         }

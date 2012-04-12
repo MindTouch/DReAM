@@ -42,9 +42,7 @@ namespace System {
         /// </summary>
         public static DateTime UtcToday {
             get {
-                DateTime result = DateTime.Today.ToUniversalTime();
-                result = result.AddHours(-result.Hour);
-                return result;
+                return DateTime.UtcNow.Date;
             }
         }
 
