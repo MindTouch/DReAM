@@ -23,6 +23,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+
+#if IGNORE_SSL_ERRORS
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+#endif
+
 using System.Text;
 
 using MindTouch.IO;
@@ -82,7 +88,7 @@ namespace MindTouch.Dream.Http {
                     return true;
                 };
             } catch(Exception e) {
-                LogUtils.LogError(_log, e, "class ctor");
+                _log.Error("class ctor", e);
             }
 #endif
         }
