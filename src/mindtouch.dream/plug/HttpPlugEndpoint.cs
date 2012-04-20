@@ -82,7 +82,7 @@ namespace MindTouch.Dream.Http {
 
         //--- Class Constructor ---
         static HttpPlugEndpoint() {
-#if ALLOW_EXPIRED_HTTPS_CERTS
+#if IGNORE_SSL_ERRORS
             try {
                 ServicePointManager.ServerCertificateValidationCallback = delegate(Object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors) {
                     return true;
