@@ -239,7 +239,7 @@ namespace MindTouch.Dream.Test.TransactionalQueue {
                         start[v] = v;
                         v++;
                     }
-                    results.Add(Async.ForkThread(() => {
+                    results.Add(AsyncUtil.ForkThread(() => {
                         trigger.WaitOne();
                         foreach(var vx in values) {
 
@@ -250,7 +250,7 @@ namespace MindTouch.Dream.Test.TransactionalQueue {
                     }, new Result()));
                 }
                 for(var i = 0; i < 10; i++) {
-                    results.Add(Async.ForkThread(() => {
+                    results.Add(AsyncUtil.ForkThread(() => {
                         trigger.WaitOne();
                         while(!done) {
                             ITransactionalQueueEntry<XDoc> vx = null;
@@ -266,7 +266,7 @@ namespace MindTouch.Dream.Test.TransactionalQueue {
                     }, new Result()));
                 }
                 for(var i = 0; i < 5; i++) {
-                    results.Add(Async.ForkThread(() => {
+                    results.Add(AsyncUtil.ForkThread(() => {
                         trigger.WaitOne();
                         while(!done) {
                             ITransactionalQueueEntry<XDoc> vx = null;
@@ -289,7 +289,7 @@ namespace MindTouch.Dream.Test.TransactionalQueue {
                         }
                     }, new Result()));
                 }
-                results.Add(Async.ForkThread(() => {
+                results.Add(AsyncUtil.ForkThread(() => {
                     trigger.WaitOne();
                     while(!done) {
                         ITransactionalQueueEntry<XDoc> vx = null;
@@ -394,7 +394,7 @@ namespace MindTouch.Dream.Test.TransactionalQueue {
                 var enqueues = new List<Result>();
                 var trigger = new ManualResetEvent(false);
                 for(var i = 0; i < w; i++) {
-                    enqueues.Add(Async.ForkThread(() => Enqueue(queue, n, trigger), new Result()));
+                    enqueues.Add(AsyncUtil.ForkThread(() => Enqueue(queue, n, trigger), new Result()));
                 }
                 var stopwatch = Stopwatch.StartNew();
                 trigger.Set();
@@ -408,7 +408,7 @@ namespace MindTouch.Dream.Test.TransactionalQueue {
                 var dequeues = new List<Result<int>>();
                 trigger.Reset();
                 for(var i = 0; i < w; i++) {
-                    dequeues.Add(Async.ForkThread(() => Dequeue(queue, trigger), new Result<int>()));
+                    dequeues.Add(AsyncUtil.ForkThread(() => Dequeue(queue, trigger), new Result<int>()));
                 }
                 stopwatch = Stopwatch.StartNew();
                 trigger.Set();

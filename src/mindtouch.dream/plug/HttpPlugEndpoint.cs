@@ -244,7 +244,7 @@ namespace MindTouch.Dream.Http {
                     if(res.HasException) {
                         activity("pre HandleResponse 3");
                         if(!HandleResponse(activity, res.Exception, null, response)) {
-                            _log.ErrorExceptionMethodCall(res.Exception, "HandleInvoke@Async.CopyStream", verb, uri);
+                            _log.ErrorExceptionMethodCall(res.Exception, "HandleInvoke@AsyncUtil.CopyStream", verb, uri);
                             try {
                                 httpRequest.Abort();
                             } catch { }

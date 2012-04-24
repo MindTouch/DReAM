@@ -43,7 +43,7 @@ namespace MindTouch.Tasking {
     /// <summary>
     /// Static utility class containing extension and helper methods for handling asynchronous execution.
     /// </summary>
-    public static class Async {
+    public static class AsyncUtil {
 
         //--- Types ---
         private delegate void AvailableThreadsDelegate(out int availableThreads, out int availablePorts);
@@ -69,7 +69,7 @@ namespace MindTouch.Tasking {
         private static IDispatchQueue _currentDispatchQueue;
 
         //--- Constructors ---
-        static Async() {
+        static AsyncUtil() {
             if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["threadpool-min"], out _minThreads)) {
                 _minThreads = 4;
             }
