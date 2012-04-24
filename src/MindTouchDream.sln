@@ -1,8 +1,16 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{41171E81-8617-4B1A-AA60-5E45F60BDC6B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{298A8F5F-EC9D-4CF9-A29E-A1B4F6976EFC}"
+	ProjectSection(SolutionItems) = preProject
+		..\LICENSE = ..\LICENSE
+		..\mindtouch.build.xml = ..\mindtouch.build.xml
+		..\MindTouchDream.proj = ..\MindTouchDream.proj
+		..\README.md = ..\README.md
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.dream", "mindtouch.dream\mindtouch.dream.csproj", "{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}"
 EndProject
@@ -27,14 +35,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.dream.test", "mindtouch.dream.test\mindtouch.dream.test.csproj", "{C4CC19EB-8149-4F39-A6E6-753886309CF6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.core", "tests\test.mindtouch.core\test.mindtouch.core.csproj", "{66E62AB7-D8A5-494A-970F-AA6705E33361}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{298A8F5F-EC9D-4CF9-A29E-A1B4F6976EFC}"
-	ProjectSection(SolutionItems) = preProject
-		..\LICENSE = ..\LICENSE
-		..\mindtouch.build.xml = ..\mindtouch.build.xml
-		..\MindTouchDream.proj = ..\MindTouchDream.proj
-		..\README.md = ..\README.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.db", "mindtouch.db\mindtouch.db.csproj", "{F9999307-4356-4EFC-AEC7-FF6D1D692618}"
 EndProject

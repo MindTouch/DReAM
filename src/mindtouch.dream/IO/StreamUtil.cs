@@ -159,7 +159,7 @@ namespace MindTouch.IO {
         /// <param name="target">Target <see cref="Stream"/>.</param>
         /// <param name="length">Number of bytes to copy from source to target.</param>
         /// <returns>Actual bytes copied.</returns>
-        public static long CopyTo(this Stream source, Stream target, long length) {
+        public static long CopyToStream(this Stream source, Stream target, long length) {
             var bufferLength = length >= 0 ? length : long.MaxValue;
             var buffer = new byte[Math.Min(bufferLength, BUFFER_SIZE)];
             long total = 0;
@@ -184,10 +184,10 @@ namespace MindTouch.IO {
         /// <param name="length">Number of bytes to copy from source to target.</param>
         /// <param name="result">The <see cref="Result"/> instance to be returned by the call.</param>
         /// <returns>Synchronization handle for the number of bytes copied.</returns>
-        public static Result<long> CopyTo(this Stream source, Stream target, long length, Result<long> result) {
+        public static Result<long> CopyToStream(this Stream source, Stream target, long length, Result<long> result) {
 
             if(!SysUtil.UseAsyncIO) {
-                return Async.Fork(() => CopyTo(source, target, length), result);
+                return Async.Fork(() => CopyToStream(source, target, length), result);
             }
 
             // NOTE (steveb): intermediary copy steps already have a timeout operation, no need to limit the duration of the entire copy operation
@@ -197,7 +197,7 @@ namespace MindTouch.IO {
             } else if(source.IsStreamMemorized() && target.IsStreamMemorized()) {
 
                 // source & target are memory streams; let's do the copy inline as fast as we can
-                result.Return(CopyTo(source, target, length));
+                result.Return(CopyToStream(source, target, length));
             } else {
 
                 // use new task environment so we don't copy the task state over and over again
@@ -391,7 +391,7 @@ namespace MindTouch.IO {
             FileStream file = null;
             try {
                 using(file = File.Create(filename)) {
-                    CopyTo(stream, file, length);
+                    CopyToStream(stream, file, length);
                 }
             } catch {
 
@@ -479,7 +479,7 @@ namespace MindTouch.IO {
         /// </summary>
         public static byte[] ReadBytes(this Stream source, long length) {
             var result = new MemoryStream();
-            CopyTo(source, result, length);
+            CopyToStream(source, result, length);
             return result.ToArray();
         }
 
@@ -497,7 +497,7 @@ namespace MindTouch.IO {
                 result.Return(copy);
             } else {
                 copy = new MemoryStream();
-                stream.CopyTo(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(
+                stream.CopyToStream(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(
                     v => {
                         copy.Position = 0;
                         result.Return(copy);
@@ -515,7 +515,7 @@ namespace MindTouch.IO {
         [Obsolete("ChunkedMemoryStream has been deprecated and will be removed in DReAM 3.0")]
         public static Result<ChunkedMemoryStream> ToChunkedMemoryStream(this Stream stream, long length, Result<ChunkedMemoryStream> result) {
             var copy = new ChunkedMemoryStream();
-            stream.CopyTo(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(
+            stream.CopyToStream(copy, length, new Result<long>(TimeSpan.MaxValue)).WhenDone(
                 v => {
                     copy.Position = 0;
                     result.Return(copy);

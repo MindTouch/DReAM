@@ -316,7 +316,7 @@ namespace MindTouch.Tasking {
 
             // inject input
             if(input != null) {
-                input.CopyTo(proc.StandardInput.BaseStream, long.MaxValue, new Result<long>(TimeSpan.MaxValue)).WhenDone(_ => {
+                input.CopyToStream(proc.StandardInput.BaseStream, long.MaxValue, new Result<long>(TimeSpan.MaxValue)).WhenDone(_ => {
 
                     // trying closing the original input stream
                     try {
@@ -331,10 +331,10 @@ namespace MindTouch.Tasking {
             }
 
             // extract output stream
-            Result<long> outputDone = proc.StandardOutput.BaseStream.CopyTo(output, long.MaxValue, new Result<long>(TimeSpan.MaxValue));
+            Result<long> outputDone = proc.StandardOutput.BaseStream.CopyToStream(output, long.MaxValue, new Result<long>(TimeSpan.MaxValue));
 
             // extract error stream
-            Result<long> errorDone = proc.StandardError.BaseStream.CopyTo(error, long.MaxValue, new Result<long>(TimeSpan.MaxValue));
+            Result<long> errorDone = proc.StandardError.BaseStream.CopyToStream(error, long.MaxValue, new Result<long>(TimeSpan.MaxValue));
             TaskTimer timer = TaskTimerFactory.Current.New(result.Timeout, delegate(TaskTimer t) {
                 try {
 

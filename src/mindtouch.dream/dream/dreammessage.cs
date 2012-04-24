@@ -679,7 +679,7 @@ namespace MindTouch.Dream {
             } else if(_stream == Stream.Null || (_stream != null && _stream.IsStreamMemorized())) {
                 _stream.Position = 0;
                 var copy = new MemoryStream((int)_stream.Length);
-                _stream.CopyTo(copy, _stream.Length);
+                _stream.CopyToStream(copy, _stream.Length);
                 _stream.Position = 0;
                 copy.Position = 0;
                 result = new DreamMessage(Status, Headers, ContentType, ContentLength, copy);
@@ -771,7 +771,7 @@ namespace MindTouch.Dream {
             Result<long> res;
 
             // TODO (steveb): use WithCleanup() to dispose of resources in case of failure
-            yield return res = _stream.CopyTo(buffer, Math.Min(length, max + 1), new Result<long>(TimeSpan.MaxValue)).Catch();
+            yield return res = _stream.CopyToStream(buffer, Math.Min(length, max + 1), new Result<long>(TimeSpan.MaxValue)).Catch();
 
             // mark stream as closed
             _stream.Close();
@@ -864,7 +864,7 @@ namespace MindTouch.Dream {
 
                     try {
                         var buffer = new MemoryStream();
-                        _stream.CopyTo(buffer, ContentLength);
+                        _stream.CopyToStream(buffer, ContentLength);
                         _bytes = buffer.ToArray();
                     } finally {
                         _stream.Close();

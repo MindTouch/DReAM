@@ -239,7 +239,7 @@ namespace MindTouch.Dream.Http {
                 using(outStream) {
                     Result<long> res;
                     activity("pre yield CopyStream");
-                    yield return res = request.ToStream().CopyTo(outStream, request.ContentLength, new Result<long>(TimeSpan.MaxValue)).Catch();
+                    yield return res = request.ToStream().CopyToStream(outStream, request.ContentLength, new Result<long>(TimeSpan.MaxValue)).Catch();
                     activity("post yield CopyStream");
                     if(res.HasException) {
                         activity("pre HandleResponse 3");
