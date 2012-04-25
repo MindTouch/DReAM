@@ -222,7 +222,7 @@ namespace MindTouch.Dream.Services {
                             _log.WarnFormat("giving up on upstream chaining to {0}", upstream);
                             break;
                         }
-                        yield return Async.Sleep(TimeSpan.FromMilliseconds(500));
+                        yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(500));
                         continue;
                     }
                 }
@@ -263,7 +263,7 @@ namespace MindTouch.Dream.Services {
                             _log.WarnFormat("giving up on downstream chaining to {0}", downstream);
                             break;
                         }
-                        yield return Async.Sleep(TimeSpan.FromMilliseconds(500));
+                        yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(500));
                     }
                 }
             }

@@ -186,11 +186,11 @@ namespace MindTouch.Dream {
                                     int workerThreads;
                                     int completionThreads;
                                     int dispatcherThreads;
-                                    Async.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads);
+                                    AsyncUtil.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads);
                                     int maxWorkerThreads;
                                     int maxCompletionThreads;
                                     int maxDispatcherThreads;
-                                    Async.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads);
+                                    AsyncUtil.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads);
                                     Console.WriteLine("Thread-pool worker threads available: {0} (max: {1})", workerThreads, maxWorkerThreads);
                                     Console.WriteLine("Thread-pool completion threads available: {0} (max: {1})", completionThreads, maxCompletionThreads);
                                     Console.WriteLine("Dispatcher threads available: {0} (max: {1})", dispatcherThreads, maxDispatcherThreads);

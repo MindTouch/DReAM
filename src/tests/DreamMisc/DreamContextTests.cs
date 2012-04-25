@@ -189,7 +189,7 @@ namespace MindTouch.Dream.Test {
                 context.SetState(guid);
                 context.SetState(ContextVar);
                 ContextLifeSpan capturedInner = null;
-                yield return Async.Fork(() =>
+                yield return AsyncUtil.Fork(() =>
                 {
                     var innerContextVar = DreamContext.Current.GetState<ContextLifeSpan>();
                     capturedInner = innerContextVar;

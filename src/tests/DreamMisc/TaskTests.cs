@@ -100,7 +100,7 @@ namespace MindTouch.Dream.Test {
         public void Forked_thread_has_copy_of_current_state() {
             var state = new State();
             TaskEnv.Current.SetState(state);
-            Assert.IsTrue(Async.Fork(() => (state == TaskEnv.Current.GetState<State>()), new Result<bool>()).Wait());
+            Assert.IsTrue(AsyncUtil.Fork(() => (state == TaskEnv.Current.GetState<State>()), new Result<bool>()).Wait());
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace MindTouch.Dream.Test {
             var state = new State();
             TaskEnv.Current.SetState(state);
             var resetEvent = new AutoResetEvent(true);
-            var result = Async.Fork(() => {
+            var result = AsyncUtil.Fork(() => {
                 resetEvent.WaitOne();
                 TaskEnv.Current.SetState(new State());
                 resetEvent.WaitOne();
@@ -315,7 +315,7 @@ namespace MindTouch.Dream.Test {
             var state = new TaskLifeSpanState("baz");
             var allgood = false;
             var resetEvent = new ManualResetEvent(false);
-            Async.Fork(() => {
+            AsyncUtil.Fork(() => {
                 _log.Debug("setting inner state");
                 TaskEnv.Current.SetState("foo", state);
             }, new Result()).WhenDone(r => {
@@ -475,7 +475,7 @@ namespace MindTouch.Dream.Test {
 
         public Result LastItem;
         public void QueueWorkItem(Action callback) {
-            LastItem = Async.ForkThread(callback, new Result());
+            LastItem = AsyncUtil.ForkThread(callback, new Result());
         }
 
         public bool TryQueueWorkItem(Action callback) {

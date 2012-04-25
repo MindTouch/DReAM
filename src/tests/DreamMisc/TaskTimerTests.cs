@@ -39,7 +39,7 @@ namespace MindTouch.Dream.Test {
         public void GlobalSetup() {
 
             // Note (arnec): need to prime threadpool
-            var q = Async.GlobalDispatchQueue;
+            var q = AsyncUtil.GlobalDispatchQueue;
         }
 
         [Test, Ignore("timing test to be visually observed")]

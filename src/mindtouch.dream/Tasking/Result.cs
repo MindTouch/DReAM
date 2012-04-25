@@ -590,7 +590,7 @@ namespace MindTouch.Tasking {
                 SetCallback(null, monitor.Signal, true);
 
                 // block until async operation has executed
-                Async.WaitFor(monitor, TimeSpan.MaxValue);
+                AsyncUtil.WaitFor(monitor, TimeSpan.MaxValue);
             }
             return this;
         }
@@ -626,7 +626,7 @@ namespace MindTouch.Tasking {
                 SetCallback(null, () => localSignal.Set(), true);
 
                 // block until async operation has executed
-                Async.WaitFor(localSignal, TimeSpan.MaxValue);
+                AsyncUtil.WaitFor(localSignal, TimeSpan.MaxValue);
                 if(signal == null) {
 
                     // signal was locally created, try to put it back on the stack

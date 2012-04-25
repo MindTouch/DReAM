@@ -36,7 +36,7 @@ namespace MindTouch.Threading {
         //--- Class Methods ---
         public static bool TryQueueWorkItem(IDispatchQueue queue, Action callback) {
             DispatchThread current = CurrentThread;
-            if((current != null) && ReferenceEquals(Async.CurrentDispatchQueue, queue)) {
+            if((current != null) && ReferenceEquals(AsyncUtil.CurrentDispatchQueue, queue)) {
 
                 // NOTE (steveb): next call can never fail since we're calling the queue work-item method of the current thread
                 current.QueueWorkItem(callback);
@@ -55,8 +55,8 @@ namespace MindTouch.Threading {
         internal DispatchThread() {
 
             // create new thread
-            var thread = Async.MaxStackSize.HasValue
-                ? new Thread(DispatchLoop, Async.MaxStackSize.Value) { IsBackground = true }
+            var thread = AsyncUtil.MaxStackSize.HasValue
+                ? new Thread(DispatchLoop, AsyncUtil.MaxStackSize.Value) { IsBackground = true }
                 : new Thread(DispatchLoop) { IsBackground = true };
 
             //  assign ID
@@ -144,7 +144,7 @@ namespace MindTouch.Threading {
                         var result = new Result<DispatchWorkItem>(TimeSpan.MaxValue);
 
                         // reset the dispatch queue for this thread
-                        Async.CurrentDispatchQueue = null;
+                        AsyncUtil.CurrentDispatchQueue = null;
 
                         // check if thread is associated with a host already
                         if(_host == null) {
@@ -175,7 +175,7 @@ namespace MindTouch.Threading {
                         // TODO (steveb): handle the weird case where _queue is null
 
                         // set the dispatch queue for this thread
-                        Async.CurrentDispatchQueue = _queue;
+                        AsyncUtil.CurrentDispatchQueue = _queue;
                     }
 
                     // execute work-item

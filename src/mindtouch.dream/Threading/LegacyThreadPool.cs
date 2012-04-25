@@ -49,11 +49,11 @@ namespace MindTouch.Threading {
         /// <param name="callback">Item to add to the thread pool.</param>
         public void QueueWorkItem(Action callback) {
             ThreadPool.UnsafeQueueUserWorkItem(delegate {
-                Async.CurrentDispatchQueue = this;
+                AsyncUtil.CurrentDispatchQueue = this;
                 try {
                     callback();
                 } finally {
-                    Async.CurrentDispatchQueue = null;
+                    AsyncUtil.CurrentDispatchQueue = null;
                 }
             }, null);
         }

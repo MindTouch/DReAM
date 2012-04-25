@@ -363,8 +363,8 @@ namespace MindTouch.Dream.Test.Threading {
                     Result<int> a = Fibonacci(stp, n - 1, delay, new Result<int>(TimeSpan.MaxValue, TaskEnv.New(stp)));
                     Result<int> b = Fibonacci(stp, n - 2, delay, new Result<int>(TimeSpan.MaxValue, TaskEnv.New(stp)));
                     new AResult[] { a, b }.Join(new Result(TimeSpan.MaxValue, TaskEnv.New(stp))).WhenDone(_ => {
-                        if(!ReferenceEquals(Async.CurrentDispatchQueue, stp)) {
-                            _log.Error(string.Format("ERROR: wrong queue {0}, expected {1}.", Async.CurrentDispatchQueue, stp));
+                        if(!ReferenceEquals(AsyncUtil.CurrentDispatchQueue, stp)) {
+                            _log.Error(string.Format("ERROR: wrong queue {0}, expected {1}.", AsyncUtil.CurrentDispatchQueue, stp));
                         }
                         result.Return(a.Value + b.Value);
                     });

@@ -90,13 +90,13 @@ namespace MindTouch.Collections {
         /// </summary>
         /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
         /// <param name="maxParallelism">Maximum number of items being dispatch simultaneously against the dispatch queue.</param>
-        public ProcessingQueue(Action<T, Action> handler, int maxParallelism) : this(handler, maxParallelism, Async.GlobalDispatchQueue) { }
+        public ProcessingQueue(Action<T, Action> handler, int maxParallelism) : this(handler, maxParallelism, AsyncUtil.GlobalDispatchQueue) { }
 
         /// <summary>
         /// Create an instance of the work queue.
         /// </summary>
         /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
-        public ProcessingQueue(Action<T, Action> handler) : this(handler, int.MaxValue, Async.GlobalDispatchQueue) { }
+        public ProcessingQueue(Action<T, Action> handler) : this(handler, int.MaxValue, AsyncUtil.GlobalDispatchQueue) { }
 
         /// <summary>
         /// Create an instance of the work queue.
@@ -118,13 +118,13 @@ namespace MindTouch.Collections {
         /// </summary>
         /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
         /// <param name="maxParallelism">Maximum number of items being dispatch simultaneously against the dispatch queue.</param>
-        public ProcessingQueue(Action<T> handler, int maxParallelism) : this(handler, maxParallelism, Async.GlobalDispatchQueue) { }
+        public ProcessingQueue(Action<T> handler, int maxParallelism) : this(handler, maxParallelism, AsyncUtil.GlobalDispatchQueue) { }
 
         /// <summary>
         /// Create an instance of the work queue.
         /// </summary>
         /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
-        public ProcessingQueue(Action<T> handler) : this(handler, int.MaxValue, Async.GlobalDispatchQueue) { }
+        public ProcessingQueue(Action<T> handler) : this(handler, int.MaxValue, AsyncUtil.GlobalDispatchQueue) { }
 
         //--- Properties ---
 

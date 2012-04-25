@@ -116,7 +116,7 @@ namespace MindTouch.Dream.Services.PubSub {
                 if(_currentItem == null) {
                     return;
                 }
-                Async.Fork(TryDequeue);
+                AsyncUtil.Fork(TryDequeue);
             }
         }
 

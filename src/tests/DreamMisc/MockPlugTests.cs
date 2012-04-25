@@ -234,11 +234,11 @@ namespace MindTouch.Dream.Test {
             });
             Plug.New("http://foo/bar").PostAsync();
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "no async failed");
-            Async.Fork(() => Async.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result());
+            AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "async failed");
-            Async.Fork(() => Async.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result());
+            AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "nested async failed");
-            Async.Fork(() => Async.Fork(() => Async.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result()), new Result());
+            AsyncUtil.Fork(() => AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result()), new Result());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "double async failed");
         }
 
