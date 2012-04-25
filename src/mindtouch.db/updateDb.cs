@@ -157,7 +157,7 @@ namespace MindTouch.Data.Db {
                                 }
                             } catch(VersionInfoException) {
                                 PrintErrorAndExit("You entered an incorrect version numbner.");
-                            } catch(Exception ex) {
+                            } catch(Exception) {
                                 
                                 // If there is any problem creating the connection we will just keep going
                                 errors++;
@@ -167,7 +167,7 @@ namespace MindTouch.Data.Db {
                         } else {
                             try {
                                 mysqlSchemaUpdater.ChangeDatabase(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, timeout);
-                            } catch (Exception ex) {
+                            } catch (Exception) {
                                 errors++;
                                 errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
                                 continue;

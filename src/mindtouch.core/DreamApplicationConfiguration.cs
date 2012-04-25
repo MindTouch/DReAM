@@ -56,6 +56,7 @@ namespace MindTouch.Dream {
 
         /// <summary>
         /// Expected Authtoken for whitelist behavior for dream.in.* parameters.
+        /// </summary>
         public string DreamInParamAuthToken;
     }
 }
