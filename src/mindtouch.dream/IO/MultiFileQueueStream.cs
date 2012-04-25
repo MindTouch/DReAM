@@ -141,7 +141,7 @@ namespace MindTouch.IO {
             _head.Stream.Write(RecordMarker, 0, RecordMarker.Length);
             var lengthBytes = BitConverter.GetBytes((int)length);
             _head.Stream.Write(lengthBytes, 0, lengthBytes.Length);
-            var copied = stream.CopyTo(_head.Stream, length);
+            var copied = stream.CopyToStream(_head.Stream, length);
             if(copied != length) {
 
                 // unable to read as many bytes as we expected before EOF
@@ -171,7 +171,7 @@ namespace MindTouch.IO {
             }
             streamInfo.Stream.Seek(next.Position + HEADER_SIZE, SeekOrigin.Begin);
             var data = new MemoryStream();
-            var copied = streamInfo.Stream.CopyTo(data, next.Length);
+            var copied = streamInfo.Stream.CopyToStream(data, next.Length);
             if(copied != next.Length) {
                 _log.WarnFormat("reached EOF in the middle of the record");
                 return QueueStreamRecord.Empty;

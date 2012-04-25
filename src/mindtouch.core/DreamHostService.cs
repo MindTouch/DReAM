@@ -679,11 +679,11 @@ namespace MindTouch.Dream {
             int workerThreads;
             int completionThreads;
             int dispatcherThreads;
-            Async.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads);
+            AsyncUtil.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads);
             int maxWorkerThreads;
             int maxCompletionThreads;
             int maxDispatcherThreads;
-            Async.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads);
+            AsyncUtil.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads);
             result.Elem("workerthreads.max", maxWorkerThreads);
             result.Elem("workerthreads.used", maxWorkerThreads - workerThreads);
             result.Elem("completionthreads.max", maxCompletionThreads);
@@ -1032,7 +1032,7 @@ namespace MindTouch.Dream {
                     int maxThreads;
                     int maxPorts;
                     int maxDispatchers;
-                    Async.GetMaxThreads(out maxThreads, out maxPorts, out maxDispatchers);
+                    AsyncUtil.GetMaxThreads(out maxThreads, out maxPorts, out maxDispatchers);
                     if(maxDispatchers > 0) {
                         _connectionLimit = maxDispatchers + _connectionLimit;
                     } else {
@@ -1424,7 +1424,7 @@ namespace MindTouch.Dream {
                 }
 
                 // kick-off new task
-                Async.Fork(
+                AsyncUtil.Fork(
                     () => chain.Return(request),
                     TaskEnv.New(TimerFactory),
                     new Result(TimeSpan.MaxValue, response.Env).WhenDone(delegate(Result res) {

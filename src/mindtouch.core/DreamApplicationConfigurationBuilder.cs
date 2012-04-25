@@ -129,7 +129,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Define the authtoken expected via 'X-Dream-In-Auth' to allow dream.im.* query args through. If ommitted, any call may pass dream.in.* args
         /// </summary>
-        /// <param name="apikey">Api key</param>
+        /// <param name="authtoken">Authtoken</param>
         /// <returns>Current builder instance.</returns>
         public DreamApplicationConfigurationBuilder WithDreamInParamAuthtoken(string authtoken) {
             _configuration.DreamInParamAuthToken = authtoken;

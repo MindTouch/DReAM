@@ -48,7 +48,7 @@ namespace MindTouch.Tasking {
         /// <summary>
         /// Get the environment-less marker value.
         /// </summary>
-        public static TaskEnv None { get { return new TaskEnv(Async.GlobalDispatchQueue, CurrentTimerFactoryOrNull); } }
+        public static TaskEnv None { get { return new TaskEnv(AsyncUtil.GlobalDispatchQueue, CurrentTimerFactoryOrNull); } }
 
         /// <summary>
         /// Get the current task environment. Returns <see langword="null"/> if there is no current environment.
@@ -61,7 +61,7 @@ namespace MindTouch.Tasking {
         public static TaskEnv Current {
             get {
                 if(_currentEnv == null) {
-                    _currentEnv = new TaskEnv(Async.CurrentDispatchQueue, null);
+                    _currentEnv = new TaskEnv(AsyncUtil.CurrentDispatchQueue, null);
                 }
                 return _currentEnv;
             }
@@ -127,7 +127,7 @@ namespace MindTouch.Tasking {
         /// <param name="taskTimerFactory"><see cref="TaskTimer"/> factory to use for the environment.</param>
         /// <returns>A new <see cref="TaskEnv"/> instance.</returns>
         public static TaskEnv New(TaskTimerFactory taskTimerFactory) {
-            return new TaskEnv(Async.GlobalDispatchQueue, taskTimerFactory);
+            return new TaskEnv(AsyncUtil.GlobalDispatchQueue, taskTimerFactory);
         }
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace MindTouch.Tasking {
         /// <param name="taskTimerFactory"><see cref="TaskTimer"/> factory to use for the environment.</param>
         /// <returns>A new <see cref="TaskEnv"/> instance.</returns>
         public static TaskEnv Clone(TaskTimerFactory taskTimerFactory) {
-            return new TaskEnv(_currentEnv, Async.GlobalDispatchQueue, taskTimerFactory);
+            return new TaskEnv(_currentEnv, AsyncUtil.GlobalDispatchQueue, taskTimerFactory);
         }
 
         /// <summary>
@@ -144,14 +144,14 @@ namespace MindTouch.Tasking {
         /// </summary>
         /// <returns>A new <see cref="TaskEnv"/> instance.</returns>
         public static TaskEnv New() {
-            return new TaskEnv(Async.GlobalDispatchQueue, CurrentTimerFactoryOrNull);
+            return new TaskEnv(AsyncUtil.GlobalDispatchQueue, CurrentTimerFactoryOrNull);
         }
         /// <summary>
         /// Clone the current task environment.
         /// </summary>
         /// <returns>A new <see cref="TaskEnv"/> instance.</returns>
         public static TaskEnv Clone() {
-            return new TaskEnv(_currentEnv, Async.GlobalDispatchQueue, CurrentTimerFactoryOrNull);
+            return new TaskEnv(_currentEnv, AsyncUtil.GlobalDispatchQueue, CurrentTimerFactoryOrNull);
         }
 
         /// <summary>

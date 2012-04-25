@@ -250,7 +250,7 @@ namespace MindTouch.Dream.Services {
             }
 
             // Fire off meta data scanning
-            Async.Fork(ScanMetaData);
+            AsyncUtil.Fork(ScanMetaData);
             result.Return();
         }
 
