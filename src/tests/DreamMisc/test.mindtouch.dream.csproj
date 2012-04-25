@@ -52,7 +52,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1911,0618,0067</NoWarn>
+    <NoWarn>0618,0067</NoWarn>
     <DocumentationFile>
     </DocumentationFile>
   </PropertyGroup>
@@ -63,7 +63,7 @@
     <DefineConstants>TRACE;SIGNED</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>1</WarningLevel>
-    <NoWarn>1911,0618,0067</NoWarn>
+    <NoWarn>0618,0067</NoWarn>
     <DocumentationFile>
     </DocumentationFile>
   </PropertyGroup>
