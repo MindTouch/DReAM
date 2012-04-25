@@ -61,7 +61,7 @@
     <DefineConstants>TRACE;SIGNED</DefineConstants>
     <DocumentationFile>..\bin\mindtouch.dream.test.xml</DocumentationFile>
     <Optimize>true</Optimize>
-    <NoWarn>1911,0618,1591,1699</NoWarn>
+    <NoWarn>0618,1591,1699</NoWarn>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -73,7 +73,8 @@
     <OutputPath>..\bin\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>..\bin\mindtouch.dream.test.xml</DocumentationFile>
-    <NoWarn>1911</NoWarn>
+    <NoWarn>
+    </NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>

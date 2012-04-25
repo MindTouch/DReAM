@@ -53,7 +53,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1911,1591,0618</NoWarn>
+    <NoWarn>1591,0618</NoWarn>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Signed Release|AnyCPU' ">
@@ -63,7 +63,7 @@
     <DefineConstants>TRACE;SIGNED</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1911,1591,0618,1699</NoWarn>
+    <NoWarn>1591,0618,1699</NoWarn>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Documentation|AnyCPU' ">
@@ -72,7 +72,8 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>1911</NoWarn>
+    <NoWarn>
+    </NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
