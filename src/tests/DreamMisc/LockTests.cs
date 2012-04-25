@@ -49,14 +49,14 @@ namespace MindTouch.Dream.Test {
         public void Only_one_thread_can_acquire_the_lock_at_a_time() {
             var l = new Lock<int>(1);
             var trigger = new ManualResetEvent(false);
-            var first = Async.Fork(() =>
+            var first = AsyncUtil.Fork(() =>
             {
                 trigger.WaitOne();
                 Thread.Sleep(200);
                 l.Capture(new Result()).Wait();
             }, new Result());
             Result secondInternal = null;
-            var second = Async.Fork(() =>
+            var second = AsyncUtil.Fork(() =>
             {
                 trigger.WaitOne();
                 secondInternal = l.Capture(new Result());

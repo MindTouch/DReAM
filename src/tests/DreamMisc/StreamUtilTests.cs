@@ -39,7 +39,7 @@ namespace MindTouch.Dream.Test {
             writer.Write("abcdefghijklmnop");
             source.Seek(0, SeekOrigin.Begin);
             var target = new MemoryStream();
-            Assert.AreEqual(5, source.CopyTo(target, 5, new Result<long>()).Wait());
+            Assert.AreEqual(5, source.CopyToStream(target, 5, new Result<long>()).Wait());
             Assert.AreEqual(5, target.Length);
             Assert.AreEqual(5, source.Position);
         }
@@ -49,7 +49,7 @@ namespace MindTouch.Dream.Test {
             var bytes = GetBytes(1000);
             var source = new MemoryStream(bytes);
             var target = new MemoryStream();
-            var count = source.CopyTo(target, -1, new Result<long>()).Wait();
+            var count = source.CopyToStream(target, -1, new Result<long>()).Wait();
             Assert.AreEqual(bytes.LongLength, count);
             Assert.AreEqual(bytes, target.ToArray());
         }

@@ -105,7 +105,7 @@ namespace MindTouch.Dream.Http {
                 // send message stream
                 long size = item.ContentLength;
                 if(((size == -1) || (size > 0)) && (stream != Stream.Null)) {
-                    stream.CopyTo(httpContext.Response.OutputStream, size, new Result<long>(TimeSpan.MaxValue)).Wait();
+                    stream.CopyToStream(httpContext.Response.OutputStream, size, new Result<long>(TimeSpan.MaxValue)).Wait();
                 }
                 item.Close();
             } catch(Exception ex) {

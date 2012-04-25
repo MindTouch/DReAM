@@ -46,7 +46,7 @@ namespace MindTouch.Dream.Test {
             ManualResetEvent second = new ManualResetEvent(false);
             ManualResetEvent third = new ManualResetEvent(false);
             ManualResetEvent fourth = new ManualResetEvent(false);
-            Async.Fork(delegate() {
+            AsyncUtil.Fork(delegate() {
                 first.WaitOne();
                 try {
                     using(Stream f = StreamUtil.FileOpenExclusive("test.test")) {
@@ -111,7 +111,7 @@ namespace MindTouch.Dream.Test {
             Stream reader;
             StreamUtil.CreatePipe(1, out writer, out reader);
             byte[] write = new byte[] { 1, 2, 3, 4 };
-            Async.Fork(delegate() {
+            AsyncUtil.Fork(delegate() {
                 writer.Write(write, 0, write.Length);
                 writer.Close();
             }, null);
@@ -128,7 +128,7 @@ namespace MindTouch.Dream.Test {
             Stream reader;
             StreamUtil.CreatePipe(1, out writer, out reader);
             byte[] write = new byte[] { 1, 2, 3, 4 };
-            Async.Fork(delegate() {
+            AsyncUtil.Fork(delegate() {
                 writer.Write(write, 0, write.Length);
                 writer.Close();
             }, null);

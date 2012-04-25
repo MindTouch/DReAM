@@ -506,7 +506,7 @@ namespace MindTouch.Dream.Services.PubSub {
         }
 
         private void Update() {
-            Async.Fork(Update_Helper, new Result());
+            AsyncUtil.Fork(Update_Helper, new Result());
         }
 
         private void Update_Helper() {

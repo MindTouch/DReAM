@@ -172,7 +172,7 @@ namespace MindTouch.Dream.Test.Aws {
                 var producers = new List<Result<List<string>>>();
                 for(var i = 0; i < producerCount; i++) {
                     var producer = i;
-                    producers.Add(Async.Fork(() => {
+                    producers.Add(AsyncUtil.Fork(() => {
                         _log.DebugFormat("producer {0} started", producer);
                         var c = CreateLiveClient();
                         var msgs = new List<string>();
@@ -190,7 +190,7 @@ namespace MindTouch.Dream.Test.Aws {
                         return msgs;
                     }, new Result<List<string>>()));
                 }
-                var consumers = queues.ToDictionary(queue => queue, queue => Async.Fork(() => {
+                var consumers = queues.ToDictionary(queue => queue, queue => AsyncUtil.Fork(() => {
                     _log.DebugFormat("consumer {0} started", queue);
                     var c = CreateLiveClient();
                     var msgs = new List<string>();
@@ -358,7 +358,7 @@ namespace MindTouch.Dream.Test.Aws {
                 var received = new List<AwsSqsMessage>(r.Value);
                 if(!received.Any()) {
                     _log.DebugFormat("{0}: no messages in queue, sleeping before retry", Id);
-                    Async.Sleep(1.Seconds()).WhenDone(r2 => Receive());
+                    AsyncUtil.Sleep(1.Seconds()).WhenDone(r2 => Receive());
                     return;
                 }
                 _log.DebugFormat("{0}: received {1} messages", Id, received.Count);
@@ -418,7 +418,7 @@ namespace MindTouch.Dream.Test.Aws {
         public Result<Production> Produce(int messages) {
             var production = new Production();
             var final = new Result<Production>();
-            Async.Fork(() => {
+            AsyncUtil.Fork(() => {
                 try {
                     _log.DebugFormat("{0}: Producing {1} messages", production.Id, messages);
                     var responses = new List<Result<string>>();

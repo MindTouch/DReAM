@@ -739,7 +739,7 @@ namespace MindTouch.Dream.Test {
                     }
                     total += read.Value;
                     //fake some latency
-                    yield return Async.Sleep(TimeSpan.FromMilliseconds(1));
+                    yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(1));
                 }
                 _log.DebugFormat("read {0}/{1} bytes", total, request.ContentLength);
                 if(total != request.ContentLength) {
@@ -820,7 +820,7 @@ namespace MindTouch.Dream.Test {
                 Count = count,
                 Offset = offset
             };
-            Async.Fork(() => callback(asyncResult));
+            AsyncUtil.Fork(() => callback(asyncResult));
             return asyncResult;
         }
 
