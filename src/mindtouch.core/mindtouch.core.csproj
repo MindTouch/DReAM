@@ -52,7 +52,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1911,0618,1591</NoWarn>
+    <NoWarn>0618,1591</NoWarn>
     <DocumentationFile>..\bin\mindtouch.core.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Signed Release|AnyCPU' ">
@@ -62,7 +62,7 @@
     <DefineConstants>TRACE;SIGNED</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <NoWarn>1911,0618,1591,1699</NoWarn>
+    <NoWarn>0618,1591,1699</NoWarn>
     <DocumentationFile>..\bin\mindtouch.core.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Documentation|AnyCPU' ">
