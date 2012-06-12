@@ -1168,20 +1168,32 @@ namespace MindTouch.Dream {
         public DreamHeaders AddRange(NameValueCollection headers) {
             if(headers != null) {
                 foreach(string key in headers.Keys) {
-                    if(key.EqualsInvariant(COOKIE)) {
+
+                    // Note: Per RFC2616, "Each header field consists of a name followed by a colon (":") and the field value. Field names are case-insensitive."
+                    if(key.EqualsInvariantIgnoreCase(COOKIE)) {
                         var value = headers[key];
                         if(!string.IsNullOrEmpty(value)) {
                             Cookies.AddRange(DreamCookie.ParseCookieHeader(value));
                         }
-                    } else if(key.EqualsInvariant(SET_COOKIE)) {
+                    } else if(key.EqualsInvariantIgnoreCase(SET_COOKIE)) {
                         var value = headers[key];
                         if(!string.IsNullOrEmpty(value)) {
                             Cookies.AddRange(DreamCookie.ParseSetCookieHeader(value));
                         }
+                    } else if(key.EqualsInvariantIgnoreCase(ETAG) || key.EndsWithInvariantIgnoreCase(IF_NONE_MATCH)) {
+
+                        // Note: Since ETAG may be quoted, strip quotes from ETAG and its counter-part If-None-Match
+                        var value = headers[key];
+                        if(!string.IsNullOrEmpty(value)) {
+                            if((value.StartsWith("\"") && value.EndsWith("\"")) || (value.StartsWith("'") && value.EndsWith("'"))) {
+                                value = value.Substring(1, value.Length - 2);
+                            }
+                            _headers[key] = new Entry(value);
+                        }
                     } else {
                         string[] values = headers.GetValues(key);
                         if(!ArrayUtil.IsNullOrEmpty(values)) {
-                            if(key.EqualsInvariant(FORWARDED_HOST) || key.EqualsInvariant(FORWARDED_FOR)) {
+                            if(key.EqualsInvariantIgnoreCase(FORWARDED_HOST) || key.EqualsInvariantIgnoreCase(FORWARDED_FOR)) {
 
                                 // NOTE (steveb): 'X-Forwarded-Host', 'X-Forwarded-For' may contain one or more entries, but NameValueCollection doesn't seem to care :(
 
@@ -1236,13 +1248,23 @@ namespace MindTouch.Dream {
         public DreamHeaders AddRange(IEnumerable<KeyValuePair<string, string>> headers) {
             if(headers != null) {
                 foreach(var header in headers) {
-                    if(header.Key.EqualsInvariant(COOKIE)) {
+                    if(header.Key.EqualsInvariantIgnoreCase(COOKIE)) {
                         if(!string.IsNullOrEmpty(header.Value)) {
                             Cookies.AddRange(DreamCookie.ParseCookieHeader(header.Value));
                         }
-                    } else if(header.Key.EqualsInvariant(SET_COOKIE)) {
+                    } else if(header.Key.EqualsInvariantIgnoreCase(SET_COOKIE)) {
                         if(!string.IsNullOrEmpty(header.Value)) {
                             Cookies.AddRange(DreamCookie.ParseSetCookieHeader(header.Value));
+                        }
+                    } else if(header.Key.EqualsInvariantIgnoreCase(ETAG) || header.Key.EndsWithInvariantIgnoreCase(IF_NONE_MATCH)) {
+
+                        // Note: Since ETAG may be quoted, strip quotes from ETAG and its counter-part If-None-Match
+                        var value = header.Value;
+                        if(!string.IsNullOrEmpty(value)) {
+                            if((value.StartsWith("\"") && value.EndsWith("\"")) || (value.StartsWith("'") && value.EndsWith("'"))) {
+                                value = value.Substring(1, value.Length - 2);
+                            }
+                            _headers[header.Key] = new Entry(value);
                         }
                     } else {
 

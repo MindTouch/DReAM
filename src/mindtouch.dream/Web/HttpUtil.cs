@@ -108,6 +108,14 @@ namespace MindTouch.Web {
 #endif
             } else if(string.Compare(key, DreamHeaders.USER_AGENT, true) == 0) {
                 request.UserAgent = value;
+            } else if(string.Compare(key, DreamHeaders.ETAG, true) == 0) {
+
+                // special case: ETAG needs to be a quoted string, so quote if it doesn't look quoted already
+                if(value.StartsWith("\"") || value.StartsWith("'")) {
+                    request.Headers.Add(key, value);
+                } else {
+                    request.Headers.Add(key, "\"" + value + "\"");
+                }
             } else {
                 request.Headers.Add(key, value);
             }
@@ -168,6 +176,14 @@ namespace MindTouch.Web {
 
                 // NOTE (steveb): we didn't have a choice here; we have to be able to set 'WWW-Authenticate', but WebHeaderCollection won't let us any other way
                 UnsafeAddHeader(response.Headers, DreamHeaders.AUTHENTICATE, value);
+            } else if(string.Compare(key, DreamHeaders.ETAG, true) == 0) {
+
+                // special case: ETAG needs to be a quoted string, so quote if it doesn't look quoted already
+                if(value.StartsWith("\"") || value.StartsWith("'")) {
+                    response.AddHeader(key, value);
+                } else {
+                    response.AddHeader(key, "\"" + value + "\"");
+                }
             } else {
                 response.AddHeader(key, value);
             }

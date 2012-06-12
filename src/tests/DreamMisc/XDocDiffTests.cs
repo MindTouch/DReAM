@@ -46,7 +46,7 @@ namespace MindTouch.Xml.Test {
 
             XDoc a = XDocFactory.From("<p>before</p>", MimeType.XML);
             XDoc b = XDocFactory.From("<p>after</p>", MimeType.XML);
-            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 0);
+            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 10000);
 
             Match(diff[0], ArrayDiffKind.Same, XmlNodeType.Element, "p");
             Match(diff[1], ArrayDiffKind.Same, XmlNodeType.EndElement, string.Empty);
@@ -62,7 +62,7 @@ namespace MindTouch.Xml.Test {
 
             XDoc a = XDocFactory.From("<p>1.23</p>", MimeType.XML);
             XDoc b = XDocFactory.From("<p>4.56</p>", MimeType.XML);
-            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 0);
+            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 10000);
 
             Match(diff[0], ArrayDiffKind.Same, XmlNodeType.Element, "p");
             Match(diff[1], ArrayDiffKind.Same, XmlNodeType.EndElement, string.Empty);
@@ -78,7 +78,7 @@ namespace MindTouch.Xml.Test {
 
             XDoc a = XDocFactory.From("<p>1,23</p>", MimeType.XML);
             XDoc b = XDocFactory.From("<p>4,56</p>", MimeType.XML);
-            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 0);
+            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 10000);
 
             Match(diff[0], ArrayDiffKind.Same, XmlNodeType.Element, "p");
             Match(diff[1], ArrayDiffKind.Same, XmlNodeType.EndElement, string.Empty);
@@ -94,7 +94,7 @@ namespace MindTouch.Xml.Test {
 
             XDoc a = XDocFactory.From("<p>the quick brown fox jumped over the lazy dog</p>", MimeType.XML);
             XDoc b = XDocFactory.From("<p>the slow black fox jumped far over the dog</p>", MimeType.XML);
-            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 0);
+            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 10000);
 
             Match(diff[0], ArrayDiffKind.Same, XmlNodeType.Element, "p");
             Match(diff[1], ArrayDiffKind.Same, XmlNodeType.EndElement, string.Empty);
@@ -129,7 +129,7 @@ namespace MindTouch.Xml.Test {
 
             XDoc a = XDocFactory.From("<p>the <span class=\"red\">brown</span> fox</p>", MimeType.XML);
             XDoc b = XDocFactory.From("<p>the <span class=\"blue\">brown</span> fox</p>", MimeType.XML);
-            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 0);
+            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 10000);
 
             Match(diff[0], ArrayDiffKind.Same, XmlNodeType.Element, "p");
             Match(diff[1], ArrayDiffKind.Same, XmlNodeType.EndElement, string.Empty);
@@ -153,7 +153,7 @@ namespace MindTouch.Xml.Test {
 
             XDoc a = XDocFactory.From("<p>the <span class=\"red\">brown</span> fox</p>", MimeType.XML);
             XDoc b = XDocFactory.From("<p>the <span class=\"blue\">brown</span> fox</p>", MimeType.XML);
-            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 0);
+            Tuplet<ArrayDiffKind, XDocDiff.Token>[] diff = XDocDiff.Diff(a, b, 10000);
             List<Tuplet<string, string, string>> invisible;
             XDoc doc;
             XDoc before;
