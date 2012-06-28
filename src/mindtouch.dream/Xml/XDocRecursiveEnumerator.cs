@@ -43,6 +43,9 @@ namespace MindTouch.Xml {
             _nsManager = nsManager;
             _enumerateChildren = enumerateChildren;
             _nodeExitCallback = nodeExitCallback;
+            if(start != null) {
+                _start.OwnerDocument.XmlResolver = null;
+            }
         }
 
         //--- Properties ---
