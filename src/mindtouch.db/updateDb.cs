@@ -125,7 +125,6 @@ namespace MindTouch.Data.Db {
 
                 // If there are no custom methods specified we need a version number
                 if(customMethod == null) {
-                    CheckArg(targetVersion, "No version specified");
                     CheckArg(dbname, "No Database was specified");
                 }
 
@@ -220,34 +219,32 @@ namespace MindTouch.Data.Db {
             }
 
             // Execute update methods
-            if(targetVersion != null) {
-                site.LoadMethods(dllAssembly);
-                List<string> methods;
-                if(checkdb) {
-                    methods = site.GetDataIntegrityMethods();
-                } else {
-                    methods = site.GetMethods();
-                }
+            site.LoadMethods(dllAssembly);
+            List<string> methods;
+            if(checkdb) {
+                methods = site.GetDataIntegrityMethods();
+            } else {
+                methods = site.GetMethods();
+            }
 
-                // Execute each method
-                foreach(var method in methods) {
-                    if(verbose) {
-                        Console.WriteLine(String.Format("Executing method: {0}", method));
+            // Execute each method
+            foreach(var method in methods) {
+                if(verbose) {
+                    Console.WriteLine(String.Format("Executing method: {0}", method));
+                }
+                if(!dryrun) {
+                    try { site.TestConnection(); } catch(Exception) {
+                        System.Threading.Thread.Sleep(5000);
+                        site.TestConnection();
                     }
-                    if(!dryrun) {
-                        try { site.TestConnection(); } catch(Exception) {
-                            System.Threading.Thread.Sleep(5000);
-                            site.TestConnection();
-                        }
-                        try {
-                                site.ExecuteMethod(method);
-                        } catch(Exception ex) {
-                            Console.WriteLine(string.Format("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace));
-                            if(checkdb) {
-                                continue;
-                            } else {
-                                break;
-                            }
+                    try {
+                        site.ExecuteMethod(method);
+                    } catch(Exception ex) {
+                        Console.WriteLine(string.Format("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace));
+                        if(checkdb) {
+                            continue;
+                         } else {
+                            break;
                         }
                     }
                 }
