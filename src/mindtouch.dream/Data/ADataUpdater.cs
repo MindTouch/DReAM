@@ -96,10 +96,7 @@ namespace MindTouch.Data {
         /// <returns> The string representation of the target version</returns>
         public string TargetVersion {
             get {
-                if(_targetVersion == null) {
-                    return "";
-                }
-                return _targetVersion.ToString(); 
+                return _targetVersion == null ? "" : _targetVersion.ToString();
             }
             set { 
                 _targetVersion = new VersionInfo(value);
@@ -115,10 +112,7 @@ namespace MindTouch.Data {
         /// <returns> The string representation of the source version</returns>
         public string SourceVersion {
             get {
-                if(_sourceVersion == null) {
-                    return "";
-                }
-                return _sourceVersion.ToString();
+                return _sourceVersion == null ? "" : _sourceVersion.ToString();
             }
             set {
                 _sourceVersion = new VersionInfo(value);
@@ -171,11 +165,6 @@ namespace MindTouch.Data {
         /// <returns></returns>
         public virtual void LoadMethods(Assembly updateAssembly) { 
 
-            // Make sure we have a defined version
-            if(_targetVersion == null) {
-                throw new VersionInfoException(_targetVersion);
-            }
-            
             // get all the members of the Assembly
             var types = updateAssembly.GetTypes();
 
@@ -205,7 +194,7 @@ namespace MindTouch.Data {
                     } else {
                         continue;
                     }
-                    if(version.CompareTo(_targetVersion).Change != VersionChange.Upgrade &&
+                    if( (_targetVersion == null || version.CompareTo(_targetVersion).Change != VersionChange.Upgrade ) &&
                         (_sourceVersion == null || version.CompareTo(_sourceVersion).Change != VersionChange.Downgrade )) {
                         _methodList.Add(new DbMethod(methodInfo, version, type));
                     }

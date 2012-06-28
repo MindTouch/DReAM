@@ -257,5 +257,25 @@ namespace MindTouch.Dream.Test {
             }
 
         }
+
+        [Test]
+        public void run_all_methods_without_target_version() {
+            var types = _testAssembly.GetTypes();
+            Type dataUpgradeClass = null;
+            var classTypes = from type in types where type.IsClass select type;
+            foreach(var type in from type in classTypes from attribute in (from a in System.Attribute.GetCustomAttributes(type) where a is DataUpgradeAttribute select a) select type) {
+                dataUpgradeClass = type;
+            }
+            Assert.IsNotNull(dataUpgradeClass, "Could not read test assembly");
+            var methods = dataUpgradeClass.GetMethods();
+            var updateMethodCount = (from m in methods from attributes in (from a in m.GetCustomAttributes(false) where a is EffectiveVersionAttribute select a) select m).Count();
+            Assert.IsTrue(updateMethodCount > 0, "No upgrade methods found in test assembly");
+            var dataUpdater = new TestDataUpdater(null);
+            dataUpdater.LoadMethods(_testAssembly);
+            foreach(var method in dataUpdater.GetMethods()) {
+                dataUpdater.ExecuteMethod(method);
+            }
+            Assert.AreEqual(updateMethodCount, DummyUpgradeClass.ExecutedMethods.Count, "Not all methods were executed");
+        }
     }
 }
