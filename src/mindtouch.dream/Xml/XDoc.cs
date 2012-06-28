@@ -178,6 +178,7 @@ namespace MindTouch.Xml {
                 if(nodes[i].OwnerDocument.DocumentElement == null) {
                     throw new ArgumentNullException("nodes[" + i + "] missing root element");
                 }
+                nodes[i].OwnerDocument.XmlResolver = null;
             }
             return new XDoc(nodes, 0, null, null);
         }
@@ -343,6 +344,7 @@ namespace MindTouch.Xml {
             if(doc.DocumentElement == null) {
                 throw new ArgumentException("XmlDocument instance does not have a root element.");
             }
+            doc.XmlResolver = null;
             Initialize(new XmlNode[] { doc.DocumentElement }, 0, doc.DocumentElement, null);
         }
 
@@ -2750,11 +2752,7 @@ namespace MindTouch.Xml {
             if(IsEmpty || (_list == null)) {
                 return new List<XDoc>(0);
             }
-            List<XDoc> result = new List<XDoc>(_list.Length);
-            for(int i = 0; i < _list.Length; ++i) {
-                result.Add(new XDoc(_list, i, null, _nsManager));
-            }
-            return result;
+            return _list.Select((t, i) => new XDoc(_list, i, null, _nsManager)).ToList();
         }
 
         /// <summary>
@@ -2903,8 +2901,8 @@ namespace MindTouch.Xml {
         /// <returns>XDoc instance with elements listed in reverse order.</returns>
         public XDoc ReverseList() {
             if(!IsEmpty) {
-                int count = _list.Length;
-                XmlNode[] newList = new XmlNode[count];
+                var count = _list.Length;
+                var newList = new XmlNode[count];
                 for(int i = count - 1; i >= 0; --i) {
                     newList[i] = _list[count - i - 1];
                 }
@@ -2970,20 +2968,13 @@ namespace MindTouch.Xml {
             _index = index;
             _root = root ?? _list[_index];
             _doc = _root.OwnerDocument;
-            foreach(XmlNode node in list) {
-                node.OwnerDocument.XmlResolver = null;
-            }
 
             // set default xml namespace manager
             if(nsManager == null) {
                 nsManager = new XmlNamespaceManager(_doc.NameTable);
-                string uri = _doc.DocumentElement.NamespaceURI;
-                if(uri != null) {
-                    nsManager.AddNamespace(string.Empty, uri);
-                    nsManager.AddNamespace("_", uri);
-                } else {
-                    nsManager.AddNamespace("_", string.Empty);
-                }
+                var uri = _doc.DocumentElement.NamespaceURI;
+                nsManager.AddNamespace(string.Empty, uri);
+                nsManager.AddNamespace("_", uri);
             }
             _nsManager = nsManager;
         }
