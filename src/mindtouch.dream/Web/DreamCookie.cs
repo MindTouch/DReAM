@@ -83,12 +83,10 @@ namespace MindTouch.Web {
                 // we read something else; let's forget that we read it
                 index = 0;
             }
-            while(true) {
+            while(index < header.Length - 1) {
                 DreamCookie cookie = ParseCookie(header, ref index);
                 if(cookie != null) {
                     result.Add(cookie);
-                } else {
-                    break;
                 }
             }
             return result;
@@ -500,6 +498,9 @@ namespace MindTouch.Web {
                 int last;
                 for(last = index; (last < text.Length) && IsTokenChar(text[last]); ++last) { }
                 if(last == index) {
+
+                    // If we have an invalid character here, we need to move on
+                    ++index;
                     return false;
                 }
                 word = text.Substring(index, last - index);
@@ -553,10 +554,7 @@ namespace MindTouch.Web {
 
         private static bool IsTokenChar(char c) {
             return ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) ||
-                   ((c > 32) && (c < 127) && (c != '(') && (c != ')') && (c != '<') &&
-                    (c != '<') && (c != '>') && (c != '@') && (c != ',') && (c != ';') &&
-                    (c != ':') && (c != '\\') && (c != '"') && (c != '/') && (c != '[') &&
-                    (c != ']') && (c != '?') && (c != '=') && (c != '{') && (c != '}'));
+                   ((c > 32) && (c < 127) && (c != ',') && (c != ';') && (c != '='));
         }
         #endregion
 

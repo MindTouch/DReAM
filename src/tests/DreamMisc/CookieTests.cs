@@ -113,6 +113,60 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void ParseBadCookie1() {
+            var cookies = DreamCookie.ParseCookieHeader("foo=\"bar\"; [index.php]scayt_verLang=5; authtoken=\"1234\"");
+            Assert.AreEqual(3, cookies.Count, "Failed to parse cookies, wrong number of resulting cookies");
+            Assert.AreEqual(cookies[0].Name, "foo", "bad cookie name");
+            Assert.AreEqual(cookies[0].Value, "bar", "bad cookie value");
+            Assert.AreEqual(cookies[2].Name, "authtoken", "bad cookie name");
+            Assert.AreEqual(cookies[2].Value, "1234", "bad cookie value");
+        }
+
+        [Test]
+        public void ParseBadCookie2() {
+            var cookies = DreamCookie.ParseCookieHeader("  foo=\"bar\"; lithiumLogin:successfactors=~2acHBr09HxytcqIXV~eVqhSr8s74VfDTjhQ8XU615EaYeGn-7OdDSN70BshVnsYG71yPbJvKPoZzHl05KP; authtoken=\"1234\"  ");
+            Assert.AreEqual(3, cookies.Count, "Failed to parse cookies, wrong number of resulting cookies");
+            Assert.AreEqual(cookies[0].Name, "foo", "bad cookie name");
+            Assert.AreEqual(cookies[0].Value, "bar", "bad cookie value");
+            Assert.AreEqual(cookies[2].Name, "authtoken", "bad cookie name");
+            Assert.AreEqual(cookies[2].Value, "1234", "bad cookie value");
+        }
+
+        [Test]
+        public void ParseBadCookie3() {
+            var cookies = DreamCookie.ParseCookieHeader("  foo=\"bar\", lithiumLogin:successfactors=~2acHBr09HxytcqIXV~eVqhSr8s74VfDTjhQ8XU615EaYeGn-7OdDSN70BshVnsYG71yPbJvKPoZzHl05KP; authtoken=\"1234\"  ");
+            Assert.AreEqual(3, cookies.Count, "Failed to parse cookies, wrong number of resulting cookies");
+            Assert.AreEqual(cookies[0].Name, "foo", "bad cookie name");
+            Assert.AreEqual(cookies[0].Value, "bar", "bad cookie value");
+            Assert.AreEqual(cookies[2].Name, "authtoken", "bad cookie name");
+            Assert.AreEqual(cookies[2].Value, "1234", "bad cookie value");
+        }
+
+        [Test]
+        public void ParseBadCookie4() {
+            var cookies = DreamCookie.ParseCookieHeader("  foo=\"bar\"; hel,lo=\"wo,~rld\"; authtoken=\"1234\"  ");
+            Assert.AreEqual(4, cookies.Count, "Failed to parse cookies, wrong number of resulting cookies");
+            Assert.AreEqual(cookies[0].Name, "foo", "bad cookie name");
+            Assert.AreEqual(cookies[0].Value, "bar", "bad cookie value");
+            Assert.AreEqual(cookies[1].Name, "hel", "bad cookie name");
+            Assert.IsNull(cookies[1].Value, null, "bad cookie value");
+            Assert.AreEqual(cookies[2].Name, "lo", "bad cookie name");
+            Assert.AreEqual(cookies[2].Value, "wo,~rld", "bad cookie value");
+            Assert.AreEqual(cookies[3].Name, "authtoken", "bad cookie name");
+            Assert.AreEqual(cookies[3].Value, "1234", "bad cookie value");
+        }
+
+        [Test]
+        public void ParseBadCookie5() {
+            var cookies = DreamCookie.ParseCookieHeader("  foo=\"bar\", hello=wo;;rld; authtoken=\"1234\"  ");
+            Assert.AreEqual(4, cookies.Count, "Failed to parse cookies, wrong number of resulting cookies");
+            Assert.AreEqual(cookies[0].Name, "foo", "bad cookie name");
+            Assert.AreEqual(cookies[0].Value, "bar", "bad cookie value");
+            Assert.AreEqual(cookies[3].Name, "authtoken", "bad cookie name");
+            Assert.AreEqual(cookies[3].Value, "1234", "bad cookie value");
+        }
+
+        [Test]
         public void ParseCookies_with_unquoted_values() {
             List<DreamCookie> result = DreamCookie.ParseCookieHeader("__utma=134392366.697651776.1256325927.1256943466.1256946079.27; __utmz=134392366.1256946079.27.2.utmcsr=developer.mindtouch.com|utmccn=(referral)|utmcmd=referral|utmcct=/User:SteveB/Bugs; LOOPFUSE=78fe6a69-de6f-494f-9cf1-7e4fbe7a1c38; __kti=1256208055528,http%3A%2F%2Fwww.mindtouch.com%2F,; __ktv=9f88-8fb4-514a-a2cb1247bd5bce8; _mkto_trk=id:954-WGP-507&token:_mch-mindtouch.com-1256705011527-41439; __utma=249966356.478917817.1256718580.1256718580.1256946891.2; __utmz=249966356.1256946891.2.2.utmcsr=bugs.developer.mindtouch.com|utmccn=(referral)|utmcmd=referral|utmcct=/view.php; __utmc=134392366; __utmb=134392366.7.10.1256946079; PHPSESSID=bed8f2d85712b33f1a3804856045b374; __utmb=249966356.1.10.1256946891; __utmc=249966356; __kts=1256946891198,http%3A%2F%2Fcampaign.mindtouch.com%2FEvents%2FSharepoint,http%3A%2F%2Fbugs.developer.mindtouch.com%2Fview.php%3Fid%3D7255; __ktt=c2e3-a511-ce1b-438b124a7df79be,abc,");
             Assert.AreEqual(15, result.Count);
