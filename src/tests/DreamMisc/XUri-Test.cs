@@ -532,6 +532,23 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void TestXUriFromUriConstruction2() {
+            string[] evilSegments = new string[] {
+
+                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
+                "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
+                "A%4b"
+            };
+            foreach(string evil in evilSegments) {
+                XUri original = new XUri("http://" + evil);
+                XUri fromDecoded = new XUri(original.ToString());
+                XUri uri1 = new XUri(original);
+                XUri uri2 = new XUri(fromDecoded);
+                // just making sure they actually parse
+            }
+        }
+
+        [Test]
         public void Decode_extended_chars1() {
             const string before = "F\u00F4\u00F6";
             const string after = "F\u00F4\u00F6";

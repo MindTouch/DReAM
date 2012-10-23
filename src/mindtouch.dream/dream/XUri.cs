@@ -977,6 +977,12 @@ namespace MindTouch.Dream {
         public XUri(Uri uri) : this(uri.OriginalString) { }
 
         /// <summary>
+        /// Create a new XUri from an existing XUri
+        /// </summary>
+        /// <param name="uri">Input uri.</param>
+        public XUri(XUri uri) : this(uri.Scheme, uri.User, uri.Password, uri.Host, uri.Port, uri.UsesDefaultPort, uri.Segments, uri.TrailingSlash, uri.Params, uri.Fragment, uri.UsesSegmentDoubleEncoding) { }
+
+        /// <summary>
         /// Create a new XUri from serialized form.
         /// </summary>
         /// <param name="info">Serialization information.</param>
