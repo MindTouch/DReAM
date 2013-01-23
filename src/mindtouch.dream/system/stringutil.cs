@@ -993,5 +993,59 @@ namespace System {
         public static string IfNullOrEmpty(this string value, string alternative) {
             return string.IsNullOrEmpty(value) ? alternative : value;
         }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the uint value.</returns>
+        /// <param name="obj">uint value</param>
+        public static string ToInvariantString(this uint obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the int value.</returns>
+        /// <param name="obj">int value</param>
+        public static string ToInvariantString(this int obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the ulong value.</returns>
+        /// <param name="obj">ulong value</param>
+        public static string ToInvariantString(this ulong obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the long value.</returns>
+        /// <param name="obj">long value</param>
+        public static string ToInvariantString(this long obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the double value.</returns>
+        /// <param name="obj">double value</param>
+        public static string ToInvariantString(this double obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the float value.</returns>
+        /// <param name="obj">float value</param>
+        public static string ToInvariantString(this float obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
     }
 }
