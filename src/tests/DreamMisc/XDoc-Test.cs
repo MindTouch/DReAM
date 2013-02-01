@@ -363,6 +363,18 @@ namespace MindTouch.Xml.Test {
         }
 
         [Test]
+        public void XPost2() {
+            var keyvalues = new[] {
+                new KeyValuePair<string, string>("a/b", "123"),
+                new KeyValuePair<string, string>("a/c", "456"),
+                new KeyValuePair<string, string>("x/a/d", "789"),
+            };
+            var doc = XDocFactory.From(keyvalues, "root");
+            var text = doc.ToString();
+            Assert.AreEqual("<root><a><b>123</b><c>456</c></a><x><a><d>789</d></a></x></root>", text);
+        }
+
+        [Test]
         public void XmlContents() {
             XDoc doc = new XDoc("test");
             doc.Value("<tag>text</tag>");
