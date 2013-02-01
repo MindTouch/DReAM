@@ -103,7 +103,9 @@ namespace MindTouch.IO {
         /// <param name="stream">Target <see cref="Stream"/></param>
         /// <returns><see langword="true"/> If the <see cref="Stream"/> contents are in memory</returns>
         public static bool IsStreamMemorized(this Stream stream) {
+#pragma warning disable 612,618
             return (stream is ChunkedMemoryStream) || (stream is MemoryStream);
+#pragma warning restore 612,618
         }
 
         /// <summary>
