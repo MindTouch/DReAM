@@ -118,6 +118,21 @@ namespace MindTouch {
             }
             return dictionary;
         }
+
+        /// <summary>
+        /// Remove all keys from supplied dictionary.
+        /// </summary>
+        /// <returns>Keys to remove from dictionary.</returns>
+        /// <param name="dictionary">Dictionary to modify.</param>
+        /// <param name="keys">Keys to remove.</param>
+        /// <typeparam name="TKey">Dictionary key type.</typeparam>
+        /// <typeparam name="TValue">Dictionary value type.</typeparam>
+        public static IDictionary<TKey, TValue> RemoveKeys<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, IEnumerable<TKey> keys) {
+            foreach(var key in keys) {
+                dictionary.Remove(key);
+            }
+            return dictionary;
+        }
     }
 }
 
