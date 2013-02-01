@@ -1563,7 +1563,7 @@ namespace MindTouch.Xml {
             }
 
             // check if path is empty
-            XDoc cursor = Copy();
+            XDoc cursor = CreateSelection(this);
             if(xpath.Length > 0) {
 
                 // split path
@@ -1604,13 +1604,13 @@ namespace MindTouch.Xml {
                         XDoc current = cursor[token];
                         while(--count >= 0) {
                             if(current.IsEmpty) {
-                                current = cursor.Start(token).Copy();
+                                current = CreateSelection(cursor.Start(token));
                                 cursor.End();
                             }
                             current = current.Next;
                         }
                         if(current.IsEmpty) {
-                            current = cursor.Start(token).Copy();
+                            current = CreateSelection(cursor.Start(token));
                             cursor.End();
                         }
 
@@ -1621,7 +1621,7 @@ namespace MindTouch.Xml {
 
                         // add one node
                         if(current.IsEmpty) {
-                            current = cursor.Start(token).Copy();
+                            current = CreateSelection(cursor.Start(token));
                             cursor.End();
                         }
                         cursor = current;
