@@ -78,7 +78,7 @@
   <ItemGroup>
     <Compile Include="CliArgException.cs" />
     <Compile Include="Options.cs" />
-    <Compile Include="UpdateDb.cs" />
+    <Compile Include="updateDb.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
