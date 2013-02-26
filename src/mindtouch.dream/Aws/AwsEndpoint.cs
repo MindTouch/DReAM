@@ -45,13 +45,17 @@ namespace MindTouch.Aws {
 
         //--- Class Methods ---
         public static AwsEndpoint GetEndpoint(string name) {
-            AwsEndpoint endpoint;
-            _endpoints.TryGetValue(name ?? "", out endpoint);
-            return endpoint;
+            lock(_endpoints) {
+                AwsEndpoint endpoint;
+                _endpoints.TryGetValue(name ?? "", out endpoint);
+                return endpoint;
+            }
         }
 
         public static void AddEndpoint(AwsEndpoint endpoint) {
-            _endpoints[endpoint.Name] = endpoint;
+            lock(_endpoints) {
+                _endpoints[endpoint.Name] = endpoint;
+            }
         }
 
         //--- Fields ---

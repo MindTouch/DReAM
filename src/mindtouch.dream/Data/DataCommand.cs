@@ -129,7 +129,7 @@ namespace MindTouch.Data {
                 return text;
             }
             text = text.ReplaceAll(
-                "\\", "\\\\", 
+                "\\", "\\\\",
                 "\0", "\\0",
                 "\n", "\\n",
                 "\r", "\\r",
@@ -142,8 +142,8 @@ namespace MindTouch.Data {
 
         private static Dictionary<string, DataColumnField> GetDataFields(Type type) {
             Dictionary<string, DataColumnField> result;
-            if(!_typeCache.TryGetValue(type, out result)) {
-                lock(_typeCache) {
+            lock(_typeCache) {
+                if(!_typeCache.TryGetValue(type, out result)) {
                     result = new Dictionary<string, DataColumnField>(StringComparer.OrdinalIgnoreCase);
 
                     // enumerate all properties of this type
@@ -190,7 +190,7 @@ namespace MindTouch.Data {
             if(factory == null) {
                 throw new ArgumentNullException("factory");
             }
-            if(catalog ==  null) {
+            if(catalog == null) {
                 throw new ArgumentNullException("catalog");
             }
             if(connection == null) {
@@ -319,7 +319,7 @@ namespace MindTouch.Data {
                     try {
                         command.ExecuteNonQuery();
                     } catch(Exception e) {
-                        _log.DebugFormat(e,"Execute(): Text: '{0}', Type: {1}", _command.CommandText, _command.CommandType);
+                        _log.DebugFormat(e, "Execute(): Text: '{0}', Type: {1}", _command.CommandText, _command.CommandType);
                         throw;
                     } finally {
                         QueryFinished(command);
@@ -352,7 +352,7 @@ namespace MindTouch.Data {
                         QueryFinished(command);
                     }
                 }
-            }            
+            }
         }
 
         /// <summary>
@@ -372,7 +372,7 @@ namespace MindTouch.Data {
                         if(value is DBNull) {
                             return null;
                         }
-                        return (string) SysUtil.ChangeType(value, typeof(string));
+                        return (string)SysUtil.ChangeType(value, typeof(string));
                     } catch(Exception e) {
                         _log.DebugFormat(e, "Read(): Text: '{0}', Type: {1}", _command.CommandText, _command.CommandType);
                         throw;
@@ -473,7 +473,7 @@ namespace MindTouch.Data {
                         if(value is DBNull) {
                             return null;
                         }
-                        return (T) SysUtil.ChangeType(value, typeof(T));
+                        return (T)SysUtil.ChangeType(value, typeof(T));
                     } catch(Exception e) {
                         _log.DebugFormat(e, "ReadAs(): Text: '{0}', Type: {1}", _command.CommandText, _command.CommandType);
                         throw;
@@ -594,7 +594,7 @@ namespace MindTouch.Data {
         /// <typeparam name="T">Object type to create</typeparam>
         /// <returns>List of created objects</returns>
         public List<T> ReadAsObjects<T>() where T : new() {
-        	if(_log.IsTraceEnabled()) {
+            if(_log.IsTraceEnabled()) {
                 _log.TraceMethodCall("ReadAsObject<T>()", typeof(T).FullName, _command.CommandText);
             }
             Dictionary<string, DataColumnField> fields = GetDataFields(typeof(T));
