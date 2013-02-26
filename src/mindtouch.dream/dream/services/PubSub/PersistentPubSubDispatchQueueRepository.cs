@@ -120,8 +120,10 @@ namespace MindTouch.Dream.Services.PubSub {
 
         public IPubSubDispatchQueue this[PubSubSubscriptionSet set] {
             get {
-                PersistentPubSubDispatchQueue queue;
-                return _repository.TryGetValue(set.Location, out queue) ? queue : null;
+                lock(_repository) {
+                    PersistentPubSubDispatchQueue queue;
+                    return _repository.TryGetValue(set.Location, out queue) ? queue : null;
+                }
             }
         }
 
