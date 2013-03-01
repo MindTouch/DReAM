@@ -121,6 +121,22 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Private_features_can_be_accessed_with_apikey_in_request_headers() {
+
+            // arrange
+            var key = StringUtil.CreateAlphaNumericKey(4);
+            var service = _hostInfo.CreateService(typeof(AccessTestService), "access", new XDoc("config").Elem("apikey", key));
+            var msg = DreamMessage.Ok();
+            msg.Headers.Add(DreamHeaders.DREAM_APIKEY, key);
+
+            // act
+            var result = service.AtLocalHost.At("private").Get(msg);
+
+            // assert
+            Assert.IsTrue(result.IsSuccessful, result.ToText());
+        }
+
+        [Test]
         public void Service_can_create_child_service() {
             XDoc config = new XDoc("config")
                 .Elem("path", "parent")
