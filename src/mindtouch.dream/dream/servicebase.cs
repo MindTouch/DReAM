@@ -853,7 +853,7 @@ namespace MindTouch.Dream {
             DreamMessage message = request;
 
             // check if request has a service or api key
-            string key = DreamContext.Current.Uri.GetParam("apikey", null);
+            string key = context.Uri.GetParam("apikey", message.Headers[DreamHeaders.DREAM_APIKEY]);
             if(key == null) {
                 DreamCookie cookie = DreamCookie.GetCookie(message.Cookies, "service-key");
                 if(cookie != null) {
