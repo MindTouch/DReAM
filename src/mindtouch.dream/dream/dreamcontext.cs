@@ -128,11 +128,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public readonly DateTime StartTime;
 
-        /// <summary>
-        /// Caching information for request.
-        /// </summary>
-        public Tuplet<object, TimeSpan> CacheKeyAndTimeout;
-
         private readonly XUri _publicUri;
         private readonly string[] _suffixes;
         private readonly Dictionary<string, string[]> _pathParams;

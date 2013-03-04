@@ -909,29 +909,6 @@ namespace MindTouch.Dream {
         }
 
         /// <summary>
-        /// Check the service's response cache.
-        /// </summary>
-        /// <param name="key">Key to check.</param>
-        protected void CheckResponseCache(object key) {
-            _env.CheckResponseCache(this, key);
-        }
-
-        /// <summary>
-        /// Remove a key from the service's response cache
-        /// </summary>
-        /// <param name="key"></param>
-        protected void RemoveResponseCache(object key) {
-            _env.RemoveResponseCache(this, key);
-        }
-
-        /// <summary>
-        /// Clear out the service's response cache
-        /// </summary>
-        protected void EmptyResponseCache() {
-            _env.EmptyResponseCache(this);
-        }
-
-        /// <summary>
         /// Provides a hook for overriding what access level the current request should be granted.
         /// </summary>
         /// <param name="context">Request context.</param>

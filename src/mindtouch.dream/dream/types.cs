@@ -142,26 +142,6 @@ namespace MindTouch.Dream {
         void UpdateInfoMessage(string source, string message);
 
         /// <summary>
-        /// Check response cache for a service.
-        /// </summary>
-        /// <param name="service">Service whose cache to check.</param>
-        /// <param name="key">Cache key.</param>
-        void CheckResponseCache(IDreamService service, object key);
-
-        /// <summary>
-        /// Remove an item from a service's cache.
-        /// </summary>
-        /// <param name="service">Service whose cache to check.</param>
-        /// <param name="key">Cache key.</param>
-        void RemoveResponseCache(IDreamService service, object key);
-
-        /// <summary>
-        /// Empty entire cache for a service.
-        /// </summary>
-        /// <param name="service">Service to clear the cache for.</param>
-        void EmptyResponseCache(IDreamService service);
-
-        /// <summary>
         /// Called by <see cref="IDreamService"/> on startup to have the environment create and initialize a service level container.
         /// </summary>
         /// <remarks>
