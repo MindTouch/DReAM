@@ -416,7 +416,9 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
@@ -475,7 +477,9 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
@@ -536,7 +540,9 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
@@ -599,7 +605,9 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
