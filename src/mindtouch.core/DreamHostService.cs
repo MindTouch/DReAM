@@ -230,7 +230,6 @@ namespace MindTouch.Dream {
         private readonly ILifetimeScope _hostLifetimeScope;
         private readonly Dictionary<IDreamService, ILifetimeScope> _serviceLifetimeScopes = new Dictionary<IDreamService, ILifetimeScope>();
         private readonly XUriMap<XUri> _aliases = new XUriMap<XUri>();
-        private readonly Dictionary<IDreamService, Dictionary<object, DreamMessage>> _responseCache = new Dictionary<IDreamService, Dictionary<object, DreamMessage>>();
         private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
         private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
@@ -254,8 +253,6 @@ namespace MindTouch.Dream {
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
-        private long _responseCacheHits;
-        private long _responseCacheMisses;
         private Plug _hostpubsub;
         private int _reentrancyLimit;
         private string _rootRedirect;
@@ -653,19 +650,6 @@ namespace MindTouch.Dream {
             // host/features
             result.Start("features").Attr("href", self.At("status", "features")).End();
 
-            // host/cache
-            long size = 0;
-            int count = 0;
-            lock(_responseCache) {
-                foreach(Dictionary<object, DreamMessage> cache in _responseCache.Values) {
-                    count += cache.Count;
-                    foreach(DreamMessage message in cache.Values) {
-                        size += message.ToBytes().LongLength;
-                    }
-                }
-            }
-            result.Start("cache").Attr("count", count).Attr("size", size).Attr("hits", _responseCacheHits).Attr("misses", _responseCacheMisses).End();
-
             // end host information
             result.End();
 
@@ -970,7 +954,6 @@ namespace MindTouch.Dream {
             _activities.Clear();
             _features = new DreamFeatureDirectory();
             _services.Clear();
-            _responseCache.Clear();
             _aliases.Clear();
 
             // mark host as not running
@@ -1122,40 +1105,6 @@ namespace MindTouch.Dream {
                 }
                 ++info.Item1;
                 info.Item2 = message;
-            }
-        }
-
-        void IDreamEnvironment.CheckResponseCache(IDreamService service, object key) {
-            DreamMessage response = null;
-            lock(_responseCache) {
-                Dictionary<object, DreamMessage> cache;
-                if(_responseCache.TryGetValue(service, out cache)) {
-                    cache.TryGetValue(key, out response);
-                }
-            }
-            if(response != null) {
-                Interlocked.Increment(ref _responseCacheHits);
-                throw new DreamCachedResponseException(response.Clone());
-            }
-            Interlocked.Increment(ref _responseCacheMisses);
-        }
-
-        void IDreamEnvironment.RemoveResponseCache(IDreamService service, object key) {
-            lock(_responseCache) {
-                Dictionary<object, DreamMessage> cache;
-                if(_responseCache.TryGetValue(service, out cache)) {
-                    cache.Remove(key);
-                }
-            }
-        }
-
-        void IDreamEnvironment.EmptyResponseCache(IDreamService service) {
-            lock(_responseCache) {
-                Dictionary<object, DreamMessage> cache;
-                if(_responseCache.TryGetValue(service, out cache)) {
-                    cache.Clear();
-                    _responseCache.Remove(service);
-                }
             }
         }
 
@@ -1379,32 +1328,6 @@ namespace MindTouch.Dream {
                         message = DreamMessage.InternalError(result.Exception);
                     }
 
-                    // check if response needs to be cached
-                    if(context.CacheKeyAndTimeout != null) {
-                        IDreamService service = feature.Service;
-
-                        // NOTE (steveb): ToBytes() forces the DreamMessage to convert it's internal
-                        //                representation to a byte array, which is better for cloning.
-                        result.Value.ToBytes();
-
-                        DreamMessage reply = result.Value.Clone();
-                        Dictionary<object, DreamMessage> cache;
-                        lock(_responseCache) {
-                            if(!_responseCache.TryGetValue(service, out cache)) {
-                                cache = new Dictionary<object, DreamMessage>();
-                                _responseCache[service] = cache;
-                            }
-                            cache[context.CacheKeyAndTimeout.Item1] = reply;
-                        }
-
-                        // start timer for clean-up
-                        TimerFactory.New(context.CacheKeyAndTimeout.Item2, delegate(TaskTimer timer) {
-                            lock(_responseCache) {
-                                cache.Remove(timer.State);
-                            }
-                        }, context.CacheKeyAndTimeout.Item1, TaskEnv.New());
-                    }
-
                     // decrease counter for external requests
                     EndRequest(external, uri, request);
 
@@ -1427,19 +1350,19 @@ namespace MindTouch.Dream {
                 AsyncUtil.Fork(
                     () => chain.Return(request),
                     TaskEnv.New(TimerFactory),
-                    new Result(TimeSpan.MaxValue, response.Env).WhenDone(delegate(Result res) {
-                    if(!res.HasException) {
-                        return;
-                    }
-                    _log.ErrorExceptionFormat(res.Exception, "handler for {0}:{1} failed", context.Verb, context.Uri.ToString(false));
-                    ((ITaskLifespan)context).Dispose();
+                    new Result(TimeSpan.MaxValue, response.Env).WhenDone(res => {
+                        if(!res.HasException) {
+                            return;
+                        }
+                        _log.ErrorExceptionFormat(res.Exception, "handler for {0}:{1} failed", context.Verb, context.Uri.ToString(false));
+                        ((ITaskLifespan)context).Dispose();
 
-                    // forward exception to recipient
-                    response.Throw(res.Exception);
+                        // forward exception to recipient
+                        response.Throw(res.Exception);
 
-                    // decrease counter for external requests
-                    EndRequest(external, uri, request);
-                })
+                        // decrease counter for external requests
+                        EndRequest(external, uri, request);
+                    })
                 );
             } catch(Exception e) {
                 response.Throw(e);
@@ -1741,11 +1664,6 @@ namespace MindTouch.Dream {
             foreach(ServiceEntry entry in entries) {
                 _log.WarnMethodCall("StopService: child service was not shutdown properly", entry.Service.Self);
                 StopService(entry.Service.Self);
-            }
-
-            // clear service associated cache
-            if(service != null) {
-                ((IDreamEnvironment)this).EmptyResponseCache(service.Service);
             }
         }
 

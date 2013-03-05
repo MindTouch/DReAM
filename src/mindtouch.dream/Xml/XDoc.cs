@@ -1725,8 +1725,9 @@ namespace MindTouch.Xml {
             if(IsEmpty) {
                 throw new InvalidOperationException("xdoc is empty");
             }
+
+            // TODO (steveb): check if we can do: for(var currentNode = AsXmlNode; currentNode != markerNode; currentNode = AsXmlNode) { End(); }
             var currentNode = AsXmlNode;
-            var root = Root.AsXmlNode;
             while(currentNode != markerNode) {
                 End();
                 currentNode = AsXmlNode;

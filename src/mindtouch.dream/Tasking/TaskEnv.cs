@@ -416,11 +416,13 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
-                _dispatchQueue.QueueWorkItem(delegate {
+                _dispatchQueue.QueueWorkItem(() => {
 
                     // store current thread-specific settings
                     TaskEnv previousEnv = _currentEnv;
@@ -475,11 +477,13 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
-                _dispatchQueue.QueueWorkItem(delegate {
+                _dispatchQueue.QueueWorkItem(() => {
 
                     // store current thread-specific settings
                     TaskEnv previousEnv = _currentEnv;
@@ -536,11 +540,13 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
-                _dispatchQueue.QueueWorkItem(delegate {
+                _dispatchQueue.QueueWorkItem(() => {
 
                     // store current thread-specific settings
                     TaskEnv previousEnv = _currentEnv;
@@ -599,11 +605,13 @@ namespace MindTouch.Tasking {
             if(_referenceCount < 1) {
                 throw new InvalidOperationException("Cannot call invoke an unaquired TaskEnv");
             }
+#pragma warning disable 219
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
+#pragma warning restore 219
 
             // check if handler can be invoked in-place or needs to queued up
             if(_dispatchQueue != null) {
-                _dispatchQueue.QueueWorkItem(delegate {
+                _dispatchQueue.QueueWorkItem(() => {
 
                     // store current thread-specific settings
                     TaskEnv previousEnv = _currentEnv;
@@ -667,7 +675,7 @@ namespace MindTouch.Tasking {
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
             Acquire();
             int executionCount = 0;
-            return delegate() {
+            return () => {
                 try {
                     var execution = Interlocked.Increment(ref executionCount);
                     var exception = InvokeNow(action);
@@ -716,11 +724,11 @@ namespace MindTouch.Tasking {
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
             Acquire();
             int executionCount = 0;
-            return delegate() {
+            return () => {
                 var execution = Interlocked.Increment(ref executionCount);
                 try {
                     var response = default(T);
-                    var exception = InvokeNow(delegate {
+                    var exception = InvokeNow(() => {
                         response = func();
                     });
                     if(execution == 1) {

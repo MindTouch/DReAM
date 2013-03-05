@@ -215,7 +215,7 @@ namespace MindTouch.Dream.Http {
                     httpContext.Response.KeepAlive = false;
                     long size = response.ContentLength;
                     if(((size == -1) || (size > 0)) && (stream != Stream.Null)) {
-                        CopyStream(delegate { }, stream, httpContext.Response.OutputStream, size, new Result<long>(DreamHostService.MAX_REQUEST_TIME)).Block();
+                        CopyStream(message => { }, stream, httpContext.Response.OutputStream, size, new Result<long>(DreamHostService.MAX_REQUEST_TIME)).Block();
                     }
                     httpContext.Response.OutputStream.Flush();
                 } catch {
@@ -293,7 +293,7 @@ namespace MindTouch.Dream.Http {
 
             // asynchronously execute read operation
             Result<IAsyncResult> inner = new Result<IAsyncResult>(TimeSpan.MaxValue);
-            inner.WhenDone(delegate(Result<IAsyncResult> _unused) {
+            inner.WhenDone(_unused => {
                 try {
                     activity(string.Format("pre {0}!EndRead", stream.GetType().FullName));
                     int readCount = stream.EndRead(inner.Value);
@@ -321,7 +321,7 @@ namespace MindTouch.Dream.Http {
 
             // asynchronously execute read operation
             Result<IAsyncResult> inner = new Result<IAsyncResult>(TimeSpan.MaxValue);
-            inner.WhenDone(delegate(Result<IAsyncResult> _unused) {
+            inner.WhenDone(_unused => {
                 try {
                     activity(string.Format("pre {0}!EndWrite", stream.GetType().FullName));
                     stream.EndWrite(inner.Value);
@@ -370,7 +370,7 @@ namespace MindTouch.Dream.Http {
             } else {
 
                 // use new task environment so we don't copy the task state over and over again
-                TaskEnv.ExecuteNew(delegate() {
+                TaskEnv.ExecuteNew(() => {
                     activity("pre CopyStream_Handler");
                     Coroutine.Invoke(CopyStream_Handler, activity, source, target, length, result);
                     activity("post CopyStream_Handler");

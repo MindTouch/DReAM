@@ -114,7 +114,7 @@ UPDATE {0} SET id = (@id := id), doc = ?DOC, revision = (@revision := revision +
 SELECT ROW_COUNT(), @id, @revision;", _name, revisionClause))
                     .With("DOCID", docid)
                     .With("DOC", doc.ToString())
-                .Execute(delegate(IDataReader reader) {
+                .Execute(reader => {
                 while(reader.Read()) {
                     rowsAffected = reader.GetInt32(0);
                     if(rowsAffected == 0) {
@@ -166,7 +166,7 @@ UPDATE {0} SET id = (@id := id), doc = ?DOC, revision = (@revision := revision +
 SELECT @id, @revision;", _name))
                         .With("DOCID", docid)
                         .With("DOC", doc.ToString())
-                        .Execute(delegate(IDataReader reader) {
+                        .Execute(reader => {
                         while(reader.Read()) {
 
                             // Note (arnec): have to fetch as string and convert to int, because @variables in mysql
@@ -212,7 +212,7 @@ SELECT @id, @revision;", _name))
             XDoc doc = null;
             _catalog.NewQuery(string.Format("SELECT id, revision, doc FROM {0} WHERE doc_id = ?KEY", _name))
                 .With("KEY", docId)
-                .Execute(delegate(IDataReader dr) {
+                .Execute(dr => {
                 while(dr.Read()) {
                     doc = XDocFactory.From(dr.GetString(2), MimeType.TEXT_XML);
                     Map(doc);
@@ -262,7 +262,7 @@ SELECT @id, @revision;", _name))
             _catalog.NewQuery(string.Format("SELECT id, revision, doc FROM {0} LEFT JOIN {1} ON {0}.id = {1}.ref_id WHERE {1}.idx_value = ?KEY ORDER BY {0}.id{2}",
                     _name, info.Table, GetLimitAndOffsetClause(limit,offset)))
                 .With("KEY", keyValue)
-                .Execute(delegate(IDataReader reader) {
+                .Execute(reader => {
                 while(reader.Read()) {
                     XDoc doc = XDocFactory.From(reader.GetString(2), MimeType.TEXT_XML);
                     Map(doc);
@@ -284,7 +284,7 @@ SELECT @id, @revision;", _name))
         private IEnumerable<XDoc> YieldAll(int limit, int offset) {
             var docResults = new List<QueryItem>();
             _catalog.NewQuery(string.Format("SELECT id, revision, doc FROM {0} ORDER BY {0}.id{1}", _name, GetLimitAndOffsetClause(limit, offset)))
-                .Execute(delegate(IDataReader dr) {
+                .Execute(dr => {
                     while(dr.Read()) {
                         var docResult = new QueryItem {
                                                           Id = dr.GetInt32(0),

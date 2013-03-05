@@ -122,13 +122,13 @@ namespace MindTouch.Dream {
                     Console.WriteLine("Dream Host APIKEY: {0}", apikey);
                 }
                 Console.WriteLine("-------------------- initializing");
-                time = DebugUtil.Stopwatch(delegate() {
+                time = DebugUtil.Stopwatch(() => {
                     _host = new DreamHost(config);
                 });
                 Console.WriteLine("-------------------- initialized {0} secs", time.TotalSeconds);
 
                 // execute scripts
-                time = DebugUtil.Stopwatch(delegate() {
+                time = DebugUtil.Stopwatch(() => {
                     _host.RunScripts(config, null);
                 });
                 Console.WriteLine("-------------------- ready {0} secs", time.TotalSeconds);

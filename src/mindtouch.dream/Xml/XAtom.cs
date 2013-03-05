@@ -331,7 +331,7 @@ namespace MindTouch.Xml {
         /// </summary>
         public XAtomEntry[] Entries {
             get {
-                return Array.ConvertAll<XDoc, XAtomEntry>(Root["_:entry"].ToList().ToArray(), delegate(XDoc entry) { return new XAtomEntry(entry);});
+                return Array.ConvertAll<XDoc, XAtomEntry>(Root["_:entry"].ToList().ToArray(), entry => new XAtomEntry(entry));
             }
         }
 

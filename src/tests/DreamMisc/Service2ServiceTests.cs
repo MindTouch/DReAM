@@ -47,9 +47,6 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Setting_ip_for_host_registers_public_alias() {
-			
-			// TODO (steveb): test fails under Mono 2.8.2
-			
             int hitCounter = 0;
             _service1.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> r) {
                 hitCounter++;
