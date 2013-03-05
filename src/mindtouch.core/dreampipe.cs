@@ -173,14 +173,14 @@ namespace MindTouch.Dream {
                 } else {
 
                     // invoke handler
-                    Result<DreamMessage> inner = new Result<DreamMessage>(_response.Timeout, TaskEnv.Current).WhenDone(delegate(DreamMessage value) {
+                    Result<DreamMessage> inner = new Result<DreamMessage>(_response.Timeout, TaskEnv.Current).WhenDone(value => {
 
                         // removing context from env so that shared context is not disposed
                         _context.DetachFromTaskEnv();
 
                         // forward result to recipient
                         _response.Return(value);
-                    }, delegate(Exception exception) {
+                    }, exception => {
 
                         // removing context from env so that shared context is not disposed
                         _context.DetachFromTaskEnv();

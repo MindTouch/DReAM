@@ -90,10 +90,10 @@ namespace MindTouch.Dream {
         /// </summary>
         public string[] SID {
             get {
-                return Array.ConvertAll<XUri, string>(_sid, delegate(XUri uri) { return uri.ToString(); });
+                return Array.ConvertAll<XUri, string>(_sid, uri => uri.ToString());
             }
             set {
-                _sid = Array.ConvertAll<string, XUri>(value, delegate(string uri) { return new XUri(uri); });
+                _sid = Array.ConvertAll<string, XUri>(value, uri => new XUri(uri));
             }
         }
 

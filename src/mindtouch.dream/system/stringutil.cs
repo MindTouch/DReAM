@@ -263,7 +263,7 @@ namespace System {
         /// <param name="useEntityNames">If <see langword="True"/>, encodes html entity using entity name rather than numeric entity code.</param>
         /// <returns>Encoded string.</returns>
         public static string EncodeHtmlEntities(this string text, Encoding encoding, bool useEntityNames) {
-            return _specialSymbolRegEx.Replace(text, delegate(Match m) {
+            return _specialSymbolRegEx.Replace(text, m => {
                 string v = m.Groups[0].Value;
                 switch(v) {
                 case "&":
@@ -291,7 +291,7 @@ namespace System {
         /// <param name="text">Html encoded string.</param>
         /// <returns>Decoded string.</returns>
         public static string DecodeHtmlEntities(this string text) {
-            return _htmlEntitiesRegEx.Replace(text, delegate(Match m) {
+            return _htmlEntitiesRegEx.Replace(text, m => {
                 string v = m.Groups["value"].Value;
                 if(v[0] == '#') {
                     if(char.ToLowerInvariant(v[1]) == 'x') {
@@ -440,7 +440,7 @@ namespace System {
         /// <param name="comparison">The type of string comparison to use to match delimiters.</param>
         /// <returns>String with delimited text replaced.</returns>
         public static string ReplaceWithinDelimiters(this string text, string startDelimiter, string endDelimiter, string replace, StringComparison comparison) {
-            return ReplaceWithinDelimiters(text, startDelimiter, endDelimiter, delegate { return replace; }, comparison);
+            return ReplaceWithinDelimiters(text, startDelimiter, endDelimiter, found => replace, comparison);
         }
 
         /// <summary>

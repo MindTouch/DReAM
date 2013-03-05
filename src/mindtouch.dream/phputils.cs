@@ -55,7 +55,7 @@ namespace MindTouch.Dream {
         public static string ConvertToFormatString(string paramsString) {
 
             // replace all string parameters of the form $x with {x-1}, where x is an integer
-            paramsString = _dollarParamsRegex.Replace(paramsString, delegate(Match m) {
+            paramsString = _dollarParamsRegex.Replace(paramsString, m => {
                 int paramValue = 0;
                 if(Int32.TryParse(m.Groups["param"].Value.Substring(1), out paramValue)) {
                     return "{" + (paramValue - 1) + "}";

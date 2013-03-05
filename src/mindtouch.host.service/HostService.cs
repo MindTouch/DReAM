@@ -60,14 +60,14 @@ namespace MindTouch.Dream {
             }
 
             // create environment
-            time = DebugUtil.Stopwatch(delegate() {
+            time = DebugUtil.Stopwatch(() => {
                 _host = new DreamHost(settings);
             });
             _sysEventLog.WriteEntry(string.Format("ApiKey: {0}", _host.Self.Uri.GetParam("apikey")), EventLogEntryType.Information);
             _sysEventLog.WriteEntry(string.Format("initialized {0} secs", time.TotalSeconds), EventLogEntryType.Information);
 
             // execute all scripts
-            time = DebugUtil.Stopwatch(delegate() {
+            time = DebugUtil.Stopwatch(() => {
                 _host.RunScripts(settings, null);
             });
             _sysEventLog.WriteEntry(string.Format("ready {0} secs", time.TotalSeconds), EventLogEntryType.Information);

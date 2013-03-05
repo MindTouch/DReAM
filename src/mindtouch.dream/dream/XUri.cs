@@ -2119,7 +2119,6 @@ namespace MindTouch.Dream {
             }
 
             // check query parameters
-            StringComparer provider = INVARIANT_IGNORE_CASE;
             int paramCount = (Params != null) ? Params.Length : -1;
             int otherParamCount = (other.Params != null) ? other.Params.Length : -1;
             if(paramCount != otherParamCount) {
