@@ -536,7 +536,7 @@ namespace MindTouch.Data {
         public XDoc ReadAsXDoc(string table, string row) {
             _log.TraceMethodCall("ReadAsXDoc()", _command.CommandText);
             XDoc result = new XDoc(table);
-            Execute(delegate(IDataReader reader) {
+            Execute(reader => {
 
                 // capture row columns
                 int count = reader.FieldCount;
@@ -580,7 +580,7 @@ namespace MindTouch.Data {
 
             // read item from database
             T result = default(T);
-            Execute(delegate(IDataReader reader) {
+            Execute(reader => {
                 if(reader.Read()) {
                     result = FillObject(new T(), fields, reader);
                 }
@@ -601,7 +601,7 @@ namespace MindTouch.Data {
 
             // read item from database
             List<T> result = new List<T>();
-            Execute(delegate(IDataReader reader) {
+            Execute(reader => {
                 while(reader.Read()) {
                     result.Add(FillObject(new T(), fields, reader));
                 }

@@ -33,7 +33,7 @@ namespace System {
         //--- Class Fields ---
         private static readonly ILog _log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static TimeSpan _collectInterval = TimeSpan.Zero;
-        private static readonly TaskTimer _collectTimer = TaskTimerFactory.Default.New(delegate(TaskTimer taskTimer) {
+        private static readonly TaskTimer _collectTimer = TaskTimerFactory.Default.New(taskTimer => {
             double memBefore = (double)GC.GetTotalMemory(false) / 1024 / 1024;
             double memAfter = (double)GC.GetTotalMemory(true) / 1024 / 1024;
             _log.DebugFormat("forced GC: {0:0.00}MB before / {1:0.00}MB after", memBefore, memAfter);

@@ -270,7 +270,7 @@ namespace MindTouch.Web {
                     // add language option
                     choices.Add(new Tuplet<string, double>(name, quality));
                 }
-                choices.Sort(delegate(Tuplet<string, double> left, Tuplet<string, double> right) {
+                choices.Sort((left, right) => {
 
                     // reverse order sort based on quality
                     return Math.Sign(right.Item2 - left.Item2);

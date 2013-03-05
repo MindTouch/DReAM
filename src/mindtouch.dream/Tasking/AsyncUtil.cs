@@ -249,7 +249,7 @@ namespace MindTouch.Tasking {
         /// <param name="result">The <see cref="Result{WaitHandle}"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
         public static Result<WaitHandle> WaitHandle(this WaitHandle handle, Result<WaitHandle> result) {
-            ThreadPool.RegisterWaitForSingleObject(handle, delegate(object _unused, bool timedOut) {
+            ThreadPool.RegisterWaitForSingleObject(handle, (_unused, timedOut) => {
                 if(timedOut) {
                     result.Throw(new TimeoutException());
                 } else {
@@ -271,7 +271,7 @@ namespace MindTouch.Tasking {
             Stream output = new MemoryStream();
             Stream error = new MemoryStream();
             Result<int> innerResult = new Result<int>(result.Timeout);
-            Coroutine.Invoke(ExecuteProcess_Helper, application, cmdline, input, output, error, innerResult).WhenDone(delegate(Result<int> _unused) {
+            Coroutine.Invoke(ExecuteProcess_Helper, application, cmdline, input, output, error, innerResult).WhenDone(_unused => {
                 if(innerResult.HasException) {
                     result.Throw(innerResult.Exception);
                 } else {
@@ -335,7 +335,7 @@ namespace MindTouch.Tasking {
 
             // extract error stream
             Result<long> errorDone = proc.StandardError.BaseStream.CopyToStream(error, long.MaxValue, new Result<long>(TimeSpan.MaxValue));
-            TaskTimer timer = TaskTimerFactory.Current.New(result.Timeout, delegate(TaskTimer t) {
+            TaskTimer timer = TaskTimerFactory.Current.New(result.Timeout, t => {
                 try {
 
                     // NOTE (steveb): we had to add the try..catch handler because mono throws an exception when killing a terminated process (why? who knows!)

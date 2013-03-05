@@ -364,7 +364,7 @@ namespace System {
         /// <param name="right">Source Array.</param>
         /// <returns>Array containing all unique items from the source arrays.</returns>
         public static T[] Union<T>(T[] left, T[] right) where T : IComparable<T> {
-            return Union(left, right, delegate(T l, T r) { return l.CompareTo(r); });
+            return Union(left, right, (l, r) => l.CompareTo(r));
         }
 
         /// <summary>

@@ -344,7 +344,7 @@ CREATE TABLE {0} (
             string tables = string.Empty;
             catalog.NewQuery("SHOW TABLES LIKE ?PREFIX")
                 .With("PREFIX", name + "_store%")
-                .Execute(delegate(IDataReader reader) {
+                .Execute(reader => {
                 while(reader.Read()) {
                     if(tables != string.Empty) {
                         tables += ", ";
@@ -361,7 +361,7 @@ CREATE TABLE {0} (
             lock(_indicies) {
                 Dictionary<string, IndexInfo> indicies = new Dictionary<string, IndexInfo>();
                 _catalog.NewQuery(string.Format(@"SELECT idx_name, idx_xpath FROM {0}", _indexLookupTable))
-                    .Execute(delegate(IDataReader reader) {
+                    .Execute(reader => {
                     while(reader.Read()) {
                         IndexInfo index = new IndexInfo();
                         index.Name = reader.GetString(0);
@@ -375,7 +375,7 @@ CREATE TABLE {0} (
         }
 
         private void BuildIndex(IndexInfo info) {
-            _catalog.NewQuery(string.Format("SELECT id, revision, doc FROM {0}", _name)).Execute(delegate(IDataReader reader) {
+            _catalog.NewQuery(string.Format("SELECT id, revision, doc FROM {0}", _name)).Execute(reader => {
                 while(reader.Read()) {
                     int id = reader.GetInt32(0);
                     int revision = reader.GetInt32(1);

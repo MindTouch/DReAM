@@ -712,7 +712,7 @@ namespace MindTouch.Xml {
                     foreach(XmlAttribute attribute in node.Attributes) {
                         attributes.Add(attribute);
                     }
-                    attributes.Sort(delegate(XmlAttribute left, XmlAttribute right) { return StringUtil.CompareInvariant(left.Name, right.Name); });
+                    attributes.Sort((left, right) => StringUtil.CompareInvariant(left.Name, right.Name));
                     foreach(XmlAttribute attribute in attributes) {
                         tokens.Add(new Token(XmlNodeType.Attribute, attribute.Name + "=" + attribute.Value, null));
                     }
