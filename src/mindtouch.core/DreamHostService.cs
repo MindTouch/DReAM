@@ -1350,19 +1350,19 @@ namespace MindTouch.Dream {
                 AsyncUtil.Fork(
                     () => chain.Return(request),
                     TaskEnv.New(TimerFactory),
-                    new Result(TimeSpan.MaxValue, response.Env).WhenDone(delegate(Result res) {
-                    if(!res.HasException) {
-                        return;
-                    }
-                    _log.ErrorExceptionFormat(res.Exception, "handler for {0}:{1} failed", context.Verb, context.Uri.ToString(false));
-                    ((ITaskLifespan)context).Dispose();
+                    new Result(TimeSpan.MaxValue, response.Env).WhenDone(res => {
+                        if(!res.HasException) {
+                            return;
+                        }
+                        _log.ErrorExceptionFormat(res.Exception, "handler for {0}:{1} failed", context.Verb, context.Uri.ToString(false));
+                        ((ITaskLifespan)context).Dispose();
 
-                    // forward exception to recipient
-                    response.Throw(res.Exception);
+                        // forward exception to recipient
+                        response.Throw(res.Exception);
 
-                    // decrease counter for external requests
-                    EndRequest(external, uri, request);
-                })
+                        // decrease counter for external requests
+                        EndRequest(external, uri, request);
+                    })
                 );
             } catch(Exception e) {
                 response.Throw(e);

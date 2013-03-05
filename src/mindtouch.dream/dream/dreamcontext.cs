@@ -615,7 +615,7 @@ namespace MindTouch.Dream {
             // combine query parameters of current request with new target URI, then append suffix segments
             Result<DreamMessage> inner = new Result<DreamMessage>(response.Timeout);
             Result result = new Result(TimeSpan.MaxValue);
-            Plug.New(plug.Uri.WithParamsFrom(Uri)).InvokeEx(verb, request, inner).WhenDone(delegate {
+            Plug.New(plug.Uri.WithParamsFrom(Uri)).InvokeEx(verb, request, inner).WhenDone(_unused => {
                 response.Return(inner);
                 result.Return();
             });

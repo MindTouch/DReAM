@@ -486,7 +486,7 @@ namespace MindTouch.Dream {
                 }
 
                 // sort features by signature then verb
-                blueprint["features"].Sort(delegate(XDoc first, XDoc second) {
+                blueprint["features"].Sort((first, second) => {
                     string[] firstPattern = first["pattern"].Contents.Split(new[] { ':' }, 2);
                     string[] secondPattern = second["pattern"].Contents.Split(new[] { ':' }, 2);
                     int cmp = firstPattern[1].CompareInvariantIgnoreCase(secondPattern[1]);
@@ -891,7 +891,7 @@ namespace MindTouch.Dream {
             // create new new environment for execution
             XUri uri = Self.AtPath(path);
             DreamContext current = DreamContext.Current;
-            Exception e = TaskEnv.ExecuteNew(delegate {
+            Exception e = TaskEnv.ExecuteNew(() => {
                 DreamFeatureStage[] stages = new[] {
                     new DreamFeatureStage("InServiceInvokeHandler", InServiceInvokeHandler, DreamAccess.Private)
                 };

@@ -987,11 +987,10 @@ namespace MindTouch.Tasking {
                 throw new ArgumentNullException("error");
             }
             return WhenDone<Result>(
-                delegate {
+                _unused => {
                     if(HasException) {
                         error(Exception);
                     } else {
-                        Confirm();
                         success();
                     }
                 }
@@ -1351,10 +1350,10 @@ namespace MindTouch.Tasking {
                 throw new ArgumentNullException("success");
             }
             if(error == null) {
-                throw new ArgumentNullException("fail");
+                throw new ArgumentNullException("error");
             }
             return WhenDone<Result<T>>(
-                delegate {
+                _unused => {
                     if(HasException) {
                         error(Exception);
                     } else {
