@@ -257,6 +257,11 @@ namespace MindTouch.Dream {
         //___ Dream-specific Headers ___
 
         /// <summary>
+        /// 'X-ApiKey' Dream Header.
+        /// </summary>
+        public const string DREAM_APIKEY = "X-ApiKey";
+
+        /// <summary>
         /// 'X-Dream-Transport' Dream Header.
         /// </summary>
         public const string DREAM_TRANSPORT = "X-Dream-Transport";
