@@ -19,8 +19,6 @@
  * limitations under the License.
  */
 
-using System;
-
 namespace System.Collections.Generic {
 
     /// <summary>

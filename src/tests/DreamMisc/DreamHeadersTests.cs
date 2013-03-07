@@ -19,17 +19,12 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
-using System.Text;
-using MindTouch.IO;
-using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
 using NUnit.Framework;
-using Moq;
 
 namespace MindTouch.Dream.Test {
     [TestFixture]

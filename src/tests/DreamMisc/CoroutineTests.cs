@@ -21,8 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using MindTouch;
-
 using MindTouch.Tasking;
 
 using NUnit.Framework;

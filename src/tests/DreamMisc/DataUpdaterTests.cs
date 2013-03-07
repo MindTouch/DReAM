@@ -22,12 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NUnit.Framework;
 using System.Reflection;
-using log4net;
-
-using MindTouch.Dream;
 using MindTouch.Data;
 
 namespace MindTouch.Dream.Test {

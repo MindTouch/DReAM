@@ -19,7 +19,6 @@
  * limitations under the License.
  */
 using System.Collections.Generic;
-using MindTouch.Dream;
 using NUnit.Framework;
 
 namespace MindTouch.Dream.Test {

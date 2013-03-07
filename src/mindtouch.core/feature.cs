@@ -21,13 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics;
-using System.IO;
-using System.Net;
-using System.Text;
-using System.Xml;
-using System.Xml.Serialization;
 using MindTouch.Xml;
 
 namespace MindTouch.Dream {

@@ -21,7 +21,6 @@
 
 using System;
 using System.Threading;
-using MindTouch.Dream;
 using MindTouch.Tasking;
 using NUnit.Framework;
 

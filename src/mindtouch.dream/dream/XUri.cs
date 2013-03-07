@@ -28,7 +28,6 @@ using System.Collections.Specialized;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Web;
 using System.IO;
 
 namespace MindTouch.Dream {

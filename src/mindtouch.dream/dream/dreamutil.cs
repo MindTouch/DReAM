@@ -23,8 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
-using MindTouch.Tasking;
-using MindTouch.Xml;
 
 namespace MindTouch.Dream {
 

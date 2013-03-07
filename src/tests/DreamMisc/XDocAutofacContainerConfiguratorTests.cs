@@ -23,7 +23,6 @@ using System;
 using Autofac;
 using Autofac.Builder;
 using Autofac.Core;
-using Autofac.Core.Registration;
 using MindTouch.Xml;
 using NUnit.Framework;
 

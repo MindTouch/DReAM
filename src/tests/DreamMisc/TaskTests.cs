@@ -19,14 +19,9 @@
  * limitations under the License.
  */
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using log4net;
-using MindTouch;
-using MindTouch.Dream;
-using MindTouch.Dream.Test;
 using MindTouch.Tasking;
 using MindTouch.Threading;
 using NUnit.Framework;

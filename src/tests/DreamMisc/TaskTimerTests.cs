@@ -22,8 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using MindTouch;
-using MindTouch.Dream;
 using MindTouch.Tasking;
 using NUnit.Framework;
 using System.Linq;

@@ -27,7 +27,6 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using Autofac;
-using Autofac.Builder;
 using MindTouch.Security.Cryptography;
 using MindTouch.Tasking;
 using MindTouch.Web;

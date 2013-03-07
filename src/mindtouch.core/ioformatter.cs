@@ -20,8 +20,6 @@
  */
 
 using System.IO;
-
-using MindTouch.IO;
 using MindTouch.Xml;
 
 namespace MindTouch.Dream.IO {

@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Text;
 using MindTouch.Web;
 using NUnit.Framework;
 

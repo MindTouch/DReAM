@@ -32,7 +32,6 @@ using MindTouch.Web;
 using MindTouch.Xml;
 
 using Autofac;
-using Autofac.Builder;
 
 namespace MindTouch.Dream {
     using Yield = IEnumerator<IYield>;

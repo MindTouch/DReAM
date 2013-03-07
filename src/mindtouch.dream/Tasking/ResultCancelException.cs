@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Runtime.Serialization;
 
 namespace MindTouch.Tasking {
 

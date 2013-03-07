@@ -20,7 +20,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.IO;
 using MindTouch.Tasking;
 using MindTouch.Xml;
 

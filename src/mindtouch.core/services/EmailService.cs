@@ -19,14 +19,12 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
 using System.Text;
 using Autofac;
-using Autofac.Builder;
 using log4net;
 
 using MindTouch.Tasking;
