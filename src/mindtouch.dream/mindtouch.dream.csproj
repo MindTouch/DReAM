@@ -198,9 +198,6 @@
     <Compile Include="Data\DataCommand.cs" />
     <Compile Include="Data\DataFactory.cs" />
     <Compile Include="Data\IDataCommand.cs" />
-    <Compile Include="Data\IDocStore.cs" />
-    <Compile Include="Data\MysqlDocStore.cs" />
-    <Compile Include="Data\MysqlDocStoreManager.cs" />
     <Compile Include="dream\attributes.cs" />
     <Compile Include="plug\PlugEx.cs" />
     <Compile Include="system\DebugUtil.cs" />
