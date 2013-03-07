@@ -27,8 +27,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.storage", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.bench", "mindtouch.bench\mindtouch.bench.csproj", "{74182840-62F6-4587-8FA8-88C4D57598AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.host.service", "mindtouch.host.service\mindtouch.host.service.csproj", "{5FF573E2-A001-438D-984D-6DEE7B8A5F55}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.dream.test", "mindtouch.dream.test\mindtouch.dream.test.csproj", "{C4CC19EB-8149-4F39-A6E6-753886309CF6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.core", "tests\test.mindtouch.core\test.mindtouch.core.csproj", "{66E62AB7-D8A5-494A-970F-AA6705E33361}"
@@ -107,14 +105,6 @@ Global
 		{74182840-62F6-4587-8FA8-88C4D57598AE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{74182840-62F6-4587-8FA8-88C4D57598AE}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
 		{74182840-62F6-4587-8FA8-88C4D57598AE}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Documentation|Any CPU.Build.0 = Debug|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
-		{5FF573E2-A001-438D-984D-6DEE7B8A5F55}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
 		{C4CC19EB-8149-4F39-A6E6-753886309CF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4CC19EB-8149-4F39-A6E6-753886309CF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4CC19EB-8149-4F39-A6E6-753886309CF6}.Documentation|Any CPU.ActiveCfg = Documentation|Any CPU
