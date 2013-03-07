@@ -121,8 +121,6 @@
     <Compile Include="AmazonS3\IAmazonS3Client.cs" />
     <Compile Include="services\S3StorageService.cs" />
     <Compile Include="services\EmailService.cs" />
-    <Compile Include="services\QueueService.cs" />
-    <Compile Include="services\RedirectService.cs" />
     <Compile Include="services\StorageService.cs" />
   </ItemGroup>
   <ItemGroup>
