@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -19,17 +19,12 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
-using System.Text;
-using MindTouch.IO;
-using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
 using NUnit.Framework;
-using Moq;
 
 namespace MindTouch.Dream.Test {
     [TestFixture]

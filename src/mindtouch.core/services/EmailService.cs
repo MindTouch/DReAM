@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -19,14 +19,12 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Mail;
 using System.Net.Mime;
 using System.Text;
 using Autofac;
-using Autofac.Builder;
 using log4net;
 
 using MindTouch.Tasking;
@@ -35,7 +33,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2011 MindTouch, Inc.",
+    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2013 MindTouch, Inc.",
         Info = "http://developer.mindtouch.com/Dream/Services/EmailService",
         SID = new[] { "sid://mindtouch.com/2009/01/dream/email" }
     )]

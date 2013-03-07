@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -27,7 +27,6 @@ using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using Autofac;
-using Autofac.Builder;
 using MindTouch.Security.Cryptography;
 using MindTouch.Tasking;
 using MindTouch.Web;
