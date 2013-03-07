@@ -70,7 +70,7 @@ namespace MindTouch.Threading {
                 return dispatchQueue.QueueWorkItemWithEnv(callback, current, result);
             }
             if(result != null) {
-                dispatchQueue.QueueWorkItem(delegate() {
+                dispatchQueue.QueueWorkItem(() => {
                     try {
                         callback();
                         result.Return();
@@ -156,7 +156,7 @@ namespace MindTouch.Threading {
                 return dispatchQueue.QueueWorkItemWithEnv(callback, current, result);
             }
             if(result != null) {
-                dispatchQueue.QueueWorkItem(delegate() {
+                dispatchQueue.QueueWorkItem(() => {
                     try {
                         result.Return(callback());
                     } catch(Exception e) {

@@ -63,10 +63,10 @@ namespace MindTouch.Tasking {
             }
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
             env.Acquire();
-            return delegate() {
+            return () => {
                 try {
                     T response = default(T);
-                    Exception exception = env.InvokeNow(delegate {
+                    Exception exception = env.InvokeNow(() => {
                         response = handler();
                     });
                     env.Release();
@@ -116,7 +116,7 @@ namespace MindTouch.Tasking {
             }
             System.Diagnostics.StackTrace stacktrace = DebugUtil.GetStackTrace();
             env.Acquire();
-            return delegate() {
+            return () => {
                 try {
                     Exception exception = env.InvokeNow(handler);
                     env.Release();

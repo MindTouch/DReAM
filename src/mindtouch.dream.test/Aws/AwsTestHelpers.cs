@@ -66,7 +66,7 @@ namespace MindTouch.Dream.Test.Aws {
 
         //--- Extension Methods Methods ---
         public static DreamMessage CallStorage(this MockServiceInfo mock, Func<Plug, Result<DreamMessage>> mockCall) {
-            mock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
+            mock.Service.CatchAllCallback = (context, request, response2) => {
                 var storage = (context.Service as MockService).Storage;
                 response2.Return(mockCall(storage).Wait());
             };

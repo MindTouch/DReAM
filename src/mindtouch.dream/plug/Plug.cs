@@ -247,7 +247,6 @@ namespace MindTouch.Dream {
 
             // check if we received cookies
             if(message.HasCookies) {
-                DreamContext context = DreamContext.CurrentOrNull;
 
                 // add matching cookies to service or to global cookie jar
                 if(cookies != null) {

@@ -486,7 +486,7 @@ namespace MindTouch.Dream {
                 }
 
                 // sort features by signature then verb
-                blueprint["features"].Sort(delegate(XDoc first, XDoc second) {
+                blueprint["features"].Sort((first, second) => {
                     string[] firstPattern = first["pattern"].Contents.Split(new[] { ':' }, 2);
                     string[] secondPattern = second["pattern"].Contents.Split(new[] { ':' }, 2);
                     int cmp = firstPattern[1].CompareInvariantIgnoreCase(secondPattern[1]);
@@ -891,7 +891,7 @@ namespace MindTouch.Dream {
             // create new new environment for execution
             XUri uri = Self.AtPath(path);
             DreamContext current = DreamContext.Current;
-            Exception e = TaskEnv.ExecuteNew(delegate {
+            Exception e = TaskEnv.ExecuteNew(() => {
                 DreamFeatureStage[] stages = new[] {
                     new DreamFeatureStage("InServiceInvokeHandler", InServiceInvokeHandler, DreamAccess.Private)
                 };
@@ -906,29 +906,6 @@ namespace MindTouch.Dream {
                 handler();
             }, TimerFactory);
             return e;
-        }
-
-        /// <summary>
-        /// Check the service's response cache.
-        /// </summary>
-        /// <param name="key">Key to check.</param>
-        protected void CheckResponseCache(object key) {
-            _env.CheckResponseCache(this, key);
-        }
-
-        /// <summary>
-        /// Remove a key from the service's response cache
-        /// </summary>
-        /// <param name="key"></param>
-        protected void RemoveResponseCache(object key) {
-            _env.RemoveResponseCache(this, key);
-        }
-
-        /// <summary>
-        /// Clear out the service's response cache
-        /// </summary>
-        protected void EmptyResponseCache() {
-            _env.EmptyResponseCache(this);
         }
 
         /// <summary>
