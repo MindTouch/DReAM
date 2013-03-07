@@ -253,7 +253,6 @@ namespace MindTouch.Dream {
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
-        private Plug _hostpubsub;
         private int _reentrancyLimit;
         private string _rootRedirect;
         private string _debugMode;
@@ -895,11 +894,6 @@ namespace MindTouch.Dream {
             if(!msg.IsSuccessful) {
                 throw new Exception("unexpected failure loading mindtouch.core");
             }
-            yield return CreateService(
-                "$pubsub",
-                "sid://mindtouch.com/dream/2008/10/pubsub",
-                new XDoc("config"),
-                new Result<Plug>()).Set(v => _hostpubsub = v);
             result.Return();
         }
 
@@ -1548,21 +1542,6 @@ namespace MindTouch.Dream {
                         }
                     }
 
-                }
-            }
-
-            //attach default pubsub service plug
-            if(_hostpubsub != null) {
-                if(config["uri.pubsub"].ListLength == 0) {
-                    config.Elem("uri.pubsub", _hostpubsub);
-
-                    // get publish's internal access key
-                    DreamCookieJar cookies = Cookies;
-                    lock(cookies) {
-                        foreach(DreamCookie cookie in cookies.Fetch(_hostpubsub.Uri)) {
-                            config.Add(cookie.AsSetCookieDocument);
-                        }
-                    }
                 }
             }
 
