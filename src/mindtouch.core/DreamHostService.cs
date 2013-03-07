@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -43,7 +43,7 @@ namespace MindTouch.Dream {
     using Yield = IEnumerator<IYield>;
     using DreamFeatureCoroutineHandler = CoroutineHandler<DreamContext, DreamMessage, Result<DreamMessage>>;
 
-    [DreamService("MindTouch Dream Host", "Copyright (c) 2006-2010 MindTouch, Inc.",
+    [DreamService("MindTouch Dream Host", "Copyright (c) 2006-2013 MindTouch, Inc.",
         Info = "http://developer.mindtouch.com/Dream/Reference/Services/Host",
         SID = new[] { 
             "sid://mindtouch.com/2007/03/dream/host",
