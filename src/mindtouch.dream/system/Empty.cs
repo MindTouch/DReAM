@@ -1,6 +1,6 @@
 /*
  * MindTouch DekiScript - embeddable web-oriented scripting runtime
- * Copyright (c) 2006-2010 MindTouch Inc.
+ * Copyright (c) 2006-2013 MindTouch Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;

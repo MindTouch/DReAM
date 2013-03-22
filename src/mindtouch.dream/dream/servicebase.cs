@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -32,7 +32,6 @@ using MindTouch.Web;
 using MindTouch.Xml;
 
 using Autofac;
-using Autofac.Builder;
 
 namespace MindTouch.Dream {
     using Yield = IEnumerator<IYield>;
@@ -202,8 +201,6 @@ namespace MindTouch.Dream {
         }
 
         //--- Fields ---
-
-        private Plug _pubsub;
         private IDreamEnvironment _env;
         private XDoc _config = XDoc.Empty;
         private Plug _self;
@@ -260,15 +257,6 @@ namespace MindTouch.Dream {
         /// <see cref="Plug"/> for Storage Service.
         /// </summary>
         public Plug Storage { get { return _storage; } }
-
-        /// <summary>
-        /// <see cref="Plug"/> for PubSub Service.
-        /// </summary>
-        [Obsolete("The PubSub subsystem has been deprecated and will be removed in v3.0")]
-        public Plug PubSub {
-            get { return _pubsub; }
-            protected set { _pubsub = value; }
-        }
 
         /// <summary>
         /// Service Identifier used to create this instance.
@@ -733,7 +721,6 @@ namespace MindTouch.Dream {
 
             // create built-in services
             _storage = Plug.New(config["uri.storage"].AsUri);
-            _pubsub = Plug.New(config["uri.pubsub"].AsUri);
 
             // done
             _log.Debug("Start");

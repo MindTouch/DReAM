@@ -118,14 +118,9 @@
     <Compile Include="serviceactivator.cs" />
     <Compile Include="AmazonS3\AmazonS3ClientConfig.cs" />
     <Compile Include="AmazonS3\AmazonS3FileHandle.cs" />
-    <Compile Include="services\atomservice.cs" />
     <Compile Include="AmazonS3\IAmazonS3Client.cs" />
     <Compile Include="services\S3StorageService.cs" />
-    <Compile Include="services\directoryservice.cs" />
     <Compile Include="services\EmailService.cs" />
-    <Compile Include="services\MountService.cs" />
-    <Compile Include="services\QueueService.cs" />
-    <Compile Include="services\RedirectService.cs" />
     <Compile Include="services\StorageService.cs" />
   </ItemGroup>
   <ItemGroup>
