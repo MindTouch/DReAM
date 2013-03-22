@@ -52,8 +52,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("2.4.1.0")]
-[assembly: AssemblyFileVersion("2.4.1.0")]
+[assembly: AssemblyVersion("2.4.1.422")]
+[assembly: AssemblyFileVersion("2.4.1.422")]
 [assembly: GitBranch("2.5")]
-[assembly: GitRevision("HEAD")]
+[assembly: GitRevision("946b9023")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]

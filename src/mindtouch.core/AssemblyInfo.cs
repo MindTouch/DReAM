@@ -52,10 +52,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.4.1.0")]
-[assembly: AssemblyFileVersion("2.4.1.0")]
+[assembly: AssemblyVersion("2.4.1.422")]
+[assembly: AssemblyFileVersion("2.4.1.422")]
 [assembly: GitBranch("2.5")]
-[assembly: GitRevision("HEAD")]
+[assembly: GitRevision("946b9023")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 //
@@ -86,7 +86,4 @@ using System.Runtime.InteropServices;
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]
 [assembly: AssemblyKeyFile(@"../mindtouch.snk")]
-[assembly: InternalsVisibleTo("test.mindtouch.core, PublicKey=0024000004800000940000000602000000240000525341310004000001000100c59c584b5a2a3c335322d6cc44f0855889b5f16de611ab96788b1ae38f061514542ef69091168b01161968191345f509072c7f11c48710869ae14770c99e83dbe14b981aab3ba7306203f86bca0cebe91fe174c525095b31b0387211653b1b569d01d7c9ed889d460b915a91442705655498be9da4cd15e4af1811851e3dbbd7")]
-#else
-//[assembly: InternalsVisibleTo("test.mindtouch.core")]
 #endif
