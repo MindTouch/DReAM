@@ -1,6 +1,6 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2010 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -43,7 +43,7 @@ namespace MindTouch.Dream {
     using Yield = IEnumerator<IYield>;
     using DreamFeatureCoroutineHandler = CoroutineHandler<DreamContext, DreamMessage, Result<DreamMessage>>;
 
-    [DreamService("MindTouch Dream Host", "Copyright (c) 2006-2010 MindTouch, Inc.",
+    [DreamService("MindTouch Dream Host", "Copyright (c) 2006-2013 MindTouch, Inc.",
         Info = "http://developer.mindtouch.com/Dream/Reference/Services/Host",
         SID = new[] { 
             "sid://mindtouch.com/2007/03/dream/host",
@@ -253,7 +253,6 @@ namespace MindTouch.Dream {
         private int _connectionCounter;
         private int _connectionLimit;
         private long _requestCounter;
-        private Plug _hostpubsub;
         private int _reentrancyLimit;
         private string _rootRedirect;
         private string _debugMode;
@@ -895,11 +894,6 @@ namespace MindTouch.Dream {
             if(!msg.IsSuccessful) {
                 throw new Exception("unexpected failure loading mindtouch.core");
             }
-            yield return CreateService(
-                "$pubsub",
-                "sid://mindtouch.com/dream/2008/10/pubsub",
-                new XDoc("config"),
-                new Result<Plug>()).Set(v => _hostpubsub = v);
             result.Return();
         }
 
@@ -1548,21 +1542,6 @@ namespace MindTouch.Dream {
                         }
                     }
 
-                }
-            }
-
-            //attach default pubsub service plug
-            if(_hostpubsub != null) {
-                if(config["uri.pubsub"].ListLength == 0) {
-                    config.Elem("uri.pubsub", _hostpubsub);
-
-                    // get publish's internal access key
-                    DreamCookieJar cookies = Cookies;
-                    lock(cookies) {
-                        foreach(DreamCookie cookie in cookies.Fetch(_hostpubsub.Uri)) {
-                            config.Add(cookie.AsSetCookieDocument);
-                        }
-                    }
                 }
             }
 

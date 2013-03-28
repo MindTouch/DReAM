@@ -137,15 +137,6 @@
     <Compile Include="dream\DreamServiceRegistrationBuilder.cs" />
     <Compile Include="dream\IDreamServiceConfigurationBuilder.cs" />
     <Compile Include="dream\RegistrationInspector.cs" />
-    <Compile Include="dream\services\PubSub\MemoryPubsubDispatchQueue.cs" />
-    <Compile Include="dream\services\PubSub\MemoryPubSubDispatchQueueRepository.cs" />
-    <Compile Include="dream\services\PubSub\DispatchItemSerializer.cs" />
-    <Compile Include="dream\services\PubSub\PersistentPubsubDispatchQueue.cs" />
-    <Compile Include="dream\services\PubSub\DispatchItem.cs" />
-    <Compile Include="dream\services\PubSub\ImmediatePubSubDispatchQueue.cs" />
-    <Compile Include="dream\services\PubSub\IPubSubDispatchQueueRepository.cs" />
-    <Compile Include="dream\services\PubSub\IPubSubDispatchQueue.cs" />
-    <Compile Include="dream\services\PubSub\PersistentPubSubDispatchQueueRepository.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
     <Compile Include="IO\ChunkedMemoryStream.cs" />
     <Compile Include="Numeric.cs" />
@@ -167,13 +158,6 @@
     <Compile Include="Collections\ExpiringDictionary.cs" />
     <Compile Include="Collections\ExpiringHashSet.cs" />
     <Compile Include="Collections\ITransactionalQueue.cs" />
-    <Compile Include="dream\services\PubSub\Dispatcher.cs" />
-    <Compile Include="dream\services\PubSub\DispatcherConfig.cs" />
-    <Compile Include="dream\services\PubSub\DispatcherEvent.cs" />
-    <Compile Include="dream\services\PubSub\DispatcherRecipient.cs" />
-    <Compile Include="dream\services\PubSub\IPubSubDispatcher.cs" />
-    <Compile Include="dream\services\PubSub\PubSubSubscription.cs" />
-    <Compile Include="dream\services\PubSub\PubSubSubscriptionSet.cs" />
     <Compile Include="dream\XDocAutofacContainerConfigurator.cs" />
     <Compile Include="Collections\LockFreeItemConsumerQueue.cs" />
     <Compile Include="Collections\ProcessingQueue.cs" />
@@ -198,9 +182,6 @@
     <Compile Include="Data\DataCommand.cs" />
     <Compile Include="Data\DataFactory.cs" />
     <Compile Include="Data\IDataCommand.cs" />
-    <Compile Include="Data\IDocStore.cs" />
-    <Compile Include="Data\MysqlDocStore.cs" />
-    <Compile Include="Data\MysqlDocStoreManager.cs" />
     <Compile Include="dream\attributes.cs" />
     <Compile Include="plug\PlugEx.cs" />
     <Compile Include="system\DebugUtil.cs" />
@@ -249,7 +230,6 @@
     <Compile Include="dream\dreamutil.cs" />
     <Compile Include="dream\exceptions.cs" />
     <Compile Include="dream\mimetype.cs" />
-    <Compile Include="dream\services\PubSubService.cs" />
     <Compile Include="dream\XUriChildMap.cs" />
     <Compile Include="IO\MultiFileQueueStream.cs" />
     <Compile Include="IO\IQueueStream.cs" />

@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2011 MindTouch, Inc.
+ * Copyright (C) 2006-2013 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
  * For community documentation and downloads visit wiki.developer.mindtouch.com;
@@ -23,7 +23,6 @@ using System;
 using Autofac;
 using Autofac.Builder;
 using Autofac.Core;
-using Autofac.Core.Registration;
 using MindTouch.Xml;
 using NUnit.Framework;
 

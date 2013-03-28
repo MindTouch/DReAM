@@ -1,6 +1,6 @@
 ﻿/*
  * MindTouch
- * Copyright (c) 2006-2010 MindTouch Inc.
+ * Copyright (c) 2006-2013 MindTouch Inc.
  * http://mindtouch.com
  *
  * This file and accompanying files are licensed under the 
