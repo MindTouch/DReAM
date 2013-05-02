@@ -754,10 +754,11 @@ namespace MindTouch.Dream {
         internal Yield PostStatusAlias(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             lock(_aliases)
                 foreach(var alias in request.ToDocument()["uri.alias"]) {
-                    var uri = alias.AsUri;
-                    if(uri == null) {
+                    var uriText = alias.AsText;
+                    if(string.IsNullOrEmpty(uriText)) {
                         continue;
                     }
+                    var uri = new XUri(uriText);
                     _aliases[uri] = uri;
                 }
             response.Return(DreamMessage.Ok());
