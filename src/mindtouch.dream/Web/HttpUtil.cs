@@ -221,10 +221,15 @@ namespace MindTouch.Web {
                 // extract authorization data
                 var value = header.Split(new[] { ' ' }, 2);
                 if((value.Length == 2) && value[0].EqualsInvariantIgnoreCase("Basic")) {
-                    var userPwd = Encoding.UTF8.GetString(Convert.FromBase64String(value[1])).Split(new[] { ':' }, 2);
-                    username = userPwd[0];
-                    password = (userPwd.Length > 1) ? userPwd[1] : string.Empty;
-                    return true;
+                    try {
+                        var userPwd = Encoding.UTF8.GetString(Convert.FromBase64String(value[1])).Split(new[] { ':' }, 2);
+                        username = userPwd[0];
+                        password = (userPwd.Length > 1) ? userPwd[1] : string.Empty;
+                        return true;
+                    } catch {
+                        
+                        // unable to decode authorization header
+                    }
                 }
             }
             return false;
