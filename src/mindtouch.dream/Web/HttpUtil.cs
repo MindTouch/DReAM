@@ -227,8 +227,7 @@ namespace MindTouch.Web {
                         password = (userPwd.Length > 1) ? userPwd[1] : string.Empty;
                         return true;
                     } catch {
-                        
-                        // unable to decode authorization header
+                        throw new InvalidHttpAuthorizationHeader();
                     }
                 }
             }
@@ -275,10 +274,12 @@ namespace MindTouch.Web {
                     // add language option
                     choices.Add(new Tuplet<string, double>(name, quality));
                 }
+
+                // reverse order sort based on quality
                 choices.Sort((left, right) => Math.Sign(right.Item2 - left.Item2));
 
                 // find the first acceptable language
-                foreach(var t in choices) {
+                foreach(var choice in choices) {
 
                     // check for wildcard
                     if(choices[0].Item1 == "*") {
@@ -286,7 +287,7 @@ namespace MindTouch.Web {
                     }
 
                     // expand language to full culture
-                    var culture = CultureUtil.GetNonNeutralCulture(t.Item1);
+                    var culture = CultureUtil.GetNonNeutralCulture(choice.Item1);
                     if(culture != null) {
                         return culture;
                     }

@@ -290,6 +290,7 @@
     <Compile Include="Threading\SynchronizationDispatchQueue.cs" />
     <Compile Include="Threading\Timer\GlobalClock.cs" />
     <Compile Include="Web\HttpUtil.cs" />
+    <Compile Include="Web\InvalidHttpAuthorizationHeader.cs" />
     <Compile Include="Xml\XAtom.cs" />
     <Compile Include="Xml\XDoc.cs" />
     <Compile Include="Xml\XDocCop.cs" />
