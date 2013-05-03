@@ -52,36 +52,36 @@ namespace MindTouch.Web {
         /// <param name="key">Header Key.</param>
         /// <param name="value">Header Value.</param>
         public static void AddHeader(this HttpWebRequest request, string key, string value) {
-            if(string.Compare(key, DreamHeaders.ACCEPT, true) == 0) {
+            if(string.Compare(key, DreamHeaders.ACCEPT, StringComparison.OrdinalIgnoreCase) == 0) {
                 request.Accept = value;
-            } else if(string.Compare(key, DreamHeaders.CONNECTION, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.CONNECTION, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // ignored: set automatically
                 //request.Connection = value;
-            } else if(string.Compare(key, DreamHeaders.CONTENT_LENGTH, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.CONTENT_LENGTH, StringComparison.OrdinalIgnoreCase) == 0) {
                 request.ContentLength = long.Parse(value);
-            } else if(string.Compare(key, DreamHeaders.CONTENT_TYPE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.CONTENT_TYPE, StringComparison.OrdinalIgnoreCase) == 0) {
                 request.ContentType = value;
-            } else if(string.Compare(key, DreamHeaders.EXPECT, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.EXPECT, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // ignored: set automatically
                 // request.Expect = value;
-            } else if(string.Compare(key, DreamHeaders.DATE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.DATE, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // ignored: set automatically
-            } else if(string.Compare(key, DreamHeaders.HOST, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.HOST, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // ignored: set automatically
-            } else if(string.Compare(key, DreamHeaders.IF_MODIFIED_SINCE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.IF_MODIFIED_SINCE, StringComparison.OrdinalIgnoreCase) == 0) {
                 request.IfModifiedSince = DateTimeUtil.ParseInvariant(value);
-            } else if(string.Compare(key, DreamHeaders.RANGE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.RANGE, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // read range-specifier, with range (e.g. "bytes=500-999")
-                Match m = _rangeRegex.Match(value);
+                var m = _rangeRegex.Match(value);
                 if(m.Success) {
-                    int from = int.Parse(m.Groups["from"].Value);
-                    int to = m.Groups["to"].Success ? int.Parse(m.Groups["to"].Value) : -1;
-                    string rangeSpecifier = m.Groups["rangeSpecifier"].Success ? m.Groups["rangeSpecifier"].Value : null;
+                    var from = int.Parse(m.Groups["from"].Value);
+                    var to = m.Groups["to"].Success ? int.Parse(m.Groups["to"].Value) : -1;
+                    var rangeSpecifier = m.Groups["rangeSpecifier"].Success ? m.Groups["rangeSpecifier"].Value : null;
                     if((rangeSpecifier != null) && (to >= 0)) {
                         request.AddRange(rangeSpecifier, from, to);
                     } else if(rangeSpecifier != null) {
@@ -92,26 +92,26 @@ namespace MindTouch.Web {
                         request.AddRange(from);
                     }
                 }
-            } else if(string.Compare(key, DreamHeaders.REFERER, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.REFERER, StringComparison.OrdinalIgnoreCase) == 0) {
                 request.Referer = value;
-            } else if(string.Compare(key, DreamHeaders.PROXY_CONNECTION, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.PROXY_CONNECTION, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // TODO (steveb): not implemented
 #if DEBUG
                 throw new NotImplementedException("missing code");
 #endif
-            } else if(string.Compare(key, DreamHeaders.TRANSFER_ENCODING, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.TRANSFER_ENCODING, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // TODO (steveb): not implemented
 #if DEBUG
                 throw new NotImplementedException("missing code");
 #endif
-            } else if(string.Compare(key, DreamHeaders.USER_AGENT, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.USER_AGENT, StringComparison.OrdinalIgnoreCase) == 0) {
                 request.UserAgent = value;
-            } else if(string.Compare(key, DreamHeaders.ETAG, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.ETAG, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: ETAG needs to be a quoted string, so quote if it doesn't look quoted already
-                if(value.StartsWith("\"") || value.StartsWith("'")) {
+                if(value.StartsWithInvariant("\"") || value.StartsWithInvariant("'")) {
                     request.Headers.Add(key, value);
                 } else {
                     request.Headers.Add(key, "\"" + value + "\"");
@@ -128,58 +128,59 @@ namespace MindTouch.Web {
         /// <param name="key">Header Key.</param>
         /// <param name="value">Header Value.</param>
         public static void AddHeader(this HttpListenerResponse response, string key, string value) {
-            if(string.Compare(key, DreamHeaders.ACCEPT, true) == 0) {
+            if(string.Compare(key, DreamHeaders.ACCEPT, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.CONNECTION, true) == 0) {
+            }
+            if(string.Compare(key, DreamHeaders.CONNECTION, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: this header is automatically set, just ignore it
                 // throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.CONTENT_LENGTH, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.CONTENT_LENGTH, StringComparison.OrdinalIgnoreCase) == 0) {
                 response.ContentLength64 = long.Parse(value);
-            } else if(string.Compare(key, DreamHeaders.CONTENT_ENCODING, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.CONTENT_ENCODING, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: not required by WebHeaderCollection, but present in HttpWebResponse
                 response.Headers[DreamHeaders.CONTENT_ENCODING] = value;
-            } else if(string.Compare(key, DreamHeaders.CONTENT_TYPE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.CONTENT_TYPE, StringComparison.OrdinalIgnoreCase) == 0) {
                 response.ContentType = value;
-            } else if(string.Compare(key, DreamHeaders.EXPECT, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.EXPECT, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.DATE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.DATE, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: this header is automatically set, just ignore it
                 // throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.HOST, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.HOST, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.IF_MODIFIED_SINCE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.IF_MODIFIED_SINCE, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.LOCATION, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.LOCATION, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: not required by WebHeaderCollection, but present in HttpWebResponse
                 response.RedirectLocation = value;
-            } else if(string.Compare(key, DreamHeaders.RANGE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.RANGE, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.REFERER, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.REFERER, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.PROXY_CONNECTION, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.PROXY_CONNECTION, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // TODO (steveb): not implemented
 #if DEBUG
                 throw new NotImplementedException("missing code");
 #endif
-            } else if(string.Compare(key, DreamHeaders.TRANSFER_ENCODING, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.TRANSFER_ENCODING, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: this header is automatically set, just ignore it
                 // throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.USER_AGENT, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.USER_AGENT, StringComparison.OrdinalIgnoreCase) == 0) {
                 throw new ArgumentException(key);
-            } else if(string.Compare(key, DreamHeaders.AUTHENTICATE, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.AUTHENTICATE, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // NOTE (steveb): we didn't have a choice here; we have to be able to set 'WWW-Authenticate', but WebHeaderCollection won't let us any other way
                 UnsafeAddHeader(response.Headers, DreamHeaders.AUTHENTICATE, value);
-            } else if(string.Compare(key, DreamHeaders.ETAG, true) == 0) {
+            } else if(string.Compare(key, DreamHeaders.ETAG, StringComparison.OrdinalIgnoreCase) == 0) {
 
                 // special case: ETAG needs to be a quoted string, so quote if it doesn't look quoted already
-                if(value.StartsWith("\"") || value.StartsWith("'")) {
+                if(value.StartsWithInvariant("\"") || value.StartsWithInvariant("'")) {
                     response.AddHeader(key, value);
                 } else {
                     response.AddHeader(key, "\"" + value + "\"");
@@ -207,23 +208,26 @@ namespace MindTouch.Web {
 
             // check if a user/password pair was provided in the URI
             if(!string.IsNullOrEmpty(uri.UserInfo)) {
-                string[] userPwd = uri.UserInfo.Split(new char[] { ':' }, 2);
+                var userPwd = uri.UserInfo.Split(new[] { ':' }, 2);
                 username = XUri.Decode(userPwd[0]);
                 password = XUri.Decode((userPwd.Length > 1) ? userPwd[1] : string.Empty);
                 return true;
-            } else {
+            }
 
-                // check if authorization is in the request header
-                string header = headers[DreamHeaders.AUTHORIZATION];
-                if(!string.IsNullOrEmpty(header)) {
+            // check if authorization is in the request header
+            var header = headers[DreamHeaders.AUTHORIZATION];
+            if(!string.IsNullOrEmpty(header)) {
 
-                    // extract authorization data
-                    string[] value = header.Split(new char[] { ' ' }, 2);
-                    if((value.Length == 2) && StringUtil.EqualsInvariantIgnoreCase(value[0], "Basic")) {
-                        string[] userPwd = Encoding.UTF8.GetString(Convert.FromBase64String(value[1])).Split(new char[] { ':' }, 2);
+                // extract authorization data
+                var value = header.Split(new[] { ' ' }, 2);
+                if((value.Length == 2) && value[0].EqualsInvariantIgnoreCase("Basic")) {
+                    try {
+                        var userPwd = Encoding.UTF8.GetString(Convert.FromBase64String(value[1])).Split(new[] { ':' }, 2);
                         username = userPwd[0];
                         password = (userPwd.Length > 1) ? userPwd[1] : string.Empty;
                         return true;
+                    } catch {
+                        throw new InvalidHttpAuthorizationHeader();
                     }
                 }
             }
@@ -237,7 +241,7 @@ namespace MindTouch.Web {
         /// <param name="password">Password.</param>
         /// <returns>Basic Authentication string.</returns>
         public static string RenderBasicAuthentication(string username, string password) {
-            string credentials = XUri.Decode(username ?? string.Empty) + ":" + XUri.Decode(password ?? string.Empty);
+            var credentials = XUri.Decode(username ?? string.Empty) + ":" + XUri.Decode(password ?? string.Empty);
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(credentials));
         }
 
@@ -253,16 +257,16 @@ namespace MindTouch.Web {
                 // NOTE: we attempt to find the best acceptable language; format is: da, en-gb;q=0.8, en;q=0.7, *
 
                 // convert language header into sorted list of languages
-                List<Tuplet<string, double>> choices = new List<Tuplet<string, double>>();
-                foreach(string choice in header.Split(',')) {
-                    string[] parts = choice.Split(';');
-                    string name = parts[0].Trim();
+                var choices = new List<Tuplet<string, double>>();
+                foreach(var choice in header.Split(',')) {
+                    var parts = choice.Split(';');
+                    var name = parts[0].Trim();
 
                     // parse optional quality parameter
-                    double quality = (name == "*") ? 0.0 : 1.0;
+                    var quality = (name == "*") ? 0.0 : 1.0;
                     if((parts.Length == 2)) {
-                        string value = parts[1].Trim();
-                        if(value.StartsWith("q=")) {
+                        var value = parts[1].Trim();
+                        if(value.StartsWithInvariant("q=")) {
                             double.TryParse(value.Substring(2), out quality);
                         }
                     }
@@ -270,14 +274,12 @@ namespace MindTouch.Web {
                     // add language option
                     choices.Add(new Tuplet<string, double>(name, quality));
                 }
-                choices.Sort((left, right) => {
 
-                    // reverse order sort based on quality
-                    return Math.Sign(right.Item2 - left.Item2);
-                });
+                // reverse order sort based on quality
+                choices.Sort((left, right) => Math.Sign(right.Item2 - left.Item2));
 
                 // find the first acceptable language
-                for(int i = 0; i < choices.Count; ++i) {
+                foreach(var choice in choices) {
 
                     // check for wildcard
                     if(choices[0].Item1 == "*") {
@@ -285,7 +287,7 @@ namespace MindTouch.Web {
                     }
 
                     // expand language to full culture
-                    CultureInfo culture = CultureUtil.GetNonNeutralCulture(choices[i].Item1);
+                    var culture = CultureUtil.GetNonNeutralCulture(choice.Item1);
                     if(culture != null) {
                         return culture;
                     }
@@ -300,14 +302,14 @@ namespace MindTouch.Web {
         /// <param name="header">Header to be parsed.</param>
         /// <returns>Dictionary of header name value pairs.</returns>
         public static Dictionary<string, string> ParseNameValuePairs(string header) {
-            Dictionary<string, string> result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            int index = 0;
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var index = 0;
             string name;
             string value;
-            int count = 1;
+            var count = 1;
             while(ParseNameValue(out name, out value, header, ref index, false)) {
                 if(value == null) {
-                    result["#" + count.ToString()] = name;
+                    result["#" + count.ToInvariantString()] = name;
                     ++count;
                 }
                 result[name] = value;
@@ -316,7 +318,6 @@ namespace MindTouch.Web {
         }
 
         private static bool ParseNameValue(out string name, out string value, string text, ref int index, bool useCommaAsSeparator) {
-            name = null;
             value = null;
             SkipWhitespace(text, ref index);
             if(!ParseWord(out name, text, ref index)) {
@@ -324,10 +325,10 @@ namespace MindTouch.Web {
             }
             SkipWhitespace(text, ref index);
             if(MatchToken("=", text, ref index)) {
-                int useCommaAsSeparatorStartingAtOffset = (useCommaAsSeparator ? 0 : int.MaxValue);
+                var useCommaAsSeparatorStartingAtOffset = (useCommaAsSeparator ? 0 : int.MaxValue);
 
                 // NOTE (steveb): 'expires' can contain commas, but cannot be quoted; so we need skip some characters when we find it before we allows commas again
-                if(useCommaAsSeparator && StringUtil.EqualsInvariantIgnoreCase(name, "expires")) {
+                if(useCommaAsSeparator && name.EqualsInvariantIgnoreCase("expires")) {
                     useCommaAsSeparatorStartingAtOffset = 6;
                 }
 
@@ -344,31 +345,22 @@ namespace MindTouch.Web {
             return true;
         }
 
-        private static bool SkipWhitespace(string text, ref int index) {
-
-            // skip whitespace
+        private static void SkipWhitespace(string text, ref int index) {
             while((index < text.Length) && char.IsWhiteSpace(text[index])) {
                 ++index;
             }
-            return true;
         }
 
-        private static bool SkipSemiColon(string text, ref int index) {
-
-            // skip whitespace
+        private static void SkipSemiColon(string text, ref int index) {
             if((index < text.Length) && (text[index] == ';')) {
                 ++index;
             }
-            return true;
         }
 
-        private static bool SkipDelimiter(string text, ref int index) {
-
-            // skip whitespace
+        private static void SkipDelimiter(string text, ref int index) {
             if((index < text.Length) && ((text[index] == ',') || (text[index] == ';'))) {
                 ++index;
             }
-            return true;
         }
 
         private static bool MatchToken(string token, string text, ref int index) {
@@ -511,7 +503,7 @@ namespace MindTouch.Web {
                 parsed = parsed.AtAbsolutePath(rawpath);
             } catch {
                 // need to try to do an extra pass at encoding the uri, just in case
-                rawpath = _encodingFixUpRegex.Replace(rawpath, m => String.Format("%{0}", StringUtil.HexStringFromBytes(Encoding.ASCII.GetBytes((string)m.Value))));
+                rawpath = _encodingFixUpRegex.Replace(rawpath, m => String.Format("%{0}", StringUtil.HexStringFromBytes(Encoding.ASCII.GetBytes(m.Value))));
                 parsed = parsed.AtAbsolutePath(rawpath);
             }
             return parsed;
