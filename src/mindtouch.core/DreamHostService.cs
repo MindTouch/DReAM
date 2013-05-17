@@ -1590,7 +1590,7 @@ namespace MindTouch.Dream {
                     _features.Remove(uri);
                 }
                 _log.ErrorExceptionMethodCall(null, "StartService", (sid != null) ? (object)sid : (object)type.FullName);
-                string message = string.Format("service initialization failed: {0} ({1}))", uri, sid);
+                string message = string.Format("service initialization failed: {0} ({1})", uri, sid);
                 _log.Warn(message);
                 throw new DreamAbortException(r.Value);
             }
