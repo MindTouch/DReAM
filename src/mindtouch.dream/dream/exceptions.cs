@@ -236,6 +236,13 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <param name="message">Text message to use for <see cref="Exception.Message"/> and the internal <see cref="DreamMessage"/>.</param>
         public DreamBadRequestException(string message) : base(DreamMessage.BadRequest(message), message) { }
+
+        /// <summary>
+        /// Create a new instance for a <see cref="DreamStatus.BadRequest"/> condition.
+        /// </summary>
+        /// <param name="message">Text message to use for <see cref="Exception.Message"/> and the internal <see cref="DreamMessage"/>.</param>
+        /// <param name="innerException">Inner Exception</param>
+        public DreamBadRequestException(string message, Exception innerException) : base(DreamMessage.BadRequest(message), message, innerException) { }
     }
 
     /// <summary>
@@ -269,7 +276,7 @@ namespace MindTouch.Dream {
     /// <summary>
     /// Thrown at DreamFeature invocation if any of the arguments cannot be properly parsed from the incoming message.
     /// </summary>
-    public class FeatureArgumentParseException : Exception {
+    public class FeatureArgumentParseException : DreamBadRequestException {
 
         //--- Fields ---
 
