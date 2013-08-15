@@ -112,11 +112,10 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Auto_casting_path_parameter_with_invalid_value_returns_informative_500() {
+        public void Auto_casting_path_parameter_with_invalid_value_returns_informative_bad_request() {
             var response = _plug.At("sync", "noattr", "int", "abc").Get(new Result<DreamMessage>()).Wait();
-            Assert.AreEqual(DreamStatus.InternalError, response.Status);
+            Assert.AreEqual(DreamStatus.BadRequest, response.Status);
             var exception = response.ToDocument();
-            Assert.AreEqual("MindTouch.Dream.FeatureArgumentParseException", exception["type"].AsText);
             Assert.AreEqual("Cannot parse feature argument 'x'", exception["message"].AsText);
         }
 
