@@ -30,6 +30,7 @@ namespace MindTouch.Aws {
         public static readonly AwsEndpoint EU = new AwsEndpoint("EU", "http://s3-eu-west-1.amazonaws.com", "http://sqs.eu-west-1.amazonaws.com/");
         public static readonly AwsEndpoint AsiaPacificSingapore = new AwsEndpoint("ap-southeast-1", "http://s3-ap-southeast-1.amazonaws.com", "http://sqs.ap-southeast-1.amazonaws.com/");
         public static readonly AwsEndpoint AsiaPacificJapan = new AwsEndpoint("ap-northeast-1", "http://s3-ap-northeast-1.amazonaws.com", "http://sqs.ap-northeast-1.amazonaws.com/");
+        public static readonly AwsEndpoint ElasticMQ = new AwsEndpoint("elasticmq", "http://s3.amazonaws.com", "http://elasticmq:9324");
         public static readonly AwsEndpoint Default = USEast;
         private static readonly IDictionary<string, AwsEndpoint> _endpoints = new Dictionary<string, AwsEndpoint>();
 
@@ -41,6 +42,7 @@ namespace MindTouch.Aws {
             _endpoints.Add(EU.Name, EU);
             _endpoints.Add(AsiaPacificSingapore.Name, AsiaPacificSingapore);
             _endpoints.Add(AsiaPacificJapan.Name, AsiaPacificJapan);
+            _endpoints.Add(ElasticMQ.Name, ElasticMQ);
         }
 
         //--- Class Methods ---
