@@ -19,7 +19,7 @@
  * limitations under the License.
  */
 using System;
-using System.Threading;
+using System.Globalization;
 using Autofac;
 using log4net;
 using MindTouch.Tasking;
@@ -34,8 +34,6 @@ namespace MindTouch.Dream.Test {
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
-        private static int _port = 1024;
-        private static Random _random = new Random();
 
         //--- Extension Methods ---
         /// <summary>
@@ -183,9 +181,9 @@ namespace MindTouch.Dream.Test {
                 path = config["uri.public"].AsText;
             }
             for(var i = 1; i <= 10; i++) {
-                var port = GetPort();
+                var port = TestPortSource.GetAvailablePort();
                 var localhost = string.Format("http://localhost:{0}{1}", port, path);
-                UpdateElement(config, "http-port", port.ToString());
+                UpdateElement(config, "http-port", port.ToString(CultureInfo.InvariantCulture));
                 UpdateElement(config, "uri.public", localhost);
                 var apikey = config["apikey"].Contents;
                 if(string.IsNullOrEmpty(apikey)) {
@@ -205,20 +203,6 @@ namespace MindTouch.Dream.Test {
             }
             throw new InvalidOperationException("Unable to create a new host after 10 attempts");
         }
-
-        private static int GetPort() {
-            var increment = _random.Next(20);
-            var port = Interlocked.Add(ref _port, increment);
-            if(port > 30000) {
-
-                // we don't care if it succeeds or fails, since failure means that someone else
-                // has already succeeded at resetting the port and we can call GetPort again.
-                Interlocked.CompareExchange(ref _port, 1024, port);
-                return GetPort();
-            }
-            return port;
-        }
-
         /// <summary>
         /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
         /// </summary>

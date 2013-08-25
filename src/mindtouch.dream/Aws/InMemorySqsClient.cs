@@ -104,6 +104,7 @@ namespace MindTouch.Aws {
 
         //--- Fields ---
         private readonly Dictionary<string, List<QueueEntry>> _queues = new Dictionary<string, List<QueueEntry>>();
+        private readonly Random _random = new Random();
         private ulong _messageCounter;
         private bool _isDisposed;
 
@@ -179,6 +180,7 @@ namespace MindTouch.Aws {
                 lock(msgQueue) {
                     entries = msgQueue
                         .Where(x => x.VisibleTime <= now)
+                        .OrderBy(x => _random.Next())
                         .Take(maxMessages)
                         .ToArray();
                     foreach(var entry in entries) {
