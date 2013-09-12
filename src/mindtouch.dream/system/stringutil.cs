@@ -78,7 +78,7 @@ namespace System {
         private static RNGCryptoServiceProvider _generator = new RNGCryptoServiceProvider();
         private static Dictionary<string, Sgml.Entity> _literals;
         private static Dictionary<string, string> _entities;
-        private static Regex _specialSymbolRegEx = new Regex("[&<>\x22\u0080-\uFFFF]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static Regex _specialSymbolRegEx = new Regex("[&<>\x00\x22\u0080-\uFFFF]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static Regex _htmlEntitiesRegEx = new Regex("&(?<value>#(x[a-f0-9]+|[0-9]+)|[a-z0-9]+);", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         //--- Class Constructor ---
@@ -266,6 +266,8 @@ namespace System {
             return _specialSymbolRegEx.Replace(text, m => {
                 string v = m.Groups[0].Value;
                 switch(v) {
+                case "\0":
+                    return "";
                 case "&":
                     return "&amp;";
                 case "<":
@@ -281,7 +283,7 @@ namespace System {
                 if(useEntityNames && LiteralNameLookup.TryGetValue(v, out e)) {
                     return "&" + e.Name + ";";
                 }
-                return (encoding == Encoding.ASCII) ? "&#" + (int)v[0] + ";" : v;
+                return Encoding.ASCII.Equals(encoding) ? "&#" + (int)v[0] + ";" : v;
             }, int.MaxValue);
         }
 
