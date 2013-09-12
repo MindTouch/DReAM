@@ -166,7 +166,7 @@ namespace MindTouch {
         public static IEnumerable<uint> CommaDelimitedToUInt(this string commaDelimited) {
             return string.IsNullOrEmpty(commaDelimited)
                 ? new uint[0]
-                : commaDelimited.Split(',').Select(x => uint.Parse(x)).ToArray();
+                : commaDelimited.Split(',').Select(uint.Parse).ToArray();
         }
 
         /// <summary>
@@ -177,7 +177,7 @@ namespace MindTouch {
         public static IEnumerable<int> CommaDelimitedToInt(this string commaDelimited) {
             return string.IsNullOrEmpty(commaDelimited)
                 ? new int[0]
-                : commaDelimited.Split(',').Select(x => int.Parse(x)).ToArray();
+                : commaDelimited.Split(',').Select(int.Parse).ToArray();
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace MindTouch {
         public static IEnumerable<ulong> CommaDelimitedToULong(this string commaDelimited) {
             return string.IsNullOrEmpty(commaDelimited)
                 ? new ulong[0]
-                : commaDelimited.Split(',').Select(x => ulong.Parse(x)).ToArray();
+                : commaDelimited.Split(',').Select(ulong.Parse).ToArray();
         }
 
         /// <summary>
@@ -199,7 +199,7 @@ namespace MindTouch {
         public static IEnumerable<long> CommaDelimitedToLong(this string commaDelimited) {
             return string.IsNullOrEmpty(commaDelimited)
                 ? new long[0]
-                : commaDelimited.Split(',').Select(x => long.Parse(x)).ToArray();
+                : commaDelimited.Split(',').Select(long.Parse).ToArray();
         }
     }
 }
