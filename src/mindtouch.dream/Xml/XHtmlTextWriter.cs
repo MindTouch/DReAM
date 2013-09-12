@@ -29,35 +29,32 @@ namespace MindTouch.Xml {
     internal class XHtmlTextWriter : XmlTextWriter {
 
         //--- Class Fields --
-        private static readonly string[] _emptyElements = new[] { "area", "atopara", "audioscopebasefont", "base", "br", "choose", "col", "frame", "hr", "img", "isindex", "keygen", "left", "limittext", "link", "meta", "nextid", "of", "over", "param", "range", "right", "spacer", "spot", "tab", "wbr" };
-        private static readonly string[] _cdataElements = new[] { "script", "style" };
+        private static readonly string[] _emptyElements = { "area", "atopara", "audioscopebasefont", "base", "br", "choose", "col", "frame", "hr", "img", "isindex", "keygen", "left", "limittext", "link", "meta", "nextid", "of", "over", "param", "range", "right", "spacer", "spot", "tab", "wbr" };
+        private static readonly string[] _cdataElements = { "script", "style" };
 
         //--- Fields ---
         private readonly Stack<string> _elements = new Stack<string>();
         private bool _inAttribute;
         private bool _hasCData;
-        private readonly Encoding _encoding;
         private readonly bool _useEntityNames;
 
         //--- Constructors ---
         public XHtmlTextWriter(string filename, Encoding encoding, bool useEntityNames) : base(filename, encoding) {
-            _encoding = encoding;
             _useEntityNames = useEntityNames;
         }
 
         public XHtmlTextWriter(Stream w, Encoding encoding, bool useEntityNames) : base(w, encoding) {
-            _encoding = encoding;
             _useEntityNames = useEntityNames;
         }
 
         public XHtmlTextWriter(TextWriter w, bool useEntityNames) : base(w) {
-            _encoding = w.Encoding;
             _useEntityNames = useEntityNames;
         }
 
         //--- Methods ---
         public override void WriteStartDocument() {
-            return;
+
+            // nothing to do
         }
 
         public override void WriteStartAttribute(string prefix, string localName, string ns) {
@@ -90,7 +87,7 @@ namespace MindTouch.Xml {
                 _hasCData = false;
                 base.WriteRaw("/*]]>*/");
             }
-            string element = _elements.Pop();
+            var element = _elements.Pop();
             if(Array.BinarySearch(_emptyElements, element.ToLowerInvariant()) >= 0) {
                 base.WriteEndElement();
             } else {
@@ -113,7 +110,7 @@ namespace MindTouch.Xml {
                     _hasCData = true;
                     base.WriteRaw("/*<![CDATA[*/");
                 }
-                base.WriteRaw(text);
+                base.WriteRaw(XDoc.RemoveInvalidXmlChars(text));
             }
         }
 
@@ -122,7 +119,7 @@ namespace MindTouch.Xml {
                 base.WriteCData(text);
             } else {
                 base.WriteRaw("/*<![CDATA[*/");
-                base.WriteRaw(text);
+                base.WriteRaw(XDoc.RemoveInvalidXmlChars(text));
                 base.WriteRaw("/*]]>*/");
             }
         }

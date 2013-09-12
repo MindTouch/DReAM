@@ -62,6 +62,20 @@ namespace MindTouch.Xml {
         /// </summary>
         public const string NS_XML = "http://www.w3.org/XML/1998/namespace";
 
+        //--- Types ---
+        private sealed class XmlRemoveInvalidXmlCharsTextWriter : XmlTextWriter {
+
+            //--- Constructors ---
+            public XmlRemoveInvalidXmlCharsTextWriter(TextWriter writer) : base(writer) { }
+
+            public XmlRemoveInvalidXmlCharsTextWriter(Stream stream, Encoding encoding) : base(stream, encoding) { }
+
+            //--- Methods ---
+            public override void WriteString(string text) {
+                base.WriteString(RemoveInvalidXmlChars(text));
+            }
+        }
+
         //--- Class Fields ---
 
         /// <summary>
@@ -271,6 +285,14 @@ namespace MindTouch.Xml {
         internal static XmlDocument NewXmlDocument() {
             XmlDocument result = new XmlDocument(XmlNameTable) { PreserveWhitespace = true, XmlResolver = null };
             return result;
+        }
+
+        internal static string RemoveInvalidXmlChars(string value) {
+            return value.Replace("\0", "");
+        }
+
+        private static string RemoveInvalidXmlEntities(string value) {
+            return value.Replace("&#x0;", "");
         }
 
         //--- Fields ---
@@ -2644,7 +2666,7 @@ namespace MindTouch.Xml {
                     }
                 }
             }
-            result.Append(_root.OuterXml);
+            result.Append(RemoveInvalidXmlEntities(_root.OuterXml));
             return result.ToString();
         }
 
@@ -2681,7 +2703,7 @@ namespace MindTouch.Xml {
                 }
 
                 // serialize XML document to writer
-                XmlWriter writer = new XmlTextWriter(stream, encoding);
+                XmlWriter writer = new XmlRemoveInvalidXmlCharsTextWriter(stream, encoding);
                 if(ReferenceEquals(_root.ParentNode, _doc)) {
                     var decl = _doc.FirstChild as XmlDeclaration;
                     if(decl != null) {
@@ -2717,7 +2739,7 @@ namespace MindTouch.Xml {
                 }
             }
             StringWriter result = new StringWriter();
-            using(XmlTextWriter xmlWriter = new XmlTextWriter(result)) {
+            using(var xmlWriter = new XmlRemoveInvalidXmlCharsTextWriter(result)) {
                 xmlWriter.Formatting = Formatting.Indented;
                 xmlWriter.WriteNode(new XmlNodeReader(top ? _root.OwnerDocument : _root), true);
             }
@@ -2742,7 +2764,7 @@ namespace MindTouch.Xml {
             var compact = new XmlDocument();
             compact.PreserveWhitespace = false;
             compact.Load(new XmlNodeReader(top ? _root.OwnerDocument : _root));
-            return compact.OuterXml;
+            return RemoveInvalidXmlEntities(compact.OuterXml);
         }
 
         /// <summary>
