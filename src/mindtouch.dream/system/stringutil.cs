@@ -422,6 +422,85 @@ namespace System {
         }
 
         /// <summary>
+        /// Replace special characters with a regular space or an empty string where appropriate
+        /// </summary>
+        /// <param name="text">String to process</param>
+        /// <returns>Escaped string</returns>
+        public static string RemoveSpecialChars(string text) {
+            return text.ReplaceAll(
+
+                // 00A0: No-break space -> space
+                "\u00A0", " ",
+
+                // 00AD: Soft-hypen -> removed
+                "\u00AD", "",
+
+                // 1806: Mongolian todo soft-hyphen -> removed
+                "\u1806", "",
+
+                // 1680: Ogham separator -> space
+                "\u1680", " ",
+
+                // 180E: Mongolian vowel separator -> space
+                "\u180E", " ",
+
+                // 2000: En quad -> space
+                "\u2000", " ",
+
+                // 2001: Em quad -> space
+                "\u2001", " ",
+
+                // 2002: En space -> space
+                "\u2002", " ",
+
+                // 2003: Em space -> space
+                "\u2003", " ",
+
+                // 2004: Three-per-em space -> space
+                "\u2004", " ",
+
+                // 2005: Four-per-em space -> space
+                "\u2005", " ",
+
+                // 2006: Six-per-em space -> space
+                "\u2006", " ",
+
+                // 2007: Figure space -> space
+                "\u2007", " ",
+
+                // 2008: Punctuation space -> space
+                "\u2008", " ",
+
+                // 2009: Thin space -> space
+                "\u2009", " ",
+
+                // 200A: Hair space -> space
+                "\u200A", " ",
+
+                // 200B: Zero-width space -> removed
+                "\u200B", "",
+
+                // 200C: Zero-width non-joiner -> removed
+                "\u200C", "",
+
+                // 200D: Zero-width joiner -> removed
+                "\u200D", "",
+
+                // 202F: Narrow no-break space -> space
+                "\u202F", " ",
+
+                // 205F: Medium math space -> space
+                "\u205F", " ",
+
+                // 2060: Word joiner -> remove
+                "\u2060", "",
+
+                // 3000: Ideographic space -> space
+                "\u3000", " "
+            );
+        }
+
+        /// <summary>
         /// Escape string and quote the results.
         /// </summary>
         /// <param name="text">Source string.</param>
