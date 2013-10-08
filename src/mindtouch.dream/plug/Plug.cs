@@ -76,8 +76,14 @@ namespace MindTouch.Dream {
         private static log4net.ILog _log = LogUtils.CreateLog();
         private static List<IPlugEndpoint> _endpoints = new List<IPlugEndpoint>();
 
-        //--- Class Constructors ---
+        //--- Class Constructor ---
         static Plug() {
+
+            // read custom timeout value to use as default for plugs from app settings
+            double defaultTimeout;
+            if(double.TryParse(System.Configuration.ConfigurationManager.AppSettings["plug-default-timeout"], out defaultTimeout)) {
+                DEFAULT_TIMEOUT = TimeSpan.FromSeconds(defaultTimeout);
+            }
 
             // let's find all IPlugEndpoint derived, concrete classes
             foreach(Type type in typeof(Plug).Assembly.GetTypes()) {
