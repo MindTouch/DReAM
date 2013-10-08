@@ -130,6 +130,15 @@ namespace MindTouch.Tasking {
         protected static int _pendingCounter;
         private static LockFreeStack<AutoResetEvent> _resetEventStack = new LockFreeStack<AutoResetEvent>();
 
+        //--- Class Constructor ---
+        static AResult() {
+
+            // read custom timeout value to use as default for results from app settings
+            double defaultTimeout;
+            if(double.TryParse(System.Configuration.ConfigurationManager.AppSettings["result-default-timeout"], out defaultTimeout)) {
+                DEFAULT_TIMEOUT = TimeSpan.FromSeconds(defaultTimeout);
+            }
+        }
 
         //--- Class Properties ---
 
