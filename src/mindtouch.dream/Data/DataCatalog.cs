@@ -72,8 +72,10 @@ namespace MindTouch.Data {
 
         //--- Fields ---
         private readonly DataFactory _factory;
+        private readonly bool _verifyCatalog;
         private readonly string _connection;
         private readonly string _readonlyconnection;
+        private readonly string _catalogName;
 
         //--- Constructors ---
 
@@ -97,7 +99,7 @@ namespace MindTouch.Data {
         /// This constructor is deprecated, please use use the constructor requiring a connectionString instead
         /// </summary>
         [Obsolete("This constructor is deprecated, please use use the constructor requiring a connectionString instead")]
-        public DataCatalog(DataFactory factory, XDoc config) {
+        public DataCatalog(DataFactory factory, XDoc config, bool verifyCatalog = false) {
             if(factory == null) {
                 throw new ArgumentNullException("factory");
             }
@@ -105,26 +107,27 @@ namespace MindTouch.Data {
                 throw new ArgumentNullException("config");
             }
             _factory = factory;
+            _verifyCatalog = verifyCatalog;
 
             // compose connection string from config document
             string server = config["db-server"].AsText ?? "localhost";
             int port = config["db-port"].AsInt ?? 3306;
-            string catalog = config["db-catalog"].AsText;
+            _catalogName = config["db-catalog"].AsText;
             string user = config["db-user"].AsText;
             string password = config["db-password"].AsText ?? string.Empty;
             string options = config["db-options"].AsText;
-            if(string.IsNullOrEmpty(catalog)) {
+            if(string.IsNullOrEmpty(_catalogName)) {
                 throw new ArgumentNullException("config/catalog");
             }
             if(string.IsNullOrEmpty(user)) {
                 throw new ArgumentNullException("config/user");
             }
-            _connection = string.Format("Server={0};Port={1};Database={2};Uid={3};Pwd={4};{5}", server, port, catalog, user, password, options);
+            _connection = string.Format("Server={0};Port={1};Database={2};Uid={3};Pwd={4};{5}", server, port, _catalogName, user, password, options);
 
             // compose read-only connection string
             string readonly_server = config["db-readonly-server"].AsText ?? server;
             int readonly_port = config["db-readonly-port"].AsInt ?? port;
-            string readonly_catalog = config["db-readonly-catalog"].AsText ?? catalog;
+            string readonly_catalog = config["db-readonly-catalog"].AsText ?? _catalogName;
             string readonly_user = config["db-readonly-user"].AsText ?? user;
             string readonly_password = config["db-readonly-password"].AsText ?? password;
             string readonly_options = config["db-readonly-options"].AsText ?? options;
@@ -132,7 +135,7 @@ namespace MindTouch.Data {
         }
 
         //--- Properties ---
-        
+
         /// <summary>
         /// This property bypasses the safety measures provided by MindTouch.Data objects.  Please avoid using it if possible.
         /// </summary>
@@ -184,7 +187,7 @@ namespace MindTouch.Data {
             if(@readonly && string.IsNullOrEmpty(_readonlyconnection)) {
                 throw new DreamException("No read-only connection string has been defined.");
             }
-            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateQuery(query));
+            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateQuery(query), _verifyCatalog ? _catalogName : null);
         }
 
         IDataCommand IDataCatalog.NewQuery(string query, bool @readonly) {
@@ -216,7 +219,7 @@ namespace MindTouch.Data {
         /// <param name="readonly"><see langword="True"/> if the query is read-only.</param>
         /// <returns>Stored procedure command.</returns>
         public DataCommand NewProcedure(string name, bool @readonly) {
-            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateProcedure(name));
+            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateProcedure(name), _verifyCatalog ? _catalogName : null);
         }
 
         /// <summary>
@@ -239,6 +242,15 @@ namespace MindTouch.Data {
         internal void FireQueryFinished(IDataCommand cmd) {
             if(OnQueryFinished != null) {
                 OnQueryFinished(cmd);
+            }
+        }
+
+        public void VerifyCatalog(string catalog) {
+            if(!_verifyCatalog) {
+                return;
+            }
+            if(!_catalogName.EqualsInvariantIgnoreCase(catalog)) {
+                throw new InvalidOperationException(string.Format("[Verify Catalog] Database catalog does not match session catalog: {0} != {1}", _catalogName, catalog));
             }
         }
     }

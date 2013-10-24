@@ -181,12 +181,13 @@ namespace MindTouch.Data {
         //--- Fields ---
         private readonly DataFactory _factory;
         private readonly IDbCommand _command;
+        private readonly string _catalogName;
         private readonly string _connection;
         private readonly Stopwatch _stopWatch = new Stopwatch();
         private readonly DataCatalog _catalog;
 
         //--- Constructors ---
-        internal DataCommand(DataFactory factory, DataCatalog catalog, string connection, IDbCommand command) {
+        internal DataCommand(DataFactory factory, DataCatalog catalog, string connection, IDbCommand command, string catalogName) {
             if(factory == null) {
                 throw new ArgumentNullException("factory");
             }
@@ -202,6 +203,7 @@ namespace MindTouch.Data {
             _factory = factory;
             _connection = connection;
             _command = command;
+            _catalogName = catalogName;
             _catalog = catalog;
         }
 
@@ -315,6 +317,7 @@ namespace MindTouch.Data {
             _log.TraceMethodCall("Execute()", _command.CommandText);
             QueryStart();
             using(IDbConnection connection = _factory.OpenConnection(_connection)) {
+                VerifyConnectionCatalog(connection);
                 using(IDbCommand command = CreateExecutableCommand(connection)) {
                     try {
                         command.ExecuteNonQuery();
@@ -323,6 +326,22 @@ namespace MindTouch.Data {
                         throw;
                     } finally {
                         QueryFinished(command);
+                    }
+                }
+            }
+        }
+
+        private void VerifyConnectionCatalog(IDbConnection connection) {
+            if(string.IsNullOrEmpty(_catalogName)) {
+                return;
+            }
+            using(var command = connection.CreateCommand()) {
+                command.CommandText = "SELECT DATABASE()";
+                using(var reader = command.ExecuteReader()) {
+                    reader.Read();
+                    var database = reader.GetString(0);
+                    if(!_catalogName.EqualsInvariantIgnoreCase(database)) {
+                        throw new InvalidOperationException(string.Format("[Verify Catalog] Database catalog does not match command catalog: {0} != {1}", _catalogName, database));
                     }
                 }
             }
@@ -340,6 +359,7 @@ namespace MindTouch.Data {
             }
             QueryStart();
             using(IDbConnection connection = _factory.OpenConnection(_connection)) {
+                VerifyConnectionCatalog(connection);
                 using(IDbCommand command = CreateExecutableCommand(connection)) {
                     try {
                         using(IDataReader reader = command.ExecuteReader()) {
@@ -363,6 +383,7 @@ namespace MindTouch.Data {
             _log.TraceMethodCall("Read()", _command.CommandText);
             QueryStart();
             using(IDbConnection connection = _factory.OpenConnection(_connection)) {
+                VerifyConnectionCatalog(connection);
                 using(IDbCommand command = CreateExecutableCommand(connection)) {
                     try {
                         object value = command.ExecuteScalar();
@@ -464,6 +485,7 @@ namespace MindTouch.Data {
             _log.TraceMethodCall("ReadAs<T>()", typeof(T).FullName, _command.CommandText);
             QueryStart();
             using(IDbConnection connection = _factory.OpenConnection(_connection)) {
+                VerifyConnectionCatalog(connection);
                 using(IDbCommand command = CreateExecutableCommand(connection)) {
                     try {
                         object value = command.ExecuteScalar();
@@ -515,6 +537,7 @@ namespace MindTouch.Data {
             _log.TraceMethodCall("ReadAsDataSet()", _command.CommandText);
             DataSet result = new DataSet();
             using(IDbConnection connection = _factory.OpenConnection(_connection)) {
+                VerifyConnectionCatalog(connection);
                 using(IDbCommand command = CreateExecutableCommand(connection)) {
                     try {
                         _factory.CreateAdapter(command).Fill(result);
