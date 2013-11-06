@@ -1774,7 +1774,8 @@ namespace MindTouch.Dream {
                 stages.AddRange(_defaultEpilogues);
 
                 // create dream feature and add to service directory
-                DreamFeature feature = new DreamFeature(service, serviceUri, mainStageIndex, stages.ToArray(), verb, signature);
+                var paramAttributes = method.GetCustomAttributes(typeof(DreamFeatureParamAttribute), false).Cast<DreamFeatureParamAttribute>().ToArray();
+                DreamFeature feature = new DreamFeature(service, serviceUri, mainStageIndex, stages.ToArray(), verb, signature, paramAttributes);
                 directory.Add(feature.PathSegments, serviceUriSegmentsLength, feature);
             }
             return directory;
