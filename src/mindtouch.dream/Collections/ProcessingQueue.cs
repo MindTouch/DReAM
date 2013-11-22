@@ -160,8 +160,9 @@ namespace MindTouch.Collections {
         /// <param name="item">Storage location for the item to be removed.</param>
         /// <returns><see langword="True"/> if the dequeue succeeded.</returns>
         public bool TryDequeue(out T item) {
-            if(_inbox != null) {
-                return _inbox.TryDequeue(out item);
+            if((_inbox != null) && _inbox.TryDequeue(out item)) {
+                Interlocked.Increment(ref _capacity);
+                return true;
             }
             item = default(T);
             return false;
