@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-
+using MindTouch.Collections;
 using MindTouch.IO;
 using MindTouch.Tasking;
 using MindTouch.Web;
@@ -33,16 +33,21 @@ namespace MindTouch.Dream.Http {
 
     internal class HttpTransport : IPlugEndpoint {
 
+        //--- Constants ---
+
+        // TODO (steveb): make this configurable
+        private const int MAX_REQUEST_PARALELLISM = 50;
+
         //--- Types ---
         internal class ActivityState {
 
             //--- Fields ---
-            private object _key = new object();
+            private readonly object _key = new object();
             private Queue<string> _messages = new Queue<string>();
-            private IDreamEnvironment _env;
-            private string _verb;
-            private string _uri;
-            private string _hostname;
+            private readonly IDreamEnvironment _env;
+            private readonly string _verb;
+            private readonly string _uri;
+            private readonly string _hostname;
 
             //--- Constructors ---
             internal ActivityState(IDreamEnvironment env, string verb, string uri, string hostname) {
@@ -72,18 +77,19 @@ namespace MindTouch.Dream.Http {
         }
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
-        private IDreamEnvironment _env;
+        private readonly IDreamEnvironment _env;
         private XUri _uri;
-        private int _minSimilarity;
+        private readonly int _minSimilarity;
         private HttpListener _listener;
-        private string _sourceInternal;
-        private string _sourceExternal;
-        private string _serverSignature;
-        private AuthenticationSchemes _authenticationSheme;
+        private readonly string _sourceInternal;
+        private readonly string _sourceExternal;
+        private readonly string _serverSignature;
+        private readonly AuthenticationSchemes _authenticationSheme;
         private readonly string _dreamInParamAuthtoken;
+        private readonly ProcessingQueue<Tuple<HttpListener, HttpListenerContext>> _pendingRequestQueue;
 
         //--- Constructors ---
         public HttpTransport(IDreamEnvironment env, XUri uri, AuthenticationSchemes authenticationSheme, string dreamInParamAuthtoken) {
@@ -100,26 +106,22 @@ namespace MindTouch.Dream.Http {
             _sourceExternal = _uri.ToString();
             _authenticationSheme = authenticationSheme;
             _dreamInParamAuthtoken = dreamInParamAuthtoken;
+            _serverSignature = "Dream-HTTPAPI/" + DreamUtil.DreamVersion;
+            _pendingRequestQueue = new ProcessingQueue<Tuple<HttpListener, HttpListenerContext>>(RequestHandler, MAX_REQUEST_PARALELLISM);
         }
 
         //--- Properties ---
-        public string ServerSignature {
-            get {
-                if(_serverSignature == null) {
-                    _serverSignature = "Dream-HTTPAPI/" + DreamUtil.DreamVersion;
-                }
-                return _serverSignature;
-            }
-        }
+        public string ServerSignature { get { return _serverSignature; } }
 
         //--- Methods ---
         public void Startup() {
             _log.InfoMethodCall("Startup", _uri);
 
             // create listener and make it listen to the uri
-            _listener = new HttpListener();
-            _listener.IgnoreWriteExceptions = true;
-            _listener.AuthenticationSchemes = _authenticationSheme;
+            _listener = new HttpListener {
+                IgnoreWriteExceptions = true, 
+                AuthenticationSchemes = _authenticationSheme
+            };
             _listener.Prefixes.Add(_uri.ToString());
             try {
                 _listener.Start();
@@ -127,7 +129,7 @@ namespace MindTouch.Dream.Http {
                 _log.WarnExceptionFormat(x, "Unable to start listening on '{0}'", _uri);
                 throw;
             }
-            _listener.BeginGetContext(RequestHandler, _listener);
+            _listener.BeginGetContext(QueueRequest, _listener);
 
             // register plug factory for this uri
             Plug.AddEndpoint(this);
@@ -145,12 +147,15 @@ namespace MindTouch.Dream.Http {
             } catch(Exception e) {
                 _log.Debug("Shutdown", e);
             }
+
+            // empty out as many unprocessed requests as we can
+            Tuple<HttpListener, HttpListenerContext> context;
+            while(_pendingRequestQueue.TryDequeue(out context)) { }
         }
 
-        private void RequestHandler(IAsyncResult ar) {
+        private void QueueRequest(IAsyncResult ar) {
             HttpListenerContext httpContext = null;
-            Action<string> activity = null;
-            HttpListener listener = (HttpListener)ar.AsyncState;
+            var listener = (HttpListener)ar.AsyncState;
 
             // try to finish getting the current context
             try {
@@ -165,7 +170,7 @@ namespace MindTouch.Dream.Http {
                 return;
             }
             try {
-                listener.BeginGetContext(RequestHandler, listener);
+                listener.BeginGetContext(QueueRequest, listener);
             } catch(Exception e) {
                 _log.WarnExceptionFormat(e, "unable to re-aquire context, dropping out of request handler");
                 return;
@@ -175,60 +180,77 @@ namespace MindTouch.Dream.Http {
             if(httpContext == null) {
                 return;
             }
-            DreamMessage request = null;
+
+            // queue request for concurrent processing
+            _pendingRequestQueue.TryEnqueue(new Tuple<HttpListener, HttpListenerContext>(listener, httpContext));
+        }
+
+        private void RequestHandler(Tuple<HttpListener,HttpListenerContext> context, Action done) {
+            var listener = context.Item1;
+            var httpContext = context.Item2;
             try {
-
-                // finish listening for current context
-                string[] prefixes = new string[listener.Prefixes.Count];
-                listener.Prefixes.CopyTo(prefixes, 0);
-                XUri requestUri = HttpUtil.FromHttpContext(httpContext);
-                _log.DebugMethodCall("RequestHandler", httpContext.Request.HttpMethod, requestUri);
-
-                // create request message
-                request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
-                DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
-                requestUri = requestUri.AuthorizeDreamInParams(request, _dreamInParamAuthtoken);
-
-                // check if the request was forwarded through Apache mod_proxy
-                string hostname = requestUri.GetParam(DreamInParam.HOST, null) ?? request.Headers.ForwardedHost ?? request.Headers.Host ?? requestUri.HostPort;
-                activity = new ActivityState(_env, httpContext.Request.HttpMethod, httpContext.Request.Url.ToString(), hostname).Message;
-                activity("RequestHandler");
-
-                // process message
-                _env.UpdateInfoMessage(_sourceExternal, null);
-                string verb = httpContext.Request.HttpMethod;
-                _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue))
-                    .WhenDone(result => Coroutine.Invoke(ResponseHandler, request, result, httpContext, activity, new Result(TimeSpan.MaxValue)));
-            } catch(Exception ex) {
-                _log.ErrorExceptionMethodCall(ex, "RequestHandler");
-                if(request != null) {
-                    request.Close();
-                }
+                Action<string> activity = null;
+                DreamMessage request = null;
                 try {
-                    DreamMessage response = DreamMessage.InternalError(ex);
-                    httpContext.Response.StatusCode = (int)response.Status;
-                    Stream stream = response.ToStream();
-                    httpContext.Response.Headers.Clear();
-                    foreach(KeyValuePair<string, string> pair in response.Headers) {
-                        HttpUtil.AddHeader(httpContext.Response, pair.Key, pair.Value);
+
+                    // finish listening for current context
+                    var prefixes = new string[listener.Prefixes.Count];
+                    listener.Prefixes.CopyTo(prefixes, 0);
+                    var requestUri = HttpUtil.FromHttpContext(httpContext);
+                    _log.DebugMethodCall("RequestHandler", httpContext.Request.HttpMethod, requestUri);
+
+                    // create request message
+                    request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
+                    DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
+                    requestUri = requestUri.AuthorizeDreamInParams(request, _dreamInParamAuthtoken);
+
+                    // check if the request was forwarded through Apache mod_proxy
+                    var hostname = requestUri.GetParam(DreamInParam.HOST, null) ?? request.Headers.ForwardedHost ?? request.Headers.Host ?? requestUri.HostPort;
+                    activity = new ActivityState(_env, httpContext.Request.HttpMethod, httpContext.Request.Url.ToString(), hostname).Message;
+                    activity("RequestHandler");
+
+                    // process message
+                    _env.UpdateInfoMessage(_sourceExternal, null);
+                    var verb = httpContext.Request.HttpMethod;
+                    _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue))
+                        .WhenDone(result => Coroutine.Invoke(ResponseHandler, request, result, httpContext, activity, done, new Result(TimeSpan.MaxValue)));
+                } catch(Exception ex) {
+                    try {
+                        _log.ErrorExceptionMethodCall(ex, "RequestHandler");
+                        if(request != null) {
+                            request.Close();
+                        }
+                        try {
+                            var response = DreamMessage.InternalError(ex);
+                            httpContext.Response.StatusCode = (int)response.Status;
+                            var stream = response.ToStream();
+                            httpContext.Response.Headers.Clear();
+                            foreach(var pair in response.Headers) {
+                                HttpUtil.AddHeader(httpContext.Response, pair.Key, pair.Value);
+                            }
+                            httpContext.Response.KeepAlive = false;
+                            var size = response.ContentLength;
+                            if(((size == -1) || (size > 0)) && (stream != Stream.Null)) {
+                                CopyStream(message => { }, stream, httpContext.Response.OutputStream, size, new Result<long>(DreamHostService.MAX_REQUEST_TIME)).Block();
+                            }
+                            httpContext.Response.OutputStream.Flush();
+                        } catch {
+                            httpContext.Response.StatusCode = (int)DreamStatus.InternalError;
+                        }
+                        httpContext.Response.Close();
+                        if(activity != null) {
+                            activity(null);
+                        }
+                    } finally {
+                        done();
                     }
-                    httpContext.Response.KeepAlive = false;
-                    long size = response.ContentLength;
-                    if(((size == -1) || (size > 0)) && (stream != Stream.Null)) {
-                        CopyStream(message => { }, stream, httpContext.Response.OutputStream, size, new Result<long>(DreamHostService.MAX_REQUEST_TIME)).Block();
-                    }
-                    httpContext.Response.OutputStream.Flush();
-                } catch {
-                    httpContext.Response.StatusCode = (int)DreamStatus.InternalError;
                 }
-                httpContext.Response.Close();
-                if(activity != null) {
-                    activity(null);
-                }
+            } catch {
+                done();
             }
         }
 
-        private Yield ResponseHandler(DreamMessage request, Result<DreamMessage> response, HttpListenerContext httpContext, Action<string> activity, Result result) {
+        private Yield ResponseHandler(DreamMessage request, Result<DreamMessage> response, HttpListenerContext httpContext, Action<string> activity, Action done, Result result) {
             DreamMessage item = null;
             request.Close();
             try {
@@ -249,18 +271,18 @@ namespace MindTouch.Dream.Http {
                 }
 
                 // create stream for response (this will force the creation of the 'Content-Length' header as well)
-                Stream stream = item.ToStream();
+                var stream = item.ToStream();
 
                 // copy headers
                 httpContext.Response.Headers.Clear();
-                foreach(KeyValuePair<string, string> pair in item.Headers) {
+                foreach(var pair in item.Headers) {
                     _log.TraceMethodCall("SendHttpResponse: Header", pair.Key, pair.Value);
                     HttpUtil.AddHeader(httpContext.Response, pair.Key, pair.Value);
                 }
 
                 // add set-cookie headers to response
                 if(item.HasCookies) {
-                    foreach(DreamCookie cookie in item.Cookies) {
+                    foreach(var cookie in item.Cookies) {
                         httpContext.Response.Headers.Add(DreamHeaders.SET_COOKIE, cookie.ToSetCookieHeader());
                     }
                 }
@@ -269,7 +291,7 @@ namespace MindTouch.Dream.Http {
                 httpContext.Response.KeepAlive = false;
 
                 // send message stream
-                long size = item.ContentLength;
+                var size = item.ContentLength;
                 if(((size == -1) || (size > 0)) && (stream != Stream.Null)) {
                     activity(string.Format("pre CopyStream ({0} bytes)", size));
                     yield return CopyStream(activity, stream, httpContext.Response.OutputStream, size, new Result<long>(DreamHostService.MAX_REQUEST_TIME)).CatchAndLog(_log);
@@ -281,22 +303,26 @@ namespace MindTouch.Dream.Http {
                 result.Return();
                 activity("end ResponseHandler");
             } finally {
-                activity(null);
-                if(item != null) {
-                    item.Close();
+                try {
+                    activity(null);
+                    if(item != null) {
+                        item.Close();
+                    }
+                    httpContext.Response.Close();
+                } finally {
+                    done();
                 }
-                httpContext.Response.Close();
             }
         }
 
         private Result<int> Read(Action<string> activity, Stream stream, byte[] buffer, int offset, int count, Result<int> result) {
 
             // asynchronously execute read operation
-            Result<IAsyncResult> inner = new Result<IAsyncResult>(TimeSpan.MaxValue);
+            var inner = new Result<IAsyncResult>(TimeSpan.MaxValue);
             inner.WhenDone(_unused => {
                 try {
                     activity(string.Format("pre {0}!EndRead", stream.GetType().FullName));
-                    int readCount = stream.EndRead(inner.Value);
+                    var readCount = stream.EndRead(inner.Value);
                     activity("post EndRead");
                     result.Return(readCount);
                 } catch(Exception e) {
@@ -320,7 +346,7 @@ namespace MindTouch.Dream.Http {
         private Result Write(Action<string> activity, Stream stream, byte[] buffer, int offset, int count, Result result) {
 
             // asynchronously execute read operation
-            Result<IAsyncResult> inner = new Result<IAsyncResult>(TimeSpan.MaxValue);
+            var inner = new Result<IAsyncResult>(TimeSpan.MaxValue);
             inner.WhenDone(_unused => {
                 try {
                     activity(string.Format("pre {0}!EndWrite", stream.GetType().FullName));
@@ -354,7 +380,7 @@ namespace MindTouch.Dream.Http {
             } else if(!SysUtil.UseAsyncIO || (source.IsStreamMemorized() && target.IsStreamMemorized())) {
 
                 // source & target are memory streams; let's do the copy inline as fast as we can
-                byte[] buffer = new byte[StreamUtil.BUFFER_SIZE];
+                var buffer = new byte[StreamUtil.BUFFER_SIZE];
                 long total = 0;
                 while(length != 0) {
                     long count = source.Read(buffer, 0, buffer.Length);
@@ -380,10 +406,10 @@ namespace MindTouch.Dream.Http {
         }
 
         private Yield CopyStream_Handler(Action<string> activity, Stream source, Stream target, long length, Result<long> result) {
-            byte[] readBuffer = new byte[StreamUtil.BUFFER_SIZE];
-            byte[] writeBuffer = new byte[StreamUtil.BUFFER_SIZE];
+            var readBuffer = new byte[StreamUtil.BUFFER_SIZE];
+            var writeBuffer = new byte[StreamUtil.BUFFER_SIZE];
             long total = 0;
-            int zero_read_counter = 0;
+            var zero_read_counter = 0;
             Result write = null;
 
             // NOTE (steveb): we stop when we've read the expected number of bytes and the length was non-negative, 
@@ -392,7 +418,7 @@ namespace MindTouch.Dream.Http {
             while(length != 0) {
 
                 // read first
-                long count = (length >= 0) ? Math.Min(length, readBuffer.LongLength) : readBuffer.LongLength;
+                var count = (length >= 0) ? Math.Min(length, readBuffer.LongLength) : readBuffer.LongLength;
                 if(source.IsStreamMemorized()) {
                     activity("pre Stream.Read");
                     count = source.Read(readBuffer, 0, (int)count);
@@ -422,7 +448,7 @@ namespace MindTouch.Dream.Http {
                 length -= count;
 
                 // swap buffers
-                byte[] tmp = writeBuffer;
+                var tmp = writeBuffer;
                 writeBuffer = readBuffer;
                 readBuffer = tmp;
 
@@ -458,13 +484,13 @@ namespace MindTouch.Dream.Http {
         //--- Interface Methods ---
         int IPlugEndpoint.GetScoreWithNormalizedUri(XUri uri, out XUri normalized) {
             normalized = uri;
-            int similarity = uri.Similarity(_uri);
+            var similarity = uri.Similarity(_uri);
             return (similarity >= _minSimilarity) ? similarity : 0;
         }
 
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
             _env.UpdateInfoMessage(_sourceInternal, null);
-            Result<DreamMessage> res = new Result<DreamMessage>(response.Timeout);
+            var res = new Result<DreamMessage>(response.Timeout);
             _env.SubmitRequestAsync(verb, uri, null, request, res);
             yield return res;
             response.Return(res);
