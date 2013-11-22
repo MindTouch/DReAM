@@ -48,6 +48,7 @@ namespace MindTouch.Collections {
         private readonly IDispatchQueue _dispatchQueue;
         private readonly LockFreeItemConsumerQueue<T> _inbox;
         private int _capacity;
+        private readonly int _maxParallelism;
 
         //--- Constructors ---
 
@@ -68,6 +69,7 @@ namespace MindTouch.Collections {
                 throw new ArgumentException("maxParallelism must be greater than 0", "maxParallelism");
             }
             _handler = handler;
+            _maxParallelism = maxParallelism;
             _capacity = maxParallelism;
             _dispatchQueue = dispatchQueue;
 
@@ -130,12 +132,12 @@ namespace MindTouch.Collections {
         /// <summary>
         /// <see langword="True"/> if the queue is empty.
         /// </summary>
-        public bool IsEmpty { get { return (_inbox != null) ? _inbox.ItemIsEmpty : true; } }
+        public bool IsEmpty { get { return Count == 0; } }
 
         /// <summary>
         /// Total number of items in queue.
         /// </summary>
-        public int Count { get { return (_inbox != null) ? _inbox.ItemCount : 0; } }
+        public int Count { get { return _maxParallelism - Thread.VolatileRead(ref _capacity); } }
 
         //--- Methods ---
 
@@ -145,18 +147,18 @@ namespace MindTouch.Collections {
         /// <param name="item">Item to add to queue.</param>
         /// <returns><see langword="True"/> if the enqueue succeeded.</returns>
         public bool TryEnqueue(T item) {
-            if((_inbox != null) && (Interlocked.Decrement(ref _capacity) < 0)) {
+            var hasCapacity = (Interlocked.Decrement(ref _capacity) < 0);
+            if((_inbox != null) && hasCapacity) {
                 return _inbox.TryEnqueue(item);
             }
             return TryStartWorkItem(item);
         }
 
         /// <summary>
-        /// This method is not supported and throws <see cref="NotSupportedException"/>.
+        /// Try to get an item from the queue.
         /// </summary>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        /// <exception cref="NotSupportedException"/>
+        /// <param name="item">Storage location for the item to be removed.</param>
+        /// <returns><see langword="True"/> if the dequeue succeeded.</returns>
         public bool TryDequeue(out T item) {
             if(_inbox != null) {
                 return _inbox.TryDequeue(out item);
@@ -176,7 +178,8 @@ namespace MindTouch.Collections {
         }
 
         private void EndWorkItem() {
-            if((_inbox != null) && (Interlocked.Increment(ref _capacity) <= 0)) {
+            var hasCapacity = (Interlocked.Increment(ref _capacity) <= 0);
+            if((_inbox != null) && hasCapacity) {
                 if(!_inbox.TryEnqueue(StartWorkItem)) {
                     throw new NotSupportedException("TryEnqueue failed");
                 }
