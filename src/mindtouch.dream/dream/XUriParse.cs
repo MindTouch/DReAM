@@ -141,7 +141,7 @@ namespace MindTouch.Dream {
                         hostname = text.Substring(last, current - last);
                         last = current + 1;
                         state = (State)c;
-                    } else if(!IsAlphaDigitSymbol(c)) {
+                    } else if(!IsHostnameOrUserInfoChar(c)) {
 
                         // both username and hostname require alphanumeric characters
                         return false;
@@ -168,7 +168,7 @@ namespace MindTouch.Dream {
                         }
                         last = current + 1;
                         state = (State)c;
-                    } else if(!IsAlphaDigitSymbol(c)) {
+                    } else if(!IsHostnameOrUserInfoChar(c)) {
 
                         // password requires alphanumeric characters; for port information, we'll validate it once we've identified it
                         return false;
@@ -191,7 +191,7 @@ namespace MindTouch.Dream {
                         hostname = text.Substring(last, current - last);
                         last = current + 1;
                         state = (State)c;
-                    } else if(!IsAlphaDigitSymbol(c)) {
+                    } else if(!IsHostnameOrUserInfoChar(c)) {
 
                         // hostname requires alphanumeric characters
                         return false;
@@ -264,6 +264,12 @@ namespace MindTouch.Dream {
                     throw new ShouldNeverHappenException();
                 }
             }
+
+            // TODO:
+            // * decode username and password if present
+            // * parse path into segments
+            // * parse query into key=value pairs
+
             return true;
         }
 
@@ -275,9 +281,9 @@ namespace MindTouch.Dream {
             return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9'));
         }
 
-        private static bool IsAlphaDigitSymbol(char c) {
+        private static bool IsHostnameOrUserInfoChar(char c) {
 
-            // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:]
+            // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=]
 
             return ((c >= 'a') && (c <= 'z')) || 
                 ((c >= 'A') && (c <= 'Z')) || 
