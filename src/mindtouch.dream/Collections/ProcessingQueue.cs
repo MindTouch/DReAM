@@ -46,9 +46,9 @@ namespace MindTouch.Collections {
         //--- Fields ---
         private readonly Action<T, Action> _handler;
         private readonly IDispatchQueue _dispatchQueue;
-        private readonly LockFreeItemConsumerQueue<T> _inbox;
-        private int _capacity;
+        private readonly LockFreeItemConsumerQueue<T> _pending;
         private readonly int _maxParallelism;
+        private int _capacity;
 
         //--- Constructors ---
 
@@ -75,7 +75,7 @@ namespace MindTouch.Collections {
 
             // check if we need an item holding queue
             if(maxParallelism < int.MaxValue) {
-                _inbox = new LockFreeItemConsumerQueue<T>();
+                _pending = new LockFreeItemConsumerQueue<T>();
             }
         }
 
@@ -147,9 +147,13 @@ namespace MindTouch.Collections {
         /// <param name="item">Item to add to queue.</param>
         /// <returns><see langword="True"/> if the enqueue succeeded.</returns>
         public bool TryEnqueue(T item) {
-            var hasCapacity = (Interlocked.Decrement(ref _capacity) < 0);
-            if((_inbox != null) && hasCapacity) {
-                return _inbox.TryEnqueue(item);
+
+            // NOTE (steveb): when '_capacity' drops below 0, we have more items to process than we have 
+            //                concurrent capacity for; in this case, we need to enqueue the item for later.
+
+            var overCapacity = (Interlocked.Decrement(ref _capacity) < 0);
+            if((_pending != null) && overCapacity) {
+                return _pending.TryEnqueue(item);
             }
             return TryStartWorkItem(item);
         }
@@ -160,7 +164,10 @@ namespace MindTouch.Collections {
         /// <param name="item">Storage location for the item to be removed.</param>
         /// <returns><see langword="True"/> if the dequeue succeeded.</returns>
         public bool TryDequeue(out T item) {
-            if((_inbox != null) && _inbox.TryDequeue(out item)) {
+
+            // WRONG
+
+            if((_pending != null) && _pending.TryDequeue(out item)) {
                 Interlocked.Increment(ref _capacity);
                 return true;
             }
@@ -179,9 +186,14 @@ namespace MindTouch.Collections {
         }
 
         private void EndWorkItem() {
-            var hasCapacity = (Interlocked.Increment(ref _capacity) <= 0);
-            if((_inbox != null) && hasCapacity) {
-                if(!_inbox.TryEnqueue(StartWorkItem)) {
+
+            // NOTE (steveb): if after increasing '_capacity', it is still not positive, then we know
+            //                there were pending items that need to be run; otherwise, all remaining
+            //                items are inflight or done.
+
+            var overCapacity = (Interlocked.Increment(ref _capacity) <= 0);
+            if((_pending != null) && overCapacity) {
+                if(!_pending.TryEnqueue(StartWorkItem)) {
                     throw new NotSupportedException("TryEnqueue failed");
                 }
             }
