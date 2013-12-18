@@ -26,7 +26,7 @@ using System.Text;
 using System.IO;
 
 namespace MindTouch.Dream {
-    internal static class XUriParse {
+    internal static class XUriParser {
 
         //--- Constants ---
         private enum State {
