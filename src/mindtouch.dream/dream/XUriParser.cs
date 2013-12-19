@@ -20,13 +20,9 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
-using System.IO;
 
 namespace MindTouch.Dream {
-    internal static class XUriParser {
+    public static class XUriParser {
 
         //--- Constants ---
         private enum State {
@@ -40,14 +36,14 @@ namespace MindTouch.Dream {
             Hostname,
             IPv6Address,
             PortNumberOrPathOrQueryOrFragmentOrEnd,
-            PortNumber,
+            PortNumber = (int)':',
             Path = (int)'/',
             Query = (int)'?',
             Fragment = (int)'#'
         }
 
         //--- Class Methods ---
-        internal static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string path, out string query, out string fragment) {
+        public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string path, out string query, out string fragment) {
             scheme = null;
             user = null;
             password = null;
@@ -187,7 +183,7 @@ namespace MindTouch.Dream {
                     }
                     break;
                 case State.Hostname:
-                    if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                    if((c == ':') || (c == '/') || (c == '?') || (c == '#') || (c == 0)) {
                         hostname = text.Substring(last, current - last);
                         last = current + 1;
                         state = (State)c;
@@ -202,9 +198,9 @@ namespace MindTouch.Dream {
                         hostname = text.Substring(last, current - last + 1);
                         last = current + 1;
                         state = State.PortNumberOrPathOrQueryOrFragmentOrEnd;
-                    } else if(!(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == '.'))) {
+                    } else if(!(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == ':') || (c == '.'))) {
 
-                        // IPv6 address requires hexadecimal characters or periods
+                        // IPv6 address requires hexadecimal characters, colons, or periods
                         return false;
                     }
                     break;
