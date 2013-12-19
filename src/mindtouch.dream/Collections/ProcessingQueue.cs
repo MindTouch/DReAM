@@ -32,6 +32,9 @@ namespace MindTouch.Collections {
     /// <typeparam name="T">Type of work item that can be dispatched.</typeparam>
     public class ProcessingQueue<T> : IThreadsafeQueue<T> {
 
+        //--- Constants ---
+        public const int MAX_PARALLELISM = 10000;
+
         //--- Class Methods ---
         private static Action<T, Action> MakeHandlerWithCompletion(Action<T> handler) {
             return (item, completion) => {
@@ -46,9 +49,8 @@ namespace MindTouch.Collections {
         //--- Fields ---
         private readonly Action<T, Action> _handler;
         private readonly IDispatchQueue _dispatchQueue;
-        private readonly LockFreeItemConsumerQueue<T> _pending;
-        private readonly int _maxParallelism;
-        private int _capacity;
+        private readonly LockFreeItemConsumerQueue<T> _pending = new LockFreeItemConsumerQueue<T>();
+        private int _count;
 
         //--- Constructors ---
 
@@ -65,17 +67,17 @@ namespace MindTouch.Collections {
             if(handler == null) {
                 throw new ArgumentNullException("handler");
             }
-            if(maxParallelism <= 0) {
-                throw new ArgumentException("maxParallelism must be greater than 0", "maxParallelism");
+            if((maxParallelism <= 0) || (maxParallelism > MAX_PARALLELISM)) {
+                throw new ArgumentException(string.Format("maxParallelism must be between 1 and {0:#,##0}", MAX_PARALLELISM), "maxParallelism");
             }
             _handler = handler;
-            _maxParallelism = maxParallelism;
-            _capacity = maxParallelism;
             _dispatchQueue = dispatchQueue;
 
-            // check if we need an item holding queue
-            if(maxParallelism < int.MaxValue) {
-                _pending = new LockFreeItemConsumerQueue<T>();
+            // prime the pending queue with dispatchers
+            for(var i = 0; i < maxParallelism; ++i) {
+                if(!_pending.TryEnqueue(StartWorkItem)) {
+                    throw new NotSupportedException();
+                }
             }
         }
 
@@ -83,21 +85,8 @@ namespace MindTouch.Collections {
         /// Create an instance of the work queue.
         /// </summary>
         /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
-        /// <param name="dispatchQueue">Dispatch queue for work items.</param>
-        public ProcessingQueue(Action<T, Action> handler, IDispatchQueue dispatchQueue) : this(handler, int.MaxValue, dispatchQueue) { }
-
-        /// <summary>
-        /// Create an instance of the work queue.
-        /// </summary>
-        /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
         /// <param name="maxParallelism">Maximum number of items being dispatch simultaneously against the dispatch queue.</param>
         public ProcessingQueue(Action<T, Action> handler, int maxParallelism) : this(handler, maxParallelism, AsyncUtil.GlobalDispatchQueue) { }
-
-        /// <summary>
-        /// Create an instance of the work queue.
-        /// </summary>
-        /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
-        public ProcessingQueue(Action<T, Action> handler) : this(handler, int.MaxValue, AsyncUtil.GlobalDispatchQueue) { }
 
         /// <summary>
         /// Create an instance of the work queue.
@@ -110,22 +99,9 @@ namespace MindTouch.Collections {
         /// <summary>
         /// Create an instance of the work queue.
         /// </summary>
-        /// <param name="handler">Dispatch action for work item Type.</param>
-        /// <param name="dispatchQueue">Dispatch queue for work items.</param>
-        public ProcessingQueue(Action<T> handler, IDispatchQueue dispatchQueue) : this(handler, int.MaxValue, dispatchQueue) { }
-
-        /// <summary>
-        /// Create an instance of the work queue.
-        /// </summary>
         /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
         /// <param name="maxParallelism">Maximum number of items being dispatch simultaneously against the dispatch queue.</param>
         public ProcessingQueue(Action<T> handler, int maxParallelism) : this(handler, maxParallelism, AsyncUtil.GlobalDispatchQueue) { }
-
-        /// <summary>
-        /// Create an instance of the work queue.
-        /// </summary>
-        /// <param name="handler">Dispatch action for work item Type and with completion callback.</param>
-        public ProcessingQueue(Action<T> handler) : this(handler, int.MaxValue, AsyncUtil.GlobalDispatchQueue) { }
 
         //--- Properties ---
 
@@ -137,7 +113,7 @@ namespace MindTouch.Collections {
         /// <summary>
         /// Total number of items in queue.
         /// </summary>
-        public int Count { get { return _maxParallelism - Thread.VolatileRead(ref _capacity); } }
+        public int Count { get { return Thread.VolatileRead(ref _count); } }
 
         //--- Methods ---
 
@@ -148,14 +124,16 @@ namespace MindTouch.Collections {
         /// <returns><see langword="True"/> if the enqueue succeeded.</returns>
         public bool TryEnqueue(T item) {
 
-            // NOTE (steveb): when '_capacity' drops below 0, we have more items to process than we have 
-            //                concurrent capacity for; in this case, we need to enqueue the item for later.
+            // NOTE (steveb): we optimistically increase the _count variable and then decrease it if the enqueue were to fail;
+            //                this avoids a race condition where an item gets enqueued and immediately processed before _count 
+            //                is increased, which could lead to an observable negative _count value.
 
-            var overCapacity = (Interlocked.Decrement(ref _capacity) < 0);
-            if((_pending != null) && overCapacity) {
-                return _pending.TryEnqueue(item);
+            Interlocked.Increment(ref _count);
+            if(!_pending.TryEnqueue(item)) {
+                Interlocked.Decrement(ref _count);
+                return false;
             }
-            return TryStartWorkItem(item);
+            return true;
         }
 
         /// <summary>
@@ -164,38 +142,23 @@ namespace MindTouch.Collections {
         /// <param name="item">Storage location for the item to be removed.</param>
         /// <returns><see langword="True"/> if the dequeue succeeded.</returns>
         public bool TryDequeue(out T item) {
-
-            // WRONG
-
-            if((_pending != null) && _pending.TryDequeue(out item)) {
-                Interlocked.Increment(ref _capacity);
+            if(_pending.TryDequeue(out item)) {
+                Interlocked.Decrement(ref _count);
                 return true;
             }
-            item = default(T);
             return false;
         }
 
-        private bool TryStartWorkItem(T item) {
-            return _dispatchQueue.TryQueueWorkItem(() => _handler(item, EndWorkItem));
-        }
-
         private void StartWorkItem(T item) {
-            if(!TryStartWorkItem(item)) {
-                throw new NotSupportedException("TryStartWorkItem failed");
+            if(!_dispatchQueue.TryQueueWorkItem(() => _handler(item, EndWorkItem))) {
+                throw new NotSupportedException();
             }
         }
 
         private void EndWorkItem() {
-
-            // NOTE (steveb): if after increasing '_capacity', it is still not positive, then we know
-            //                there were pending items that need to be run; otherwise, all remaining
-            //                items are inflight or done.
-
-            var overCapacity = (Interlocked.Increment(ref _capacity) <= 0);
-            if((_pending != null) && overCapacity) {
-                if(!_pending.TryEnqueue(StartWorkItem)) {
-                    throw new NotSupportedException("TryEnqueue failed");
-                }
+            Interlocked.Decrement(ref _count);
+            if(!_pending.TryEnqueue(StartWorkItem)) {
+                throw new NotSupportedException();
             }
         }
     }
