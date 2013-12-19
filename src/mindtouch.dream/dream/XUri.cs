@@ -19,13 +19,12 @@
  * limitations under the License.
  */
 
-// TODO (steveb): should we enable this again? (http://youtrack.developer.mindtouch.com/issue/MT-9135)
+// TODO (steveb): should we enable this again? (https://youtrack.mindtouch.us/issue/DR-30)
 //#define XURI_USE_NAMETABLE
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
@@ -87,8 +86,7 @@ namespace MindTouch.Dream {
     /// <summary>
     /// Encapsulation of a Uniform Resource Identifier as an immutable class with a fluent interface for modification.
     /// </summary>
-    [Serializable]
-    public sealed class XUri : ISerializable {
+    public sealed class XUri {
 
         // NOTE (steveb): XUri parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; and \ as valid segment separator
 
@@ -138,7 +136,6 @@ namespace MindTouch.Dream {
         /// <summary>
         /// An empty string array.
         /// </summary>
-        public static readonly string[] EMPTY_ARRAY = new string[0];
 
         /// <summary>
         /// Invariant string comparer (using <see cref="StringComparer.Ordinal"/> by default).
@@ -150,6 +147,7 @@ namespace MindTouch.Dream {
         /// </summary>
         public static StringComparer INVARIANT_IGNORE_CASE = StringComparer.OrdinalIgnoreCase;
 
+        private static readonly string[] EMPTY_ARRAY = new string[0];
         private const string UP_SEGMENT = "..";
         private static readonly int HTTP_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("http");
         private static readonly int HTTPS_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("https");
@@ -966,13 +964,6 @@ namespace MindTouch.Dream {
         public XUri(XUri uri) : this(uri.Scheme, uri.User, uri.Password, uri.Host, uri.Port, uri.UsesDefaultPort, uri.Segments, uri.TrailingSlash, uri.Params, uri.Fragment, uri.UsesSegmentDoubleEncoding) { }
 
         /// <summary>
-        /// Create a new XUri from serialized form.
-        /// </summary>
-        /// <param name="info">Serialization information.</param>
-        /// <param name="context">Streaming context.</param>
-        public XUri(SerializationInfo info, StreamingContext context) : this(info.GetString("uri")) { }
-
-        /// <summary>
         /// Create a new XUri from a valid uri string.
         /// </summary>
         /// <param name="uri">Uri string.</param>
@@ -1695,7 +1686,7 @@ namespace MindTouch.Dream {
         /// <param name="args">Array of query key/value pairs.</param>
         /// <returns>New uri.</returns>
         public XUri WithParams(KeyValuePair<string, string>[] args) {
-            if((args == null) || (args.Length == 0)) {
+            if(args == null) {
                 return this;
             }
             KeyValuePair<string, string>[] newParams;
@@ -1750,7 +1741,7 @@ namespace MindTouch.Dream {
         /// <param name="query">Query string.</param>
         /// <returns>New uri.</returns>
         public XUri WithQuery(string query) {
-            if(string.IsNullOrEmpty(query)) {
+            if(query == null) {
                 return this;
             }
             return WithParams(ParseParamsAsPairs(query));
@@ -2283,11 +2274,6 @@ namespace MindTouch.Dream {
                 }
             }
             return true;
-        }
-
-        //--- ISerializable Members ---
-        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
-            info.AddValue("uri", ToString());
         }
     }
 }
