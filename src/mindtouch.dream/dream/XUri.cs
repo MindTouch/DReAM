@@ -84,9 +84,6 @@ namespace MindTouch.Dream {
         Fragment
     }
 
-    // TODO (steveb): implement XUriTemplate/XUriPattern (see http://youtrack.developer.mindtouch.com/issue/MT-9660)
-    // {scheme}://{host}/{path-param};[{segment-param}]/[{optional-path-param};{segment-param}}]//{segment-list}?query-arg={query-param}&[optional-query-arg={query-param}]
-
     /// <summary>
     /// Encapsulation of a Uniform Resource Identifier as an immutable class with a fluent interface for modification.
     /// </summary>
@@ -100,37 +97,43 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Regular expression used to parse a full Uri string.
         /// </summary>
-        public const string URI_REGEX = @"(?<scheme>" + SCHEME_REGEX + @")://(?<userinfo>" + USERINFO_REGEX + @"@)?(?<host>" + HOST_REGEX + @")(?<port>:[\d]*)?(?<path>([/\\]" + SEGMENT_REGEX + @")*)(?<query>\?" + QUERY_REGEX + @")?(?<fragment>#" + FRAGMENT_REGEX + @")?";
+        public const string URI_REGEX = @"(?<scheme>" + SCHEME_REGEX + @")://" + 
+                                        @"(?<userinfo>" + USERINFO_REGEX + @"@)?" + 
+                                        @"(?<host>" + HOST_REGEX + @")" + 
+                                        @"(?<port>:[\d]*)?" + 
+                                        @"(?<path>([/\\]" + SEGMENT_REGEX + @")*)" + 
+                                        @"(?<query>\?" + QUERY_REGEX + @")?" + 
+                                        @"(?<fragment>#" + FRAGMENT_REGEX + @")?";
 
         /// <summary>
         /// Regular expression to match Uri scheme.
         /// </summary>
-        public const string SCHEME_REGEX = @"[a-zA-Z][\w+-\.]*";
+        public const string SCHEME_REGEX = @"[a-zA-Z][\w\+\-\.]*";
 
         /// <summary>
         /// Regular expression to match Uri User Info.
         /// </summary>
-        public const string USERINFO_REGEX = @"[\w-\._~!\$&'\(\)\*\+,;=%:]*";
+        public const string USERINFO_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:]*";
 
         /// <summary>
         /// Regular expression to match Uri host.
         /// </summary>
-        public const string HOST_REGEX = @"((\[[a-fA-F\d:\.]*(%.+)?\])|([\w-\._~%!\$&'\(\)\*\+,;=]*))";
+        public const string HOST_REGEX = @"((\[[a-fA-F\d:\.]*\])|([\w\-\._~%!\$&'\(\)\*\+,;=]*))";
 
         /// <summary>
         /// Regular expression for matching path segments.
         /// </summary>
-        public const string SEGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^\[\]{}]*";
+        public const string SEGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^\|\[\]{}]*";
 
         /// <summary>
         /// Regular expression for matching query name/value pairs.
         /// </summary>
-        public const string QUERY_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]*";
+        public const string QUERY_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]*";
 
         /// <summary>
         /// Regular expression for matching fragment elements.
         /// </summary>
-        public const string FRAGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}]*";
+        public const string FRAGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}]*";
 
         /// <summary>
         /// An empty string array.
@@ -378,8 +381,52 @@ namespace MindTouch.Dream {
         /// <param name="text">Input text.</param>
         /// <returns>Decoded text.</returns>
         public static string Decode(string text) {
-            string result = UrlDecode(text);
-            return result;
+            if(null == text) {
+                return null;
+            }
+            if(text.IndexOfAny(new[] { '%', '+' }) == -1) {
+                return text;
+            }
+            StringBuilder output = new StringBuilder();
+            long len = text.Length;
+            MemoryStream bytes = new MemoryStream();
+            int xchar;
+            for(int i = 0; i < len; i++) {
+                if(text[i] == '%' && i + 2 < len && text[i + 1] != '%') {
+                    if(text[i + 1] == 'u' && i + 5 < len) {
+                        if(bytes.Length > 0) {
+                            output.Append(GetChars(bytes));
+                            bytes.SetLength(0);
+                        }
+                        xchar = GetChar(text, i + 2, 4);
+                        if(xchar != -1) {
+                            output.Append((char)xchar);
+                            i += 5;
+                        } else {
+                            output.Append('%');
+                        }
+                    } else if((xchar = GetChar(text, i + 1, 2)) != -1) {
+                        bytes.WriteByte((byte)xchar);
+                        i += 2;
+                    } else {
+                        output.Append('%');
+                    }
+                    continue;
+                }
+                if(bytes.Length > 0) {
+                    output.Append(GetChars(bytes));
+                    bytes.SetLength(0);
+                }
+                if(text[i] == '+') {
+                    output.Append(' ');
+                } else {
+                    output.Append(text[i]);
+                }
+            }
+            if(bytes.Length > 0) {
+                output.Append(GetChars(bytes));
+            }
+            return output.ToString();
         }
 
         /// <summary>
@@ -821,84 +868,21 @@ namespace MindTouch.Dream {
         // This code comes from https://github.com/mono/mono/blob/bb9a8d9550f4b59e6e31ed39314f720115d1f8a8/mcs/class/System.Web/System.Web/HttpUtility.cs
         // This is being copied here to achieve consistent decoding between Mono versions as well as .Net and is used by XUri.Decode
 
-        private static string UrlDecode(string str) {
-            return UrlDecode(str, Encoding.UTF8);
-        }
-
-        private static char[] GetChars(MemoryStream b, Encoding e) {
-            return e.GetChars(b.GetBuffer(), 0, (int)b.Length);
-        }
-
-        private static string UrlDecode(string s, Encoding e) {
-            if(null == s)
-                return null;
-
-            if(s.IndexOf('%') == -1 && s.IndexOf('+') == -1)
-                return s;
-
-            if(e == null)
-                e = Encoding.UTF8;
-
-            StringBuilder output = new StringBuilder();
-            long len = s.Length;
-            MemoryStream bytes = new MemoryStream();
-            int xchar;
-
-            for(int i = 0; i < len; i++) {
-                if(s[i] == '%' && i + 2 < len && s[i + 1] != '%') {
-                    if(s[i + 1] == 'u' && i + 5 < len) {
-                        if(bytes.Length > 0) {
-                            output.Append(GetChars(bytes, e));
-                            bytes.SetLength(0);
-                        }
-
-                        xchar = GetChar(s, i + 2, 4);
-                        if(xchar != -1) {
-                            output.Append((char)xchar);
-                            i += 5;
-                        } else {
-                            output.Append('%');
-                        }
-                    } else if((xchar = GetChar(s, i + 1, 2)) != -1) {
-                        bytes.WriteByte((byte)xchar);
-                        i += 2;
-                    } else {
-                        output.Append('%');
-                    }
-                    continue;
-                }
-
-                if(bytes.Length > 0) {
-                    output.Append(GetChars(bytes, e));
-                    bytes.SetLength(0);
-                }
-
-                if(s[i] == '+') {
-                    output.Append(' ');
-                } else {
-                    output.Append(s[i]);
-                }
-            }
-
-            if(bytes.Length > 0) {
-                output.Append(GetChars(bytes, e));
-            }
-
-            bytes = null;
-            return output.ToString();
+        private static char[] GetChars(MemoryStream b) {
+            return Encoding.UTF8.GetChars(b.GetBuffer(), 0, (int)b.Length);
         }
 
         private static int GetInt(byte b) {
             char c = (char)b;
-            if(c >= '0' && c <= '9')
+            if(c >= '0' && c <= '9') {
                 return c - '0';
-
-            if(c >= 'a' && c <= 'f')
+            }
+            if(c >= 'a' && c <= 'f') {
                 return c - 'a' + 10;
-
-            if(c >= 'A' && c <= 'F')
+            }
+            if(c >= 'A' && c <= 'F') {
                 return c - 'A' + 10;
-
+            }
             return -1;
         }
 
@@ -907,15 +891,15 @@ namespace MindTouch.Dream {
             int end = length + offset;
             for(int i = offset; i < end; i++) {
                 char c = str[i];
-                if(c > 127)
+                if(c > 127) {
                     return -1;
-
+                }
                 int current = GetInt((byte)c);
-                if(current == -1)
+                if(current == -1) {
                     return -1;
+                }
                 val = (val << 4) + current;
             }
-
             return val;
         }
 
