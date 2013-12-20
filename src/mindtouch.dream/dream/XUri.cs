@@ -134,10 +134,6 @@ namespace MindTouch.Dream {
         public const string FRAGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}]*";
 
         /// <summary>
-        /// An empty string array.
-        /// </summary>
-
-        /// <summary>
         /// Invariant string comparer (using <see cref="StringComparer.Ordinal"/> by default).
         /// </summary>
         public static StringComparer INVARIANT = StringComparer.Ordinal;
