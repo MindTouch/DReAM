@@ -20,6 +20,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 
 namespace MindTouch.Dream {
     public static class XUriParser {
@@ -36,21 +37,25 @@ namespace MindTouch.Dream {
             Hostname,
             IPv6Address,
             PortNumberOrPathOrQueryOrFragmentOrEnd,
+            PathNextChar,
+
+            // special values assigned to reduce code complexity
             PortNumber = (int)':',
-            Path = (int)'/',
+            PathFirstChar = (int)'/',
             Query = (int)'?',
             Fragment = (int)'#'
         }
 
         //--- Class Methods ---
-        public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string path, out string query, out string fragment) {
+        public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out string query, out string fragment) {
             scheme = null;
             user = null;
             password = null;
             hostname = null;
             port = -1;
             usesDefautPort = true;
-            path = null;
+            segments = null;
+            trailingSlash = false;
             query = null;
             fragment = null;
 
@@ -62,6 +67,7 @@ namespace MindTouch.Dream {
             // initialize state and loop over all characters
             var state = State.SchemeFirstLetter;
             string hostnameOrUsername = null;
+            var segmentList = new List<string>(16);
             for(int current = 0, last = 0; current <= text.Length; ++current) {
                 char c;
                 if(current < text.Length) {
@@ -228,13 +234,33 @@ namespace MindTouch.Dream {
                         return false;
                     }
                     break;
-                case State.Path:
+                case State.PathFirstChar:
                     if((c == '?') || (c == '#') || (c == 0)) {
-
-                        // path always starts with a leading '/' character that we want to be included
-                        path = text.Substring(last - 1, current - last + 1);
+                        if(last == current) {
+                            trailingSlash = true;
+                        } else {
+                            segmentList.Add(text.Substring(last, current - last));
+                        }
                         last = current + 1;
                         state = (State)c;
+                    } else if(c == '/') {
+
+                        // we allow leading '/' characters in segments; stay in first-char state
+                    } else if(IsPathChar(c)) {
+                        state = State.PathNextChar;
+                    } else {
+                        return false;
+                    }
+                    break;
+                case State.PathNextChar:
+                    if((c == '?') || (c == '#') || (c == 0)) {
+                        segmentList.Add(text.Substring(last, current - last));
+                        last = current + 1;
+                        state = (State)c;
+                    } else if(c == '/') {
+                        segmentList.Add(text.Substring(last, current - last));
+                        last = current + 1;
+                        state = State.PathFirstChar;
                     } else if(!IsPathChar(c)) {
                         return false;
                     }
@@ -263,9 +289,9 @@ namespace MindTouch.Dream {
 
             // TODO:
             // * decode username and password if present
-            // * parse path into segments
             // * parse query into key=value pairs
 
+            segments = segmentList.ToArray();
             return true;
         }
 

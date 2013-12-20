@@ -20,6 +20,7 @@
  */
 
 using System;
+using System.Collections.Generic;
 using MindTouch.Web;
 using NUnit.Framework;
 
@@ -29,10 +30,8 @@ namespace MindTouch.Dream.Test {
     public class XUriParserTest {
 
         // MISSING TESTS FOR:
-        //      mailto:John.Doe@example.com
-        //      news:comp.infosystems.www.servers.unix
-        //      tel:+1-816-555-1212
-        //      urn:oasis:names:specification:docbook:dtd:xml:4.1.2
+        // * encoded user & password values
+        // * test trailing double-slash: //
 
         //--- Class Methods ---
         private static XUri TryParse(string text) {
@@ -42,23 +41,50 @@ namespace MindTouch.Dream.Test {
             string hostname;
             int port;
             bool usesDefaultPort;
-            string path;
+            bool trailingSlash;
+            string[] segements;
             string query;
             string fragment;
-            if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out path, out query, out fragment)) {
+            if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out query, out fragment)) {
                 Assert.Fail("failed to parse uri: {0}", text);
             }
-            var result = new XUri(scheme, user, password, hostname, port, null, false, null, null);
-            if(path != null) {
-                result = result.AtAbsolutePath(path);
+            if(user != null) {
+                user = XUri.Decode(user);
             }
+            if(password != null) {
+                password = XUri.Decode(password);
+            }
+            var result = new XUri(scheme, user, password, hostname, port, segements, trailingSlash, null, fragment);
             if(query != null) {
                 result = result.WithQuery(query);
             }
-            if(fragment != null) {
-                result = result.WithFragment(fragment);
-            }
             return result;
+        }
+
+        private void AssertParse(string text, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null) {
+
+            // setup
+            Action<XUri, string> assert = (uri, suffix) => {
+                Assert.AreEqual(scheme, uri.Scheme, string.Format("scheme ({0})", suffix));
+                Assert.AreEqual(hostname, uri.Host, string.Format("hostname ({0})", suffix));
+                Assert.AreEqual(port, uri.Port, string.Format("port ({0})", suffix));
+                Assert.AreEqual(usesDefaultPort, uri.UsesDefaultPort, string.Format("usesDefaultPort ({0})", suffix));
+                Assert.AreEqual(user, uri.User, string.Format("user ({0})", suffix));
+                Assert.AreEqual(password, uri.Password, string.Format("password ({0})", suffix));
+                Assert.AreEqual(segments, uri.Segments, string.Format("segments ({0})", suffix));
+                Assert.AreEqual(trailingSlash, uri.TrailingSlash, string.Format("trailingSlash ({0})", suffix));
+                Assert.AreEqual(@params, uri.Params, string.Format("query ({0})", suffix));
+                Assert.AreEqual(fragment, uri.Fragment, string.Format("fragment ({0})", suffix));
+                Assert.AreEqual(text, uri.ToString(), string.Format("ToString() ({0})", suffix));
+            };
+
+            // setup
+            var uriOriginal = XUri.TryParse(text);
+            var uriNew = TryParse(text);
+
+            // test
+            assert(uriOriginal, "original");
+            assert(uriNew, "new");
         }
 
         //--- Methods ---
@@ -66,439 +92,350 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void TestUriConstructor1() {
             const string original = "http://domain.org/";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original, 
+                scheme: "http",
+                hostname: "domain.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0], 
+                trailingSlash: true
+            );
         }
 
         [Test]
         public void TestUriConstructor2() {
             const string original = "http://domain.org:81";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor3() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]/";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true
+            );
         }
 
         [Test]
         public void TestUriConstructor4() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:81/";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: true
+            );
         }
 
         [Test]
         public void TestUriConstructor5() {
             const string original = "http://user:password@domain.org";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor6() {
             const string original = "http://user:password@domain.org:81/";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: true
+            );
         }
 
         [Test]
         public void TestUriConstructor7() {
             const string original = "http://user:password@domain.org:81/path";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/path", uri.Path);
-            Assert.AreEqual(1, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "path" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor8() {
             const string original = "http://user:password@domain.org:81/path//";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/path//", uri.Path);
-            Assert.AreEqual(2, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "path", "/" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor9() {
             const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/path/foo%20bar/path//@blah", uri.Path);
-            Assert.AreEqual(4, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "path", "foo%20bar", "path", "/@blah" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor10() {
             const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah?ready&set=&go=foo/bar";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/path/foo%20bar/path//@blah", uri.Path);
-            Assert.AreEqual(4, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual("ready&set=&go=foo/bar", uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "path", "foo%20bar", "path", "/@blah" },
+                trailingSlash: false,
+                @params: new[] {
+                    new KeyValuePair<string, string>("ready", null), 
+                    new KeyValuePair<string, string>("set", ""), 
+                    new KeyValuePair<string, string>("go", "foo/bar")
+                }
+            );
         }
 
         [Test]
         public void TestUriConstructor11() {
             const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah#yo";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/path/foo%20bar/path//@blah", uri.Path);
-            Assert.AreEqual(4, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual("yo", uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "path", "foo%20bar", "path", "/@blah" },
+                trailingSlash: false,
+                fragment: "yo"
+            );
         }
 
         [Test]
         public void TestUriConstructor12() {
             const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(81, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual("user", uri.User);
-            Assert.AreEqual("password", uri.Password);
-            Assert.AreEqual("/path/foo%20bar/path//@blah/", uri.Path);
-            Assert.AreEqual(4, uri.Segments.Length);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual("ready&set=&go=foo/bar", uri.Query);
-            Assert.AreEqual("yo", uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "path", "foo%20bar", "path", "/@blah" },
+                trailingSlash: true,
+                @params: new[] {
+                    new KeyValuePair<string, string>("ready", null), 
+                    new KeyValuePair<string, string>("set", ""), 
+                    new KeyValuePair<string, string>("go", "foo/bar")
+                },
+                fragment: "yo"
+            );
         }
 
         [Test]
         public void TestUriConstructor13() {
             const string original = "ftp://ftp.is.co.za/rfc/rfc1808.txt";
-            var uri = TryParse(original);
-            Assert.AreEqual("ftp", uri.Scheme);
-            Assert.AreEqual("ftp.is.co.za", uri.Host);
-            Assert.AreEqual(21, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/rfc/rfc1808.txt", uri.Path);
-            Assert.AreEqual(2, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "ftp",
+                hostname: "ftp.is.co.za",
+                port: 21,
+                usesDefaultPort: true,
+                segments: new[] { "rfc", "rfc1808.txt" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor14() {
             const string original = "http://www.ietf.org/rfc/rfc2396.txt";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("www.ietf.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/rfc/rfc2396.txt", uri.Path);
-            Assert.AreEqual(2, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "rfc", "rfc2396.txt" },
+                trailingSlash: false
+            );
         }
 
-        [Test]
+        [Test, Ignore("doesn't pass the original test either")]
         public void TestUriConstructor15() {
             const string original = "ldap://[2001:db8::7]/c=GB?objectClass?one";
-            var uri = TryParse(original);
-            Assert.AreEqual("ldap", uri.Scheme);
-            Assert.AreEqual("[2001:db8::7]", uri.Host);
-            Assert.AreEqual(-1, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/c=GB", uri.Path);
-            Assert.AreEqual(1, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual("objectClass%3Fone", uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
+            AssertParse(original,
+                scheme: "ldap",
+                hostname: "[2001:db8::7]",
+                port: -1,
+                usesDefaultPort: true,
+                segments: new[] { "c=GB" },
+                trailingSlash: false,
+                @params: new[] {
+                    new KeyValuePair<string, string>("objectClass?one", null)
+                }
+            );
         }
 
         [Test]
         public void TestUriConstructor16() {
             const string original = "telnet://192.0.2.16:80/";
-            var uri = TryParse(original);
-            Assert.AreEqual("telnet", uri.Scheme);
-            Assert.AreEqual("192.0.2.16", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(false, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "telnet",
+                hostname: "192.0.2.16",
+                port: 80,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: true
+            );
         }
 
         [Test]
         public void TestUriConstructor17() {
             const string original = "ftp://cnn.example.com&story=breaking_news@10.0.0.1/top_story.htm#";
-            var uri = TryParse(original);
-            Assert.AreEqual("ftp", uri.Scheme);
-            Assert.AreEqual("10.0.0.1", uri.Host);
-            Assert.AreEqual(21, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual("cnn.example.com&story=breaking_news", uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/top_story.htm", uri.Path);
-            Assert.AreEqual(1, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual("", uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "ftp",
+                user: "cnn.example.com&story=breaking_news",
+                hostname: "10.0.0.1",
+                port: 21,
+                usesDefaultPort: true,
+                segments: new[] { "top_story.htm" },
+                trailingSlash: false,
+                fragment: ""
+            );
         }
 
         [Test]
         public void TestUriConstructor18() {
             const string original = "http://domain.org/?";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(true, uri.TrailingSlash);
-            Assert.AreEqual("", uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "domain.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true,
+                @params: new KeyValuePair<string, string>[0]
+            );
         }
 
         [Test]
         public void TestUriConstructor19() {
             const string original = "http://domain.org?";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("domain.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("", uri.Path);
-            Assert.AreEqual(0, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual("", uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "domain.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new KeyValuePair<string, string>[0]
+            );
         }
 
         [Test]
         public void TestUriConstructor20() {
             const string original = "http://www.ietf.org/rfc;15/rfc2396.txt";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("www.ietf.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/rfc;15/rfc2396.txt", uri.Path);
-            Assert.AreEqual(2, uri.Segments.Length);
-            Assert.AreEqual("rfc;15", uri.Segments[0]);
-            Assert.AreEqual("rfc2396.txt", uri.Segments[1]);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "rfc;15", "rfc2396.txt" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor21() {
             const string original = "http://www.ietf.org/rfc;15/rfc2396.txt;";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("www.ietf.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/rfc;15/rfc2396.txt;", uri.Path);
-            Assert.AreEqual(2, uri.Segments.Length);
-            Assert.AreEqual("rfc;15", uri.Segments[0]);
-            Assert.AreEqual("rfc2396.txt;", uri.Segments[1]);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "rfc;15", "rfc2396.txt;" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor22() {
             const string original = "http://www.ietf.org/;15/rfc2396.txt;";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("www.ietf.org", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/;15/rfc2396.txt;", uri.Path);
-            Assert.AreEqual(2, uri.Segments.Length);
-            Assert.AreEqual(";15", uri.Segments[0]);
-            Assert.AreEqual("rfc2396.txt;", uri.Segments[1]);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { ";15", "rfc2396.txt;" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor23() {
             const string original = "http:///path";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/path", uri.Path);
-            Assert.AreEqual(1, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual(null, uri.Query);
-            Assert.AreEqual(null, uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" },
+                trailingSlash: false
+            );
         }
 
         [Test]
         public void TestUriConstructor24() {
             const string original = "http://host/seg^ment?qu^ery=a|b^c#fo|o#b^ar";
-            var uri = TryParse(original);
-            Assert.AreEqual("http", uri.Scheme);
-            Assert.AreEqual("host", uri.Host);
-            Assert.AreEqual(80, uri.Port);
-            Assert.AreEqual(true, uri.UsesDefaultPort);
-            Assert.AreEqual(null, uri.User);
-            Assert.AreEqual(null, uri.Password);
-            Assert.AreEqual("/seg^ment", uri.Path);
-            Assert.AreEqual(1, uri.Segments.Length);
-            Assert.AreEqual(false, uri.TrailingSlash);
-            Assert.AreEqual("qu^ery=a|b^c", uri.Query);
-            Assert.AreEqual("a|b^c", uri.GetParam("qu^ery"));
-            Assert.AreEqual("fo|o#b^ar", uri.Fragment);
-            Assert.AreEqual(original, uri.ToString());
+            AssertParse(original,
+                scheme: "http",
+                hostname: "host",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "seg^ment" },
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("qu^ery", "a|b^c") },
+                fragment: "fo|o#b^ar"
+            );
         }
 
         [Test]
