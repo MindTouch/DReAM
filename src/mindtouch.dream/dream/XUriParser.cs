@@ -206,7 +206,7 @@ namespace MindTouch.Dream {
                         hostname = hostnameOrUsername;
 
                         // part after ':' is port, parse and validate it
-                        if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0)) {
+                        if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
                             return false;
                         }
                         last = current + 1;
