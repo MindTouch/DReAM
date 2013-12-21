@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NUnit.Framework;
 
 namespace MindTouch.Dream.Test {
@@ -29,8 +30,12 @@ namespace MindTouch.Dream.Test {
     public class XUriParserTest {
 
         // MISSING TESTS FOR:
-        // * encoded user & password values
+        // * user name with encoding
+        // * password with encoding
         // * test trailing double-slash: //
+        // * fragment with encoding
+        // * query key with encoding
+        // * query value with encoding
 
         //--- Class Methods ---
         private static XUri TryParse(string text) {
@@ -46,12 +51,6 @@ namespace MindTouch.Dream.Test {
             string fragment;
             if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out query, out fragment)) {
                 Assert.Fail("failed to parse uri: {0}", text);
-            }
-            if(user != null) {
-                user = XUri.Decode(user);
-            }
-            if(password != null) {
-                password = XUri.Decode(password);
             }
             var result = new XUri(scheme, user, password, hostname, port, segements, trailingSlash, null, fragment);
             if(query != null) {
@@ -196,6 +195,21 @@ namespace MindTouch.Dream.Test {
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path", "/" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void TestUriConstructor8_1() {
+            const string original = "http://user:password@domain.org:81//";
+            AssertParse(original,
+                scheme: "http",
+                user: "user",
+                password: "password",
+                hostname: "domain.org",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new[] { "/" },
                 trailingSlash: false
             );
         }
@@ -515,6 +529,37 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void TestTryParse() {
             Assert.IsFalse(XUri.TryParse("htt;//") != null);
+        }
+
+        [Test, Ignore]
+        public void ParsePerformance() {
+            const string uri = "http://user:password@domain.org:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
+            const int WARMUP = 1000;
+            const int PERF_LOOPS = 500000;
+
+            // test original parsing code
+            for(var i = 0; i < WARMUP; ++i) {
+                XUri.TryParse(uri);
+            }
+            var swOriginal = Stopwatch.StartNew();
+            for(var i = 0; i < PERF_LOOPS; ++i) {
+                XUri.TryParse(uri);
+            }
+            swOriginal.Stop();
+
+            // test new parsing code
+            for(var i = 0; i < WARMUP; ++i) {
+                TryParse(uri);
+            }
+            var swNew = Stopwatch.StartNew();
+            for(var i = 0; i < PERF_LOOPS; ++i) {
+                TryParse(uri);
+            }
+            swNew.Stop();
+
+            // show result
+            Console.WriteLine("original: {0:#,##0}ms", swOriginal.ElapsedMilliseconds);
+            Console.WriteLine("new     : {0:#,##0}ms", swNew.ElapsedMilliseconds);
         }
     }
 }

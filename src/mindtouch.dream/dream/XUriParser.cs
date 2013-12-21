@@ -21,6 +21,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace MindTouch.Dream {
     public static class XUriParser {
@@ -28,8 +30,8 @@ namespace MindTouch.Dream {
         //--- Constants ---
         private enum State {
             End = 0,
-            SchemeFirstLetter,
-            SchemeRemainder,
+            SchemeFirst,
+            SchemeNext,
             HostnameOrUserInfoFirstLetter,
             HostnameOrUserInfoBeforeColon,
             HostnameOrUserInfoAfterColon,
@@ -65,22 +67,26 @@ namespace MindTouch.Dream {
             }
 
             // initialize state and loop over all characters
-            var state = State.SchemeFirstLetter;
+            var state = State.SchemeFirst;
             string hostnameOrUsername = null;
             var segmentList = new List<string>(16);
+            var decode = false;
             for(int current = 0, last = 0; current <= text.Length; ++current) {
                 char c;
                 if(current < text.Length) {
                     c = text[current];
-                    if(c == 0) {
+                    switch(c) {
+                    case '\0':
 
                         // '\0' is illegal in a uri string
                         return false;
-                    }
-                    if(c == '\\') {
-
-                        // treat '\' same as '/'
+                    case '\\':
                         c = '/';
+                        break;
+                    case '%':
+                    case '+':
+                        decode = true;
+                        break;
                     }
                 } else {
 
@@ -88,21 +94,23 @@ namespace MindTouch.Dream {
                     c = '\0';
                 }
                 switch(state) {
-                case State.SchemeFirstLetter:
+                case State.SchemeFirst:
                     if(!IsAlpha(c)) {
 
                         // scheme must begin with alpha character
                         return false;
                     }
-                    state = State.SchemeRemainder;
+                    decode = false;
+                    state = State.SchemeNext;
                     break;
-                case State.SchemeRemainder:
+                case State.SchemeNext:
                     if((text.Length - current >= 3) && (string.CompareOrdinal(text, current, "://", 0, 3) == 0)) {
 
                         // found "://" sequence at current location, we're done with scheme parsing
                         scheme = text.Substring(last, current - last);
                         last = current + 3;
                         current += 2;
+                        decode = false;
                         state = State.HostnameOrUserInfoFirstLetter;
                     } else if(!IsAlphaDigit(c)) {
 
@@ -117,6 +125,7 @@ namespace MindTouch.Dream {
                         last = current;
 
                         // IPv6 addresses start with '['
+                        decode = false;
                         state = State.IPv6Address;
                     } else {
 
@@ -135,13 +144,23 @@ namespace MindTouch.Dream {
 
                         // part before '@' must be username since we didn't find ':'
                         user = text.Substring(last, current - last);
+                        if(decode) {
+                            user = Decode(user);
+                        }
                         last = current + 1;
+                        decode = false;
                         state = State.HostnameOrIPv6Address;
                     } else if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
 
                         // part before '/' or '\' must be hostname
+                        if(decode) {
+                            
+                            // hostname cannot contain encoded characters
+                            return false;
+                        }
                         hostname = text.Substring(last, current - last);
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(!IsHostnameOrUserInfoChar(c)) {
 
@@ -154,14 +173,23 @@ namespace MindTouch.Dream {
 
                         // part before ':' was username
                         user = hostnameOrUsername;
+                        if(decode) {
+                            user = Decode(user);
+                        }
 
                         // part after ':' is password
                         password = text.Substring(last, current - last);
                         last = current + 1;
+                        decode = false;
                         state = State.HostnameOrIPv6Address;
                     } else if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
 
                         // part before ':' was hostname
+                        if(decode) {
+                            
+                            // hostname cannot contain encoded characters
+                            return false;
+                        }
                         hostname = hostnameOrUsername;
 
                         // part after ':' is port, parse and validate it
@@ -169,6 +197,7 @@ namespace MindTouch.Dream {
                             return false;
                         }
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(!IsHostnameOrUserInfoChar(c)) {
 
@@ -183,6 +212,7 @@ namespace MindTouch.Dream {
                         last = current;
 
                         // IPv6 addresses start with '['
+                        decode = false;
                         state = State.IPv6Address;
                     } else {
                         goto case State.Hostname;
@@ -190,8 +220,14 @@ namespace MindTouch.Dream {
                     break;
                 case State.Hostname:
                     if((c == ':') || (c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                        if(decode) {
+
+                            // hostname cannot contain encoded characters
+                            return false;
+                        }
                         hostname = text.Substring(last, current - last);
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(!IsHostnameOrUserInfoChar(c)) {
 
@@ -201,8 +237,14 @@ namespace MindTouch.Dream {
                     break;
                 case State.IPv6Address:
                     if(c == ']') {
+                        if(decode) {
+
+                            // hostname cannot contain encoded characters
+                            return false;
+                        }
                         hostname = text.Substring(last, current - last + 1);
                         last = current + 1;
+                        decode = false;
                         state = State.PortNumberOrPathOrQueryOrFragmentOrEnd;
                     } else if(!(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == ':') || (c == '.'))) {
 
@@ -213,9 +255,11 @@ namespace MindTouch.Dream {
                 case State.PortNumberOrPathOrQueryOrFragmentOrEnd:
                     if(c == ':') {
                         last = current + 1;
+                        decode = false;
                         state = State.PortNumber;
                     } else if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else {
                         return false;
@@ -227,6 +271,7 @@ namespace MindTouch.Dream {
                             return false;
                         }
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(!((c >= '0') && (c <= '9'))) {
 
@@ -242,12 +287,14 @@ namespace MindTouch.Dream {
                             segmentList.Add(text.Substring(last, current - last));
                         }
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(c == '/') {
 
                         // we allow leading '/' characters in segments; stay in first-char state
                     } else if(IsPathChar(c)) {
                         state = State.PathNextChar;
+                        decode = false;
                     } else {
                         return false;
                     }
@@ -256,10 +303,12 @@ namespace MindTouch.Dream {
                     if((c == '?') || (c == '#') || (c == 0)) {
                         segmentList.Add(text.Substring(last, current - last));
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(c == '/') {
                         segmentList.Add(text.Substring(last, current - last));
                         last = current + 1;
+                        decode = false;
                         state = State.PathFirstChar;
                     } else if(!IsPathChar(c)) {
                         return false;
@@ -269,6 +318,7 @@ namespace MindTouch.Dream {
                     if((c == '#') || (c == 0)) {
                         query = text.Substring(last, current - last);
                         last = current + 1;
+                        decode = false;
                         state = (State)c;
                     } else if(!IsQueryChar(c)) {
                         return false;
@@ -277,18 +327,23 @@ namespace MindTouch.Dream {
                 case State.Fragment:
                     if(c == 0) {
                         fragment = text.Substring(last, current - last);
+                        if(decode) {
+                            fragment = Decode(fragment);
+                        }
+                        decode = false;
                         state = State.End;
                     } else if(!IsFragmentChar(c)) {
                         return false;
                     }
                     break;
                 case State.End:
-                    throw new ShouldNeverHappenException();
+                    throw new ShouldNeverHappenException("State.End");
+                default:
+                    throw new ShouldNeverHappenException("default");
                 }
             }
 
             // TODO:
-            // * decode username and password if present
             // * parse query into key=value pairs
 
             segments = segmentList.ToArray();
@@ -378,6 +433,72 @@ namespace MindTouch.Dream {
             return (c == '!') ||
                 ((c >= '#') && (c <= '_')) ||
                 ((c >= 'a') && (c <= '~'));
+        }
+
+        private static string Decode(string text) {
+            if(null == text) {
+                return null;
+            }
+            var output = new StringBuilder();
+            long len = text.Length;
+            var bytes = new MemoryStream();
+            for(var i = 0; i < len; i++) {
+                if(text[i] == '%' && i + 2 < len && text[i + 1] != '%') {
+                    int xchar;
+                    if(text[i + 1] == 'u' && i + 5 < len) {
+                        if(bytes.Length > 0) {
+                            output.Append(GetChars(bytes));
+                            bytes.SetLength(0);
+                        }
+                        xchar = GetChar(text, i + 2, 4);
+                        if(xchar != -1) {
+                            output.Append((char)xchar);
+                            i += 5;
+                        } else {
+                            output.Append('%');
+                        }
+                    } else if((xchar = GetChar(text, i + 1, 2)) != -1) {
+                        bytes.WriteByte((byte)xchar);
+                        i += 2;
+                    } else {
+                        output.Append('%');
+                    }
+                    continue;
+                }
+                if(bytes.Length > 0) {
+                    output.Append(GetChars(bytes));
+                    bytes.SetLength(0);
+                }
+                output.Append(text[i] == '+' ? ' ' : text[i]);
+            }
+            if(bytes.Length > 0) {
+                output.Append(GetChars(bytes));
+            }
+            return output.ToString();
+        }
+
+        private static char[] GetChars(MemoryStream b) {
+            return Encoding.UTF8.GetChars(b.GetBuffer(), 0, (int)b.Length);
+        }
+
+        private static int GetChar(string text, int offset, int length) {
+            var result = 0;
+            var end = length + offset;
+            for(var i = offset; i < end; i++) {
+                var c = text[i];
+                int value;
+                if(c >= '0' && c <= '9') {
+                    value = c - '0';
+                } else if(c >= 'a' && c <= 'f') {
+                    value = c - 'a' + 10;
+                } else if(c >= 'A' && c <= 'F') {
+                    value = c - 'A' + 10;
+                } else {
+                    return -1;
+                }
+                result = (result << 4) + value;
+            }
+            return result;
         }
     }
 }
