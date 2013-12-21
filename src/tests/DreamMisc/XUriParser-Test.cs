@@ -30,9 +30,6 @@ namespace MindTouch.Dream.Test {
     public class XUriParserTest {
 
         // MISSING TESTS FOR:
-        // * user name with encoding
-        // * user name without password
-        // * password with encoding
         // * test trailing double-slash: //
         // * fragment with encoding
         // * query key with encoding
@@ -44,6 +41,15 @@ namespace MindTouch.Dream.Test {
         // * decode with double %% sequence
         // * decode with %u1234 sequence
         // * decode with mixed UTF-8 and UTF-16 sequences
+        // * Q: is username:password valid on IPv6 addresses?
+
+        //--- Types ---
+        private enum ParseSuccess {
+            NEITHER,
+            ORIGINAL,
+            NEW,
+            BOTH
+        }
 
         //--- Class Methods ---
         private static XUri TryParse(string text) {
@@ -58,12 +64,12 @@ namespace MindTouch.Dream.Test {
             string fragment;
             KeyValuePair<string, string>[] @params;
             if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out @params, out fragment)) {
-                Assert.Fail("failed to parse uri: {0}", text);
+                return null;
             }
             return XUri.NewUnsafe(scheme, user, password, hostname, port, usesDefaultPort, segements, trailingSlash, @params, fragment, true);
         }
 
-        private void AssertParse(string text, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null) {
+        private static void AssertParse(string text, ParseSuccess success = ParseSuccess.BOTH, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null, string toString = null) {
 
             // setup
             Action<XUri, string> assert = (uri, suffix) => {
@@ -77,7 +83,7 @@ namespace MindTouch.Dream.Test {
                 Assert.AreEqual(trailingSlash, uri.TrailingSlash, string.Format("trailingSlash ({0})", suffix));
                 Assert.AreEqual(@params, uri.Params, string.Format("query ({0})", suffix));
                 Assert.AreEqual(fragment, uri.Fragment, string.Format("fragment ({0})", suffix));
-                Assert.AreEqual(text, uri.ToString(), string.Format("ToString() ({0})", suffix));
+                Assert.AreEqual(text, toString ?? uri.ToString(), string.Format("ToString() ({0})", suffix));
             };
 
             // setup
@@ -85,31 +91,54 @@ namespace MindTouch.Dream.Test {
             var uriNew = TryParse(text);
 
             // test
-            assert(uriOriginal, "original");
-            assert(uriNew, "new");
+            if((success == ParseSuccess.BOTH) || (success == ParseSuccess.ORIGINAL)) {
+                assert(uriOriginal, "original");
+            } else {
+                Assert.IsNull(uriOriginal, "(original)");                
+            }
+            if((success == ParseSuccess.BOTH) || (success == ParseSuccess.NEW)) {
+                assert(uriNew, "new");
+            } else {
+                Assert.IsNull(uriNew, "(new)");
+            }
         }
 
         //--- Methods ---
 
+        #region Scheme Tests
         [Test]
-        public void TestUriConstructor1() {
-            const string original = "http://domain.org/";
-            AssertParse(original, 
+        public void Http_hostname() {
+            const string original = "http://example.com";
+            AssertParse(original,
                 scheme: "http",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 80,
                 usesDefaultPort: true,
-                segments: new string[0], 
-                trailingSlash: true
+                segments: new string[0],
+                trailingSlash: false
             );
         }
 
         [Test]
-        public void TestUriConstructor2() {
-            const string original = "http://domain.org:81";
+        public void Http_hostname_with_default_port() {
+            const string original = "http://example.com:80";
             AssertParse(original,
                 scheme: "http",
-                hostname: "domain.org",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                toString: "http://example.com:80"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_with_nondefault_port() {
+            const string original = "http://example.com:81";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new string[0],
@@ -118,7 +147,528 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor3() {
+        public void Https_hostname() {
+            const string original = "https://example.com";
+            AssertParse(original,
+                scheme: "https",
+                hostname: "example.com",
+                port: 443,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Https_hostname_with_default_port() {
+            const string original = "https://example.com:443";
+            AssertParse(original,
+                scheme: "https",
+                hostname: "example.com",
+                port: 443,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                toString: "https://example.com:443"
+            );
+        }
+
+        [Test]
+        public void Https_hostname_with_nondefault_port() {
+            const string original = "https://example.com:444";
+            AssertParse(original,
+                scheme: "https",
+                hostname: "example.com",
+                port: 444,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Ftp_hostname() {
+            const string original = "ftp://example.com";
+            AssertParse(original,
+                scheme: "ftp",
+                hostname: "example.com",
+                port: 21,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Ftp_hostname_with_default_port() {
+            const string original = "ftp://example.com:21";
+            AssertParse(original,
+                scheme: "ftp",
+                hostname: "example.com",
+                port: 21,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                toString: "ftp://example.com:21"
+            );
+        }
+
+        [Test]
+        public void Ftp_hostname_with_nondefault_port() {
+            const string original = "ftp://example.com:22";
+            AssertParse(original,
+                scheme: "ftp",
+                hostname: "example.com",
+                port: 22,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Unknown_scheme() {
+            const string original = "unknown://example.com";
+            AssertParse(original,
+                scheme: "unknown",
+                hostname: "example.com",
+                port: -1,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Unknown_scheme_with_explicit_port() {
+            const string original = "unknown://example.com:8888";
+            AssertParse(original,
+                scheme: "unknown",
+                hostname: "example.com",
+                port: 8888,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Scheme_is_not_case_sensisitive() {
+            const string original = "hTTp://example.com";
+            AssertParse(original,
+                scheme: "hTTp",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Scheme_with_numbers_only_fails() {
+            const string original = "123://example.com";
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+
+        [Test]
+        public void Scheme_with_plus_sign_fails() {
+            const string original = "ht+tp://example.com";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "ht+tp",
+                hostname: "example.com",
+                port: -1,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Scheme_with_encoding_fails() {
+            const string original = "ht%74p://example.com";
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+        #endregion
+
+        #region Hostname & Port Tests
+        [Test]
+        public void Http_IPv4() {
+            const string original = "http://8.8.8.8";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_IPv4_with_default_port() {
+            const string original = "http://8.8.8.8:80";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                toString: "http://8.8.8.8:80"
+            );
+        }
+
+        [Test]
+        public void Http_IPv4_with_nondefault_port() {
+            const string original = "http://8.8.8.8:81";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_IPv4_with_path() {
+            const string original = "http://8.8.8.8/path";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_IPv4_with_query() {
+            const string original = "http://8.8.8.8?a=b";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("a", "b") }
+            );
+        }
+
+        [Test]
+        public void Http_IPv4_with_fragment() {
+            const string original = "http://8.8.8.8#fragment";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "fragment"
+            );
+        }
+
+        [Test]
+        public void Http_IPv6() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_default_port() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:80";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                toString: "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:80"
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_nondefault_port() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:81";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_path() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]/path";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_query() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]?a=b";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("a", "b") }
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_fragment() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]#fragment";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "fragment"
+            );
+        }
+
+        [Test]
+        public void IPv6_with_non_hex_digits_fails() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:xxxx]";
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+
+        [Test]
+        public void Hostname_with_plus_sign_fails() {
+            const string original = "http://ex+ample.com";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "http",
+                hostname: "ex+ample.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Hostname_with_encoding_fails() {
+            const string original = "http://ex%62mple.com";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "http",
+                hostname: "ex%62mple.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Port_value_that_is_too_large_fails() {
+            const string original = "http://example.com:100000";
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+        #endregion
+
+        #region Username & Password Testse
+
+        [Test]
+        public void Http_with_username_and_password() {
+            const string original = "http://john.doe:password@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                password: "password",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username() {
+            const string original = "http://john.doe@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_plus_sign_in_username() {
+            const string original = "http://john+doe@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john doe",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_encoded_username() {
+            const string original = "http://john%2Fdoe@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john/doe",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_plus_sign_in_username_and_unencoded_password() {
+            const string original = "http://john.doe:password@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                password: "password",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_encoded_username_and_password() {
+            const string original = "http://john%2Fdoe:password@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john/doe",
+                password: "password",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username_and_plus_sign_in_password() {
+            const string original = "http://john.doe:pass+word@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                password: "pass word",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username_and_encoded_password() {
+            const string original = "http://john.doe:pass%2Fword@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                password: "pass/word",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_plus_sign_in_username_and_encoded_password() {
+            const string original = "http://john+doe:pass%2Fword@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john doe",
+                password: "pass/word",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_encoded_username_and_encoded_password() {
+            const string original = "http://john%2Fdoe:pass%2Fword@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "john/doe",
+                password: "pass/word",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+        #endregion
+
+        [Test]
+        public void Http_hostname_with_trailingslash() {
+            const string original = "http://example.com/";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_trailingslash() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]/";
             AssertParse(original,
                 scheme: "http",
@@ -131,41 +681,13 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor4() {
-            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:81/";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
-                port: 81,
-                usesDefaultPort: false,
-                segments: new string[0],
-                trailingSlash: true
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor5() {
-            const string original = "http://user:password@domain.org";
-            AssertParse(original,
-                scheme: "http",
-                user: "user",
-                password: "password",
-                hostname: "domain.org",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
-        }
-
-        [Test]
         public void TestUriConstructor6() {
-            const string original = "http://user:password@domain.org:81/";
+            const string original = "http://user:password@example.com:81/";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new string[0],
@@ -175,12 +697,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor7() {
-            const string original = "http://user:password@domain.org:81/path";
+            const string original = "http://user:password@example.com:81/path";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path" },
@@ -190,12 +712,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor8() {
-            const string original = "http://user:password@domain.org:81/path//";
+            const string original = "http://user:password@example.com:81/path//";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path", "/" },
@@ -205,12 +727,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor8_1() {
-            const string original = "http://user:password@domain.org:81//";
+            const string original = "http://user:password@example.com:81//";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "/" },
@@ -220,12 +742,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor9() {
-            const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah";
+            const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path", "foo%20bar", "path", "/@blah" },
@@ -235,12 +757,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor10() {
-            const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah?ready&set=&go=foo/bar";
+            const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah?ready&set=&go=foo/bar";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path", "foo%20bar", "path", "/@blah" },
@@ -255,12 +777,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor11() {
-            const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah#yo";
+            const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah#yo";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path", "foo%20bar", "path", "/@blah" },
@@ -271,12 +793,12 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor12() {
-            const string original = "http://user:password@domain.org:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
+            const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
             AssertParse(original,
                 scheme: "http",
                 user: "user",
                 password: "password",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
                 segments: new[] { "path", "foo%20bar", "path", "/@blah" },
@@ -362,10 +884,10 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor18() {
-            const string original = "http://domain.org/?";
+            const string original = "http://example.com/?";
             AssertParse(original,
                 scheme: "http",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 80,
                 usesDefaultPort: true,
                 segments: new string[0],
@@ -376,10 +898,10 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void TestUriConstructor19() {
-            const string original = "http://domain.org?";
+            const string original = "http://example.com?";
             AssertParse(original,
                 scheme: "http",
-                hostname: "domain.org",
+                hostname: "example.com",
                 port: 80,
                 usesDefaultPort: true,
                 segments: new string[0],
@@ -537,7 +1059,7 @@ namespace MindTouch.Dream.Test {
 
         [Test, Ignore]
         public void ParsePerformance() {
-            const string uri = "http://user:password@domain.org:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
+            const string uri = "http://user:password@example.com:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
             const int WARMUP = 1000;
             const int PERF_LOOPS = 500000;
 
