@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Text;
 
 namespace MindTouch.Dream {
@@ -190,6 +189,9 @@ namespace MindTouch.Dream {
 
                         // part after ':' is password
                         password = text.Substring(last, current - last);
+                        if(decode) {
+                            password = Decode(password);
+                        }
                         last = current + 1;
                         decode = false;
                         state = State.HostnameOrIPv6Address;
@@ -479,49 +481,50 @@ namespace MindTouch.Dream {
         }
 
         private static string Decode(string text) {
-            if(null == text) {
-                return null;
-            }
-            var output = new StringBuilder();
-            long len = text.Length;
-            var bytes = new MemoryStream();
-            for(var i = 0; i < len; i++) {
-                if(text[i] == '%' && i + 2 < len && text[i + 1] != '%') {
-                    int xchar;
-                    if(text[i + 1] == 'u' && i + 5 < len) {
-                        if(bytes.Length > 0) {
-                            output.Append(GetChars(bytes));
-                            bytes.SetLength(0);
-                        }
-                        xchar = GetChar(text, i + 2, 4);
-                        if(xchar != -1) {
-                            output.Append((char)xchar);
-                            i += 5;
-                        } else {
-                            output.Append('%');
-                        }
-                    } else if((xchar = GetChar(text, i + 1, 2)) != -1) {
-                        bytes.WriteByte((byte)xchar);
-                        i += 2;
-                    } else {
-                        output.Append('%');
-                    }
-                    continue;
-                }
-                if(bytes.Length > 0) {
-                    output.Append(GetChars(bytes));
-                    bytes.SetLength(0);
-                }
-                output.Append(text[i] == '+' ? ' ' : text[i]);
-            }
-            if(bytes.Length > 0) {
-                output.Append(GetChars(bytes));
-            }
-            return output.ToString();
-        }
 
-        private static char[] GetChars(MemoryStream b) {
-            return Encoding.UTF8.GetChars(b.GetBuffer(), 0, (int)b.Length);
+            // NOTE (steveb): justification for why 'bytes' cannot be longer than 'text';
+            //                for ascii characters, we need 1 byte per character
+            //                for encoded 8-bit characters (%XX), we need 1-2 byte(s) per 3 characters
+            //                for encoded 16-bit characters (%uXXXX), we need 2-4 bytes per 6 characters
+
+            var length = text.Length;
+            var bytes = new byte[text.Length];
+            var bytesIndex = 0;
+            var chars = new char[1];
+            for(var textIndex = 0; textIndex < length; textIndex++) {
+                var c = text[textIndex];
+                switch(c) {
+                case '+':
+                    bytes[bytesIndex++] = (byte)' ';
+                    break;
+                case '%':
+                    if((textIndex + 2) < length) {
+                        int xchar;
+                        if((text[textIndex + 1] == 'u') && ((textIndex + 5) < length) && (xchar = GetChar(text, textIndex + 2, 4)) != -1) {
+                            chars[0] = (char)xchar;
+                            bytesIndex += Encoding.UTF8.GetBytes(chars, 0, 1, bytes, bytesIndex);
+                            textIndex += 5;
+                            continue;
+                        }
+                        if((xchar = GetChar(text, textIndex + 1, 2)) != -1) {
+                            if(xchar <= 127) {
+                                bytes[bytesIndex++] = (byte)xchar;
+                            } else {
+                                chars[0] = (char)xchar;
+                                bytesIndex += Encoding.UTF8.GetBytes(chars, 0, 1, bytes, bytesIndex);
+                            }
+                            textIndex += 2;
+                            continue;
+                        }
+                    }
+                    bytes[bytesIndex++] = (byte)'%';
+                    break;
+                default:
+                    bytes[bytesIndex++] = (byte)c;
+                    break;
+                }
+            }
+            return Encoding.UTF8.GetString(bytes, 0, bytesIndex);
         }
 
         private static int GetChar(string text, int offset, int length) {
@@ -541,7 +544,7 @@ namespace MindTouch.Dream {
                 }
                 result = (result << 4) + value;
             }
-            return result;
+            return (char)result;
         }
 
         private static int DeterminePort(string scheme, int port, out bool isDefault) {

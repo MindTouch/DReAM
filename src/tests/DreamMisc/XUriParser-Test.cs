@@ -31,6 +31,7 @@ namespace MindTouch.Dream.Test {
 
         // MISSING TESTS FOR:
         // * user name with encoding
+        // * user name without password
         // * password with encoding
         // * test trailing double-slash: //
         // * fragment with encoding
@@ -39,6 +40,10 @@ namespace MindTouch.Dream.Test {
         // * trailing & (e.g. http://foo/?a=b&)
         // * leading & (e.g. http://foo/?&a=b)
         // * double && (e.g. http://foo/?a=b&&c=d)
+        // * decode with invalid % sequence
+        // * decode with double %% sequence
+        // * decode with %u1234 sequence
+        // * decode with mixed UTF-8 and UTF-16 sequences
 
         //--- Class Methods ---
         private static XUri TryParse(string text) {
