@@ -27,7 +27,7 @@ using System.Text;
 namespace MindTouch.Dream {
     public static class XUriParser {
 
-        //--- Constants ---
+        //--- Types ---
         private enum State {
             End = 0,
             SchemeFirst,
@@ -44,12 +44,21 @@ namespace MindTouch.Dream {
             // special values assigned to reduce code complexity
             PortNumber = (int)':',
             PathFirstChar = (int)'/',
-            Query = (int)'?',
+            QueryStart = (int)'?',
+            QueryKey = (int)'&',
+            QueryValue = (int)'=',
             Fragment = (int)'#'
         }
 
+        //--- Class Fields ---
+        private static readonly StringComparer INVARIANT_IGNORE_CASE = StringComparer.OrdinalIgnoreCase;
+        private static readonly int HTTP_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("http");
+        private static readonly int HTTPS_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("https");
+        private static readonly int LOCAL_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("local");
+        private static readonly int FTP_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("ftp");
+
         //--- Class Methods ---
-        public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out string query, out string fragment) {
+        public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
             scheme = null;
             user = null;
             password = null;
@@ -58,7 +67,7 @@ namespace MindTouch.Dream {
             usesDefautPort = true;
             segments = null;
             trailingSlash = false;
-            query = null;
+            @params = null;
             fragment = null;
 
             // check for trivial case
@@ -69,7 +78,9 @@ namespace MindTouch.Dream {
             // initialize state and loop over all characters
             var state = State.SchemeFirst;
             string hostnameOrUsername = null;
+            string paramsKey = null;
             var segmentList = new List<string>(16);
+            List<KeyValuePair<string, string>> paramsList = null;
             var decode = false;
             for(int current = 0, last = 0; current <= text.Length; ++current) {
                 char c;
@@ -314,9 +325,41 @@ namespace MindTouch.Dream {
                         return false;
                     }
                     break;
-                case State.Query:
-                    if((c == '#') || (c == 0)) {
-                        query = text.Substring(last, current - last);
+                case State.QueryStart:
+                case State.QueryKey:
+                    if(paramsList == null) {
+                        paramsList = new List<KeyValuePair<string, string>>(16);
+                    }
+                    if((c == '&') || (c == '#') || (c == 0)) {
+                        if(current != last) {
+                            paramsKey = text.Substring(last, current - last);
+                            if(decode) {
+                                paramsKey = Decode(paramsKey);
+                            }
+                            paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
+                        }
+                        last = current + 1;
+                        decode = false;
+                        state = (State)c;
+                    } else if(c == '=') {
+                        paramsKey = text.Substring(last, current - last);
+                        if(decode) {
+                            paramsKey = Decode(paramsKey);
+                        }
+                        last = current + 1;
+                        decode = false;
+                        state = State.QueryValue;
+                    } else if(!IsQueryChar(c)) {
+                        return false;
+                    }
+                    break;
+                case State.QueryValue:
+                    if((c == '&') || (c == '#') || (c == 0)) {
+                        var paramsValue = text.Substring(last, current - last);
+                        if(decode) {
+                            paramsValue = Decode(paramsValue);
+                        }
+                        paramsList.Add(new KeyValuePair<string, string>(paramsKey, paramsValue));
                         last = current + 1;
                         decode = false;
                         state = (State)c;
@@ -342,11 +385,11 @@ namespace MindTouch.Dream {
                     throw new ShouldNeverHappenException("default");
                 }
             }
-
-            // TODO:
-            // * parse query into key=value pairs
-
+            port = DeterminePort(scheme, port, out usesDefautPort);
             segments = segmentList.ToArray();
+            if(paramsList != null) {
+                @params = paramsList.ToArray();
+            }
             return true;
         }
 
@@ -499,6 +542,26 @@ namespace MindTouch.Dream {
                 result = (result << 4) + value;
             }
             return result;
+        }
+
+        private static int DeterminePort(string scheme, int port, out bool isDefault) {
+            var defaultPort = -1;
+            var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
+            if(schemeHashCode == LOCAL_HASHCODE) {
+
+                // use default port number (-1)
+            } else if(schemeHashCode == HTTP_HASHCODE) {
+                defaultPort = 80;
+            } else if(schemeHashCode == HTTPS_HASHCODE) {
+                defaultPort = 443;
+            } else if(schemeHashCode == FTP_HASHCODE) {
+                defaultPort = 21;
+            }
+            if(port == -1) {
+                port = defaultPort;
+            }
+            isDefault = (port == defaultPort);
+            return port;
         }
     }
 }

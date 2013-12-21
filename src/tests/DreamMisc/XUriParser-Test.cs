@@ -36,6 +36,9 @@ namespace MindTouch.Dream.Test {
         // * fragment with encoding
         // * query key with encoding
         // * query value with encoding
+        // * trailing & (e.g. http://foo/?a=b&)
+        // * leading & (e.g. http://foo/?&a=b)
+        // * double && (e.g. http://foo/?a=b&&c=d)
 
         //--- Class Methods ---
         private static XUri TryParse(string text) {
@@ -47,16 +50,12 @@ namespace MindTouch.Dream.Test {
             bool usesDefaultPort;
             bool trailingSlash;
             string[] segements;
-            string query;
             string fragment;
-            if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out query, out fragment)) {
+            KeyValuePair<string, string>[] @params;
+            if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out @params, out fragment)) {
                 Assert.Fail("failed to parse uri: {0}", text);
             }
-            var result = new XUri(scheme, user, password, hostname, port, segements, trailingSlash, null, fragment);
-            if(query != null) {
-                result = result.WithQuery(query);
-            }
-            return result;
+            return XUri.NewUnsafe(scheme, user, password, hostname, port, usesDefaultPort, segements, trailingSlash, @params, fragment, true);
         }
 
         private void AssertParse(string text, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null) {
