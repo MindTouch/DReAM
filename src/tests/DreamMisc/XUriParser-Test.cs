@@ -51,6 +51,11 @@ namespace MindTouch.Dream.Test {
             BOTH
         }
 
+        ///--- Constants ---
+
+        // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
+        private const string INTERNATIONALIZATION = "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n";
+
         //--- Class Methods ---
         private static XUri TryParse(string text) {
             string scheme;
@@ -105,6 +110,14 @@ namespace MindTouch.Dream.Test {
 
         //--- Methods ---
 
+        [Test]
+        public void TestTryParse() {
+            const string original = "htt;//";
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+
         #region Scheme Tests
         [Test]
         public void Http_hostname() {
@@ -126,10 +139,9 @@ namespace MindTouch.Dream.Test {
                 scheme: "http",
                 hostname: "example.com",
                 port: 80,
-                usesDefaultPort: true,
+                usesDefaultPort: false,
                 segments: new string[0],
-                trailingSlash: false,
-                toString: "http://example.com:80"
+                trailingSlash: false
             );
         }
 
@@ -166,10 +178,9 @@ namespace MindTouch.Dream.Test {
                 scheme: "https",
                 hostname: "example.com",
                 port: 443,
-                usesDefaultPort: true,
+                usesDefaultPort: false,
                 segments: new string[0],
-                trailingSlash: false,
-                toString: "https://example.com:443"
+                trailingSlash: false
             );
         }
 
@@ -206,10 +217,9 @@ namespace MindTouch.Dream.Test {
                 scheme: "ftp",
                 hostname: "example.com",
                 port: 21,
-                usesDefaultPort: true,
+                usesDefaultPort: false,
                 segments: new string[0],
-                trailingSlash: false,
-                toString: "ftp://example.com:21"
+                trailingSlash: false
             );
         }
 
@@ -317,10 +327,9 @@ namespace MindTouch.Dream.Test {
                 scheme: "http",
                 hostname: "8.8.8.8",
                 port: 80,
-                usesDefaultPort: true,
+                usesDefaultPort: false,
                 segments: new string[0],
-                trailingSlash: false,
-                toString: "http://8.8.8.8:80"
+                trailingSlash: false
             );
         }
 
@@ -398,10 +407,9 @@ namespace MindTouch.Dream.Test {
                 scheme: "http",
                 hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
                 port: 80,
-                usesDefaultPort: true,
+                usesDefaultPort: false,
                 segments: new string[0],
-                trailingSlash: false,
-                toString: "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:80"
+                trailingSlash: false
             );
         }
 
@@ -536,6 +544,20 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Http_with_empty_username() {
+            const string original = "http://@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
         public void Http_with_plus_sign_in_username() {
             const string original = "http://john+doe@example.com";
             AssertParse(original,
@@ -654,8 +676,10 @@ namespace MindTouch.Dream.Test {
         }
         #endregion
 
+        #region Path Tests
+
         [Test]
-        public void Http_hostname_with_trailingslash() {
+        public void Http_hostname_with_trailing_slash() {
             const string original = "http://example.com/";
             AssertParse(original,
                 scheme: "http",
@@ -668,7 +692,20 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_IPv6_with_trailingslash() {
+        public void IPv4_hostname_with_trailing_slash() {
+            const string original = "http://8.8.8.8/";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_with_trailing_slash() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]/";
             AssertParse(original,
                 scheme: "http",
@@ -681,12 +718,10 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor6() {
-            const string original = "http://user:password@example.com:81/";
+        public void Http_hostname_with_custom_port_and_trailing_slash() {
+            const string original = "http://example.com:81/";
             AssertParse(original,
                 scheme: "http",
-                user: "user",
-                password: "password",
                 hostname: "example.com",
                 port: 81,
                 usesDefaultPort: false,
@@ -696,63 +731,144 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor7() {
-            const string original = "http://user:password@example.com:81/path";
+        public void Http_hostname_with_trailing_double_slash() {
+            const string original = "http://example.com//";
             AssertParse(original,
                 scheme: "http",
-                user: "user",
-                password: "password",
                 hostname: "example.com",
-                port: 81,
-                usesDefaultPort: false,
-                segments: new[] { "path" },
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor8() {
-            const string original = "http://user:password@example.com:81/path//";
-            AssertParse(original,
-                scheme: "http",
-                user: "user",
-                password: "password",
-                hostname: "example.com",
-                port: 81,
-                usesDefaultPort: false,
-                segments: new[] { "path", "/" },
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor8_1() {
-            const string original = "http://user:password@example.com:81//";
-            AssertParse(original,
-                scheme: "http",
-                user: "user",
-                password: "password",
-                hostname: "example.com",
-                port: 81,
-                usesDefaultPort: false,
+                port: 80,
+                usesDefaultPort: true,
                 segments: new[] { "/" },
                 trailingSlash: false
             );
         }
 
         [Test]
-        public void TestUriConstructor9() {
-            const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah";
+        public void Http_hostname_single_segment() {
+            const string original = "http://example.com/path";
             AssertParse(original,
                 scheme: "http",
-                user: "user",
-                password: "password",
                 hostname: "example.com",
-                port: 81,
-                usesDefaultPort: false,
-                segments: new[] { "path", "foo%20bar", "path", "/@blah" },
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" },
                 trailingSlash: false
             );
+        }
+
+        [Test]
+        public void Http_hostname_single_segment_with_trailing_slash() {
+            const string original = "http://example.com/path/";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" },
+                trailingSlash: true
+            );
+        }
+
+        [Test]
+        public void Http_hostname_single_segment_with_trailing_double_slash() {
+            const string original = "http://example.com/path//";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" , "/"},
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_multi_segment_with_encoding() {
+            const string original = "http://example.com/abc/foo%20bar/xyz";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "abc", "foo%20bar", "xyz" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_single_segment_with_caret() {
+            const string original = "http://example.com/foo^bar";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "foo^bar" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_single_segment_with_vertical_bar() {
+            const string original = "http://example.com/foo|bar";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "foo|bar" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_single_segment_with_square_brackets() {
+            const string original = "http://example.com/[foobar]";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "[foobar]" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_single_segment_with_curly_brackets() {
+            const string original = "http://example.com/{foobar}";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "{foobar}" },
+                trailingSlash: false
+            );
+        }
+        #endregion
+
+
+
+
+
+
+        [Test]
+        public void TestXUriFromUriConstruction() {
+            var evilSegments = new[] {
+
+                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
+                INTERNATIONALIZATION,
+                "A%4b",
+                "A^B"
+            };
+            foreach(var evil in evilSegments) {
+                var original = new Uri("http://foo/" + evil);
+                var fromDecoded = new Uri(original.ToString());
+                var uri1 = new XUri(original);
+                var uri2 = new XUri(fromDecoded);
+                // just making sure they actually parse
+            }
         }
 
         [Test]
@@ -983,11 +1099,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_parse_square_brackets_in_segment() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo/[123]/bar"));
-        }
-
-        [Test]
         public void Can_parse_square_brackets_in_fragment() {
             Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"));
         }
@@ -1003,11 +1114,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_parse_curly_brackets_in_segment() {
-            Assert.IsNotNull(XUri.TryParse("http://test.com/{xyz}/foo"));
-        }
-
-        [Test]
         public void Can_parse_curly_brackets_in_fragment() {
             Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"));
         }
@@ -1015,24 +1121,6 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Curly_brackets_in_parsed_query_are_encoded_on_render() {
             Assert.AreEqual("http://test.com/AllItems.aspx?RootFolder=%7Bxyz%7D", new XUri("http://test.com/AllItems.aspx?RootFolder={xyz}").ToString());
-        }
-
-        [Test]
-        public void TestXUriFromUriConstruction() {
-            var evilSegments = new[] {
-
-                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
-                "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
-                "A%4b",
-                "A^B"
-            };
-            foreach(var evil in evilSegments) {
-                var original = new Uri("http://foo/" + evil);
-                var fromDecoded = new Uri(original.ToString());
-                var uri1 = new XUri(original);
-                var uri2 = new XUri(fromDecoded);
-                // just making sure they actually parse
-            }
         }
 
         [Test]
@@ -1050,11 +1138,6 @@ namespace MindTouch.Dream.Test {
                 var uri2 = new XUri(fromDecoded);
                 // just making sure they actually parse
             }
-        }
-
-        [Test]
-        public void TestTryParse() {
-            Assert.IsFalse(XUri.TryParse("htt;//") != null);
         }
 
         [Test, Ignore]

@@ -242,7 +242,7 @@ namespace MindTouch.Dream {
                 uri = null;
                 return false;
             }
-            uri = new XUri(scheme, user, password, host, port, null, segments, trailingSlash, @params, fragment, true);
+            uri = new XUri(scheme, user, password, host, port, usesDefaultPort, segments, trailingSlash, @params, fragment, true);
             return true;
         }
 
@@ -736,23 +736,23 @@ namespace MindTouch.Dream {
             return true;
         }
 
-        private static int DeterminePort(string scheme, int port, out bool isDefault) {
-            int defaultPort = -1;
-            int schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
-            if(schemeHashCode == LOCAL_HASHCODE) {
-
-                // use default port number (-1)
-            } else if(schemeHashCode == HTTP_HASHCODE) {
-                defaultPort = 80;
-            } else if(schemeHashCode == HTTPS_HASHCODE) {
-                defaultPort = 443;
-            } else if(schemeHashCode == FTP_HASHCODE) {
-                defaultPort = 21;
-            }
+        private static int DeterminePort(string scheme, int port, out bool usesDefault) {
             if(port == -1) {
-                port = defaultPort;
+                var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
+                if(schemeHashCode == LOCAL_HASHCODE) {
+
+                    // use default port number (-1)
+                } else if(schemeHashCode == HTTP_HASHCODE) {
+                    port = 80;
+                } else if(schemeHashCode == HTTPS_HASHCODE) {
+                    port = 443;
+                } else if(schemeHashCode == FTP_HASHCODE) {
+                    port = 21;
+                }
+                usesDefault = true;
+            } else {
+                usesDefault = false;
             }
-            isDefault = (port == defaultPort);
             return port;
         }
 
@@ -866,7 +866,7 @@ namespace MindTouch.Dream {
         /// <param name="fragment"></param>
         /// <param name="doubleEncodeSegments"></param>
         /// <returns></returns>
-        public static XUri NewUnsafe(string scheme, string user, string password, string host, int port, bool? defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
+        public static XUri NewUnsafe(string scheme, string user, string password, string host, int port, bool defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
             return new XUri(scheme, user, password, host, port, defaultPort, segments, trailingSlash, @params, fragment, doubleEncodeSegments);
         }
 #endif
@@ -1066,7 +1066,7 @@ namespace MindTouch.Dream {
             this.TrailingSlash = trailingSlash;
         }
 
-        private XUri(string scheme, string user, string password, string host, int port, bool? defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
+        private XUri(string scheme, string user, string password, string host, int port, bool defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
 
             // NOTE: this constructor is similar to the public constructor, except that it does not use any of the RegEx checks
 
@@ -1118,12 +1118,8 @@ namespace MindTouch.Dream {
 #endif
             // these strings are never internalized
             this.Password = password;
-            if(defaultPort.HasValue) {
-                this.Port = port;
-                this.UsesDefaultPort = defaultPort.Value;
-            } else {
-                this.Port = DeterminePort(scheme, port, out this.UsesDefaultPort);
-            }
+            this.Port = port;
+            this.UsesDefaultPort = defaultPort;
             this.TrailingSlash = trailingSlash;
             _segments = segments ?? EMPTY_ARRAY;
             _doubleEncode = doubleEncodeSegments;
@@ -1982,7 +1978,9 @@ namespace MindTouch.Dream {
             if((port < -1) || (port > ushort.MaxValue)) {
                 throw new ArgumentException("port");
             }
-            return new XUri(Scheme, User, Password, Host, port, null, Segments, TrailingSlash, Params, Fragment, _doubleEncode);
+            bool usesDefaultPort;
+            port = DeterminePort(Scheme, port, out usesDefaultPort);
+            return new XUri(Scheme, User, Password, Host, port, usesDefaultPort, Segments, TrailingSlash, Params, Fragment, _doubleEncode);
         }
 
         /// <summary>
@@ -1990,7 +1988,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns>New uri.</returns>
         public XUri WithSegmentDoubleEncoding() {
-            return new XUri(Scheme, User, Password, Host, Port, null, Segments, TrailingSlash, Params, Fragment, true);
+            return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, Segments, TrailingSlash, Params, Fragment, true);
         }
 
         /// <summary>
@@ -1998,7 +1996,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns>New uri.</returns>
         public XUri WithoutSegmentDoubleEncoding() {
-            return new XUri(Scheme, User, Password, Host, Port, null, Segments, TrailingSlash, Params, Fragment, false);
+            return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, Segments, TrailingSlash, Params, Fragment, false);
         }
 
         /// <summary>

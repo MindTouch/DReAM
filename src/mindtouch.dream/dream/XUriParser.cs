@@ -26,6 +26,8 @@ using System.Text;
 namespace MindTouch.Dream {
     public static class XUriParser {
 
+        // NOTE (steveb): XUriParser parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; and \ as valid segment separator
+
         //--- Types ---
         private enum State {
             End = 0,
@@ -547,23 +549,23 @@ namespace MindTouch.Dream {
             return (char)result;
         }
 
-        private static int DeterminePort(string scheme, int port, out bool isDefault) {
-            var defaultPort = -1;
-            var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
-            if(schemeHashCode == LOCAL_HASHCODE) {
-
-                // use default port number (-1)
-            } else if(schemeHashCode == HTTP_HASHCODE) {
-                defaultPort = 80;
-            } else if(schemeHashCode == HTTPS_HASHCODE) {
-                defaultPort = 443;
-            } else if(schemeHashCode == FTP_HASHCODE) {
-                defaultPort = 21;
-            }
+        private static int DeterminePort(string scheme, int port, out bool usesDefault) {
             if(port == -1) {
-                port = defaultPort;
+                var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
+                if(schemeHashCode == LOCAL_HASHCODE) {
+
+                    // use default port number (-1)
+                } else if(schemeHashCode == HTTP_HASHCODE) {
+                    port = 80;
+                } else if(schemeHashCode == HTTPS_HASHCODE) {
+                    port = 443;
+                } else if(schemeHashCode == FTP_HASHCODE) {
+                    port = 21;
+                }
+                usesDefault = true;
+            } else {
+                usesDefault = false;
             }
-            isDefault = (port == defaultPort);
             return port;
         }
     }
