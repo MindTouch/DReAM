@@ -59,6 +59,23 @@ namespace MindTouch.Dream {
         private static readonly int FTP_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("ftp");
 
         //--- Class Methods ---
+        public static XUri TryParse(string text) {
+            string scheme;
+            string user;
+            string password;
+            string hostname;
+            int port;
+            bool usesDefaultPort;
+            bool trailingSlash;
+            string[] segements;
+            string fragment;
+            KeyValuePair<string, string>[] @params;
+            if(!TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out @params, out fragment)) {
+                return null;
+            }
+            return XUri.NewUnsafe(scheme, user, password, hostname, port, usesDefaultPort, segements, trailingSlash, @params, fragment, true);
+        }
+
         public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
             scheme = null;
             user = null;
@@ -412,7 +429,7 @@ namespace MindTouch.Dream {
             return ((c >= 'a') && (c <= 'z')) || 
                 ((c >= 'A') && (c <= 'Z')) || 
                 ((c >= '0') && (c <= '9')) ||
-                ((c >= '$') && (c <= '.')) || /* one of: $%&'()*+,-. */
+                ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
                 (c == '!') || 
                 (c == ';') || 
                 (c == '=') || 
@@ -425,9 +442,10 @@ namespace MindTouch.Dream {
             // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:@\^\|\[\]{}]
 
             return (c == '!') ||
-                ((c >= '$') && (c <= '=')) ||
-                ((c >= '@') && (c <= '_')) ||
-                ((c >= 'a') && (c <= '~'));
+                ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
+                (c == '=') ||
+                ((c >= '@') && (c <= '_')) ||   // one of: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+                ((c >= 'a') && (c <= '~'));     // one of: abcdefghijklmnopqrstuvwxyz{|}~
         }
 
         private static bool IsQueryChar(char c) {
@@ -435,8 +453,10 @@ namespace MindTouch.Dream {
             // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]
 
             return (c == '!') ||
-                ((c >= '$') && (c <= '_')) ||
-                ((c >= 'a') && (c <= '~'));
+                ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
+                (c == '=') ||
+                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+                ((c >= 'a') && (c <= '~'));     // one of: abcdefghijklmnopqrstuvwxyz{|}~
         }
 
         private static bool IsFragmentChar(char c) {
@@ -461,7 +481,9 @@ namespace MindTouch.Dream {
             // 0..9 48..57
             // : 58
             // ; 59
+
             // = 61
+
             // ? 63 (not valid in path)
             // @ 64
             // A..Z 65..90
@@ -478,8 +500,10 @@ namespace MindTouch.Dream {
             // ~ 126
 
             return (c == '!') ||
-                ((c >= '#') && (c <= '_')) ||
-                ((c >= 'a') && (c <= '~'));
+                ((c >= '#') && (c <= ';')) ||   // one of: #$%&'()*+,-./0123456789:;
+                (c == '=') ||
+                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+                ((c >= 'a') && (c <= '~'));     // one of: abcdefghijklmnopqrstuvwxyz{|}~
         }
 
         private static string Decode(string text) {

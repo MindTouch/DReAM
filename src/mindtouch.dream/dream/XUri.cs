@@ -126,12 +126,12 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Regular expression for matching query name/value pairs.
         /// </summary>
-        public const string QUERY_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]*";
+        public const string QUERY_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}\\]*";
 
         /// <summary>
         /// Regular expression for matching fragment elements.
         /// </summary>
-        public const string FRAGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}]*";
+        public const string FRAGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}\\]*";
 
         /// <summary>
         /// Invariant string comparer (using <see cref="StringComparer.Ordinal"/> by default).
@@ -850,7 +850,6 @@ namespace MindTouch.Dream {
             return false;
         }
 
-#if DEBUG
         /// <summary>
         /// DO NOT USE THIS METHOD
         /// </summary>
@@ -869,7 +868,6 @@ namespace MindTouch.Dream {
         public static XUri NewUnsafe(string scheme, string user, string password, string host, int port, bool defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
             return new XUri(scheme, user, password, host, port, defaultPort, segments, trailingSlash, @params, fragment, doubleEncodeSegments);
         }
-#endif
 
         private static bool HaveSameScheme(XUri left, XUri right, bool strict) {
             return INVARIANT_IGNORE_CASE.Equals(left.Scheme, right.Scheme) || (!strict && left.IsHttpOrHttps && right.IsHttpOrHttps);

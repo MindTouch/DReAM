@@ -57,23 +57,6 @@ namespace MindTouch.Dream.Test {
         private const string INTERNATIONALIZATION = "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n";
 
         //--- Class Methods ---
-        private static XUri TryParse(string text) {
-            string scheme;
-            string user;
-            string password;
-            string hostname;
-            int port;
-            bool usesDefaultPort;
-            bool trailingSlash;
-            string[] segements;
-            string fragment;
-            KeyValuePair<string, string>[] @params;
-            if(!XUriParser.TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out @params, out fragment)) {
-                return null;
-            }
-            return XUri.NewUnsafe(scheme, user, password, hostname, port, usesDefaultPort, segements, trailingSlash, @params, fragment, true);
-        }
-
         private static void AssertParse(string text, ParseSuccess success = ParseSuccess.BOTH, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null, string toString = null) {
 
             // setup
@@ -93,7 +76,7 @@ namespace MindTouch.Dream.Test {
 
             // setup
             var uriOriginal = XUri.TryParse(text);
-            var uriNew = TryParse(text);
+            var uriNew = XUriParser.TryParse(text);
 
             // test
             if((success == ParseSuccess.BOTH) || (success == ParseSuccess.ORIGINAL)) {
@@ -1158,11 +1141,11 @@ namespace MindTouch.Dream.Test {
 
             // test new parsing code
             for(var i = 0; i < WARMUP; ++i) {
-                TryParse(uri);
+                XUriParser.TryParse(uri);
             }
             var swNew = Stopwatch.StartNew();
             for(var i = 0; i < PERF_LOOPS; ++i) {
-                TryParse(uri);
+                XUriParser.TryParse(uri);
             }
             swNew.Stop();
 
