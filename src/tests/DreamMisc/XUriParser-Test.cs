@@ -932,8 +932,8 @@ namespace MindTouch.Dream.Test {
                 Assert.IsNotNull(XUri.TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using regex parser", evil));
 
                 // new parser
-                Assert.IsNotNull(TryParse(original.OriginalString), string.Format("original failed for '{0}' using custom parser", evil));
-                Assert.IsNotNull(TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using custom parser", evil));
+                Assert.IsNotNull(XUriParser.TryParse(original.OriginalString), string.Format("original failed for '{0}' using custom parser", evil));
+                Assert.IsNotNull(XUriParser.TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using custom parser", evil));
             }
         }
 
@@ -1082,19 +1082,19 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Can_parse_square_brackets_in_query() {
             Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"), "XUri.TryParse");
-            Assert.IsNotNull(TryParse("http://host/foo?bar[123]=abc"), "XUriParser.TryParse");
+            Assert.IsNotNull(XUriParser.TryParse("http://host/foo?bar[123]=abc"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_square_brackets_in_fragment() {
             Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"), "XUri.TryParse");
-            Assert.IsNotNull(TryParse("http://host/foo#[bar]"), "XUriParser.TryParse");
+            Assert.IsNotNull(XUriParser.TryParse("http://host/foo#[bar]"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_curly_brackets_in_query() {
             Assert.IsNotNull(XUri.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUri.TryParse");
-            Assert.IsNotNull(TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUriParser.TryParse");
+            Assert.IsNotNull(XUriParser.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUriParser.TryParse");
         }
 
         [Test]
