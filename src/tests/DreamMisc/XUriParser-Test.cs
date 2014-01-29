@@ -493,6 +493,19 @@ namespace MindTouch.Dream.Test {
                 success: ParseSuccess.NEITHER
             );
         }
+
+        [Test]
+        public void Http_missing_hostname() {
+            const string original = "http:///path";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "path" },
+                trailingSlash: false
+            );
+        }
         #endregion
 
         #region Username & Password Testse
@@ -829,18 +842,83 @@ namespace MindTouch.Dream.Test {
                 trailingSlash: false
             );
         }
-        #endregion
-
-
-
-
-
 
         [Test]
-        public void TestXUriFromUriConstruction() {
-            var evilSegments = new[] {
+        public void Http_hostname_semicolon_in_path() {
+            const string original = "http://www.ietf.org/rfc;15/rfc2396.txt";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "rfc;15", "rfc2396.txt" },
+                trailingSlash: false
+            );
+        }
 
-                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
+        [Test]
+        public void Http_hostname_semicolon_in_path_and_trailing_semicolon() {
+            const string original = "http://www.ietf.org/rfc;15/rfc2396.txt;";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "rfc;15", "rfc2396.txt;" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_semicolon_at_start_of_segment() {
+            const string original = "http://www.ietf.org/;15/rfc2396.txt;";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "www.ietf.org",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { ";15", "rfc2396.txt;" },
+                trailingSlash: false
+            );
+        }
+        #endregion
+
+        #region Query Parameter Tests
+
+        [Test]
+        public void Http_hostname_trailing_slash_and_empty_query_parameters() {
+            const string original = "http://example.com/?";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true,
+                @params: new KeyValuePair<string, string>[0]
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_empty_query_parameters() {
+            const string original = "http://example.com?";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new KeyValuePair<string, string>[0]
+            );
+        }
+        #endregion
+
+        #region General Tests
+
+        [Test]
+        public void OriginalString_from_Uri_with_evil_segments() {
+            var evilSegments = new[] {
                 INTERNATIONALIZATION,
                 "A%4b",
                 "A^B"
@@ -848,14 +926,19 @@ namespace MindTouch.Dream.Test {
             foreach(var evil in evilSegments) {
                 var original = new Uri("http://foo/" + evil);
                 var fromDecoded = new Uri(original.ToString());
-                var uri1 = new XUri(original);
-                var uri2 = new XUri(fromDecoded);
-                // just making sure they actually parse
+
+                // regex parser
+                Assert.IsNotNull(XUri.TryParse(original.OriginalString), string.Format("original failed for '{0}' using regex parser", evil));
+                Assert.IsNotNull(XUri.TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using regex parser", evil));
+
+                // new parser
+                Assert.IsNotNull(TryParse(original.OriginalString), string.Format("original failed for '{0}' using custom parser", evil));
+                Assert.IsNotNull(TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using custom parser", evil));
             }
         }
 
         [Test]
-        public void TestUriConstructor10() {
+        public void Http_username_password_hostname_custom_port_and_encoded_segments_and_double_slash_in_path_and_mixed_query_parameters() {
             const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah?ready&set=&go=foo/bar";
             AssertParse(original,
                 scheme: "http",
@@ -875,7 +958,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor11() {
+        public void Http_username_password_hostname_custom_port_and_encoded_segments_and_double_slash_in_path_and_fragment() {
             const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah#yo";
             AssertParse(original,
                 scheme: "http",
@@ -891,7 +974,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor12() {
+        public void Http_username_password_hostname_custom_port_and_encoded_segments_and_double_slash_in_path_and_mixed_query_parameters_and_fragment() {
             const string original = "http://user:password@example.com:81/path/foo%20bar/path//@blah/?ready&set=&go=foo/bar#yo";
             AssertParse(original,
                 scheme: "http",
@@ -912,7 +995,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor13() {
+        public void Ftp_hostname_with_path() {
             const string original = "ftp://ftp.is.co.za/rfc/rfc1808.txt";
             AssertParse(original,
                 scheme: "ftp",
@@ -925,7 +1008,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor14() {
+        public void Http_hostname_with_path() {
             const string original = "http://www.ietf.org/rfc/rfc2396.txt";
             AssertParse(original,
                 scheme: "http",
@@ -938,7 +1021,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test, Ignore("doesn't pass the original test either")]
-        public void TestUriConstructor15() {
+        public void Ldap_IPv6_and_path_and_query_parameters() {
             const string original = "ldap://[2001:db8::7]/c=GB?objectClass?one";
             AssertParse(original,
                 scheme: "ldap",
@@ -954,7 +1037,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor16() {
+        public void Telent_IPv4_and_custom_port() {
             const string original = "telnet://192.0.2.16:80/";
             AssertParse(original,
                 scheme: "telnet",
@@ -967,7 +1050,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor17() {
+        public void Ftp_with_weird_hostname() {
             const string original = "ftp://cnn.example.com&story=breaking_news@10.0.0.1/top_story.htm#";
             AssertParse(original,
                 scheme: "ftp",
@@ -982,87 +1065,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void TestUriConstructor18() {
-            const string original = "http://example.com/?";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "example.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: true,
-                @params: new KeyValuePair<string, string>[0]
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor19() {
-            const string original = "http://example.com?";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "example.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false,
-                @params: new KeyValuePair<string, string>[0]
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor20() {
-            const string original = "http://www.ietf.org/rfc;15/rfc2396.txt";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "www.ietf.org",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new[] { "rfc;15", "rfc2396.txt" },
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor21() {
-            const string original = "http://www.ietf.org/rfc;15/rfc2396.txt;";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "www.ietf.org",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new[] { "rfc;15", "rfc2396.txt;" },
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor22() {
-            const string original = "http://www.ietf.org/;15/rfc2396.txt;";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "www.ietf.org",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new[] { ";15", "rfc2396.txt;" },
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor23() {
-            const string original = "http:///path";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new[] { "path" },
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void TestUriConstructor24() {
+        public void Http_hostname_special_characters_in_path_and_query_parameters_and_fragment() {
             const string original = "http://host/seg^ment?qu^ery=a|b^c#fo|o#b^ar";
             AssertParse(original,
                 scheme: "http",
@@ -1078,49 +1081,38 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Can_parse_square_brackets_in_query() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"));
+            Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"), "XUri.TryParse");
+            Assert.IsNotNull(TryParse("http://host/foo?bar[123]=abc"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_square_brackets_in_fragment() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"));
-        }
-
-        [Test]
-        public void Square_brackets_in_parsed_query_are_encoded_on_render() {
-            Assert.AreEqual("http://host/foo?bar%5B123%5D=abc",new XUri("http://host/foo?bar[123]=abc").ToString());
+            Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"), "XUri.TryParse");
+            Assert.IsNotNull(TryParse("http://host/foo#[bar]"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_curly_brackets_in_query() {
-            Assert.IsNotNull(XUri.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"));
+            Assert.IsNotNull(XUri.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUri.TryParse");
+            Assert.IsNotNull(TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_curly_brackets_in_fragment() {
-            Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"));
+            Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"), "XUri.TryParse");
+            Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"), "XUriParser.TryParse");
+        }
+        #endregion
+
+
+        [Test]
+        public void Square_brackets_in_parsed_query_are_encoded_on_render() {
+            Assert.AreEqual("http://host/foo?bar%5B123%5D=abc", new XUri("http://host/foo?bar[123]=abc").ToString(), "XUri.TryParse");
         }
 
         [Test]
         public void Curly_brackets_in_parsed_query_are_encoded_on_render() {
-            Assert.AreEqual("http://test.com/AllItems.aspx?RootFolder=%7Bxyz%7D", new XUri("http://test.com/AllItems.aspx?RootFolder={xyz}").ToString());
-        }
-
-        [Test]
-        public void TestXUriFromUriConstruction2() {
-            var evilSegments = new[] {
-
-                // Escaped version of "Iñtërnâtiônàlizætiøn" (should look similar to "Internationalization" but with extended characteres)
-                "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n",
-                "A%4b"
-            };
-            foreach(var evil in evilSegments) {
-                var original = new XUri("http://" + evil);
-                var fromDecoded = new XUri(original.ToString());
-                var uri1 = new XUri(original);
-                var uri2 = new XUri(fromDecoded);
-                // just making sure they actually parse
-            }
+            Assert.AreEqual("http://test.com/AllItems.aspx?RootFolder=%7Bxyz%7D", new XUri("http://test.com/AllItems.aspx?RootFolder={xyz}").ToString(), "XUri.TryParse");
         }
 
         [Test, Ignore]

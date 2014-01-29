@@ -445,7 +445,8 @@ namespace MindTouch.Dream {
                 ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
                 (c == '=') ||
                 ((c >= '@') && (c <= '_')) ||   // one of: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= 'a') && (c <= '~'));     // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                ((c >= 'a') && (c <= '~')) ||     // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                char.IsLetter(c);
         }
 
         private static bool IsQueryChar(char c) {
@@ -456,7 +457,8 @@ namespace MindTouch.Dream {
                 ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
                 (c == '=') ||
                 ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= 'a') && (c <= '~'));     // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                char.IsLetter(c);
         }
 
         private static bool IsFragmentChar(char c) {
@@ -503,7 +505,8 @@ namespace MindTouch.Dream {
                 ((c >= '#') && (c <= ';')) ||   // one of: #$%&'()*+,-./0123456789:;
                 (c == '=') ||
                 ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= 'a') && (c <= '~'));     // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                char.IsLetter(c);
         }
 
         private static string Decode(string text) {
