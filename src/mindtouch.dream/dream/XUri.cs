@@ -632,7 +632,7 @@ namespace MindTouch.Dream {
             return _segmentRegex.IsMatch(segment);
         }
 
-        private static bool TryParse(string text, out string scheme, out string user, out string password, out string host, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
+        public static bool TryParse(string text, out string scheme, out string user, out string password, out string host, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
             Group group;
             scheme = null;
             user = null;

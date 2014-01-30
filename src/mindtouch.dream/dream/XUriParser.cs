@@ -110,9 +110,6 @@ namespace MindTouch.Dream {
 
                         // '\0' is illegal in a uri string
                         return false;
-                    case '\\':
-                        c = '/';
-                        break;
                     case '%':
                     case '+':
                         decode = true;
@@ -180,7 +177,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = State.HostnameOrIPv6Address;
-                    } else if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
 
                         // part before '/' or '\' must be hostname
                         if(decode) {
@@ -215,7 +212,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = State.HostnameOrIPv6Address;
-                    } else if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
 
                         // part before ':' was hostname
                         if(decode) {
@@ -252,7 +249,7 @@ namespace MindTouch.Dream {
                     }
                     break;
                 case State.Hostname:
-                    if((c == ':') || (c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                    if((c == ':') || (c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
                         if(decode) {
 
                             // hostname cannot contain encoded characters
@@ -290,7 +287,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = State.PortNumber;
-                    } else if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
                         last = current + 1;
                         decode = false;
                         state = (State)c;
@@ -299,7 +296,7 @@ namespace MindTouch.Dream {
                     }
                     break;
                 case State.PortNumber:
-                    if((c == '/') || (c == '?') || (c == '#') || (c == 0)) {
+                    if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
                         if(!int.TryParse(text.Substring(last, current - last), out port)) {
                             return false;
                         }
@@ -323,7 +320,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = (State)c;
-                    } else if(c == '/') {
+                    } else if((c == '/') || (c == '\\')) {
 
                         // we allow leading '/' characters in segments; stay in first-char state
                     } else if(IsPathChar(c)) {
@@ -339,7 +336,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = (State)c;
-                    } else if(c == '/') {
+                    } else if((c == '/') || (c == '\\')) {
                         segmentList.Add(text.Substring(last, current - last));
                         last = current + 1;
                         decode = false;
