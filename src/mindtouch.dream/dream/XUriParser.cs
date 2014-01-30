@@ -45,6 +45,7 @@ namespace MindTouch.Dream {
             // special values assigned to reduce code complexity
             PortNumber = (int)':',
             PathFirstChar = (int)'/',
+            PathFirstCharBackslash = (int)'\\',
             QueryStart = (int)'?',
             QueryKey = (int)'&',
             QueryValue = (int)'=',
@@ -67,13 +68,13 @@ namespace MindTouch.Dream {
             int port;
             bool usesDefaultPort;
             bool trailingSlash;
-            string[] segements;
-            string fragment;
+            string[] segments;
             KeyValuePair<string, string>[] @params;
-            if(!TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segements, out trailingSlash, out @params, out fragment)) {
+            string fragment;
+            if(!TryParse(text, out scheme, out user, out password, out hostname, out port, out usesDefaultPort, out segments, out trailingSlash, out @params, out fragment)) {
                 return null;
             }
-            return XUri.NewUnsafe(scheme, user, password, hostname, port, usesDefaultPort, segements, trailingSlash, @params, fragment, true);
+            return XUri.NewUnsafe(scheme, user, password, hostname, port, usesDefaultPort, segments, trailingSlash, @params, fragment, true);
         }
 
         public static bool TryParse(string text, out string scheme, out string user, out string password, out string hostname, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
@@ -312,6 +313,7 @@ namespace MindTouch.Dream {
                     }
                     break;
                 case State.PathFirstChar:
+                case State.PathFirstCharBackslash:
                     if((c == '?') || (c == '#') || (c == 0)) {
                         if(last == current) {
                             trailingSlash = true;
@@ -358,6 +360,10 @@ namespace MindTouch.Dream {
                                 paramsKey = Decode(paramsKey);
                             }
                             paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
+                        } else if(c == '&') {
+
+                            // this occurs in the degenerate case of two consecutive ampersands (e.g. "&&")
+                            paramsList.Add(new KeyValuePair<string, string>("", null));                            
                         }
                         last = current + 1;
                         decode = false;
@@ -527,21 +533,17 @@ namespace MindTouch.Dream {
                     bytes[bytesIndex++] = (byte)' ';
                     break;
                 case '%':
-                    if((textIndex + 2) < length) {
+                    char next;
+                    if(((textIndex + 2) < length) && ((next = text[textIndex + 1]) != '%')) {
                         int xchar;
-                        if((text[textIndex + 1] == 'u') && ((textIndex + 5) < length) && (xchar = GetChar(text, textIndex + 2, 4)) != -1) {
+                        if((next == 'u') && ((textIndex + 5) < length) && (xchar = GetChar(text, textIndex + 2, 4)) != -1) {
                             chars[0] = (char)xchar;
                             bytesIndex += Encoding.UTF8.GetBytes(chars, 0, 1, bytes, bytesIndex);
                             textIndex += 5;
                             continue;
                         }
                         if((xchar = GetChar(text, textIndex + 1, 2)) != -1) {
-                            if(xchar <= 127) {
-                                bytes[bytesIndex++] = (byte)xchar;
-                            } else {
-                                chars[0] = (char)xchar;
-                                bytesIndex += Encoding.UTF8.GetBytes(chars, 0, 1, bytes, bytesIndex);
-                            }
+                            bytes[bytesIndex++] = (byte)xchar;
                             textIndex += 2;
                             continue;
                         }
@@ -573,7 +575,7 @@ namespace MindTouch.Dream {
                 }
                 result = (result << 4) + value;
             }
-            return (char)result;
+            return result;
         }
 
         private static int DeterminePort(string scheme, int port, out bool usesDefault) {
