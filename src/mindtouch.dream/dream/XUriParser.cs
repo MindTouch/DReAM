@@ -26,7 +26,9 @@ using System.Text;
 namespace MindTouch.Dream {
     public static class XUriParser {
 
-        // NOTE (steveb): XUriParser parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; and \ as valid segment separator
+        // NOTE (steveb): XUriParser parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with 
+        //                the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; 
+        //                and \ as valid segment separator.
 
         //--- Types ---
         private enum State {
@@ -101,6 +103,7 @@ namespace MindTouch.Dream {
             var segmentList = new List<string>(16);
             List<KeyValuePair<string, string>> paramsList = null;
             var decode = false;
+            var hasLeadingBackslashes = false;
             for(int current = 0, last = 0; current <= text.Length; ++current) {
                 char c;
                 if(current < text.Length) {
@@ -315,14 +318,23 @@ namespace MindTouch.Dream {
                         if(last == current) {
                             trailingSlash = true;
                         } else {
-                            segmentList.Add(text.Substring(last, current - last));
+                            var segment = text.Substring(last, current - last);
+                            if(hasLeadingBackslashes) {
+                                segment = segment.Replace('\\', '/');
+                                hasLeadingBackslashes = false;
+                            }
+                            segmentList.Add(segment);
                         }
                         last = current + 1;
                         decode = false;
                         state = (State)c;
-                    } else if((c == '/') || (c == '\\')) {
+                    } else if(c == '/') {
 
                         // we allow leading '/' characters in segments; stay in first-char state
+                    } else if(c == '\\') {
+
+                        // we allow leading '\' characters in segments; stay in first-char state, but remember to replace '\' with '/'
+                        hasLeadingBackslashes = true;
                     } else if(IsPathChar(c)) {
                         state = State.PathNextChar;
                         decode = false;
@@ -332,12 +344,22 @@ namespace MindTouch.Dream {
                     break;
                 case State.PathNextChar:
                     if((c == '?') || (c == '#') || (c == 0)) {
-                        segmentList.Add(text.Substring(last, current - last));
+                        var segment = text.Substring(last, current - last);
+                        if(hasLeadingBackslashes) {
+                            segment = segment.Replace('\\', '/');
+                            hasLeadingBackslashes = false;
+                        }
+                        segmentList.Add(segment);
                         last = current + 1;
                         decode = false;
                         state = (State)c;
                     } else if((c == '/') || (c == '\\')) {
-                        segmentList.Add(text.Substring(last, current - last));
+                        var segment = text.Substring(last, current - last);
+                        if(hasLeadingBackslashes) {
+                            segment = segment.Replace('\\', '/');
+                            hasLeadingBackslashes = false;
+                        }
+                        segmentList.Add(segment);
                         last = current + 1;
                         decode = false;
                         state = State.PathFirstChar;

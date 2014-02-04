@@ -21,11 +21,14 @@ namespace MindTouchTest.Dream {
             });
 
             // extract uris
-            var uris = new List<string>(lines.Length);
+            var uris = new List<string>(4000000);
+            var added = 0;
             Timer("extracting URIs from CSV", () => {
                 var first = true;
                 foreach(var line in lines) {
                     if(first) {
+
+                        // first line is never valid
                         first = false;
                         continue;
                     }
@@ -34,6 +37,7 @@ namespace MindTouchTest.Dream {
 
                         // check if this URI contains "http://" more than once
                         if((uri.IndexOf("http://", 1, StringComparison.Ordinal) == -1) && (uri.IndexOf("https://", 1, StringComparison.Ordinal) == -1)) {
+                            ++added;
                             uris.Add(uri);
                         }
                     } else {
@@ -41,7 +45,7 @@ namespace MindTouchTest.Dream {
                     }
                 }
             });
-            Console.WriteLine("{0:#,##0} URIs accepted; {1:#,##0} lines rejected", uris.Count, lines.Length - 1 - uris.Count);
+            Console.WriteLine("{0:#,##0} URIs accepted; {1:#,##0} duplicates; {2:#,##0} lines rejected", uris.Count, added - uris.Count, lines.Length - 1 - uris.Count);
 
             // convert uris
             var failed = 0;
@@ -85,7 +89,6 @@ namespace MindTouchTest.Dream {
 
             // compare results produced by XUri and XUriParser
             var passed = 0;
-            var skipped = 0;
             Timer("compare results of XUri.TryParse() and XUriParser.TryParse()", () => {
                 failed = 0;
                 foreach(var uri in uris) {
@@ -166,14 +169,9 @@ namespace MindTouchTest.Dream {
                         }
                         for(var i = 0; i < segmentsRegex.Length; ++i) {
                             if(segmentsRegex[i] != segmentsCustom[i]) {
-                                if(segmentsCustom[i].Replace('\\', '/') != segmentsRegex[i]) {
-                                    Console.WriteLine("FAILED : {0}", uri);
-                                    ++failed;
-                                    goto skip;
-                                }
-
-                                // regex-parser does not preserve '\' in original uri
-                                ++skipped;
+                                Console.WriteLine("FAILED : {0}", uri);
+                                ++failed;
+                                goto skip;
                             }
                         }
                     }
@@ -211,7 +209,7 @@ namespace MindTouchTest.Dream {
                     var x = 0;
                 }
             });
-            Console.WriteLine("{0:#,##0} uris passed comparison between regex and custom parser; {1:#,##0} were skipped; and {2:#,##0} failed", passed, skipped, failed);
+            Console.WriteLine("{0:#,##0} uris passed comparison between regex and custom parser and {1:#,##0} failed", passed, failed);
 
             // check if URI can be reproduced validly
             Timer("compare original URI to XUriParser.TryParse().ToString()", () => {

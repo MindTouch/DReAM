@@ -71,7 +71,7 @@ namespace MindTouch.Dream.Test {
                 Assert.AreEqual(trailingSlash, uri.TrailingSlash, string.Format("trailingSlash ({0})", suffix));
                 Assert.AreEqual(@params, uri.Params, string.Format("query ({0})", suffix));
                 Assert.AreEqual(fragment, uri.Fragment, string.Format("fragment ({0})", suffix));
-                Assert.AreEqual(text, toString ?? uri.ToString(), string.Format("ToString() ({0})", suffix));
+                Assert.AreEqual(toString ?? text, uri.ToString(), string.Format("ToString() ({0})", suffix));
             };
 
             // setup
@@ -881,6 +881,75 @@ namespace MindTouch.Dream.Test {
                 trailingSlash: false
             );
         }
+
+        [Test]
+        public void Http_hostname_utf8_segment() {
+            const string original = "http://example.com/cr%c3%a9ate";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "cr%c3%a9ate" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_backslash() {
+            const string original = @"http://example.com\";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true,
+                toString: "http://example.com/"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_segment_separated_by_backslash() {
+            const string original = @"http://example.com/foo\bar";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "foo", "bar" },
+                trailingSlash: false,
+                toString: "http://example.com/foo/bar"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_segment_starting_with_backslash() {
+            const string original = @"http://example.com/foo/\bar";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "foo", "/bar" },
+                trailingSlash: false,
+                toString: "http://example.com/foo//bar"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_segment_with_trailing_backslash() {
+            const string original = @"http://example.com/foo/bar\";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "foo", "bar" },
+                trailingSlash: true,
+                toString: "http://example.com/foo/bar/"
+            );
+        }
         #endregion
 
         #region Query Parameter Tests
@@ -910,6 +979,20 @@ namespace MindTouch.Dream.Test {
                 segments: new string[0],
                 trailingSlash: false,
                 @params: new KeyValuePair<string, string>[0]
+            );
+        }
+
+        [Test]
+        public void Http_hostname_utf8_query_parameter() {
+            const string original = "http://example.com/?key=cr%C3%A9ate";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: true,
+                @params: new[] { new KeyValuePair<string, string>("key", "cr\u00e9ate") }
             );
         }
         #endregion
@@ -1103,7 +1186,6 @@ namespace MindTouch.Dream.Test {
             Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"), "XUriParser.TryParse");
         }
         #endregion
-
 
         [Test]
         public void Square_brackets_in_parsed_query_are_encoded_on_render() {
