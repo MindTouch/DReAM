@@ -45,9 +45,9 @@ namespace MindTouch.Dream {
 
             // special values assigned to reduce code complexity
             PortNumber = (int)':',
-            PathFirstChar = (int)'/',
-            PathFirstCharBackslash = (int)'\\',
-            QueryStart = (int)'?',
+            Path = (int)'/',
+            PathBackslash = (int)'\\',
+            Query = (int)'?',
             Fragment = (int)'#'
         }
 
@@ -96,7 +96,6 @@ namespace MindTouch.Dream {
             // initialize state and loop over all characters
             var state = State.SchemeFirst;
             string hostnameOrUsername = null;
-            string paramsKey = null;
             List<KeyValuePair<string, string>> paramsList = null;
             var decode = false;
             var length = text.Length;
@@ -308,14 +307,14 @@ namespace MindTouch.Dream {
                         return false;
                     }
                     break;
-                case State.PathFirstChar:
-                case State.PathFirstCharBackslash:
+                case State.Path:
+                case State.PathBackslash:
                     if(!TryParsePath(text, length, current, ref last, ref state, ref trailingSlash, out segments)) {
                         return false;
                     }
                     current = last - 1;
                     break;
-                case State.QueryStart:
+                case State.Query:
                     if(!TryParseQuery(text, length, current, ref last, ref state, out @params)) {
                         return false;
                     }
@@ -385,7 +384,7 @@ namespace MindTouch.Dream {
                     (c == '=') || (c == '!') || char.IsLetter(c)
                 ) {
 
-                    // let's move onto to parsing regular characters
+                    // no longer accept leading '/' or '\' characters
                     leading = false;
                 } else if((c == '?') || (c == '#') || (c == '\0')) {
                     if(last == current) {
