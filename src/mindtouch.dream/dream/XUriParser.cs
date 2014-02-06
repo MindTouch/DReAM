@@ -48,8 +48,6 @@ namespace MindTouch.Dream {
             PathFirstChar = (int)'/',
             PathFirstCharBackslash = (int)'\\',
             QueryStart = (int)'?',
-            QueryKey = (int)'&',
-            QueryValue = (int)'=',
             Fragment = (int)'#'
         }
 
@@ -178,7 +176,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = State.HostnameOrIPv6Address;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
 
                         // part before '/' or '\' must be hostname
                         if(decode) {
@@ -213,7 +211,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = State.HostnameOrIPv6Address;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
 
                         // part before ':' was hostname
                         if(decode) {
@@ -250,7 +248,7 @@ namespace MindTouch.Dream {
                     }
                     break;
                 case State.Hostname:
-                    if((c == ':') || (c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
+                    if((c == ':') || (c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                         if(decode) {
 
                             // hostname cannot contain encoded characters
@@ -288,7 +286,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         decode = false;
                         state = State.PortNumber;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                         last = current + 1;
                         decode = false;
                         state = (State)c;
@@ -297,7 +295,7 @@ namespace MindTouch.Dream {
                     }
                     break;
                 case State.PortNumber:
-                    if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == 0)) {
+                    if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                         if(!int.TryParse(text.Substring(last, current - last), out port)) {
                             return false;
                         }
@@ -318,53 +316,13 @@ namespace MindTouch.Dream {
                     current = last - 1;
                     break;
                 case State.QueryStart:
-                case State.QueryKey:
-                    if(paramsList == null) {
-                        paramsList = new List<KeyValuePair<string, string>>(16);
-                    }
-                    if((c == '&') || (c == '#') || (c == 0)) {
-                        if(current != last) {
-                            paramsKey = text.Substring(last, current - last);
-                            if(decode) {
-                                paramsKey = Decode(paramsKey);
-                            }
-                            paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
-                        } else if(c == '&') {
-
-                            // this occurs in the degenerate case of two consecutive ampersands (e.g. "&&")
-                            paramsList.Add(new KeyValuePair<string, string>("", null));                            
-                        }
-                        last = current + 1;
-                        decode = false;
-                        state = (State)c;
-                    } else if(c == '=') {
-                        paramsKey = text.Substring(last, current - last);
-                        if(decode) {
-                            paramsKey = Decode(paramsKey);
-                        }
-                        last = current + 1;
-                        decode = false;
-                        state = State.QueryValue;
-                    } else if(!IsQueryChar(c)) {
+                    if(!TryParseQuery(text, length, current, ref last, ref state, out @params)) {
                         return false;
                     }
-                    break;
-                case State.QueryValue:
-                    if((c == '&') || (c == '#') || (c == 0)) {
-                        var paramsValue = text.Substring(last, current - last);
-                        if(decode) {
-                            paramsValue = Decode(paramsValue);
-                        }
-                        paramsList.Add(new KeyValuePair<string, string>(paramsKey, paramsValue));
-                        last = current + 1;
-                        decode = false;
-                        state = (State)c;
-                    } else if(!IsQueryChar(c)) {
-                        return false;
-                    }
+                    current = last - 1;
                     break;
                 case State.Fragment:
-                    if(c == 0) {
+                    if(c == '\0') {
                         fragment = text.Substring(last, current - last);
                         if(decode) {
                             fragment = Decode(fragment);
@@ -393,8 +351,8 @@ namespace MindTouch.Dream {
             var hasLeadingBackslashes = false;
             var segmentList = new List<string>(16);
             var leading = true;
-            for(;; ++current) {
-                char c;
+            char c;
+            for(; ; ++current) {
                 if(current < length) {
                     c = text[current];
                     if(c == '\0') {
@@ -439,14 +397,122 @@ namespace MindTouch.Dream {
                         }
                         segmentList.Add(segment);
                     }
-                    segments = segmentList.ToArray();
-                    last = current + 1;
-                    nextState = (State)c;
-                    return true;
+
+                    // we're done parsing the path string
+                    break;
                 } else {
                     return false;
                 }
             }
+
+            // initialize return values
+            segments = segmentList.ToArray();
+            last = current + 1;
+            nextState = (State)c;
+            return true;
+        }
+
+        private static bool TryParseQuery(string text, int length, int current, ref int last, ref State nextState, out KeyValuePair<string, string>[] @params) {
+            @params = null;
+            var paramsList = new List<KeyValuePair<string, string>>(16);
+            string paramsKey = null;
+            var decode = false;
+            var parsingKey = true;
+            char c;
+            for(; ; ++current) {
+                if(current < length) {
+                    c = text[current];
+                    switch(c) {
+                    case '\0':
+
+                        // '\0' is illegal in a uri string
+                        return false;
+                    case '%':
+                    case '+':
+                        decode = true;
+                        break;
+                    }
+                } else {
+
+                    // use '\0' as end-of-string marker
+                    c = '\0';
+                }
+                if(c == '&') {
+                    if(parsingKey) {
+                        if(current != last) {
+                            paramsKey = text.Substring(last, current - last);
+                            if(decode) {
+                                paramsKey = Decode(paramsKey);
+                                decode = false;
+                            }
+                            paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
+                        } else {
+
+                            // this occurs in the degenerate case of two consecutive ampersands (e.g. "&&")
+                            paramsList.Add(new KeyValuePair<string, string>("", null));
+                        }
+                        last = current + 1;
+                    } else {
+                        var paramsValue = text.Substring(last, current - last);
+                        if(decode) {
+                            paramsValue = Decode(paramsValue);
+                            decode = false;
+                        }
+                        paramsList.Add(new KeyValuePair<string, string>(paramsKey, paramsValue));
+                        last = current + 1;
+                        parsingKey = true;
+                    }
+                } else if(
+                    ((c >= 'a') && (c <= '~')) || // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                    ((c >= '?') && (c <= '_')) || // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+                    ((c >= '$') && (c <= ';')) || // one of: $%&'()*+,-./0123456789:;
+                    (c == '!') || char.IsLetter(c)
+                ) {
+
+                    // valid character, moving on
+                } else if((c == '#') || (c == '\0')) {
+                    if(parsingKey) {
+                        if(current != last) {
+
+                            // add non-empty key with empty value
+                            paramsKey = text.Substring(last, current - last);
+                            if(decode) {
+                                paramsKey = Decode(paramsKey);
+                            }
+                            paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
+                        }
+                    } else {
+
+                        // add key with value
+                        var paramsValue = text.Substring(last, current - last);
+                        if(decode) {
+                            paramsValue = Decode(paramsValue);
+                        }
+                        paramsList.Add(new KeyValuePair<string, string>(paramsKey, paramsValue));
+                    }
+
+                    // we're done parsing the query string
+                    break;
+                } else if(c == '=') {
+                    if(parsingKey) {
+                        paramsKey = text.Substring(last, current - last);
+                        if(decode) {
+                            paramsKey = Decode(paramsKey);
+                            decode = false;
+                        }
+                        last = current + 1;
+                        parsingKey = false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+
+            // initialize return values
+            last = current + 1;
+            nextState = (State)c;
+            @params = paramsList.ToArray();
+            return true;
         }
 
         private static bool IsAlpha(char c) {
@@ -470,19 +536,6 @@ namespace MindTouch.Dream {
                 (c == '=') || 
                 (c == '_') || 
                 (c == '~');
-        }
-
-        private static bool IsQueryChar(char c) {
-
-            // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]
-
-            return
-                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
-                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
-                (c == '=') ||
-                (c == '!') ||
-                char.IsLetter(c);
         }
 
         private static bool IsFragmentChar(char c) {
