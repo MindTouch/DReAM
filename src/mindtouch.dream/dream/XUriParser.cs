@@ -42,7 +42,6 @@ namespace MindTouch.Dream {
             Hostname,
             IPv6Address,
             PortNumberOrPathOrQueryOrFragmentOrEnd,
-            PathNextChar,
 
             // special values assigned to reduce code complexity
             PortNumber = (int)':',
@@ -86,7 +85,7 @@ namespace MindTouch.Dream {
             hostname = null;
             port = -1;
             usesDefautPort = true;
-            segments = null;
+            segments = new string[0];
             trailingSlash = false;
             @params = null;
             fragment = null;
@@ -100,13 +99,12 @@ namespace MindTouch.Dream {
             var state = State.SchemeFirst;
             string hostnameOrUsername = null;
             string paramsKey = null;
-            var segmentList = new List<string>(16);
             List<KeyValuePair<string, string>> paramsList = null;
             var decode = false;
-            var hasLeadingBackslashes = false;
-            for(int current = 0, last = 0; current <= text.Length; ++current) {
+            var length = text.Length;
+            for(int current = 0, last = 0; current <= length; ++current) {
                 char c;
-                if(current < text.Length) {
+                if(current < length) {
                     c = text[current];
                     switch(c) {
                     case '\0':
@@ -134,7 +132,7 @@ namespace MindTouch.Dream {
                     state = State.SchemeNext;
                     break;
                 case State.SchemeNext:
-                    if((text.Length - current >= 3) && (string.CompareOrdinal(text, current, "://", 0, 3) == 0)) {
+                    if((length - current >= 3) && (string.CompareOrdinal(text, current, "://", 0, 3) == 0)) {
 
                         // found "://" sequence at current location, we're done with scheme parsing
                         scheme = text.Substring(last, current - last);
@@ -314,58 +312,10 @@ namespace MindTouch.Dream {
                     break;
                 case State.PathFirstChar:
                 case State.PathFirstCharBackslash:
-                    if((c == '?') || (c == '#') || (c == 0)) {
-                        if(last == current) {
-                            trailingSlash = true;
-                        } else {
-                            var segment = text.Substring(last, current - last);
-                            if(hasLeadingBackslashes) {
-                                segment = segment.Replace('\\', '/');
-                                hasLeadingBackslashes = false;
-                            }
-                            segmentList.Add(segment);
-                        }
-                        last = current + 1;
-                        decode = false;
-                        state = (State)c;
-                    } else if(c == '/') {
-
-                        // we allow leading '/' characters in segments; stay in first-char state
-                    } else if(c == '\\') {
-
-                        // we allow leading '\' characters in segments; stay in first-char state, but remember to replace '\' with '/'
-                        hasLeadingBackslashes = true;
-                    } else if(IsPathChar(c)) {
-                        state = State.PathNextChar;
-                        decode = false;
-                    } else {
+                    if(!TryParsePath(text, length, current, ref last, ref state, ref trailingSlash, out segments)) {
                         return false;
                     }
-                    break;
-                case State.PathNextChar:
-                    if((c == '?') || (c == '#') || (c == 0)) {
-                        var segment = text.Substring(last, current - last);
-                        if(hasLeadingBackslashes) {
-                            segment = segment.Replace('\\', '/');
-                            hasLeadingBackslashes = false;
-                        }
-                        segmentList.Add(segment);
-                        last = current + 1;
-                        decode = false;
-                        state = (State)c;
-                    } else if((c == '/') || (c == '\\')) {
-                        var segment = text.Substring(last, current - last);
-                        if(hasLeadingBackslashes) {
-                            segment = segment.Replace('\\', '/');
-                            hasLeadingBackslashes = false;
-                        }
-                        segmentList.Add(segment);
-                        last = current + 1;
-                        decode = false;
-                        state = State.PathFirstChar;
-                    } else if(!IsPathChar(c)) {
-                        return false;
-                    }
+                    current = last - 1;
                     break;
                 case State.QueryStart:
                 case State.QueryKey:
@@ -432,11 +382,71 @@ namespace MindTouch.Dream {
                 }
             }
             port = DeterminePort(scheme, port, out usesDefautPort);
-            segments = segmentList.ToArray();
             if(paramsList != null) {
                 @params = paramsList.ToArray();
             }
             return true;
+        }
+
+        private static bool TryParsePath(string text, int length, int current, ref int last, ref State nextState, ref bool trailingSlash, out string[] segments) {
+            segments = null;
+            var hasLeadingBackslashes = false;
+            var segmentList = new List<string>(16);
+            var leading = true;
+            for(;; ++current) {
+                char c;
+                if(current < length) {
+                    c = text[current];
+                    if(c == '\0') {
+
+                        // '\0' is illegal in a uri string
+                        return false;
+                    }
+                } else {
+
+                    // use '\0' as end-of-string marker
+                    c = '\0';
+                }
+                if((c == '/') || (c == '\\')) {
+                    if(leading) {
+                        hasLeadingBackslashes = hasLeadingBackslashes || (c == '\\');
+                    } else {
+                        var segment = text.Substring(last, current - last);
+                        if(hasLeadingBackslashes) {
+                            segment = segment.Replace('\\', '/');
+                            hasLeadingBackslashes = false;
+                        }
+                        segmentList.Add(segment);
+                        last = current + 1;
+                        leading = true;
+                    }
+                } else if(
+                    ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                    ((c >= '@') && (c <= '_')) ||   // one of: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+                    ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
+                    (c == '=') || (c == '!') || char.IsLetter(c)
+                ) {
+
+                    // let's move onto to parsing regular characters
+                    leading = false;
+                } else if((c == '?') || (c == '#') || (c == '\0')) {
+                    if(last == current) {
+                        trailingSlash = true;
+                    } else {
+                        var segment = text.Substring(last, current - last);
+                        if(hasLeadingBackslashes) {
+                            segment = segment.Replace('\\', '/');
+                        }
+                        segmentList.Add(segment);
+                    }
+                    segments = segmentList.ToArray();
+                    last = current + 1;
+                    nextState = (State)c;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
 
         private static bool IsAlpha(char c) {
@@ -462,27 +472,16 @@ namespace MindTouch.Dream {
                 (c == '~');
         }
 
-        private static bool IsPathChar(char c) {
-
-            // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:@\^\|\[\]{}]
-
-            return (c == '!') ||
-                ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
-                (c == '=') ||
-                ((c >= '@') && (c <= '_')) ||   // one of: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= 'a') && (c <= '~')) ||     // one of: abcdefghijklmnopqrstuvwxyz{|}~
-                char.IsLetter(c);
-        }
-
         private static bool IsQueryChar(char c) {
 
             // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]
 
-            return (c == '!') ||
+            return
+                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
                 ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
                 (c == '=') ||
-                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                (c == '!') ||
                 char.IsLetter(c);
         }
 
@@ -526,11 +525,12 @@ namespace MindTouch.Dream {
             // } 125
             // ~ 126
 
-            return (c == '!') ||
+            return
+                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
                 ((c >= '#') && (c <= ';')) ||   // one of: #$%&'()*+,-./0123456789:;
                 (c == '=') ||
-                ((c >= '?') && (c <= '_')) ||   // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
+                (c == '!') ||
                 char.IsLetter(c);
         }
 
