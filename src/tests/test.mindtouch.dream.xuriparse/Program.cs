@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using MindTouch;
 using MindTouch.Dream;
 
 namespace MindTouchTest.Dream {
@@ -88,10 +89,11 @@ namespace MindTouchTest.Dream {
             }
 
             // compare results produced by XUri and XUriParser
+            var uniqueUris = uris.ToHashSet();
             var passed = 0;
             Timer("compare results of XUri.TryParse() and XUriParser.TryParse()", () => {
                 failed = 0;
-                foreach(var uri in uris) {
+                foreach(var uri in uniqueUris) {
                     string schemeRegex;
                     string userRegex;
                     string passwordRegex;
@@ -214,7 +216,7 @@ namespace MindTouchTest.Dream {
             // check if URI can be reproduced validly
             Timer("compare original URI to XUriParser.TryParse().ToString()", () => {
                 failed = 0;
-                foreach(var uri in uris) {
+                foreach(var uri in uniqueUris) {
                     var u = XUriParser.TryParse(uri);
                     if(u != null) {
                         var rendered = u.ToString();
