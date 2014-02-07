@@ -19,6 +19,8 @@
  * limitations under the License.
  */
 
+#define NEW_AUTHORITY
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -35,7 +37,7 @@ namespace MindTouch.Dream {
             Error = -1,
             End = 0,
             Authority,
-#if false
+#if !NEW_AUTHORITY
             HostnameOrUserInfoBeforeColon,
             HostnameOrUserInfoAfterColon,
             HostnameOrIPv6Address,
@@ -152,14 +154,15 @@ namespace MindTouch.Dream {
             }
             return false;
         }
-#if true
+#if NEW_AUTHORITY
         private static bool TryParseAuthority(string text, int length, int current, ref int last, out State nextState, out string user, out string password, out string hostname, out int port) {
-            nextState = State.Authority;
+            nextState = State.Error;
             user = null;
             password = null;
             hostname = null;
             port = -1;
 
+            // check first character; it could tell us if we're parsing an IPv6 address
             var decode = false;
             char c;
             if(current < length) {
@@ -178,15 +181,53 @@ namespace MindTouch.Dream {
                 nextState = State.End;
                 return true;
             }
-
             if(c == '[') {
                 ++current;
                 goto ipv6;
             }
-            string hostnameOrUsername;
 
             // parse hostname -OR- user info
-            for(;; ++current) {
+            string hostnameOrUsername;
+            for(;;) {
+                if(IsHostnameOrUserInfoChar(c)) {
+
+                    // valid character, keep parsing
+                } else if(c == ':') {
+
+                    // part before ':' is either a username or hostname
+                    hostnameOrUsername = text.Substring(last, current - last);
+                    last = current + 1;
+                    ++current;
+                    goto hostnameOrUserInfoAfterColon;
+                } else if(c == '@') {
+
+                    // part before '@' must be username since we didn't find ':'
+                    user = text.Substring(last, current - last);
+                    if(decode) {
+                        user = Decode(user);
+                        decode = false;
+                    }
+                    last = current + 1;
+                    ++current;
+                    goto hostnameOrIPv6Address;
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+
+                    // part before '/', '\', '?', '#' must be hostname
+                    if(decode) {
+
+                        // hostname cannot contain encoded characters
+                        return false;
+                    }
+                    hostname = text.Substring(last, current - last);
+                    last = current + 1;
+                    nextState = (State)c;
+                    return true;
+                } else {
+                    return false;
+                }
+
+                // continue on by reading the next character
+                ++current;
                 if(current < length) {
                     c = text[current];
                     switch(c) {
@@ -203,38 +244,10 @@ namespace MindTouch.Dream {
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(c == ':') {
-                    // part before ':' is either a username or hostname
-                    hostnameOrUsername = text.Substring(last, current - last);
-                    last = current + 1;
-                    ++current;
-                    goto hostnameOrUserInfoAfterColon;
-                } else if(c == '@') {
-                    // part before '@' must be username since we didn't find ':'
-                    user = text.Substring(last, current - last);
-                    if(decode) {
-                        user = Decode(user);
-                        decode = false;
-                    }
-                    last = current + 1;
-                    ++current;
-                    goto hostnameOrIPv6Address;
-                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                    // part before '/', '\', '?', '#' must be hostname
-                    if(decode) {
-                        // hostname cannot contain encoded characters
-                        return false;
-                    }
-                    hostname = text.Substring(last, current - last);
-                    last = current + 1;
-                    nextState = (State)c;
-                    return true;
-                } else if(!IsHostnameOrUserInfoChar(c)) {
-                    // both username and hostname require alphanumeric characters
-                    return false;
-                }
             }
+            throw new ShouldNeverHappenException("hostnameOrUsername");
 
+            // parse hostname -OR- user info AFTER we're parsed a colon (':')
         hostnameOrUserInfoAfterColon:
             for(;; ++current) {
                 if(current < length) {
@@ -250,10 +263,14 @@ namespace MindTouch.Dream {
                         break;
                     }
                 } else {
+
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(c == '@') {
+                if(IsHostnameOrUserInfoChar(c)) {
+
+                    // valid character, keep parsing
+                } else if(c == '@') {
 
                     // part before ':' was username
                     user = hostnameOrUsername;
@@ -271,8 +288,10 @@ namespace MindTouch.Dream {
                     ++current;
                     goto hostnameOrIPv6Address;
                 } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+
                     // part before ':' was hostname
                     if(decode) {
+
                         // hostname cannot contain encoded characters
                         return false;
                     }
@@ -285,11 +304,11 @@ namespace MindTouch.Dream {
                     last = current + 1;
                     nextState = (State)c;
                     return true;
-                } else if(!IsHostnameOrUserInfoChar(c)) {
-                    // password requires alphanumeric characters; for port information, we'll validate it once we've identified it
+                } else {
                     return false;
                 }
             }
+            throw new ShouldNeverHappenException("hostnameOrUserInfoAfterColon");
 
         hostnameOrIPv6Address:
             if(current < length) {
@@ -305,10 +324,12 @@ namespace MindTouch.Dream {
                     break;
                 }
             } else {
+
                 // use '\0' as end-of-string marker
                 c = '\0';
             }
             if(c == '[') {
+
                 // NOTE (steveb): we want to include the leading character in the final result
                 last = current;
 
@@ -318,6 +339,7 @@ namespace MindTouch.Dream {
             } else {
                 goto hostname;
             }
+            throw new ShouldNeverHappenException("hostnameOrIPv6Address");
 
         hostname:
             for(;; ++current) {
@@ -334,11 +356,16 @@ namespace MindTouch.Dream {
                         break;
                     }
                 } else {
+
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(c == ':') {
+                if(IsHostnameOrUserInfoChar(c)) {
+
+                    // valid character, keep parsing
+                } else if(c == ':') {
                     if(decode) {
+
                         // hostname cannot contain encoded characters
                         return false;
                     }
@@ -348,6 +375,7 @@ namespace MindTouch.Dream {
                     goto portNumber;
                 } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                     if(decode) {
+
                         // hostname cannot contain encoded characters
                         return false;
                     }
@@ -355,84 +383,74 @@ namespace MindTouch.Dream {
                     last = current + 1;
                     nextState = (State)c;
                     return true;
-                } else if(!IsHostnameOrUserInfoChar(c)) {
-                    // hostname requires alphanumeric characters
+                } else {
                     return false;
                 }
             }
+            throw new ShouldNeverHappenException("hostname");
 
         portNumber:
             for(;; ++current) {
                 if(current < length) {
                     c = text[current];
-                    switch(c) {
-                    case '\0':
+                    if(c == '\0') {
 
                         // '\0' is illegal in a uri string
                         return false;
-                    case '%':
-                    case '+':
-                        decode = true;
-                        break;
                     }
                 } else {
+
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                if((c >= '0') && (c <= '9')) {
+
+                    // valid character, keep parsing
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                     if(!int.TryParse(text.Substring(last, current - last), out port)) {
                         return false;
                     }
                     last = current + 1;
                     nextState = (State)c;
                     return true;
-                }
-                if(!((c >= '0') && (c <= '9'))) {
-                    // port number requires decimal characters
+                } else {
                     return false;
                 }
             }
+            throw new ShouldNeverHappenException("portNumber");
 
         ipv6:
             for(;; ++current) {
                 if(current < length) {
                     c = text[current];
-                    switch(c) {
-                    case '\0':
+                    if(c == '\0') {
 
                         // '\0' is illegal in a uri string
                         return false;
-                    case '%':
-                    case '+':
-                        decode = true;
-                        break;
                     }
                 } else {
+
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(c == ']') {
-                    if(decode) {
+                if(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == ':') || (c == '.')) {
 
-                        // hostname cannot contain encoded characters
-                        return false;
-                    }
+                    // valid character, keep parsing
+                } else if(c == ']') {
                     hostname = text.Substring(last, current - last + 1);
                     last = current + 1;
+
+                    // check next character to determine correct state to transition to
                     ++current;
                     if(current < length) {
                         c = text[current];
-                        switch(c) {
-                        case '\0':
+                        if(c == '\0') {
 
                             // '\0' is illegal in a uri string
                             return false;
-                        case '%':
-                        case '+':
-                            decode = true;
-                            break;
                         }
                     } else {
+
                         // use '\0' as end-of-string marker
                         c = '\0';
                     }
@@ -447,11 +465,11 @@ namespace MindTouch.Dream {
                     } else {
                         return false;
                     }
-                } else if(!(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == ':') || (c == '.'))) {
-                    // IPv6 address requires hexadecimal characters, colons, or periods
+                } else {
                     return false;
                 }
             }
+            throw new ShouldNeverHappenException("ipv6");
         }
 
 #else
