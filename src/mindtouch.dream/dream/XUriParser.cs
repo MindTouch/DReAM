@@ -32,8 +32,8 @@ namespace MindTouch.Dream {
 
         //--- Types ---
         private enum State {
+            Error = -1,
             End = 0,
-            Scheme,
             Authority,
             HostnameOrUserInfoBeforeColon,
             HostnameOrUserInfoAfterColon,
@@ -91,56 +91,40 @@ namespace MindTouch.Dream {
             if(string.IsNullOrEmpty(text)) {
                 return false;
             }
-
-            // initialize state and loop over all characters
-            var state = State.Scheme;
             var length = text.Length;
-            for(int current = 0, last = 0; current <= length; ++current) {
-                switch(state) {
-                case State.Scheme:
-                    if(!TryParseScheme(text, length, current, ref last, out scheme)) {
-                        return false;
-                    }
-                    current = last - 1;
-                    state = State.Authority;
-                    break;
-                case State.Authority:
-                    if(!TryParseAuthority(text, length, current, ref last, ref state, out user, out password, out hostname, out port)) {
-                        return false;
-                    }
-                    current = last - 1;
-                    break;
-                case State.Path:
-                case State.PathBackslash:
-                    if(!TryParsePath(text, length, current, ref last, ref state, ref trailingSlash, out segments)) {
-                        return false;
-                    }
-                    current = last - 1;
-                    break;
-                case State.Query:
-                    if(!TryParseQuery(text, length, current, ref last, ref state, out @params)) {
-                        return false;
-                    }
-                    current = last - 1;
-                    break;
-                case State.Fragment:
-                    if(!TryParseFragment(text, length, current, ref last, out fragment)) {
-                        return false;
-                    }
-                    current = last - 1;
-                    state = State.End;
-                    break;
-                case State.End:
-                    throw new ShouldNeverHappenException("State.End");
-                default:
-                    throw new ShouldNeverHappenException("default");
+            var current = 0;
+            if(!TryParseScheme(text, length, ref current, out scheme)) {
+                return false;
+            }
+            State nextState;
+            if(!TryParseAuthority(text, length, current, ref current, out nextState, out user, out password, out hostname, out port)) {
+                return false;
+            }
+            if((nextState == State.Path) || (nextState == State.PathBackslash)) {
+                if(!TryParsePath(text, length, ref current, out nextState, ref trailingSlash, out segments)) {
+                    return false;
                 }
+            }
+            if(nextState == State.Query) {
+                if(!TryParseQuery(text, length, ref current, out nextState, out @params)) {
+                    return false;
+                }
+            }
+            if(nextState == State.Fragment) {
+                if(!TryParseFragment(text, length, current, out fragment)) {
+                    return false;
+                }
+                nextState = State.End;
+            }
+            if(nextState != State.End) {
+                throw new ShouldNeverHappenException();
             }
             port = DeterminePort(scheme, port, out usesDefautPort);
             return true;
         }
 
-        private static bool TryParseScheme(string text, int length, int current, ref int last, out string scheme) {
+        private static bool TryParseScheme(string text, int length, ref int current, out string scheme) {
+            var last = current;
             scheme = null;
             if(!IsAlpha(text[current++])) {
 
@@ -157,7 +141,7 @@ namespace MindTouch.Dream {
 
                         // found "://" sequence at current location, we're done with scheme parsing
                         scheme = text.Substring(last, current - last);
-                        last = current + 3;
+                        current = current + 3;
                         return true;
                     }
                 } else {
@@ -167,7 +151,8 @@ namespace MindTouch.Dream {
             return false;
         }
 
-        private static bool TryParseAuthority(string text, int length, int current, ref int last, ref State nextState, out string user, out string password, out string hostname, out int port) {
+        private static bool TryParseAuthority(string text, int length, int current, ref int last, out State nextState, out string user, out string password, out string hostname, out int port) {
+            nextState = State.Authority;
             user = null;
             password = null;
             hostname = null;
@@ -371,8 +356,10 @@ namespace MindTouch.Dream {
             }
         }
 
-        private static bool TryParsePath(string text, int length, int current, ref int last, ref State nextState, ref bool trailingSlash, out string[] segments) {
+        private static bool TryParsePath(string text, int length, ref int current, out State nextState, ref bool trailingSlash, out string[] segments) {
+            nextState = State.Error;
             segments = null;
+            var last = current;
             var hasLeadingBackslashes = false;
             var segmentList = new List<string>(16);
             var leading = true;
@@ -432,13 +419,15 @@ namespace MindTouch.Dream {
 
             // initialize return values
             segments = segmentList.ToArray();
-            last = current + 1;
+            current = current + 1;
             nextState = (State)c;
             return true;
         }
 
-        private static bool TryParseQuery(string text, int length, int current, ref int last, ref State nextState, out KeyValuePair<string, string>[] @params) {
+        private static bool TryParseQuery(string text, int length, ref int current, out State nextState, out KeyValuePair<string, string>[] @params) {
+            nextState = State.Error;
             @params = null;
+            var last = current;
             var paramsList = new List<KeyValuePair<string, string>>(16);
             string paramsKey = null;
             var decode = false;
@@ -534,14 +523,15 @@ namespace MindTouch.Dream {
             }
 
             // initialize return values
-            last = current + 1;
+            current = current + 1;
             nextState = (State)c;
             @params = paramsList.ToArray();
             return true;
         }
 
-        private static bool TryParseFragment(string text, int length, int current, ref int last, out string fragment) {
+        private static bool TryParseFragment(string text, int length, int current, out string fragment) {
             fragment = null;
+            var last = current;
             var decode = false;
             for(;; ++current) {
                 char c;
@@ -570,7 +560,6 @@ namespace MindTouch.Dream {
                     if(decode) {
                         fragment = Decode(fragment);
                     }
-                    last = current + 1;
                     return true;
                 } else {
                     return false;
