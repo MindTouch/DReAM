@@ -33,8 +33,7 @@ namespace MindTouch.Dream {
         //--- Types ---
         private enum State {
             End = 0,
-            SchemeFirst,
-            SchemeNext,
+            Scheme,
             Authority,
             HostnameOrUserInfoBeforeColon,
             HostnameOrUserInfoAfterColon,
@@ -94,53 +93,16 @@ namespace MindTouch.Dream {
             }
 
             // initialize state and loop over all characters
-            var state = State.SchemeFirst;
-            List<KeyValuePair<string, string>> paramsList = null;
-            var decode = false;
+            var state = State.Scheme;
             var length = text.Length;
             for(int current = 0, last = 0; current <= length; ++current) {
-                char c;
-                if(current < length) {
-                    c = text[current];
-                    switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return false;
-                    case '%':
-                    case '+':
-                        decode = true;
-                        break;
-                    }
-                } else {
-
-                    // use '\0' as end-of-string marker
-                    c = '\0';
-                }
                 switch(state) {
-                case State.SchemeFirst:
-                    if(!IsAlpha(c)) {
-
-                        // scheme must begin with alpha character
+                case State.Scheme:
+                    if(!TryParseScheme(text, length, current, ref last, out scheme)) {
                         return false;
                     }
-                    decode = false;
-                    state = State.SchemeNext;
-                    break;
-                case State.SchemeNext:
-                    if((length - current >= 3) && (string.CompareOrdinal(text, current, "://", 0, 3) == 0)) {
-
-                        // found "://" sequence at current location, we're done with scheme parsing
-                        scheme = text.Substring(last, current - last);
-                        last = current + 3;
-                        current += 2;
-                        decode = false;
-                        state = State.Authority;
-                    } else if(!IsAlphaDigit(c)) {
-
-                        // scheme requires alphanumeric characters
-                        return false;
-                    }
+                    current = last - 1;
+                    state = State.Authority;
                     break;
                 case State.Authority:
                     if(!TryParseAuthority(text, length, current, ref last, ref state, out user, out password, out hostname, out port)) {
@@ -162,16 +124,11 @@ namespace MindTouch.Dream {
                     current = last - 1;
                     break;
                 case State.Fragment:
-                    if(c == '\0') {
-                        fragment = text.Substring(last, current - last);
-                        if(decode) {
-                            fragment = Decode(fragment);
-                        }
-                        decode = false;
-                        state = State.End;
-                    } else if(!IsFragmentChar(c)) {
+                    if(!TryParseFragment(text, length, current, ref last, out fragment)) {
                         return false;
                     }
+                    current = last - 1;
+                    state = State.End;
                     break;
                 case State.End:
                     throw new ShouldNeverHappenException("State.End");
@@ -180,10 +137,34 @@ namespace MindTouch.Dream {
                 }
             }
             port = DeterminePort(scheme, port, out usesDefautPort);
-            if(paramsList != null) {
-                @params = paramsList.ToArray();
-            }
             return true;
+        }
+
+        private static bool TryParseScheme(string text, int length, int current, ref int last, out string scheme) {
+            scheme = null;
+            if(!IsAlpha(text[current++])) {
+
+                // scheme must begin with alpha character
+                return false;
+            }
+            for(; current < length; ++current) {
+                var c = text[current];
+                if(IsAlphaDigit(c)) {
+
+                    // valid character, keep parsing
+                } else if(c == ':') {
+                    if((length - current >= 3) && (string.CompareOrdinal(text, current + 1, "//", 0, 2) == 0)) {
+
+                        // found "://" sequence at current location, we're done with scheme parsing
+                        scheme = text.Substring(last, current - last);
+                        last = current + 3;
+                        return true;
+                    }
+                } else {
+                    return false;
+                }
+            }
+            return false;
         }
 
         private static bool TryParseAuthority(string text, int length, int current, ref int last, ref State nextState, out string user, out string password, out string hostname, out int port) {
@@ -193,7 +174,7 @@ namespace MindTouch.Dream {
             port = -1;
             string hostnameOrUsername = null;
             var decode = false;
-            for(;; ++current) {
+            for(; ; ++current) {
                 char c;
                 if(current < length) {
                     c = text[current];
@@ -513,7 +494,7 @@ namespace MindTouch.Dream {
                     (c == '!') || char.IsLetter(c)
                 ) {
 
-                    // valid character, moving on
+                    // valid character, keep parsing
                 } else if((c == '#') || (c == '\0')) {
                     if(parsingKey) {
                         if(current != last) {
@@ -557,6 +538,44 @@ namespace MindTouch.Dream {
             nextState = (State)c;
             @params = paramsList.ToArray();
             return true;
+        }
+
+        private static bool TryParseFragment(string text, int length, int current, ref int last, out string fragment) {
+            fragment = null;
+            var decode = false;
+            for(;; ++current) {
+                char c;
+                if(current < length) {
+                    c = text[current];
+                    switch(c) {
+                    case '\0':
+
+                        // '\0' is illegal in a uri string
+                        return false;
+                    case '%':
+                    case '+':
+                        decode = true;
+                        break;
+                    }
+                } else {
+
+                    // use '\0' as end-of-string marker
+                    c = '\0';
+                }
+                if(IsFragmentChar(c)) {
+
+                    // valid character, keep parsing
+                } else if(c == '\0') {
+                    fragment = text.Substring(last, current - last);
+                    if(decode) {
+                        fragment = Decode(fragment);
+                    }
+                    last = current + 1;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
 
         private static bool IsAlpha(char c) {
