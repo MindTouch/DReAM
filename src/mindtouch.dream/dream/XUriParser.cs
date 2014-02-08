@@ -19,8 +19,6 @@
  * limitations under the License.
  */
 
-#define NEW_AUTHORITY
-
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -37,15 +35,6 @@ namespace MindTouch.Dream {
             Error = -1,
             End = 0,
             Authority,
-#if !NEW_AUTHORITY
-            HostnameOrUserInfoBeforeColon,
-            HostnameOrUserInfoAfterColon,
-            HostnameOrIPv6Address,
-            Hostname,
-            IPv6Address,
-            PortNumberOrPathOrQueryOrFragmentOrEnd,
-            PortNumber = (int)':',
-#endif
 
             // special values assigned to reduce code complexity
             Path = (int)'/',
@@ -154,7 +143,7 @@ namespace MindTouch.Dream {
             }
             return false;
         }
-#if NEW_AUTHORITY
+
         private static bool TryParseAuthority(string text, int length, int current, ref int last, out State nextState, out string user, out string password, out string hostname, out int port) {
             nextState = State.Error;
             user = null;
@@ -472,212 +461,6 @@ namespace MindTouch.Dream {
             throw new ShouldNeverHappenException("ipv6");
         }
 
-#else
-        private static bool TryParseAuthority(string text, int length, int current, ref int last, out State nextState, out string user, out string password, out string hostname, out int port) {
-            nextState = State.Authority;
-            user = null;
-            password = null;
-            hostname = null;
-            port = -1;
-            string hostnameOrUsername = null;
-            var decode = false;
-            for(; ; ++current) {
-                char c;
-                if(current < length) {
-                    c = text[current];
-                    switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return false;
-                    case '%':
-                    case '+':
-                        decode = true;
-                        break;
-                    }
-                } else {
-
-                    // use '\0' as end-of-string marker
-                    c = '\0';
-                }
-                switch(nextState) {
-                case State.Authority:
-                    if(c == '[') {
-
-                        // NOTE (steveb): we want to include the leading character in the final result
-                        last = current;
-
-                        // IPv6 addresses start with '['
-                        decode = false;
-                        nextState = State.IPv6Address;
-                    } else {
-
-                        // we might either be parsing the username:password or hostname:port part
-                        goto case State.HostnameOrUserInfoBeforeColon;
-                    }
-                    break;
-                case State.HostnameOrUserInfoBeforeColon:
-                    if(c == ':') {
-
-                        // part before ':' is either a username or hostname
-                        hostnameOrUsername = text.Substring(last, current - last);
-                        last = current + 1;
-                        nextState = State.HostnameOrUserInfoAfterColon;
-                    } else if(c == '@') {
-
-                        // part before '@' must be username since we didn't find ':'
-                        user = text.Substring(last, current - last);
-                        if(decode) {
-                            user = Decode(user);
-                            decode = false;
-                        }
-                        last = current + 1;
-                        nextState = State.HostnameOrIPv6Address;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-
-                        // part before '/', '\', '?', '#' must be hostname
-                        if(decode) {
-
-                            // hostname cannot contain encoded characters
-                            return false;
-                        }
-                        hostname = text.Substring(last, current - last);
-                        last = current + 1;
-                        nextState = (State)c;
-                        return true;
-                    } else if(!IsHostnameOrUserInfoChar(c)) {
-
-                        // both username and hostname require alphanumeric characters
-                        return false;
-                    }
-                    break;
-                case State.HostnameOrUserInfoAfterColon:
-                    if(c == '@') {
-
-                        // part before ':' was username
-                        user = hostnameOrUsername;
-                        if(decode) {
-                            user = Decode(user);
-                        }
-
-                        // part after ':' is password
-                        password = text.Substring(last, current - last);
-                        if(decode) {
-                            password = Decode(password);
-                        }
-                        last = current + 1;
-                        decode = false;
-                        nextState = State.HostnameOrIPv6Address;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-
-                        // part before ':' was hostname
-                        if(decode) {
-
-                            // hostname cannot contain encoded characters
-                            return false;
-                        }
-                        hostname = hostnameOrUsername;
-
-                        // part after ':' is port, parse and validate it
-                        if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
-                            return false;
-                        }
-                        last = current + 1;
-                        nextState = (State)c;
-                        return true;
-                    } else if(!IsHostnameOrUserInfoChar(c)) {
-
-                        // password requires alphanumeric characters; for port information, we'll validate it once we've identified it
-                        return false;
-                    }
-                    break;
-                case State.HostnameOrIPv6Address:
-                    if(c == '[') {
-
-                        // NOTE (steveb): we want to include the leading character in the final result
-                        last = current;
-
-                        // IPv6 addresses start with '['
-                        decode = false;
-                        nextState = State.IPv6Address;
-                    } else {
-                        goto case State.Hostname;
-                    }
-                    break;
-                case State.Hostname:
-                    if(c == ':') {
-                        if(decode) {
-
-                            // hostname cannot contain encoded characters
-                            return false;
-                        }
-                        hostname = text.Substring(last, current - last);
-                        last = current + 1;
-                        nextState = State.PortNumber;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                        if(decode) {
-
-                            // hostname cannot contain encoded characters
-                            return false;
-                        }
-                        hostname = text.Substring(last, current - last);
-                        last = current + 1;
-                        nextState = (State)c;
-                        return true;
-                    } else if(!IsHostnameOrUserInfoChar(c)) {
-
-                        // hostname requires alphanumeric characters
-                        return false;
-                    }
-                    break;
-                case State.IPv6Address:
-                    if(c == ']') {
-                        if(decode) {
-
-                            // hostname cannot contain encoded characters
-                            return false;
-                        }
-                        hostname = text.Substring(last, current - last + 1);
-                        last = current + 1;
-                        nextState = State.PortNumberOrPathOrQueryOrFragmentOrEnd;
-                    } else if(!(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == ':') || (c == '.'))) {
-
-                        // IPv6 address requires hexadecimal characters, colons, or periods
-                        return false;
-                    }
-                    break;
-                case State.PortNumberOrPathOrQueryOrFragmentOrEnd:
-                    if(c == ':') {
-                        last = current + 1;
-                        decode = false;
-                        nextState = State.PortNumber;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                        last = current + 1;
-                        nextState = (State)c;
-                        return true;
-                    } else {
-                        return false;
-                    }
-                    break;
-                case State.PortNumber:
-                    if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                        if(!int.TryParse(text.Substring(last, current - last), out port)) {
-                            return false;
-                        }
-                        last = current + 1;
-                        nextState = (State)c;
-                        return true;
-                    }
-                    if(!((c >= '0') && (c <= '9'))) {
-
-                        // port number requires decimal characters
-                        return false;
-                    }
-                    break;
-                }
-            }
-        }
-#endif
         private static bool TryParsePath(string text, int length, ref int current, out State nextState, ref bool trailingSlash, out string[] segments) {
             nextState = State.Error;
             segments = null;
