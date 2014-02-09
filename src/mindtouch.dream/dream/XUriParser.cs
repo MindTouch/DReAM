@@ -34,7 +34,6 @@ namespace MindTouch.Dream {
         private enum State {
             Error = -1,
             End = 0,
-            Authority,
 
             // special values assigned to reduce code complexity
             Path = (int)'/',
@@ -119,14 +118,15 @@ namespace MindTouch.Dream {
         private static bool TryParseScheme(string text, int length, ref int current, out string scheme) {
             var last = current;
             scheme = null;
-            if(!IsAlpha(text[current++])) {
+            var c = text[current++];
+            if(!(((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')))) {
 
                 // scheme must begin with alpha character
                 return false;
             }
             for(; current < length; ++current) {
-                var c = text[current];
-                if(IsAlphaDigit(c)) {
+                c = text[current];
+                if(((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9'))) {
 
                     // valid character, keep parsing
                 } else if(c == ':') {
@@ -165,17 +165,15 @@ namespace MindTouch.Dream {
                 case '+':
                     decode = true;
                     break;
+                case '[':
+                    goto ipv6;
                 }
             } else {
                 nextState = State.End;
                 return true;
             }
-            if(c == '[') {
-                ++current;
-                goto ipv6;
-            }
 
-            // parse hostname -OR- user info
+            // parse hostname -OR- user-info
             string hostnameOrUsername;
             for(;;) {
                 if(IsHostnameOrUserInfoChar(c)) {
@@ -186,7 +184,6 @@ namespace MindTouch.Dream {
                     // part before ':' is either a username or hostname
                     hostnameOrUsername = text.Substring(last, current - last);
                     last = current + 1;
-                    ++current;
                     goto hostnameOrUserInfoAfterColon;
                 } else if(c == '@') {
 
@@ -197,7 +194,6 @@ namespace MindTouch.Dream {
                         decode = false;
                     }
                     last = current + 1;
-                    ++current;
                     goto hostnameOrIPv6Address;
                 } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
 
@@ -230,15 +226,17 @@ namespace MindTouch.Dream {
                         break;
                     }
                 } else {
+
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
             }
             throw new ShouldNeverHappenException("hostnameOrUsername");
 
-            // parse hostname -OR- user info AFTER we're parsed a colon (':')
+            // parse hostname -OR- user-info AFTER we're parsed a colon (':')
         hostnameOrUserInfoAfterColon:
-            for(;; ++current) {
+            for(;;) {
+                ++current;
                 if(current < length) {
                     c = text[current];
                     switch(c) {
@@ -274,7 +272,6 @@ namespace MindTouch.Dream {
                     }
                     last = current + 1;
                     decode = false;
-                    ++current;
                     goto hostnameOrIPv6Address;
                 } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
 
@@ -300,6 +297,7 @@ namespace MindTouch.Dream {
             throw new ShouldNeverHappenException("hostnameOrUserInfoAfterColon");
 
         hostnameOrIPv6Address:
+            ++current;
             if(current < length) {
                 c = text[current];
                 switch(c) {
@@ -311,27 +309,48 @@ namespace MindTouch.Dream {
                 case '+':
                     decode = true;
                     break;
+                case '[':
+
+                    // NOTE (steveb): we want to include the leading character in the final result
+                    last = current;
+
+                    // IPv6 addresses start with '['
+                    goto ipv6;
                 }
             } else {
 
                 // use '\0' as end-of-string marker
                 c = '\0';
             }
-            if(c == '[') {
+            for(;;) {
+                if(IsHostnameOrUserInfoChar(c)) {
 
-                // NOTE (steveb): we want to include the leading character in the final result
-                last = current;
+                    // valid character, keep parsing
+                } else if(c == ':') {
+                    if(decode) {
 
-                // IPv6 addresses start with '['
-                decode = false;
-                goto ipv6;
-            } else {
-                goto hostname;
-            }
-            throw new ShouldNeverHappenException("hostnameOrIPv6Address");
+                        // hostname cannot contain encoded characters
+                        return false;
+                    }
+                    hostname = text.Substring(last, current - last);
+                    last = current + 1;
+                    goto portNumber;
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                    if(decode) {
 
-        hostname:
-            for(;; ++current) {
+                        // hostname cannot contain encoded characters
+                        return false;
+                    }
+                    hostname = text.Substring(last, current - last);
+                    last = current + 1;
+                    nextState = (State)c;
+                    return true;
+                } else {
+                    return false;
+                }
+
+                // continue on by reading the next character
+                ++current;
                 if(current < length) {
                     c = text[current];
                     switch(c) {
@@ -349,37 +368,12 @@ namespace MindTouch.Dream {
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(IsHostnameOrUserInfoChar(c)) {
-
-                    // valid character, keep parsing
-                } else if(c == ':') {
-                    if(decode) {
-
-                        // hostname cannot contain encoded characters
-                        return false;
-                    }
-                    hostname = text.Substring(last, current - last);
-                    last = current + 1;
-                    ++current;
-                    goto portNumber;
-                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                    if(decode) {
-
-                        // hostname cannot contain encoded characters
-                        return false;
-                    }
-                    hostname = text.Substring(last, current - last);
-                    last = current + 1;
-                    nextState = (State)c;
-                    return true;
-                } else {
-                    return false;
-                }
             }
             throw new ShouldNeverHappenException("hostname");
 
         portNumber:
-            for(;; ++current) {
+            for(;;) {
+                ++current;
                 if(current < length) {
                     c = text[current];
                     if(c == '\0') {
@@ -409,7 +403,8 @@ namespace MindTouch.Dream {
             throw new ShouldNeverHappenException("portNumber");
 
         ipv6:
-            for(;; ++current) {
+            for(;;) {
+                ++current;
                 if(current < length) {
                     c = text[current];
                     if(c == '\0') {
@@ -445,7 +440,6 @@ namespace MindTouch.Dream {
                     }
                     if(c == ':') {
                         last = current + 1;
-                        ++current;
                         goto portNumber;
                     } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                         last = current + 1;
@@ -670,14 +664,6 @@ namespace MindTouch.Dream {
                     return false;
                 }
             }
-        }
-
-        private static bool IsAlpha(char c) {
-            return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
-        }
-
-        private static bool IsAlphaDigit(char c) {
-            return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9'));
         }
 
         private static bool IsHostnameOrUserInfoChar(char c) {
