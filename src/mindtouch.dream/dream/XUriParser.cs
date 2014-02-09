@@ -176,7 +176,13 @@ namespace MindTouch.Dream {
             // parse hostname -OR- user-info
             string hostnameOrUsername;
             for(;;) {
-                if(IsHostnameOrUserInfoChar(c)) {
+                if(
+                    ((c >= 'a') && (c <= 'z')) ||
+                    ((c >= 'A') && (c <= 'Z')) ||
+                    ((c >= '0') && (c <= '9')) ||
+                    ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
+                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~')
+                ) {
 
                     // valid character, keep parsing
                 } else if(c == ':') {
@@ -253,7 +259,13 @@ namespace MindTouch.Dream {
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(IsHostnameOrUserInfoChar(c)) {
+                if(
+                    ((c >= 'a') && (c <= 'z')) ||
+                    ((c >= 'A') && (c <= 'Z')) ||
+                    ((c >= '0') && (c <= '9')) ||
+                    ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
+                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~')
+                ) {
 
                     // valid character, keep parsing
                 } else if(c == '@') {
@@ -321,7 +333,13 @@ namespace MindTouch.Dream {
                 c = '\0';
             }
             for(;;) {
-                if(IsHostnameOrUserInfoChar(c)) {
+                if(
+                    ((c >= 'a') && (c <= 'z')) ||
+                    ((c >= 'A') && (c <= 'Z')) ||
+                    ((c >= '0') && (c <= '9')) ||
+                    ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
+                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~')
+                ) {
 
                     // valid character, keep parsing
                 } else if(c == ':') {
@@ -657,21 +675,6 @@ namespace MindTouch.Dream {
                     return false;
                 }
             }
-        }
-
-        private static bool IsHostnameOrUserInfoChar(char c) {
-
-            // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=]
-
-            return ((c >= 'a') && (c <= 'z')) || 
-                ((c >= 'A') && (c <= 'Z')) || 
-                ((c >= '0') && (c <= '9')) ||
-                ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
-                (c == '!') || 
-                (c == ';') || 
-                (c == '=') || 
-                (c == '_') || 
-                (c == '~');
         }
 
         private static bool IsFragmentChar(char c) {
