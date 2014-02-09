@@ -85,20 +85,20 @@ namespace MindTouch.Dream {
             }
             var length = text.Length;
             var current = 0;
-            if(!TryParseScheme(text, length, ref current, out scheme)) {
+            if((current = TryParseScheme(text, length, current, out scheme)) < 0) {
                 return false;
             }
             State nextState;
-            if(!TryParseAuthority(text, length, current, ref current, out nextState, out user, out password, out hostname, out port)) {
+            if((current = TryParseAuthority(text, length, current, out nextState, out user, out password, out hostname, out port)) < 0) {
                 return false;
             }
             if((nextState == State.Path) || (nextState == State.PathBackslash)) {
-                if(!TryParsePath(text, length, ref current, out nextState, ref trailingSlash, out segments)) {
+                if((current = TryParsePath(text, length, current, out nextState, ref trailingSlash, out segments)) < 0) {
                     return false;
                 }
             }
             if(nextState == State.Query) {
-                if(!TryParseQuery(text, length, ref current, out nextState, out @params)) {
+                if((current = TryParseQuery(text, length, current, out nextState, out @params)) < 0) {
                     return false;
                 }
             }
@@ -115,14 +115,14 @@ namespace MindTouch.Dream {
             return true;
         }
 
-        private static bool TryParseScheme(string text, int length, ref int current, out string scheme) {
+        private static int TryParseScheme(string text, int length, int current, out string scheme) {
             var last = current;
             scheme = null;
             var c = text[current++];
             if(!(((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')))) {
 
                 // scheme must begin with alpha character
-                return false;
+                return -1;
             }
             for(; current < length; ++current) {
                 c = text[current];
@@ -134,17 +134,17 @@ namespace MindTouch.Dream {
 
                         // found "://" sequence at current location, we're done with scheme parsing
                         scheme = text.Substring(last, current - last);
-                        current = current + 3;
-                        return true;
+                        return current + 3;
                     }
                 } else {
-                    return false;
+                    return -1;
                 }
             }
-            return false;
+            return -1;
         }
 
-        private static bool TryParseAuthority(string text, int length, int current, ref int last, out State nextState, out string user, out string password, out string hostname, out int port) {
+        private static int TryParseAuthority(string text, int length, int current, out State nextState, out string user, out string password, out string hostname, out int port) {
+            var last = current;
             nextState = State.Error;
             user = null;
             password = null;
@@ -160,7 +160,7 @@ namespace MindTouch.Dream {
                 case '\0':
 
                     // '\0' is illegal in a uri string
-                    return false;
+                    return -1;
                 case '%':
                 case '+':
                     decode = true;
@@ -170,7 +170,7 @@ namespace MindTouch.Dream {
                 }
             } else {
                 nextState = State.End;
-                return true;
+                return current + 1;
             }
 
             // parse hostname -OR- user-info
@@ -201,14 +201,13 @@ namespace MindTouch.Dream {
                     if(decode) {
 
                         // hostname cannot contain encoded characters
-                        return false;
+                        return -1;
                     }
                     hostname = text.Substring(last, current - last);
-                    last = current + 1;
                     nextState = (State)c;
-                    return true;
+                    return current + 1;
                 } else {
-                    return false;
+                    return -1;
                 }
 
                 // continue on by reading the next character
@@ -219,7 +218,7 @@ namespace MindTouch.Dream {
                     case '\0':
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -243,7 +242,7 @@ namespace MindTouch.Dream {
                     case '\0':
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -279,19 +278,18 @@ namespace MindTouch.Dream {
                     if(decode) {
 
                         // hostname cannot contain encoded characters
-                        return false;
+                        return -1;
                     }
                     hostname = hostnameOrUsername;
 
                     // part after ':' is port, parse and validate it
                     if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
-                        return false;
+                        return -1;
                     }
-                    last = current + 1;
                     nextState = (State)c;
-                    return true;
+                    return current + 1;
                 } else {
-                    return false;
+                    return -1;
                 }
             }
             throw new ShouldNeverHappenException("hostnameOrUserInfoAfterColon");
@@ -304,7 +302,7 @@ namespace MindTouch.Dream {
                 case '\0':
 
                     // '\0' is illegal in a uri string
-                    return false;
+                    return -1;
                 case '%':
                 case '+':
                     decode = true;
@@ -330,7 +328,7 @@ namespace MindTouch.Dream {
                     if(decode) {
 
                         // hostname cannot contain encoded characters
-                        return false;
+                        return -1;
                     }
                     hostname = text.Substring(last, current - last);
                     last = current + 1;
@@ -339,14 +337,13 @@ namespace MindTouch.Dream {
                     if(decode) {
 
                         // hostname cannot contain encoded characters
-                        return false;
+                        return -1;
                     }
                     hostname = text.Substring(last, current - last);
-                    last = current + 1;
                     nextState = (State)c;
-                    return true;
+                    return current + 1;
                 } else {
-                    return false;
+                    return -1;
                 }
 
                 // continue on by reading the next character
@@ -357,7 +354,7 @@ namespace MindTouch.Dream {
                     case '\0':
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -379,7 +376,7 @@ namespace MindTouch.Dream {
                     if(c == '\0') {
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     }
                 } else {
 
@@ -391,13 +388,12 @@ namespace MindTouch.Dream {
                     // valid character, keep parsing
                 } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
                     if(!int.TryParse(text.Substring(last, current - last), out port)) {
-                        return false;
+                        return -1;
                     }
-                    last = current + 1;
                     nextState = (State)c;
-                    return true;
+                    return current + 1;
                 } else {
-                    return false;
+                    return -1;
                 }
             }
             throw new ShouldNeverHappenException("portNumber");
@@ -410,7 +406,7 @@ namespace MindTouch.Dream {
                     if(c == '\0') {
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     }
                 } else {
 
@@ -431,7 +427,7 @@ namespace MindTouch.Dream {
                         if(c == '\0') {
 
                             // '\0' is illegal in a uri string
-                            return false;
+                            return -1;
                         }
                     } else {
 
@@ -442,20 +438,19 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         goto portNumber;
                     } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                        last = current + 1;
                         nextState = (State)c;
-                        return true;
+                        return current + 1;
                     } else {
-                        return false;
+                        return -1;
                     }
                 } else {
-                    return false;
+                    return -1;
                 }
             }
             throw new ShouldNeverHappenException("ipv6");
         }
 
-        private static bool TryParsePath(string text, int length, ref int current, out State nextState, ref bool trailingSlash, out string[] segments) {
+        private static int TryParsePath(string text, int length, int current, out State nextState, ref bool trailingSlash, out string[] segments) {
             nextState = State.Error;
             segments = null;
             var last = current;
@@ -469,7 +464,7 @@ namespace MindTouch.Dream {
                     if(c == '\0') {
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     }
                 } else {
 
@@ -512,18 +507,17 @@ namespace MindTouch.Dream {
                     // we're done parsing the path string
                     break;
                 } else {
-                    return false;
+                    return -1;
                 }
             }
 
             // initialize return values
             segments = segmentList.ToArray();
-            current = current + 1;
             nextState = (State)c;
-            return true;
+            return current + 1;
         }
 
-        private static bool TryParseQuery(string text, int length, ref int current, out State nextState, out KeyValuePair<string, string>[] @params) {
+        private static int TryParseQuery(string text, int length, int current, out State nextState, out KeyValuePair<string, string>[] @params) {
             nextState = State.Error;
             @params = null;
             var last = current;
@@ -539,7 +533,7 @@ namespace MindTouch.Dream {
                     case '\0':
 
                         // '\0' is illegal in a uri string
-                        return false;
+                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -617,15 +611,14 @@ namespace MindTouch.Dream {
                         parsingKey = false;
                     }
                 } else {
-                    return false;
+                    return -1;
                 }
             }
 
             // initialize return values
-            current = current + 1;
             nextState = (State)c;
             @params = paramsList.ToArray();
-            return true;
+            return current + 1;
         }
 
         private static bool TryParseFragment(string text, int length, int current, out string fragment) {
