@@ -1,4 +1,6 @@
-﻿using System;
+﻿//#define TRACING
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -51,6 +53,7 @@ namespace MindTouchTest.Dream {
             // convert uris
             var failed = 0;
             var failedList = new List<string>(10000);
+#if !TRACING
             Timer("parse URIs using regex parser", () => {
                 foreach(var uri in uris) {
                     var u = XUri.TryParse(uri);
@@ -67,6 +70,7 @@ namespace MindTouchTest.Dream {
                 }
                 Console.WriteLine();
             }
+#endif
 
             // convert uris
             failed = 0;
@@ -89,6 +93,8 @@ namespace MindTouchTest.Dream {
             }
 
             // compare results produced by XUri and XUriParser
+#if !TRACING
+            GC.Collect();
             var uniqueUris = uris.ToHashSet();
             var passed = 0;
             Timer("compare results of XUri.TryParse() and XUriParser.TryParse()", () => {
@@ -230,6 +236,7 @@ namespace MindTouchTest.Dream {
             if(failed > 0) {
                 Console.WriteLine("{0:#,##0} uris failed to render identically to their original", failed);
             }
+#endif
         }
 
         private static void Timer(string description, Action action) {
