@@ -169,8 +169,9 @@ namespace MindTouch.Dream {
                     goto ipv6;
                 }
             } else {
-                nextState = State.End;
-                return current + 1;
+
+                // use '\0' as end-of-string marker
+                c = '\0';
             }
 
             // parse hostname -OR- user-info

@@ -61,6 +61,7 @@ namespace MindTouch.Dream.Test {
 
             // setup
             Action<XUri, string> assert = (uri, suffix) => {
+                Assert.IsNotNull(uri, string.Format("uri ({0})", suffix));
                 Assert.AreEqual(scheme, uri.Scheme, string.Format("scheme ({0})", suffix));
                 Assert.AreEqual(hostname, uri.Host, string.Format("hostname ({0})", suffix));
                 Assert.AreEqual(port, uri.Port, string.Format("port ({0})", suffix));
@@ -496,6 +497,19 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Http_missing_hostname() {
+            const string original = "http://";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_missing_hostname_and_path() {
             const string original = "http:///path";
             AssertParse(original,
                 scheme: "http",
@@ -509,7 +523,6 @@ namespace MindTouch.Dream.Test {
         #endregion
 
         #region Username & Password Testse
-
         [Test]
         public void Http_with_username_and_password() {
             const string original = "http://john.doe:password@example.com";
@@ -546,6 +559,92 @@ namespace MindTouch.Dream.Test {
                 scheme: "http",
                 user: "",
                 hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username_and_password_IPv4() {
+            const string original = "http://john.doe:password@8.8.8.8";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                password: "password",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username_IPv4() {
+            const string original = "http://john.doe@8.8.8.8";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_empty_username_IPv4() {
+            const string original = "http://@8.8.8.8";
+            AssertParse(original,
+                scheme: "http",
+                user: "",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username_and_password_IPv6() {
+            const string original = "http://john.doe:password@[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                password: "password",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_username_IPv6() {
+            const string original = "http://john.doe@[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]";
+            AssertParse(original,
+                scheme: "http",
+                user: "john.doe",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_with_empty_username_IPv6() {
+            const string original = "http://@[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]";
+            AssertParse(original,
+                scheme: "http",
+                user: "",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
                 port: 80,
                 usesDefaultPort: true,
                 segments: new string[0],
@@ -673,7 +772,6 @@ namespace MindTouch.Dream.Test {
         #endregion
 
         #region Path Tests
-
         [Test]
         public void Http_hostname_with_trailing_slash() {
             const string original = "http://example.com/";
@@ -735,6 +833,19 @@ namespace MindTouch.Dream.Test {
                 port: 80,
                 usesDefaultPort: true,
                 segments: new[] { "/" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_with_multiple_double_slash_segments() {
+            const string original = "http://example.com//foo//bar";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "/foo", "/bar" },
                 trailingSlash: false
             );
         }
@@ -953,7 +1064,6 @@ namespace MindTouch.Dream.Test {
         #endregion
 
         #region Query Parameter Tests
-
         [Test]
         public void Http_hostname_trailing_slash_and_empty_query_parameters() {
             const string original = "http://example.com/?";
@@ -998,7 +1108,6 @@ namespace MindTouch.Dream.Test {
         #endregion
 
         #region General Tests
-
         [Test]
         public void OriginalString_from_Uri_with_evil_segments() {
             var evilSegments = new[] {
