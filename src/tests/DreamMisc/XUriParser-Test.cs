@@ -30,18 +30,8 @@ namespace MindTouch.Dream.Test {
     public class XUriParserTest {
 
         // MISSING TESTS FOR:
-        // * test trailing double-slash: //
-        // * fragment with encoding
-        // * query key with encoding
-        // * query value with encoding
-        // * trailing & (e.g. http://foo/?a=b&)
-        // * leading & (e.g. http://foo/?&a=b)
-        // * double && (e.g. http://foo/?a=b&&c=d)
-        // * decode with invalid % sequence
-        // * decode with double %% sequence
-        // * decode with %u1234 sequence
         // * decode with mixed UTF-8 and UTF-16 sequences
-        // * Q: is username:password valid on IPv6 addresses?
+        // * "local://example.com"
 
         //--- Types ---
         private enum ParseSuccess {
@@ -94,54 +84,7 @@ namespace MindTouch.Dream.Test {
 
         //--- Methods ---
 
-        [Test]
-        public void TestTryParse() {
-            const string original = "htt;//";
-            AssertParse(original,
-                success: ParseSuccess.NEITHER
-            );
-        }
-
         #region Scheme Tests
-        [Test]
-        public void Http_hostname() {
-            const string original = "http://example.com";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "example.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void Http_hostname_with_default_port() {
-            const string original = "http://example.com:80";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "example.com",
-                port: 80,
-                usesDefaultPort: false,
-                segments: new string[0],
-                trailingSlash: false
-            );
-        }
-
-        [Test]
-        public void Http_hostname_with_nondefault_port() {
-            const string original = "http://example.com:81";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "example.com",
-                port: 81,
-                usesDefaultPort: false,
-                segments: new string[0],
-                trailingSlash: false
-            );
-        }
-
         [Test]
         public void Https_hostname() {
             const string original = "https://example.com";
@@ -284,13 +227,111 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Scheme_with_encoding_fails() {
             const string original = "ht%74p://example.com";
-            AssertParse(original,
-                success: ParseSuccess.NEITHER
-            );
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Scheme_with_invalid_character_fails() {
+            const string original = "htt;//example.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Scheme_with_zero_char() {
+            const string original = "ht\0tp://example.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Scheme_with_invalid_char() {
+            const string original = "ht<tp://example.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Scheme_only() {
+            const string original = "http";
+            AssertParse(original, success: ParseSuccess.NEITHER);
         }
         #endregion
 
         #region Hostname & Port Tests
+        [Test]
+        public void Local_hostname() {
+            const string original = "local://example.com";
+            AssertParse(original,
+                scheme: "local",
+                hostname: "example.com",
+                port: -1,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname() {
+            const string original = "http://8.8.8.8";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_with_default_port() {
+            const string original = "http://example.com:80";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_with_nondefault_port() {
+            const string original = "http://example.com:81";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 81,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_with_invalid_port_fails() {
+            const string original = "http://example.com:65536";
+            AssertParse(original, ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_username_password_and_port_with_zero_char_fails() {
+            const string original = "http://user:pass@example.com:\0";
+            AssertParse(original, ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_username_password_and_port_with_invalid_char_fails() {
+            const string original = "http://user:pass@example.com:<";
+            AssertParse(original, ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_username_password_with_invalid_port_fails() {
+            const string original = "http://user:pass@example.com:65536";
+            AssertParse(original, ParseSuccess.NEITHER);
+        }
+
         [Test]
         public void Http_IPv4() {
             const string original = "http://8.8.8.8";
@@ -358,20 +399,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_IPv4_with_fragment() {
-            const string original = "http://8.8.8.8#fragment";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "8.8.8.8",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false,
-                fragment: "fragment"
-            );
-        }
-
-        [Test]
         public void Http_IPv6() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]";
             AssertParse(original,
@@ -382,6 +409,30 @@ namespace MindTouch.Dream.Test {
                 segments: new string[0],
                 trailingSlash: false
             );
+        }
+
+        [Test]
+        public void Http_incomplete_IPv6_fails() {
+            const string original = "http://[2001:0db8:85a3";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_IPv6_with_zero_char_fails() {
+            const string original = "http://[2001\0:0db8:85a3:08d3:1319:8a2e:0370:7344]";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_IPv6_followed_by_zero_char_fails() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]\0";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_IPv6_followed_by_invalid_char_fails() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]<";
+            AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
         [Test]
@@ -438,25 +489,15 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_IPv6_with_fragment() {
-            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]#fragment";
-            AssertParse(original,
-                scheme: "http",
-                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false,
-                fragment: "fragment"
-            );
+        public void IPv6_with_non_hex_digits_fails() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:xxxx]";
+            AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
         [Test]
-        public void IPv6_with_non_hex_digits_fails() {
-            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:xxxx]";
-            AssertParse(original,
-                success: ParseSuccess.NEITHER
-            );
+        public void IPv6_with_encoding_fails() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:%20]";
+            AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
         [Test]
@@ -474,7 +515,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Hostname_with_encoding_fails() {
+        public void Http_hostname_with_encoding_fails() {
             const string original = "http://ex%62mple.com";
             AssertParse(original,
                 success: ParseSuccess.ORIGINAL,
@@ -490,19 +531,30 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Port_value_that_is_too_large_fails() {
             const string original = "http://example.com:100000";
-            AssertParse(original,
-                success: ParseSuccess.NEITHER
-            );
+            AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
         [Test]
-        public void Http_missing_hostname() {
+        public void Http_empty_hostname() {
             const string original = "http://";
             AssertParse(original,
                 scheme: "http",
                 hostname: "",
                 port: 80,
                 usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_empty_hostname_and_port() {
+            const string original = "http://:80";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "",
+                port: 80,
+                usesDefaultPort: false,
                 segments: new string[0],
                 trailingSlash: false
             );
@@ -516,6 +568,131 @@ namespace MindTouch.Dream.Test {
                 hostname: "",
                 port: 80,
                 usesDefaultPort: true,
+                segments: new[] { "path" },
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_username_password_and_empty_hostname() {
+            const string original = "http://bob:pass@";
+            AssertParse(original,
+                scheme: "http",
+                user: "bob",
+                password: "pass",
+                hostname: "",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_username_password_followed_by_zero_char() {
+            const string original = "http://bob:pass@\0";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_username_password_and_hostname_with_leading_encoding_fails() {
+            const string original = "http://bob:pass@%65xample.com";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "http",
+                user: "bob",
+                password: "pass",
+                hostname: "%65xample.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_username_password_and_hostname_with_encoding_fails() {
+            const string original = "http://bob:pass@ex%62mple.com";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "http",
+                user: "bob",
+                password: "pass",
+                hostname: "ex%62mple.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_username_password_and_hostname_with_encoding_and_port_fails() {
+            const string original = "http://bob:pass@ex%62mple.com:80";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "http",
+                user: "bob",
+                password: "pass",
+                hostname: "ex%62mple.com",
+                port: 80,
+                usesDefaultPort: false,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+        [Test]
+        public void Http_hostname_with_leading_zero_char() {
+            const string original = "http://\0example.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_with_zero_char() {
+            const string original = "http://exam\0ple.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_username_password_and_hostname_with_zero_char() {
+            const string original = "http://user:pass@exam\0ple.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_and_port_zero_char() {
+            const string original = "http://example.com:\0";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_with_invalid_char() {
+            const string original = "http://exam<ple.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_with_invalid_char_after_colon() {
+            const string original = "http://bob:<pass@example.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_username_password_and_hostname_with_invalid_char_after_colon() {
+            const string original = "http://bob:pass@ex<ample.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_with_encoding_port() {
+            const string original = "http://ex%62mple.com:80/path";
+            AssertParse(original,
+                success: ParseSuccess.ORIGINAL,
+                scheme: "http",
+                hostname: "ex%62mple.com",
+                port: 80,
+                usesDefaultPort: false,
                 segments: new[] { "path" },
                 trailingSlash: false
             );
@@ -768,6 +945,28 @@ namespace MindTouch.Dream.Test {
                 segments: new string[0],
                 trailingSlash: false
             );
+        }
+
+        [Test]
+        public void Http_with_leading_encoded_username_and_encoded_password() {
+            const string original = "http://%2Fdoe@example.com";
+            AssertParse(original,
+                scheme: "http",
+                user: "/doe",
+                password: null,
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false
+            );
+        }
+
+
+        [Test]
+        public void Http_hostname_with_() {
+            const string original = "http://user:\0pass@example.com";
+            AssertParse(original, success: ParseSuccess.NEITHER);
         }
         #endregion
 
@@ -1061,6 +1260,32 @@ namespace MindTouch.Dream.Test {
                 toString: "http://example.com/foo/bar/"
             );
         }
+
+        [Test]
+        public void Http_hostname_segment_with_backslash_followed_by_segment() {
+            const string original = @"http://example.com/\foo/bar";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new[] { "/foo", "bar" },
+                trailingSlash: false,
+                toString: "http://example.com//foo/bar"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_path_with_zero_char() {
+            const string original = "http://example.com/path\0foo";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_and_path_with_invalid_char() {
+            const string original = "http://example.com/path<foo";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
         #endregion
 
         #region Query Parameter Tests
@@ -1093,7 +1318,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_hostname_utf8_query_parameter() {
+        public void Http_hostname_utf8_query_value() {
             const string original = "http://example.com/?key=cr%C3%A9ate";
             AssertParse(original,
                 scheme: "http",
@@ -1105,9 +1330,312 @@ namespace MindTouch.Dream.Test {
                 @params: new[] { new KeyValuePair<string, string>("key", "cr\u00e9ate") }
             );
         }
+
+        [Test]
+        public void Http_hostname_and_encoded_query_key() {
+            const string original = "http://example.com?x+y";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x y", null) }
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_key_with_double_percent() {
+            const string original = "http://example.com?x%%y";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x%%y", null) },
+                toString: "http://example.com?x%25%25y"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_key_with_single_percent() {
+            const string original = "http://example.com?x%";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x%", null) },
+                toString: "http://example.com?x%25"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_key_with_single_percent_followed_by_single_char() {
+            const string original = "http://example.com?x%y";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x%y", null) },
+                toString: "http://example.com?x%25y"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_key_with_single_percent_followed_by_two_char() {
+            const string original = "http://example.com?x%yz";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x%yz", null) },
+                toString: "http://example.com?x%25yz"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_unicode_encoded_query_key() {
+            const string original = "http://example.com?x%u0020y";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x y", null) },
+                toString: "http://example.com?x+y"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_invalid_unicode_encoded_query_key() {
+            const string original = "http://example.com?x%uxabcy";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x%uxabcy", null) },
+                toString: "http://example.com?x%25uxabcy"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_encoded_query_key_and_query_value() {
+            const string original = "http://example.com?x+y=a+b";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] { new KeyValuePair<string, string>("x y", "a b") }
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_with_leading_ampersand() {
+            const string original = "http://example.com?&a=b";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] {
+                    new KeyValuePair<string, string>("", null),
+                    new KeyValuePair<string, string>("a", "b")
+                }
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_with_trailing_ampersand() {
+            const string original = "http://example.com?a=b&";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] {
+                    new KeyValuePair<string, string>("a", "b")
+                },
+                toString: "http://example.com?a=b"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_with_double_ampersand() {
+            const string original = "http://example.com?a&&b";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                @params: new[] {
+                    new KeyValuePair<string, string>("a", null),
+                    new KeyValuePair<string, string>("", null),
+                    new KeyValuePair<string, string>("b", null)
+                }
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_query_key_with_zero_char() {
+            const string original = "http://example.com?x\0y";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_and_query_value_with_zero_char() {
+            const string original = "http://example.com?xy=a\0b";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_and_query_with_invalid_char() {
+            const string original = "http://example.com?x<y";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+        #endregion
+
+        #region Fragment Tests
+        [Test]
+        public void Http_hostname_and_fragment() {
+            const string original = "http://example.com#fragment";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "fragment"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_empty_fragment() {
+            const string original = "http://example.com#";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: ""
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_encoded_fragment() {
+            const string original = "http://example.com#a+b";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "a b"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_square_brackets_in_fragment() {
+            const string original = "http://example.com#[a]";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "[a]",
+                toString: "http://example.com#%5Ba%5D"
+            );
+        }
+
+        [Test]
+        public void Http_IPv4_and_fragment() {
+            const string original = "http://8.8.8.8#fragment";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "8.8.8.8",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "fragment"
+            );
+        }
+
+        [Test]
+        public void Http_IPv6_and_fragment() {
+            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]#fragment";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "fragment"
+            );
+        }
+
+        [Test]
+        public void Http_hostname_and_fragment_with_zero_char() {
+            const string original = "http://example.com#a\0b";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
+
+        [Test]
+        public void Http_hostname_and_fragment_with_invalid_char() {
+            const string original = "http://example.com#a<b";
+            AssertParse(original, success: ParseSuccess.NEITHER);
+        }
         #endregion
 
         #region General Tests
+        [Test]
+        public void Null_string_fails() {
+            const string original = null;
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+
+        [Test]
+        public void Empty_string_fails() {
+            const string original = "";
+            AssertParse(original,
+                success: ParseSuccess.NEITHER
+            );
+        }
+
         [Test]
         public void OriginalString_from_Uri_with_evil_segments() {
             var evilSegments = new[] {
@@ -1242,7 +1770,7 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Ftp_with_weird_hostname() {
+        public void Ftp_with_weird_hostname_and_empty_fragment() {
             const string original = "ftp://cnn.example.com&story=breaking_news@10.0.0.1/top_story.htm#";
             AssertParse(original,
                 scheme: "ftp",
@@ -1275,12 +1803,6 @@ namespace MindTouch.Dream.Test {
         public void Can_parse_square_brackets_in_query() {
             Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"), "XUri.TryParse");
             Assert.IsNotNull(XUriParser.TryParse("http://host/foo?bar[123]=abc"), "XUriParser.TryParse");
-        }
-
-        [Test]
-        public void Can_parse_square_brackets_in_fragment() {
-            Assert.IsNotNull(XUri.TryParse("http://host/foo#[bar]"), "XUri.TryParse");
-            Assert.IsNotNull(XUriParser.TryParse("http://host/foo#[bar]"), "XUriParser.TryParse");
         }
 
         [Test]
