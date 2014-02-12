@@ -243,8 +243,8 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Scheme_with_invalid_char() {
-            const string original = "ht<tp://example.com";
+        public void Scheme_with_colon() {
+            const string original = "ht:tp://example.com";
             AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
