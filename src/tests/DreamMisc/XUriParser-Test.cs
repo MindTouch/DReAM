@@ -237,12 +237,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Scheme_with_zero_char() {
-            const string original = "ht\0tp://example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
         public void Scheme_with_colon() {
             const string original = "ht:tp://example.com";
             AssertParse(original, success: ParseSuccess.NEITHER);
@@ -311,12 +305,6 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_hostname_with_invalid_port_fails() {
             const string original = "http://example.com:65536";
-            AssertParse(original, ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_hostname_username_password_and_port_with_zero_char_fails() {
-            const string original = "http://user:pass@example.com:\0";
             AssertParse(original, ParseSuccess.NEITHER);
         }
 
@@ -414,18 +402,6 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_incomplete_IPv6_fails() {
             const string original = "http://[2001:0db8:85a3";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_IPv6_with_zero_char_fails() {
-            const string original = "http://[2001\0:0db8:85a3:08d3:1319:8a2e:0370:7344]";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_IPv6_followed_by_zero_char_fails() {
-            const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]\0";
             AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
@@ -589,12 +565,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_username_password_followed_by_zero_char() {
-            const string original = "http://bob:pass@\0";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
         public void Http_username_password_and_hostname_with_leading_encoding_fails() {
             const string original = "http://bob:pass@%65xample.com";
             AssertParse(original,
@@ -640,30 +610,6 @@ namespace MindTouch.Dream.Test {
                 segments: new string[0],
                 trailingSlash: false
             );
-        }
-
-        [Test]
-        public void Http_hostname_with_leading_zero_char() {
-            const string original = "http://\0example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_hostname_with_zero_char() {
-            const string original = "http://exam\0ple.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_username_password_and_hostname_with_zero_char() {
-            const string original = "http://user:pass@exam\0ple.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_hostname_and_port_zero_char() {
-            const string original = "http://example.com:\0";
-            AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
         [Test]
@@ -1276,12 +1222,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_hostname_and_path_with_zero_char() {
-            const string original = "http://example.com/path\0foo";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
         public void Http_hostname_and_path_with_invalid_char() {
             const string original = "http://example.com/path<foo";
             AssertParse(original, success: ParseSuccess.NEITHER);
@@ -1502,18 +1442,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Http_hostname_and_query_key_with_zero_char() {
-            const string original = "http://example.com?x\0y";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
-        public void Http_hostname_and_query_value_with_zero_char() {
-            const string original = "http://example.com?xy=a\0b";
-            AssertParse(original, success: ParseSuccess.NEITHER);
-        }
-
-        [Test]
         public void Http_hostname_and_query_with_invalid_char() {
             const string original = "http://example.com?x<y";
             AssertParse(original, success: ParseSuccess.NEITHER);
@@ -1604,12 +1532,6 @@ namespace MindTouch.Dream.Test {
                 trailingSlash: false,
                 fragment: "fragment"
             );
-        }
-
-        [Test]
-        public void Http_hostname_and_fragment_with_zero_char() {
-            const string original = "http://example.com#a\0b";
-            AssertParse(original, success: ParseSuccess.NEITHER);
         }
 
         [Test]
