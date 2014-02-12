@@ -136,6 +136,7 @@ namespace MindTouch.Dream {
                         scheme = text.Substring(last, current - last);
                         return current + 3;
                     }
+                    return -1;
                 } else {
                     return -1;
                 }
@@ -406,7 +407,7 @@ namespace MindTouch.Dream {
 
                     // valid character, keep parsing
                 } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
-                    if(!int.TryParse(text.Substring(last, current - last), out port)) {
+                    if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
                         return -1;
                     }
                     nextState = (State)c;
@@ -437,7 +438,6 @@ namespace MindTouch.Dream {
                     // valid character, keep parsing
                 } else if(c == ']') {
                     hostname = text.Substring(last, current - last + 1);
-                    last = current + 1;
 
                     // check next character to determine correct state to transition to
                     ++current;
@@ -563,40 +563,15 @@ namespace MindTouch.Dream {
                     // use '\0' as end-of-string marker
                     c = '\0';
                 }
-                if(c == '&') {
-                    if(parsingKey) {
-                        if(current != last) {
-                            paramsKey = text.Substring(last, current - last);
-                            if(decode) {
-                                paramsKey = Decode(paramsKey);
-                                decode = false;
-                            }
-                            paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
-                        } else {
-
-                            // this occurs in the degenerate case of two consecutive ampersands (e.g. "&&")
-                            paramsList.Add(new KeyValuePair<string, string>("", null));
-                        }
-                        last = current + 1;
-                    } else {
-                        var paramsValue = text.Substring(last, current - last);
-                        if(decode) {
-                            paramsValue = Decode(paramsValue);
-                            decode = false;
-                        }
-                        paramsList.Add(new KeyValuePair<string, string>(paramsKey, paramsValue));
-                        last = current + 1;
-                        parsingKey = true;
-                    }
-                } else if(
+                if(
                     ((c >= 'a') && (c <= '~')) || // one of: abcdefghijklmnopqrstuvwxyz{|}~
                     ((c >= '?') && (c <= '_')) || // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
-                    ((c >= '$') && (c <= ';')) || // one of: $%&'()*+,-./0123456789:;
-                    (c == '!') || char.IsLetter(c)
+                    ((c >= '\'') && (c <= ';')) || // one of: '()*+,-./0123456789:;
+                    (c == '$') || (c == '%') || (c == '!') || char.IsLetter(c)
                 ) {
 
                     // valid character, keep parsing
-                } else if((c == '#') || (c == '\0')) {
+                } else if((c == '&') || (c == '#') || (c == '\0')) {
                     if(parsingKey) {
                         if(current != last) {
 
@@ -604,8 +579,13 @@ namespace MindTouch.Dream {
                             paramsKey = text.Substring(last, current - last);
                             if(decode) {
                                 paramsKey = Decode(paramsKey);
+                                decode = false;
                             }
                             paramsList.Add(new KeyValuePair<string, string>(paramsKey, null));
+                        } else if(c == '&') {
+
+                            // this occurs in the degenerate case of two consecutive ampersands (e.g. "&&")
+                            paramsList.Add(new KeyValuePair<string, string>("", null));
                         }
                     } else {
 
@@ -613,8 +593,16 @@ namespace MindTouch.Dream {
                         var paramsValue = text.Substring(last, current - last);
                         if(decode) {
                             paramsValue = Decode(paramsValue);
+                            decode = false;
                         }
                         paramsList.Add(new KeyValuePair<string, string>(paramsKey, paramsValue));
+                        parsingKey = true;
+                    }
+
+                    // check if we found a query parameter separator
+                    if(c == '&') {
+                        last = current + 1;
+                        continue;
                     }
 
                     // we're done parsing the query string
@@ -748,13 +736,14 @@ namespace MindTouch.Dream {
                     char next;
                     if(((textIndex + 2) < length) && ((next = text[textIndex + 1]) != '%')) {
                         int xchar;
-                        if((next == 'u') && ((textIndex + 5) < length) && (xchar = GetChar(text, textIndex + 2, 4)) != -1) {
-                            chars[0] = (char)xchar;
-                            bytesIndex += Encoding.UTF8.GetBytes(chars, 0, 1, bytes, bytesIndex);
-                            textIndex += 5;
-                            continue;
-                        }
-                        if((xchar = GetChar(text, textIndex + 1, 2)) != -1) {
+                        if(next == 'u') {
+                            if(((textIndex + 5) < length) && (xchar = GetChar(text, textIndex + 2, 4)) != -1) {
+                                chars[0] = (char)xchar;
+                                bytesIndex += Encoding.UTF8.GetBytes(chars, 0, 1, bytes, bytesIndex);
+                                textIndex += 5;
+                                continue;
+                            }
+                        } else if((xchar = GetChar(text, textIndex + 1, 2)) != -1) {
                             bytes[bytesIndex++] = (byte)xchar;
                             textIndex += 2;
                             continue;
