@@ -30,10 +30,13 @@ namespace MindTouch.Dream {
         //                the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; 
         //                and \ as valid segment separator.
 
+        //--- Constants ---
+        private const char END_OF_STRING = '\uFFFF';
+
         //--- Types ---
         private enum State {
             Error = -1,
-            End = 0,
+            End = 0xFFFF,
 
             // special values assigned to reduce code complexity
             Path = (int)'/',
@@ -158,10 +161,6 @@ namespace MindTouch.Dream {
             if(current < length) {
                 c = text[current];
                 switch(c) {
-                case '\0':
-
-                    // '\0' is illegal in a uri string
-                    return -1;
                 case '%':
                 case '+':
                     decode = true;
@@ -171,8 +170,8 @@ namespace MindTouch.Dream {
                 }
             } else {
 
-                // use '\0' as end-of-string marker
-                c = '\0';
+                // use '\uFFFF' as end-of-string marker
+                c = END_OF_STRING;
             }
 
             // parse hostname -OR- user-info
@@ -203,7 +202,7 @@ namespace MindTouch.Dream {
                     }
                     last = current + 1;
                     goto hostnameOrIPv6Address;
-                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == END_OF_STRING)) {
 
                     // part before '/', '\', '?', '#' must be hostname
                     if(decode) {
@@ -223,10 +222,6 @@ namespace MindTouch.Dream {
                 if(current < length) {
                     c = text[current];
                     switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -234,8 +229,8 @@ namespace MindTouch.Dream {
                     }
                 } else {
 
-                    // use '\0' as end-of-string marker
-                    c = '\0';
+                    // use '\uFFFF' as end-of-string marker
+                    c = END_OF_STRING;
                 }
             }
             throw new ShouldNeverHappenException("hostnameOrUsername");
@@ -247,10 +242,6 @@ namespace MindTouch.Dream {
                 if(current < length) {
                     c = text[current];
                     switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -258,8 +249,8 @@ namespace MindTouch.Dream {
                     }
                 } else {
 
-                    // use '\0' as end-of-string marker
-                    c = '\0';
+                    // use '\uFFFF' as end-of-string marker
+                    c = END_OF_STRING;
                 }
                 if(
                     ((c >= 'a') && (c <= 'z')) ||
@@ -286,7 +277,7 @@ namespace MindTouch.Dream {
                     last = current + 1;
                     decode = false;
                     goto hostnameOrIPv6Address;
-                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == END_OF_STRING)) {
 
                     // part before ':' was hostname
                     if(decode) {
@@ -313,10 +304,6 @@ namespace MindTouch.Dream {
             if(current < length) {
                 c = text[current];
                 switch(c) {
-                case '\0':
-
-                    // '\0' is illegal in a uri string
-                    return -1;
                 case '%':
                 case '+':
                     decode = true;
@@ -331,8 +318,8 @@ namespace MindTouch.Dream {
                 }
             } else {
 
-                // use '\0' as end-of-string marker
-                c = '\0';
+                // use '\uFFFF' as end-of-string marker
+                c = END_OF_STRING;
             }
             for(;;) {
                 if(
@@ -353,7 +340,7 @@ namespace MindTouch.Dream {
                     hostname = text.Substring(last, current - last);
                     last = current + 1;
                     goto portNumber;
-                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == END_OF_STRING)) {
                     if(decode) {
 
                         // hostname cannot contain encoded characters
@@ -371,10 +358,6 @@ namespace MindTouch.Dream {
                 if(current < length) {
                     c = text[current];
                     switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -382,8 +365,8 @@ namespace MindTouch.Dream {
                     }
                 } else {
 
-                    // use '\0' as end-of-string marker
-                    c = '\0';
+                    // use '\uFFFF' as end-of-string marker
+                    c = END_OF_STRING;
                 }
             }
             throw new ShouldNeverHappenException("hostname");
@@ -391,22 +374,11 @@ namespace MindTouch.Dream {
         portNumber:
             for(;;) {
                 ++current;
-                if(current < length) {
-                    c = text[current];
-                    if(c == '\0') {
-
-                        // '\0' is illegal in a uri string
-                        return -1;
-                    }
-                } else {
-
-                    // use '\0' as end-of-string marker
-                    c = '\0';
-                }
+                c = (current < length) ? text[current] : END_OF_STRING;
                 if((c >= '0') && (c <= '9')) {
 
                     // valid character, keep parsing
-                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == END_OF_STRING)) {
                     if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
                         return -1;
                     }
@@ -421,18 +393,7 @@ namespace MindTouch.Dream {
         ipv6:
             for(;;) {
                 ++current;
-                if(current < length) {
-                    c = text[current];
-                    if(c == '\0') {
-
-                        // '\0' is illegal in a uri string
-                        return -1;
-                    }
-                } else {
-
-                    // use '\0' as end-of-string marker
-                    c = '\0';
-                }
+                c = (current < length) ? text[current] : END_OF_STRING;
                 if(((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F')) || ((c >= '0') && (c <= '9')) || (c == ':') || (c == '.')) {
 
                     // valid character, keep parsing
@@ -441,18 +402,7 @@ namespace MindTouch.Dream {
 
                     // check next character to determine correct state to transition to
                     ++current;
-                    if(current < length) {
-                        c = text[current];
-                        if(c == '\0') {
-
-                            // '\0' is illegal in a uri string
-                            return -1;
-                        }
-                    } else {
-
-                        // use '\0' as end-of-string marker
-                        c = '\0';
-                    }
+                    c = (current < length) ? text[current] : END_OF_STRING;
                     if(c == ':') {
                         last = current + 1;
                         goto portNumber;
@@ -478,18 +428,7 @@ namespace MindTouch.Dream {
             var leading = true;
             char c;
             for(; ; ++current) {
-                if(current < length) {
-                    c = text[current];
-                    if(c == '\0') {
-
-                        // '\0' is illegal in a uri string
-                        return -1;
-                    }
-                } else {
-
-                    // use '\0' as end-of-string marker
-                    c = '\0';
-                }
+                c = (current < length) ? text[current] : END_OF_STRING;
                 if((c == '/') || (c == '\\')) {
                     if(leading) {
                         hasLeadingBackslashes = hasLeadingBackslashes || (c == '\\');
@@ -512,7 +451,7 @@ namespace MindTouch.Dream {
 
                     // no longer accept leading '/' or '\' characters
                     leading = false;
-                } else if((c == '?') || (c == '#') || (c == '\0')) {
+                } else if((c == '?') || (c == '#') || (c == END_OF_STRING)) {
                     if(last == current) {
                         trailingSlash = true;
                     } else {
@@ -549,10 +488,6 @@ namespace MindTouch.Dream {
                 if(current < length) {
                     c = text[current];
                     switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return -1;
                     case '%':
                     case '+':
                         decode = true;
@@ -560,8 +495,8 @@ namespace MindTouch.Dream {
                     }
                 } else {
 
-                    // use '\0' as end-of-string marker
-                    c = '\0';
+                    // use '\uFFFF' as end-of-string marker
+                    c = END_OF_STRING;
                 }
                 if(
                     ((c >= 'a') && (c <= '~')) || // one of: abcdefghijklmnopqrstuvwxyz{|}~
@@ -571,7 +506,7 @@ namespace MindTouch.Dream {
                 ) {
 
                     // valid character, keep parsing
-                } else if((c == '&') || (c == '#') || (c == '\0')) {
+                } else if((c == '&') || (c == '#') || (c == END_OF_STRING)) {
                     if(parsingKey) {
                         if(current != last) {
 
@@ -637,29 +572,21 @@ namespace MindTouch.Dream {
                 if(current < length) {
                     c = text[current];
                     switch(c) {
-                    case '\0':
-
-                        // '\0' is illegal in a uri string
-                        return false;
                     case '%':
                     case '+':
                         decode = true;
                         break;
                     }
                 } else {
-
-                    // use '\0' as end-of-string marker
-                    c = '\0';
-                }
-                if(IsFragmentChar(c)) {
-
-                    // valid character, keep parsing
-                } else if(c == '\0') {
                     fragment = text.Substring(last, current - last);
                     if(decode) {
                         fragment = Decode(fragment);
                     }
                     return true;
+                }
+                if(IsFragmentChar(c)) {
+
+                    // valid character, keep parsing
                 } else {
                     return false;
                 }
