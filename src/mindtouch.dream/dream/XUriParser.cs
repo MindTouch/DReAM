@@ -406,7 +406,7 @@ namespace MindTouch.Dream {
                     if(c == ':') {
                         last = current + 1;
                         goto portNumber;
-                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == '\0')) {
+                    } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == END_OF_STRING)) {
                         nextState = (State)c;
                         return current + 1;
                     } else {
