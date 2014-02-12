@@ -1637,6 +1637,21 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void Http_hostname_fragment_with_encoded_chars() {
+            const string original = "http://example.com#%1a%1A%20";
+            AssertParse(original,
+                scheme: "http",
+                hostname: "example.com",
+                port: 80,
+                usesDefaultPort: true,
+                segments: new string[0],
+                trailingSlash: false,
+                fragment: "\u001a\u001A\u0020",
+                toString: "http://example.com#%1A%1A+"
+            );
+        }
+
+        [Test]
         public void OriginalString_from_Uri_with_evil_segments() {
             var evilSegments = new[] {
                 INTERNATIONALIZATION,
