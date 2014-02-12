@@ -446,7 +446,7 @@ namespace MindTouch.Dream {
                     ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
                     ((c >= '@') && (c <= '_')) ||   // one of: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
                     ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
-                    (c == '=') || (c == '!') || char.IsLetter(c)
+                    (c == '=') || (c == '!') || char.IsLetterOrDigit(c)
                 ) {
 
                     // no longer accept leading '/' or '\' characters
@@ -502,7 +502,7 @@ namespace MindTouch.Dream {
                     ((c >= 'a') && (c <= '~')) || // one of: abcdefghijklmnopqrstuvwxyz{|}~
                     ((c >= '?') && (c <= '_')) || // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
                     ((c >= '\'') && (c <= ';')) || // one of: '()*+,-./0123456789:;
-                    (c == '$') || (c == '%') || (c == '!') || char.IsLetter(c)
+                    (c == '$') || (c == '%') || (c == '!') || char.IsLetterOrDigit(c)
                 ) {
 
                     // valid character, keep parsing
@@ -595,8 +595,6 @@ namespace MindTouch.Dream {
 
         private static bool IsFragmentChar(char c) {
 
-            // Implements: [\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}#]
-
             // ! 33
 
             // # 35 (not valid in path and query)
@@ -639,9 +637,10 @@ namespace MindTouch.Dream {
                 ((c >= '#') && (c <= ';')) ||   // one of: #$%&'()*+,-./0123456789:;
                 (c == '=') ||
                 (c == '!') ||
-                char.IsLetter(c);
+                char.IsLetterOrDigit(c);
         }
 
+        // merged with XUri definition?
         private static string Decode(string text) {
 
             // NOTE (steveb): justification for why 'bytes' cannot be longer than 'text';
@@ -706,6 +705,7 @@ namespace MindTouch.Dream {
             return result;
         }
 
+        // merge with XUri implementation?
         private static int DeterminePort(string scheme, int port, out bool usesDefault) {
             if(port == -1) {
                 var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
