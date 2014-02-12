@@ -33,8 +33,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.core", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mindtouch.db", "mindtouch.db\mindtouch.db.csproj", "{F9999307-4356-4EFC-AEC7-FF6D1D692618}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test.mindtouch.dream.xuriparse", "tests\test.mindtouch.dream.xuriparse\test.mindtouch.dream.xuriparse.csproj", "{294E29AA-7085-422B-AF2D-DA240BB34E43}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -271,26 +269,6 @@ Global
 		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Signed Release|Mixed Platforms.ActiveCfg = Signed Release|Any CPU
 		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Signed Release|Mixed Platforms.Build.0 = Signed Release|Any CPU
 		{F9999307-4356-4EFC-AEC7-FF6D1D692618}.Signed Release|x86.ActiveCfg = Signed Release|Any CPU
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Debug|x86.ActiveCfg = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Debug|x86.Build.0 = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Documentation|Any CPU.ActiveCfg = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Documentation|Mixed Platforms.ActiveCfg = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Documentation|Mixed Platforms.Build.0 = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Documentation|x86.ActiveCfg = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Documentation|x86.Build.0 = Debug|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Release|Any CPU.ActiveCfg = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Release|Mixed Platforms.Build.0 = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Release|x86.ActiveCfg = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Release|x86.Build.0 = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Signed Release|Any CPU.ActiveCfg = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Signed Release|Mixed Platforms.ActiveCfg = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Signed Release|Mixed Platforms.Build.0 = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Signed Release|x86.ActiveCfg = Release|x86
-		{294E29AA-7085-422B-AF2D-DA240BB34E43}.Signed Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -300,7 +278,6 @@ Global
 		{C612C4DC-E72C-4DFC-8F32-9DE1A45EBE8A} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
 		{909B67F2-F2D6-4B68-8401-A56747379995} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
 		{66E62AB7-D8A5-494A-970F-AA6705E33361} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
-		{294E29AA-7085-422B-AF2D-DA240BB34E43} = {F1DF3358-C4F9-4AC4-8121-7FDF662E75B9}
 		{DCF830D7-F840-41B3-A89A-4145DAEB9744} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}
 		{74182840-62F6-4587-8FA8-88C4D57598AE} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}
 		{F9999307-4356-4EFC-AEC7-FF6D1D692618} = {41171E81-8617-4B1A-AA60-5E45F60BDC6B}

@@ -31,15 +31,6 @@ namespace MindTouch.Dream.Test {
 
         // MISSING TESTS FOR:
         // * decode with mixed UTF-8 and UTF-16 sequences
-        // * "local://example.com"
-
-        //--- Types ---
-        private enum ParseSuccess {
-            NEITHER,
-            ORIGINAL,
-            NEW,
-            BOTH
-        }
 
         ///--- Constants ---
 
@@ -47,7 +38,7 @@ namespace MindTouch.Dream.Test {
         private const string INTERNATIONALIZATION = "I\u00f1t\u00ebrn\u00e2ti\u00f4n\u00e0liz\u00e6ti\u00f8n";
 
         //--- Class Methods ---
-        private static void AssertParse(string text, ParseSuccess success = ParseSuccess.BOTH, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null, string toString = null) {
+        private static void AssertParse(string text, bool success = true, string scheme = null, string user = null, string password = null, string hostname = null, int? port = null, bool? usesDefaultPort = null, string[] segments = null, bool? trailingSlash = null, KeyValuePair<string, string>[] @params = null, string fragment = null, string toString = null) {
 
             // setup
             Action<XUri, string> assert = (uri, suffix) => {
@@ -66,16 +57,10 @@ namespace MindTouch.Dream.Test {
             };
 
             // setup
-            var uriOriginal = XUri.TryParse(text);
             var uriNew = XUriParser.TryParse(text);
 
             // test
-            if((success == ParseSuccess.BOTH) || (success == ParseSuccess.ORIGINAL)) {
-                assert(uriOriginal, "original");
-            } else {
-                Assert.IsNull(uriOriginal, "(original)");                
-            }
-            if((success == ParseSuccess.BOTH) || (success == ParseSuccess.NEW)) {
+            if(success) {
                 assert(uriNew, "new");
             } else {
                 Assert.IsNull(uriNew, "(new)");
@@ -205,47 +190,37 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Scheme_with_numbers_only_fails() {
             const string original = "123://example.com";
-            AssertParse(original,
-                success: ParseSuccess.NEITHER
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Scheme_with_plus_sign_fails() {
             const string original = "ht+tp://example.com";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "ht+tp",
-                hostname: "example.com",
-                port: -1,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Scheme_with_encoding_fails() {
             const string original = "ht%74p://example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Scheme_with_invalid_character_fails() {
             const string original = "htt;//example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Scheme_with_colon() {
             const string original = "ht:tp://example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Scheme_only() {
             const string original = "http";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
         #endregion
 
@@ -305,19 +280,19 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_hostname_with_invalid_port_fails() {
             const string original = "http://example.com:65536";
-            AssertParse(original, ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_hostname_username_password_and_port_with_invalid_char_fails() {
             const string original = "http://user:pass@example.com:<";
-            AssertParse(original, ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_hostname_username_password_with_invalid_port_fails() {
             const string original = "http://user:pass@example.com:65536";
-            AssertParse(original, ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
@@ -402,13 +377,13 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_incomplete_IPv6_fails() {
             const string original = "http://[2001:0db8:85a3";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_IPv6_followed_by_invalid_char_fails() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]<";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
@@ -467,47 +442,31 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void IPv6_with_non_hex_digits_fails() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:xxxx]";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void IPv6_with_encoding_fails() {
             const string original = "http://[2001:0db8:85a3:08d3:1319:8a2e:0370:%20]";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Hostname_with_plus_sign_fails() {
             const string original = "http://ex+ample.com";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "http",
-                hostname: "ex+ample.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_hostname_with_encoding_fails() {
             const string original = "http://ex%62mple.com";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "http",
-                hostname: "ex%62mple.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Port_value_that_is_too_large_fails() {
             const string original = "http://example.com:100000";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
@@ -567,81 +526,43 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_username_password_and_hostname_with_leading_encoding_fails() {
             const string original = "http://bob:pass@%65xample.com";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "http",
-                user: "bob",
-                password: "pass",
-                hostname: "%65xample.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_username_password_and_hostname_with_encoding_fails() {
             const string original = "http://bob:pass@ex%62mple.com";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "http",
-                user: "bob",
-                password: "pass",
-                hostname: "ex%62mple.com",
-                port: 80,
-                usesDefaultPort: true,
-                segments: new string[0],
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_username_password_and_hostname_with_encoding_and_port_fails() {
             const string original = "http://bob:pass@ex%62mple.com:80";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "http",
-                user: "bob",
-                password: "pass",
-                hostname: "ex%62mple.com",
-                port: 80,
-                usesDefaultPort: false,
-                segments: new string[0],
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_hostname_with_invalid_char() {
             const string original = "http://exam<ple.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_hostname_with_invalid_char_after_colon() {
             const string original = "http://bob:<pass@example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_username_password_and_hostname_with_invalid_char_after_colon() {
             const string original = "http://bob:pass@ex<ample.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
 
         [Test]
         public void Http_hostname_with_encoding_port() {
             const string original = "http://ex%62mple.com:80/path";
-            AssertParse(original,
-                success: ParseSuccess.ORIGINAL,
-                scheme: "http",
-                hostname: "ex%62mple.com",
-                port: 80,
-                usesDefaultPort: false,
-                segments: new[] { "path" },
-                trailingSlash: false
-            );
+            AssertParse(original, false);
         }
         #endregion
 
@@ -912,7 +833,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_hostname_with_() {
             const string original = "http://user:\0pass@example.com";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
         #endregion
 
@@ -1224,7 +1145,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_hostname_and_path_with_invalid_char() {
             const string original = "http://example.com/path<foo";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
         #endregion
 
@@ -1444,7 +1365,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_hostname_and_query_with_invalid_char() {
             const string original = "http://example.com?x<y";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
         #endregion
 
@@ -1537,7 +1458,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Http_hostname_and_fragment_with_invalid_char() {
             const string original = "http://example.com#a<b";
-            AssertParse(original, success: ParseSuccess.NEITHER);
+            AssertParse(original, false);
         }
         #endregion
 
@@ -1546,7 +1467,7 @@ namespace MindTouch.Dream.Test {
         public void Null_string_fails() {
             const string original = null;
             AssertParse(original,
-                success: ParseSuccess.NEITHER
+                false
             );
         }
 
@@ -1554,7 +1475,7 @@ namespace MindTouch.Dream.Test {
         public void Empty_string_fails() {
             const string original = "";
             AssertParse(original,
-                success: ParseSuccess.NEITHER
+                false
             );
         }
 

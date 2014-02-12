@@ -93,17 +93,6 @@ namespace MindTouch.Dream {
         //--- Constants ---
 
         /// <summary>
-        /// Regular expression used to parse a full Uri string.
-        /// </summary>
-        public const string URI_REGEX = @"(?<scheme>" + SCHEME_REGEX + @")://" + 
-                                        @"(?<userinfo>" + USERINFO_REGEX + @"@)?" + 
-                                        @"(?<host>" + HOST_REGEX + @")" + 
-                                        @"(?<port>:[\d]*)?" + 
-                                        @"(?<path>([/\\]" + SEGMENT_REGEX + @")*)" + 
-                                        @"(?<query>\?" + QUERY_REGEX + @")?" + 
-                                        @"(?<fragment>#" + FRAGMENT_REGEX + @")?";
-
-        /// <summary>
         /// Regular expression to match Uri scheme.
         /// </summary>
         public const string SCHEME_REGEX = @"[a-zA-Z][\w\+\-\.]*";
@@ -158,7 +147,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public static readonly XUri Localhost;
 
-        private static readonly Regex _uriRegex = new Regex(@"^" + URI_REGEX + @"$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _schemeRegex = new Regex(SCHEME_REGEX, RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _hostRegex = new Regex(HOST_REGEX, RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _segmentRegex = new Regex(@"^/*" + SEGMENT_REGEX + @"$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -633,107 +621,7 @@ namespace MindTouch.Dream {
         }
 
         public static bool TryParse(string text, out string scheme, out string user, out string password, out string host, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
-            Group group;
-            scheme = null;
-            user = null;
-            password = null;
-            host = null;
-            port = -1;
-            usesDefautPort = true;
-            segments = null;
-            trailingSlash = false;
-            @params = null;
-            fragment = null;
-            if(string.IsNullOrEmpty(text)) {
-                return false;
-            }
-
-            // parse uri
-            Match match = _uriRegex.Match(text);
-            if(!match.Success) {
-                return false;
-            }
-
-            // extract scheme and host (mandatory parts);
-            scheme = match.Groups["scheme"].Captures[0].Value;
-            host = match.Groups["host"].Captures[0].Value;
-
-            // extract user information (optional)
-            group = match.Groups["userinfo"];
-            if(group.Captures.Count > 0) {
-                string userinfo = group.Captures[0].Value;
-
-                // remove the trailing '@' character
-                userinfo = userinfo.Substring(0, userinfo.Length - 1);
-                string[] parts = userinfo.Split(new char[] { ':' }, 2);
-                user = Decode(parts[0]);
-                password = (parts.Length > 1) ? Decode(parts[1]) : null;
-            }
-
-            // extract port information (optional)
-            group = match.Groups["port"];
-            if(group.Captures.Count > 0) {
-                string porttext = group.Captures[0].Value.Substring(1);
-                if(!int.TryParse(porttext, out port)) {
-                    return false;
-                }
-            }
-            port = DeterminePort(scheme, port, out usesDefautPort);
-
-            // extract path information (optional)
-            group = match.Groups["path"];
-            if(group.Captures.Count > 0) {
-                string path = group.Captures[0].Value;
-                ParsePath(path, false, out segments, out trailingSlash);
-            } else {
-                segments = EMPTY_ARRAY;
-            }
-
-            // extract query information (optional)
-            group = match.Groups["query"];
-            if(group.Captures.Count > 0) {
-                string query = group.Captures[0].Value.Substring(1);
-                @params = ParseParamsAsPairs(query);
-            } else {
-                @params = null;
-            }
-
-            // extract fragment information (optional)
-            group = match.Groups["fragment"];
-            if(group.Captures.Count > 0) {
-                fragment = Decode(group.Captures[0].Value.Substring(1));
-            }
-
-            // validate parsed result
-            if(string.IsNullOrEmpty(scheme)) {
-                return false;
-            }
-            if(!IsValidScheme(scheme)) {
-                return false;
-            }
-            if(host == null) {
-                return false;
-            }
-            if(!IsValidHost(host)) {
-                return false;
-            }
-            if((port < -1) || (port > ushort.MaxValue)) {
-                return false;
-            }
-            if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
-                    if(string.IsNullOrEmpty(segment)) {
-                        return false;
-                    }
-                    if(!IsValidSegment(segment)) {
-                        return false;
-                    }
-                }
-            }
-
-            // all checks were passed successfully
-            return true;
+            return XUriParser.TryParse(text, out scheme, out user, out password, out host, out port, out usesDefautPort, out segments, out trailingSlash, out @params, out fragment);
         }
 
         private static int DeterminePort(string scheme, int port, out bool usesDefault) {
