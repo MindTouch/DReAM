@@ -57,7 +57,7 @@ namespace MindTouch.Dream.Test {
             };
 
             // setup
-            var uriNew = XUriParser.TryParse(text);
+            var uriNew = XUri.TryParse(text);
 
             // test
             if(success) {
@@ -1504,14 +1504,8 @@ namespace MindTouch.Dream.Test {
             foreach(var evil in evilSegments) {
                 var original = new Uri("http://foo/" + evil);
                 var fromDecoded = new Uri(original.ToString());
-
-                // regex parser
                 Assert.IsNotNull(XUri.TryParse(original.OriginalString), string.Format("original failed for '{0}' using regex parser", evil));
                 Assert.IsNotNull(XUri.TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using regex parser", evil));
-
-                // new parser
-                Assert.IsNotNull(XUriParser.TryParse(original.OriginalString), string.Format("original failed for '{0}' using custom parser", evil));
-                Assert.IsNotNull(XUriParser.TryParse(fromDecoded.OriginalString), string.Format("fromDecoded failed for '{0}' using custom parser", evil));
             }
         }
 
@@ -1660,19 +1654,16 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Can_parse_square_brackets_in_query() {
             Assert.IsNotNull(XUri.TryParse("http://host/foo?bar[123]=abc"), "XUri.TryParse");
-            Assert.IsNotNull(XUriParser.TryParse("http://host/foo?bar[123]=abc"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_curly_brackets_in_query() {
             Assert.IsNotNull(XUri.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUri.TryParse");
-            Assert.IsNotNull(XUriParser.TryParse("http://test.com/AllItems.aspx?RootFolder={xyz}"), "XUriParser.TryParse");
         }
 
         [Test]
         public void Can_parse_curly_brackets_in_fragment() {
             Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"), "XUri.TryParse");
-            Assert.IsNotNull(XUri.TryParse("http://test.com/foo#{xyz}"), "XUriParser.TryParse");
         }
         #endregion
 
@@ -1704,11 +1695,11 @@ namespace MindTouch.Dream.Test {
 
             // test new parsing code
             for(var i = 0; i < WARMUP; ++i) {
-                XUriParser.TryParse(uri);
+                XUri.TryParse(uri);
             }
             var swNew = Stopwatch.StartNew();
             for(var i = 0; i < PERF_LOOPS; ++i) {
-                XUriParser.TryParse(uri);
+                XUri.TryParse(uri);
             }
             swNew.Stop();
 
