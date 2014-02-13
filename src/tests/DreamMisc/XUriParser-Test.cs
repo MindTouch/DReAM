@@ -31,7 +31,6 @@ namespace MindTouch.Dream.Test {
 
         // MISSING TESTS FOR:
         // * decode with mixed UTF-8 and UTF-16 sequences
-        // * "local://example.com"
 
         //--- Types ---
         private enum ParseSuccess {

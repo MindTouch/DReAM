@@ -34,7 +34,7 @@ namespace MindTouch.Dream {
         private const char END_OF_STRING = '\uFFFF';
 
         //--- Types ---
-        private enum State {
+        public enum nextStep {
             Error = -1,
             End = 0xFFFF,
 
@@ -91,34 +91,34 @@ namespace MindTouch.Dream {
             if((current = TryParseScheme(text, length, current, out scheme)) < 0) {
                 return false;
             }
-            State nextState;
-            if((current = TryParseAuthority(text, length, current, out nextState, out user, out password, out hostname, out port)) < 0) {
+            nextStep next;
+            if((current = TryParseAuthority(text, length, current, out next, out user, out password, out hostname, out port)) < 0) {
                 return false;
             }
-            if((nextState == State.Path) || (nextState == State.PathBackslash)) {
-                if((current = TryParsePath(text, length, current, out nextState, ref trailingSlash, out segments)) < 0) {
+            if((next == nextStep.Path) || (next == nextStep.PathBackslash)) {
+                if((current = TryParsePath(text, length, current, out next, ref trailingSlash, out segments)) < 0) {
                     return false;
                 }
             }
-            if(nextState == State.Query) {
-                if((current = TryParseQuery(text, length, current, out nextState, out @params)) < 0) {
+            if(next == nextStep.Query) {
+                if((current = TryParseQuery(text, length, current, out next, out @params)) < 0) {
                     return false;
                 }
             }
-            if(nextState == State.Fragment) {
+            if(next == nextStep.Fragment) {
                 if(!TryParseFragment(text, length, current, out fragment)) {
                     return false;
                 }
-                nextState = State.End;
+                next = nextStep.End;
             }
-            if(nextState != State.End) {
+            if(next != nextStep.End) {
                 throw new ShouldNeverHappenException();
             }
             port = DeterminePort(scheme, port, out usesDefautPort);
             return true;
         }
 
-        private static int TryParseScheme(string text, int length, int current, out string scheme) {
+        public static int TryParseScheme(string text, int length, int current, out string scheme) {
             var last = current;
             scheme = null;
             var c = text[current++];
@@ -147,9 +147,9 @@ namespace MindTouch.Dream {
             return -1;
         }
 
-        private static int TryParseAuthority(string text, int length, int current, out State nextState, out string user, out string password, out string hostname, out int port) {
+        public static int TryParseAuthority(string text, int length, int current, out nextStep next, out string user, out string password, out string hostname, out int port) {
             var last = current;
-            nextState = State.Error;
+            next = nextStep.Error;
             user = null;
             password = null;
             hostname = null;
@@ -182,7 +182,8 @@ namespace MindTouch.Dream {
                     ((c >= 'A') && (c <= 'Z')) ||
                     ((c >= '0') && (c <= '9')) ||
                     ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
-                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~')
+                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~') || 
+                    char.IsLetterOrDigit(c)
                 ) {
 
                     // valid character, keep parsing
@@ -211,7 +212,7 @@ namespace MindTouch.Dream {
                         return -1;
                     }
                     hostname = text.Substring(last, current - last);
-                    nextState = (State)c;
+                    next = (nextStep)c;
                     return current + 1;
                 } else {
                     return -1;
@@ -257,7 +258,8 @@ namespace MindTouch.Dream {
                     ((c >= 'A') && (c <= 'Z')) ||
                     ((c >= '0') && (c <= '9')) ||
                     ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
-                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~')
+                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~') || 
+                    char.IsLetterOrDigit(c)
                 ) {
 
                     // valid character, keep parsing
@@ -291,7 +293,7 @@ namespace MindTouch.Dream {
                     if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
                         return -1;
                     }
-                    nextState = (State)c;
+                    next = (nextStep)c;
                     return current + 1;
                 } else {
                     return -1;
@@ -327,7 +329,8 @@ namespace MindTouch.Dream {
                     ((c >= 'A') && (c <= 'Z')) ||
                     ((c >= '0') && (c <= '9')) ||
                     ((c >= '$') && (c <= '.')) ||   // one of: $%&'()*+,-.
-                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~')
+                    (c == '!') || (c == ';') || (c == '=') || (c == '_') || (c == '~') || 
+                    char.IsLetterOrDigit(c)
                 ) {
 
                     // valid character, keep parsing
@@ -347,7 +350,7 @@ namespace MindTouch.Dream {
                         return -1;
                     }
                     hostname = text.Substring(last, current - last);
-                    nextState = (State)c;
+                    next = (nextStep)c;
                     return current + 1;
                 } else {
                     return -1;
@@ -382,7 +385,7 @@ namespace MindTouch.Dream {
                     if(!int.TryParse(text.Substring(last, current - last), out port) || (port < 0) || (port > ushort.MaxValue)) {
                         return -1;
                     }
-                    nextState = (State)c;
+                    next = (nextStep)c;
                     return current + 1;
                 } else {
                     return -1;
@@ -407,7 +410,7 @@ namespace MindTouch.Dream {
                         last = current + 1;
                         goto portNumber;
                     } else if((c == '/') || (c == '\\') || (c == '?') || (c == '#') || (c == END_OF_STRING)) {
-                        nextState = (State)c;
+                        next = (nextStep)c;
                         return current + 1;
                     } else {
                         return -1;
@@ -419,8 +422,8 @@ namespace MindTouch.Dream {
             throw new ShouldNeverHappenException("ipv6");
         }
 
-        private static int TryParsePath(string text, int length, int current, out State nextState, ref bool trailingSlash, out string[] segments) {
-            nextState = State.Error;
+        public static int TryParsePath(string text, int length, int current, out nextStep next, ref bool trailingSlash, out string[] segments) {
+            next = nextStep.Error;
             segments = null;
             var last = current;
             var hasLeadingBackslashes = false;
@@ -446,7 +449,8 @@ namespace MindTouch.Dream {
                     ((c >= 'a') && (c <= '~')) ||   // one of: abcdefghijklmnopqrstuvwxyz{|}~
                     ((c >= '@') && (c <= '_')) ||   // one of: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
                     ((c >= '$') && (c <= ';')) ||   // one of: $%&'()*+,-./0123456789:;
-                    (c == '=') || (c == '!') || char.IsLetterOrDigit(c)
+                    (c == '=') || (c == '!') || 
+                    char.IsLetterOrDigit(c)
                 ) {
 
                     // no longer accept leading '/' or '\' characters
@@ -471,12 +475,12 @@ namespace MindTouch.Dream {
 
             // initialize return values
             segments = segmentList.ToArray();
-            nextState = (State)c;
+            next = (nextStep)c;
             return current + 1;
         }
 
-        private static int TryParseQuery(string text, int length, int current, out State nextState, out KeyValuePair<string, string>[] @params) {
-            nextState = State.Error;
+        public static int TryParseQuery(string text, int length, int current, out nextStep next, out KeyValuePair<string, string>[] @params) {
+            next = nextStep.Error;
             @params = null;
             var last = current;
             var paramsList = new List<KeyValuePair<string, string>>(16);
@@ -502,7 +506,8 @@ namespace MindTouch.Dream {
                     ((c >= 'a') && (c <= '~')) || // one of: abcdefghijklmnopqrstuvwxyz{|}~
                     ((c >= '?') && (c <= '_')) || // one of: ?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
                     ((c >= '\'') && (c <= ';')) || // one of: '()*+,-./0123456789:;
-                    (c == '$') || (c == '%') || (c == '!') || char.IsLetterOrDigit(c)
+                    (c == '$') || (c == '%') || (c == '!') || 
+                    char.IsLetterOrDigit(c)
                 ) {
 
                     // valid character, keep parsing
@@ -558,12 +563,12 @@ namespace MindTouch.Dream {
             }
 
             // initialize return values
-            nextState = (State)c;
+            next = (nextStep)c;
             @params = paramsList.ToArray();
             return current + 1;
         }
 
-        private static bool TryParseFragment(string text, int length, int current, out string fragment) {
+        public static bool TryParseFragment(string text, int length, int current, out string fragment) {
             fragment = null;
             var last = current;
             var decode = false;
@@ -593,7 +598,7 @@ namespace MindTouch.Dream {
             }
         }
 
-        private static bool IsFragmentChar(char c) {
+        public static bool IsFragmentChar(char c) {
 
             // ! 33
 
@@ -640,8 +645,7 @@ namespace MindTouch.Dream {
                 char.IsLetterOrDigit(c);
         }
 
-        // merged with XUri definition?
-        private static string Decode(string text) {
+        public static string Decode(string text) {
 
             // NOTE (steveb): justification for why 'bytes' cannot be longer than 'text';
             //                for ascii characters, we need 1 byte per character
@@ -649,7 +653,7 @@ namespace MindTouch.Dream {
             //                for encoded 16-bit characters (%uXXXX), we need 2-4 bytes per 6 characters
 
             var length = text.Length;
-            var bytes = new byte[text.Length];
+            var bytes = new byte[4 * text.Length];
             var bytesIndex = 0;
             var chars = new char[1];
             for(var textIndex = 0; textIndex < length; textIndex++) {
@@ -678,11 +682,31 @@ namespace MindTouch.Dream {
                     bytes[bytesIndex++] = (byte)'%';
                     break;
                 default:
-                    bytes[bytesIndex++] = (byte)c;
+                    bytesIndex += Encoding.UTF8.GetBytes(text, textIndex, 1, bytes, bytesIndex);
                     break;
                 }
             }
             return Encoding.UTF8.GetString(bytes, 0, bytesIndex);
+        }
+
+        public static int DeterminePort(string scheme, int port, out bool usesDefault) {
+            if(port == -1) {
+                var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
+                if(schemeHashCode == LOCAL_HASHCODE) {
+
+                    // use default port number (-1)
+                } else if(schemeHashCode == HTTP_HASHCODE) {
+                    port = 80;
+                } else if(schemeHashCode == HTTPS_HASHCODE) {
+                    port = 443;
+                } else if(schemeHashCode == FTP_HASHCODE) {
+                    port = 21;
+                }
+                usesDefault = true;
+            } else {
+                usesDefault = false;
+            }
+            return port;
         }
 
         private static int GetChar(string text, int offset, int length) {
@@ -703,27 +727,6 @@ namespace MindTouch.Dream {
                 result = (result << 4) + value;
             }
             return result;
-        }
-
-        // merge with XUri implementation?
-        private static int DeterminePort(string scheme, int port, out bool usesDefault) {
-            if(port == -1) {
-                var schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
-                if(schemeHashCode == LOCAL_HASHCODE) {
-
-                    // use default port number (-1)
-                } else if(schemeHashCode == HTTP_HASHCODE) {
-                    port = 80;
-                } else if(schemeHashCode == HTTPS_HASHCODE) {
-                    port = 443;
-                } else if(schemeHashCode == FTP_HASHCODE) {
-                    port = 21;
-                }
-                usesDefault = true;
-            } else {
-                usesDefault = false;
-            }
-            return port;
         }
     }
 }
