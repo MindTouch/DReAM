@@ -19,12 +19,10 @@
  * limitations under the License.
  */
 
-// TODO (steveb): should we enable this again? (https://youtrack.mindtouch.us/issue/DR-30)
-//#define XURI_USE_NAMETABLE
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
@@ -86,7 +84,8 @@ namespace MindTouch.Dream {
     /// <summary>
     /// Encapsulation of a Uniform Resource Identifier as an immutable class with a fluent interface for modification.
     /// </summary>
-    public sealed class XUri {
+    [Serializable]
+    public sealed class XUri : ISerializable {
 
         // NOTE (steveb): XUri parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; and \ as valid segment separator
 
@@ -1017,27 +1016,6 @@ namespace MindTouch.Dream {
             if((port < -1) || (port > ushort.MaxValue)) {
                 throw new ArgumentException("port");
             }
-#if XURI_USE_NAMETABLE
-            if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
-                    if(string.IsNullOrEmpty(segment)) {
-                        throw new ArgumentException(string.Format("segment[{0}] is null", i));
-                    }
-                    if(!IsValidSegment(segment)) {
-                        throw new ArgumentException("invalid char in segment: " + segment);
-                    }
-                    segments[i] = SysUtil.NameTable.Add(segment);
-                }
-            }
-            this.Scheme = SysUtil.NameTable.Add(scheme);
-            this.User = (user != null) ? SysUtil.NameTable.Add(user) : null;
-            this.Host = SysUtil.NameTable.Add(host);
-            this.Fragment = (fragment != null) ? SysUtil.NameTable.Add(fragment) : null;
-
-            // TODO (steveb): internalize parameter strings
-            _params = @params;
-#else
             if(segments != null) {
                 for(int i = 0; i < segments.Length; ++i) {
                     string segment = segments[i];
@@ -1055,7 +1033,6 @@ namespace MindTouch.Dream {
             this.Host = host;
             this.Fragment = fragment;
             _params = @params;
-#endif
 
             // these strings are never internalized
             _segments = segments ?? EMPTY_ARRAY;
@@ -1077,28 +1054,6 @@ namespace MindTouch.Dream {
             if((port < -1) || (port > ushort.MaxValue)) {
                 throw new ArgumentException("port");
             }
-#if XURI_USE_NAMETABLE
-
-            // TODO (steveb): we should not need to do this since we're deriving the new XUri instance from an existing one; 
-            //                instead, we only need to capture the places where new strings can be added (WithHost, With, At, ...)
-
-            if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
-                    if(string.IsNullOrEmpty(segment)) {
-                        throw new ArgumentException("segment is null");
-                    }
-                    segments[i] = SysUtil.NameTable.Add(segment);
-                }
-            }
-            this.Scheme = SysUtil.NameTable.Add(scheme);
-            this.User = (user != null) ? SysUtil.NameTable.Add(user) : null;
-            this.Host = SysUtil.NameTable.Add(host);
-            this.Fragment = (fragment != null) ? SysUtil.NameTable.Add(fragment) : null;
-
-            // TODO (steveb): internalize parameter strings
-            _params = @params;
-#else
             if(segments != null) {
                 for(int i = 0; i < segments.Length; ++i) {
                     string segment = segments[i];
@@ -1113,7 +1068,7 @@ namespace MindTouch.Dream {
             this.Host = host;
             this.Fragment = fragment;
             _params = @params;
-#endif
+
             // these strings are never internalized
             this.Password = password;
             this.Port = port;
@@ -2287,6 +2242,11 @@ namespace MindTouch.Dream {
                 }
             }
             return true;
+        }
+
+        //--- ISerializable Members ---
+        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
+            info.AddValue("uri", ToString());
         }
     }
 }
