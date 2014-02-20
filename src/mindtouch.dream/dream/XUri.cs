@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -84,7 +85,8 @@ namespace MindTouch.Dream {
     /// <summary>
     /// Encapsulation of a Uniform Resource Identifier as an immutable class with a fluent interface for modification.
     /// </summary>
-    public sealed class XUri {
+    [Serializable]
+    public sealed class XUri : ISerializable {
 
         // NOTE (steveb): XUri parses absolute URIs based on RFC3986 (http://www.ietf.org/rfc/rfc3986.txt), with the addition of ^, |, [, ], { and } as a valid character in segments, queries, and fragments; and \ as valid segment separator
 
@@ -1985,6 +1987,11 @@ namespace MindTouch.Dream {
                 return false;
             }
             return !segments.Where((t, i) => !INVARIANT_IGNORE_CASE.Equals(Segments[i], t)).Any();
+        }
+
+        //--- ISerializable Members ---
+        void ISerializable.GetObjectData(SerializationInfo info, StreamingContext context) {
+            info.AddValue("uri", ToString());
         }
     }
 }
