@@ -532,6 +532,21 @@ namespace MindTouch.Dream.Test {
             );
         }
 
+        [Test]
+        public void Feature_can_get_declared_query_params() {
+            var expectedDoc = new XDoc("params")
+                .Start("param").Attr("name", "parama").Value("valuea").End()
+                .Start("param").Attr("name", "paramb").Value("valueb").End();
+            AssertFeature(
+                "GET:sync/featureparams",
+                _plug.At("sync", "featureparams")
+                    .With("parama", "valuea")
+                    .With("paramb", "valueb")
+                    .With("paramc", "valuec"),
+                expectedDoc
+            );
+        }
+
         private void AssertFeature(string pattern, Plug plug) {
             AssertFeature(pattern, plug, null);
         }
@@ -877,6 +892,17 @@ namespace MindTouch.Dream.Test {
             [DreamFeature("GET:sync/inject/instance", "")]
             public DreamMessage SyncInjectInstance(IFoo foo) {
                 return Response(new XDoc("body").Elem("class", foo.GetType().FullName));
+            }
+
+            [DreamFeature("GET:sync/featureparams", "")]
+            [DreamFeatureParam("parama", "string?", "")]
+            [DreamFeatureParam("paramb", "string?", "")]
+            public DreamMessage SyncFeatureParams(DreamContext context) {
+                var doc = new XDoc("params");
+                foreach(var paramAttribute in context.Feature.FeatureParamAttributes) {
+                    doc.Start("param").Attr("name", paramAttribute.Name).Value(context.GetParam(paramAttribute.Name)).End();
+                }
+                return Response(doc);
             }
 
             //--- Methods ---

@@ -370,11 +370,6 @@ namespace MindTouch.Dream {
         public const string SELECT = "dream.out.select";
 
         /// <summary>
-        /// Response chunk.
-        /// </summary>
-        public const string CHUNK = "dream.out.chunk";
-
-        /// <summary>
         /// Response type.
         /// </summary>
         public const string TYPE = "dream.out.type";
@@ -507,6 +502,11 @@ namespace MindTouch.Dream {
         /// </summary>
         public readonly ExceptionTranslator[] ExceptionTranslators;
 
+        /// <summary>
+        /// Get the list of declared feature parameter attributes
+        /// </summary>
+        public readonly IEnumerable<DreamFeatureParamAttribute> FeatureParamAttributes; 
+
         private KeyValuePair<int, string>[] _paramNames;
         private int _counter;
 
@@ -521,13 +521,15 @@ namespace MindTouch.Dream {
         /// <param name="stages">Feature stages.</param>
         /// <param name="verb">Request verb.</param>
         /// <param name="signature">Feature signature.</param>
-        public DreamFeature(IDreamService service, XUri serviceUri, int mainStageIndex, DreamFeatureStage[] stages, string verb, string signature) {
+        /// <param name="featureParamAttributes">Feature parameter attributes</param>
+        public DreamFeature(IDreamService service, XUri serviceUri, int mainStageIndex, DreamFeatureStage[] stages, string verb, string signature, IEnumerable<DreamFeatureParamAttribute> featureParamAttributes) {
             this.Service = service;
             this.ServiceUri = serviceUri;
             this.Stages = stages;
             this.MainStageIndex = mainStageIndex;
             this.Verb = verb;
             this.ExceptionTranslators = service.ExceptionTranslators;
+            this.FeatureParamAttributes = featureParamAttributes;
             ParseFeatureSignature(serviceUri, signature, out this.PathSegments, out _paramNames, out this.OptionalSegments);
         }
 

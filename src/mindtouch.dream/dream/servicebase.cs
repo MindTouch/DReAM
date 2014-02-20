@@ -886,7 +886,7 @@ namespace MindTouch.Dream {
                 // BUGBUGBUG (steveb): when invoking a remote function this way, we're are not running the proloques and epilogues, which leads to errors;
                 //  also dream-access attributes are being ignored (i.e. 'public' vs. 'private')
                 DreamMessage message = DreamUtil.AppendHeadersToInternallyForwardedMessage(current.Request, DreamMessage.Ok());
-                var context = current.CreateContext(verb, uri, new DreamFeature(this, Self, 0, stages, verb, path), message);
+                var context = current.CreateContext(verb, uri, new DreamFeature(this, Self, 0, stages, verb, path, Enumerable.Empty<DreamFeatureParamAttribute>()), message);
                 context.AttachToCurrentTaskEnv();
 
                 // pass along host and public-uri information
