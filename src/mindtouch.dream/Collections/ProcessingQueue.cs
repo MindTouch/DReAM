@@ -30,7 +30,7 @@ namespace MindTouch.Collections {
     /// Provides a mechanism for dispatching work items against an <see cref="IDispatchQueue"/>.
     /// </summary>
     /// <typeparam name="T">Type of work item that can be dispatched.</typeparam>
-    public class ProcessingQueue<T> : IThreadsafeQueue<T>, IDisposable {
+    public class ProcessingQueue<T> : IThreadsafeQueue<T> {
 
         //--- Class Methods ---
         private static Action<T, Action> MakeHandlerWithCompletion(Action<T> handler) {
@@ -47,7 +47,6 @@ namespace MindTouch.Collections {
         private readonly Action<T, Action> _handler;
         private readonly IDispatchQueue _dispatchQueue;
         private readonly LockFreeItemConsumerQueue<T> _inbox;
-        private bool _disposed;
         private int _capacity;
 
         //--- Constructors ---
@@ -164,21 +163,6 @@ namespace MindTouch.Collections {
             }
             item = default(T);
             return false;
-        }
-
-        /// <summary>
-        /// Release the resources reserved by the work queue from the global thread pool.
-        /// </summary>
-        public void Dispose() {
-            if(!_disposed) {
-                _disposed = true;
-
-                // check if the dispatch queue needs to be disposed
-                IDisposable disposable = _dispatchQueue as IDisposable;
-                if(disposable != null) {
-                    disposable.Dispose();
-                }
-            }
         }
 
         private bool TryStartWorkItem(T item) {
