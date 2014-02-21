@@ -176,7 +176,6 @@ namespace MindTouch.Tasking {
     /// a method's signature must match one of the <see cref="CoroutineHandler{TResult}"/> delegates, i.e. it will always have a
     /// return type of <see cref="IEnumerator{T}"/> and the last argument is always a subclass of <see cref="AResult"/>.
     /// </remarks>
-    [Serializable]
     public sealed class Coroutine : IContinuation {
 
         //--- Class Fields ---

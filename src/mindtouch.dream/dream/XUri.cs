@@ -19,16 +19,14 @@
  * limitations under the License.
  */
 
-// TODO (steveb): should we enable this again? (http://youtrack.developer.mindtouch.com/issue/MT-9135)
-//#define XURI_USE_NAMETABLE
-
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.IO;
 
 namespace MindTouch.Dream {
 
@@ -84,9 +82,6 @@ namespace MindTouch.Dream {
         Fragment
     }
 
-    // TODO (steveb): implement XUriTemplate/XUriPattern (see http://youtrack.developer.mindtouch.com/issue/MT-9660)
-    // {scheme}://{host}/{path-param};[{segment-param}]/[{optional-path-param};{segment-param}}]//{segment-list}?query-arg={query-param}&[optional-query-arg={query-param}]
-
     /// <summary>
     /// Encapsulation of a Uniform Resource Identifier as an immutable class with a fluent interface for modification.
     /// </summary>
@@ -98,44 +93,34 @@ namespace MindTouch.Dream {
         //--- Constants ---
 
         /// <summary>
-        /// Regular expression used to parse a full Uri string.
-        /// </summary>
-        public const string URI_REGEX = @"(?<scheme>" + SCHEME_REGEX + @")://(?<userinfo>" + USERINFO_REGEX + @"@)?(?<host>" + HOST_REGEX + @")(?<port>:[\d]*)?(?<path>([/\\]" + SEGMENT_REGEX + @")*)(?<query>\?" + QUERY_REGEX + @")?(?<fragment>#" + FRAGMENT_REGEX + @")?";
-
-        /// <summary>
         /// Regular expression to match Uri scheme.
         /// </summary>
-        public const string SCHEME_REGEX = @"[a-zA-Z][\w+-\.]*";
+        public const string SCHEME_REGEX = @"[a-zA-Z][\w\+\-\.]*";
 
         /// <summary>
         /// Regular expression to match Uri User Info.
         /// </summary>
-        public const string USERINFO_REGEX = @"[\w-\._~!\$&'\(\)\*\+,;=%:]*";
+        public const string USERINFO_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:]*";
 
         /// <summary>
         /// Regular expression to match Uri host.
         /// </summary>
-        public const string HOST_REGEX = @"((\[[a-fA-F\d:\.]*(%.+)?\])|([\w-\._~%!\$&'\(\)\*\+,;=]*))";
+        public const string HOST_REGEX = @"((\[[a-fA-F\d:\.]*\])|([\w\-\._~%!\$&'\(\)\*\+,;=]*))";
 
         /// <summary>
         /// Regular expression for matching path segments.
         /// </summary>
-        public const string SEGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^\[\]{}]*";
+        public const string SEGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^\|\[\]{}]*";
 
         /// <summary>
         /// Regular expression for matching query name/value pairs.
         /// </summary>
-        public const string QUERY_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}]*";
+        public const string QUERY_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]{}\\]*";
 
         /// <summary>
         /// Regular expression for matching fragment elements.
         /// </summary>
-        public const string FRAGMENT_REGEX = @"[\w-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}]*";
-
-        /// <summary>
-        /// An empty string array.
-        /// </summary>
-        public static readonly string[] EMPTY_ARRAY = new string[0];
+        public const string FRAGMENT_REGEX = @"[\w\-\._~%!\$&'\(\)\*\+,;=:@\^/\?|\[\]#{}\\]*";
 
         /// <summary>
         /// Invariant string comparer (using <see cref="StringComparer.Ordinal"/> by default).
@@ -145,14 +130,11 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Invariant, case-insensitive string comparer (using <see cref="StringComparer.OrdinalIgnoreCase"/> by default).
         /// </summary>
-        public static StringComparer INVARIANT_IGNORE_CASE = StringComparer.OrdinalIgnoreCase;
+        public static readonly StringComparer INVARIANT_IGNORE_CASE = StringComparer.OrdinalIgnoreCase;
 
+        private static readonly string[] EMPTY_ARRAY = new string[0];
         private const string UP_SEGMENT = "..";
-        private static readonly int HTTP_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("http");
-        private static readonly int HTTPS_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("https");
-        private static readonly int LOCAL_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("local");
-        private static readonly int FTP_HASHCODE = StringComparer.OrdinalIgnoreCase.GetHashCode("ftp");
-        private static readonly char[] SLASHES = new char[] { '/', '\\' };
+        private static readonly char[] SLASHES = new[] { '/', '\\' };
 
         //--- Class Fields ---
 
@@ -161,7 +143,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public static readonly XUri Localhost;
 
-        private static readonly Regex _uriRegex = new Regex(@"^" + URI_REGEX + @"$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _schemeRegex = new Regex(SCHEME_REGEX, RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _hostRegex = new Regex(HOST_REGEX, RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _segmentRegex = new Regex(@"^/*" + SEGMENT_REGEX + @"$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -183,10 +164,10 @@ namespace MindTouch.Dream {
         /// <param name="right">Right Uri.</param>
         /// <returns><see langword="True"/> if left and right represent the same Uri.</returns>
         public static bool operator ==(XUri left, XUri right) {
-            if(object.ReferenceEquals(left, right)) {
+            if(ReferenceEquals(left, right)) {
                 return true;
             }
-            if(object.ReferenceEquals(left, null) || object.ReferenceEquals(right, null)) {
+            if(ReferenceEquals(left, null) || ReferenceEquals(right, null)) {
                 return false;
             }
             return left.Equals(right);
@@ -245,7 +226,7 @@ namespace MindTouch.Dream {
                 uri = null;
                 return false;
             }
-            uri = new XUri(scheme, user, password, host, port, null, segments, trailingSlash, @params, fragment, true);
+            uri = new XUri(scheme, user, password, host, port, usesDefaultPort, segments, trailingSlash, @params, fragment, true);
             return true;
         }
 
@@ -255,15 +236,18 @@ namespace MindTouch.Dream {
         /// <param name="query">Query string.</param>
         /// <returns>Array of key/value pairs.</returns>
         public static KeyValuePair<string, string>[] ParseParamsAsPairs(string query) {
+            if(query == null) {
+                return new KeyValuePair<string, string>[0];
+            }
 
             // decode query string
-            List<KeyValuePair<string, string>> result = new List<KeyValuePair<string, string>>();
-            int len = (query != null) ? query.Length : 0;
-            for(int current = 0; current < len; current++) {
-                int start = current;
+            var result = new List<KeyValuePair<string, string>>();
+            var len = query.Length;
+            for(var current = 0; current < len; current++) {
+                var start = current;
 
                 // check if string contains '='
-                int equalIndex = -1;
+                var equalIndex = -1;
                 for(; current < len; ++current) {
                     if((equalIndex < 0) && (query[current] == '=')) {
                         equalIndex = current;
@@ -273,8 +257,8 @@ namespace MindTouch.Dream {
                 }
 
                 // extract (name,value) pair
-                string name = null;
-                string value = null;
+                string name;
+                string value;
                 if(equalIndex >= 0) {
                     name = query.Substring(start, equalIndex - start);
                     value = query.Substring(equalIndex + 1, (current - equalIndex) - 1);
@@ -308,7 +292,7 @@ namespace MindTouch.Dream {
         /// <param name="trailingSlash">Output of <see langword="True"/> if the path had a trailing slash.</param>
         public static void ParsePath(string path, bool relative, out string[] segments, out bool trailingSlash) {
             if(!string.IsNullOrEmpty(path)) {
-                List<string> result = new List<string>(path.Split(SLASHES));
+                var result = new List<string>(path.Split(SLASHES));
 
                 // remove leading empty entry (always present since every path begins with '/')
                 if(!relative && (result.Count > 0) && (result[0].Length == 0)) {
@@ -322,8 +306,8 @@ namespace MindTouch.Dream {
                 }
 
                 // process empty segments and parse segment parameters
-                for(int i = result.Count - 1; i >= 0; --i) {
-                    string segment = result[i];
+                for(var i = result.Count - 1; i >= 0; --i) {
+                    var segment = result[i];
 
                     // replace empty entry with '/'; this enables proper processing of URIs like http://localhost/foo//bar -> { "foo", "/bar" }
                     if(segment.Length == 0) {
@@ -354,10 +338,10 @@ namespace MindTouch.Dream {
             if(@params == null) {
                 return null;
             }
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
             if(@params.Length > 0) {
-                bool first = true;
-                foreach(KeyValuePair<string, string> pair in @params) {
+                var first = true;
+                foreach(var pair in @params) {
                     if(!first) {
                         result.Append("&");
                     }
@@ -378,8 +362,13 @@ namespace MindTouch.Dream {
         /// <param name="text">Input text.</param>
         /// <returns>Decoded text.</returns>
         public static string Decode(string text) {
-            string result = UrlDecode(text);
-            return result;
+            if(null == text) {
+                return null;
+            }
+            if(text.IndexOfAny(new[] { '%', '+' }) == -1) {
+                return text;
+            }
+            return XUriParser.Decode(text);
         }
 
         /// <summary>
@@ -401,13 +390,13 @@ namespace MindTouch.Dream {
             if(string.IsNullOrEmpty(text)) {
                 return text;
             }
-            byte[] original = Encoding.UTF8.GetBytes(text);
+            var original = Encoding.UTF8.GetBytes(text);
 
             // count how many characters are affected by the encoding
-            int charsToReplace = 0;
-            int charsToEncode = 0;
-            int length = original.Length;
-            for(int i = 0; i < length; i++) {
+            var charsToReplace = 0;
+            var charsToEncode = 0;
+            var length = original.Length;
+            for(var i = 0; i < length; i++) {
                 var ch = (char)original[i];
                 if(ch == ' ') {
                     charsToReplace++;
@@ -423,10 +412,10 @@ namespace MindTouch.Dream {
 
             // copy, replace, and encode characters
             var encoded = new byte[length + (charsToEncode * 2)];
-            int index = 0;
-            for(int j = 0; j < length; j++) {
-                byte asciiByte = original[j];
-                char asciiChar = (char)asciiByte;
+            var index = 0;
+            for(var j = 0; j < length; j++) {
+                var asciiByte = original[j];
+                var asciiChar = (char)asciiByte;
                 if(IsValidCharInUri(asciiChar, level)) {
                     encoded[index++] = asciiByte;
                 } else if(asciiChar == ' ') {
@@ -454,13 +443,13 @@ namespace MindTouch.Dream {
             if(string.IsNullOrEmpty(text)) {
                 return text;
             }
-            byte[] original = Encoding.UTF8.GetBytes(text);
+            var original = Encoding.UTF8.GetBytes(text);
 
             // count how many characters are affected by the encoding
-            int charsToReplace = 0;
-            int charsToEncode = 0;
-            int length = original.Length;
-            for(int i = 0; i < length; i++) {
+            var charsToReplace = 0;
+            var charsToEncode = 0;
+            var length = original.Length;
+            for(var i = 0; i < length; i++) {
                 var ch = (char)original[i];
                 if(ch == ' ') {
                     charsToReplace++;
@@ -476,10 +465,10 @@ namespace MindTouch.Dream {
 
             // copy, replace, and encode characters
             var encoded = new byte[length + (charsToReplace * 2) + (charsToEncode * 4)];
-            int index = 0;
-            for(int j = 0; j < length; j++) {
-                byte asciiByte = original[j];
-                char asciiChar = (char)asciiByte;
+            var index = 0;
+            for(var j = 0; j < length; j++) {
+                var asciiByte = original[j];
+                var asciiChar = (char)asciiByte;
                 if(IsValidCharInUri(asciiChar, level)) {
                     encoded[index++] = asciiByte;
                 } else if(asciiChar == ' ') {
@@ -591,133 +580,13 @@ namespace MindTouch.Dream {
             return _segmentRegex.IsMatch(segment);
         }
 
-        private static bool TryParse(string text, out string scheme, out string user, out string password, out string host, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
-            Group group;
-            scheme = null;
-            user = null;
-            password = null;
-            host = null;
-            port = -1;
-            usesDefautPort = true;
-            segments = null;
-            trailingSlash = false;
-            @params = null;
-            fragment = null;
-            if(string.IsNullOrEmpty(text)) {
-                return false;
-            }
-
-            // parse uri
-            Match match = _uriRegex.Match(text);
-            if(!match.Success) {
-                return false;
-            }
-
-            // extract scheme and host (mandatory parts);
-            scheme = match.Groups["scheme"].Captures[0].Value;
-            host = match.Groups["host"].Captures[0].Value;
-
-            // extract user information (optional)
-            group = match.Groups["userinfo"];
-            if(group.Captures.Count > 0) {
-                string userinfo = group.Captures[0].Value;
-
-                // remove the trailing '@' character
-                userinfo = userinfo.Substring(0, userinfo.Length - 1);
-                string[] parts = userinfo.Split(new char[] { ':' }, 2);
-                user = Decode(parts[0]);
-                password = (parts.Length > 1) ? Decode(parts[1]) : null;
-            }
-
-            // extract port information (optional)
-            group = match.Groups["port"];
-            if(group.Captures.Count > 0) {
-                string porttext = group.Captures[0].Value.Substring(1);
-                if(!int.TryParse(porttext, out port)) {
-                    return false;
-                }
-            }
-            port = DeterminePort(scheme, port, out usesDefautPort);
-
-            // extract path information (optional)
-            group = match.Groups["path"];
-            if(group.Captures.Count > 0) {
-                string path = group.Captures[0].Value;
-                ParsePath(path, false, out segments, out trailingSlash);
-            } else {
-                segments = EMPTY_ARRAY;
-            }
-
-            // extract query information (optional)
-            group = match.Groups["query"];
-            if(group.Captures.Count > 0) {
-                string query = group.Captures[0].Value.Substring(1);
-                @params = ParseParamsAsPairs(query);
-            } else {
-                @params = null;
-            }
-
-            // extract fragment information (optional)
-            group = match.Groups["fragment"];
-            if(group.Captures.Count > 0) {
-                fragment = Decode(group.Captures[0].Value.Substring(1));
-            }
-
-            // validate parsed result
-            if(string.IsNullOrEmpty(scheme)) {
-                return false;
-            }
-            if(!IsValidScheme(scheme)) {
-                return false;
-            }
-            if(host == null) {
-                return false;
-            }
-            if(!IsValidHost(host)) {
-                return false;
-            }
-            if((port < -1) || (port > ushort.MaxValue)) {
-                return false;
-            }
-            if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
-                    if(string.IsNullOrEmpty(segment)) {
-                        return false;
-                    }
-                    if(!IsValidSegment(segment)) {
-                        return false;
-                    }
-                }
-            }
-
-            // all checks were passed successfully
-            return true;
-        }
-
-        private static int DeterminePort(string scheme, int port, out bool isDefault) {
-            int defaultPort = -1;
-            int schemeHashCode = INVARIANT_IGNORE_CASE.GetHashCode(scheme);
-            if(schemeHashCode == LOCAL_HASHCODE) {
-
-                // use default port number (-1)
-            } else if(schemeHashCode == HTTP_HASHCODE) {
-                defaultPort = 80;
-            } else if(schemeHashCode == HTTPS_HASHCODE) {
-                defaultPort = 443;
-            } else if(schemeHashCode == FTP_HASHCODE) {
-                defaultPort = 21;
-            }
-            if(port == -1) {
-                port = defaultPort;
-            }
-            isDefault = (port == defaultPort);
-            return port;
+        public static bool TryParse(string text, out string scheme, out string user, out string password, out string host, out int port, out bool usesDefautPort, out string[] segments, out bool trailingSlash, out KeyValuePair<string, string>[] @params, out string fragment) {
+            return XUriParser.TryParse(text, out scheme, out user, out password, out host, out port, out usesDefautPort, out segments, out trailingSlash, out @params, out fragment);
         }
 
         private static bool EqualsStrings(string left, string right, bool ignoreCase) {
-            int leftLength = (left != null) ? left.Length : -1;
-            int rightLength = (right != null) ? right.Length : -1;
+            var leftLength = (left != null) ? left.Length : -1;
+            var rightLength = (right != null) ? right.Length : -1;
             if(leftLength != rightLength) {
                 return false;
             }
@@ -817,110 +686,6 @@ namespace MindTouch.Dream {
             return (left.Port == right.Port) || (!strict && left.UsesDefaultPort && right.UsesDefaultPort);
         }
 
-        #region UrlDecode from Mono
-        // This code comes from https://github.com/mono/mono/blob/bb9a8d9550f4b59e6e31ed39314f720115d1f8a8/mcs/class/System.Web/System.Web/HttpUtility.cs
-        // This is being copied here to achieve consistent decoding between Mono versions as well as .Net and is used by XUri.Decode
-
-        private static string UrlDecode(string str) {
-            return UrlDecode(str, Encoding.UTF8);
-        }
-
-        private static char[] GetChars(MemoryStream b, Encoding e) {
-            return e.GetChars(b.GetBuffer(), 0, (int)b.Length);
-        }
-
-        private static string UrlDecode(string s, Encoding e) {
-            if(null == s)
-                return null;
-
-            if(s.IndexOf('%') == -1 && s.IndexOf('+') == -1)
-                return s;
-
-            if(e == null)
-                e = Encoding.UTF8;
-
-            StringBuilder output = new StringBuilder();
-            long len = s.Length;
-            MemoryStream bytes = new MemoryStream();
-            int xchar;
-
-            for(int i = 0; i < len; i++) {
-                if(s[i] == '%' && i + 2 < len && s[i + 1] != '%') {
-                    if(s[i + 1] == 'u' && i + 5 < len) {
-                        if(bytes.Length > 0) {
-                            output.Append(GetChars(bytes, e));
-                            bytes.SetLength(0);
-                        }
-
-                        xchar = GetChar(s, i + 2, 4);
-                        if(xchar != -1) {
-                            output.Append((char)xchar);
-                            i += 5;
-                        } else {
-                            output.Append('%');
-                        }
-                    } else if((xchar = GetChar(s, i + 1, 2)) != -1) {
-                        bytes.WriteByte((byte)xchar);
-                        i += 2;
-                    } else {
-                        output.Append('%');
-                    }
-                    continue;
-                }
-
-                if(bytes.Length > 0) {
-                    output.Append(GetChars(bytes, e));
-                    bytes.SetLength(0);
-                }
-
-                if(s[i] == '+') {
-                    output.Append(' ');
-                } else {
-                    output.Append(s[i]);
-                }
-            }
-
-            if(bytes.Length > 0) {
-                output.Append(GetChars(bytes, e));
-            }
-
-            bytes = null;
-            return output.ToString();
-        }
-
-        private static int GetInt(byte b) {
-            char c = (char)b;
-            if(c >= '0' && c <= '9')
-                return c - '0';
-
-            if(c >= 'a' && c <= 'f')
-                return c - 'a' + 10;
-
-            if(c >= 'A' && c <= 'F')
-                return c - 'A' + 10;
-
-            return -1;
-        }
-
-        private static int GetChar(string str, int offset, int length) {
-            int val = 0;
-            int end = length + offset;
-            for(int i = offset; i < end; i++) {
-                char c = str[i];
-                if(c > 127)
-                    return -1;
-
-                int current = GetInt((byte)c);
-                if(current == -1)
-                    return -1;
-                val = (val << 4) + current;
-            }
-
-            return val;
-        }
-
-        #endregion
-
         //--- Fields ---
 
         /// <summary>
@@ -982,20 +747,13 @@ namespace MindTouch.Dream {
         public XUri(XUri uri) : this(uri.Scheme, uri.User, uri.Password, uri.Host, uri.Port, uri.UsesDefaultPort, uri.Segments, uri.TrailingSlash, uri.Params, uri.Fragment, uri.UsesSegmentDoubleEncoding) { }
 
         /// <summary>
-        /// Create a new XUri from serialized form.
-        /// </summary>
-        /// <param name="info">Serialization information.</param>
-        /// <param name="context">Streaming context.</param>
-        public XUri(SerializationInfo info, StreamingContext context) : this(info.GetString("uri")) { }
-
-        /// <summary>
         /// Create a new XUri from a valid uri string.
         /// </summary>
         /// <param name="uri">Uri string.</param>
         /// <exception cref="UriFormatException">Thrown if string cannot be parsed into an XUri.</exception>
         public XUri(string uri) {
             if(!TryParse(uri, out this.Scheme, out this.User, out this.Password, out this.Host, out this.Port, out this.UsesDefaultPort, out _segments, out this.TrailingSlash, out _params, out this.Fragment)) {
-                throw new UriFormatException("invalid uri syntax: " + uri ?? "(NULL)");
+                throw new UriFormatException("invalid uri syntax: " + (uri ?? "(NULL)"));
             }
         }
 
@@ -1027,30 +785,9 @@ namespace MindTouch.Dream {
             if((port < -1) || (port > ushort.MaxValue)) {
                 throw new ArgumentException("port");
             }
-#if XURI_USE_NAMETABLE
             if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
-                    if(string.IsNullOrEmpty(segment)) {
-                        throw new ArgumentException(string.Format("segment[{0}] is null", i));
-                    }
-                    if(!IsValidSegment(segment)) {
-                        throw new ArgumentException("invalid char in segment: " + segment);
-                    }
-                    segments[i] = SysUtil.NameTable.Add(segment);
-                }
-            }
-            this.Scheme = SysUtil.NameTable.Add(scheme);
-            this.User = (user != null) ? SysUtil.NameTable.Add(user) : null;
-            this.Host = SysUtil.NameTable.Add(host);
-            this.Fragment = (fragment != null) ? SysUtil.NameTable.Add(fragment) : null;
-
-            // TODO (steveb): internalize parameter strings
-            _params = @params;
-#else
-            if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
+                for(var i = 0; i < segments.Length; ++i) {
+                    var segment = segments[i];
                     if(string.IsNullOrEmpty(segment)) {
                         throw new ArgumentException(string.Format("segment[{0}] is null", i));
                     }
@@ -1065,16 +802,15 @@ namespace MindTouch.Dream {
             this.Host = host;
             this.Fragment = fragment;
             _params = @params;
-#endif
 
             // these strings are never internalized
             _segments = segments ?? EMPTY_ARRAY;
             this.Password = password;
-            this.Port = DeterminePort(scheme, port, out this.UsesDefaultPort);
+            this.Port = XUriParser.DeterminePort(scheme, port, out this.UsesDefaultPort);
             this.TrailingSlash = trailingSlash;
         }
 
-        private XUri(string scheme, string user, string password, string host, int port, bool? defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
+        private XUri(string scheme, string user, string password, string host, int port, bool defaultPort, string[] segments, bool trailingSlash, KeyValuePair<string, string>[] @params, string fragment, bool doubleEncodeSegments) {
 
             // NOTE: this constructor is similar to the public constructor, except that it does not use any of the RegEx checks
 
@@ -1087,31 +823,9 @@ namespace MindTouch.Dream {
             if((port < -1) || (port > ushort.MaxValue)) {
                 throw new ArgumentException("port");
             }
-#if XURI_USE_NAMETABLE
-
-            // TODO (steveb): we should not need to do this since we're deriving the new XUri instance from an existing one; 
-            //                instead, we only need to capture the places where new strings can be added (WithHost, With, At, ...)
-
             if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
-                    if(string.IsNullOrEmpty(segment)) {
-                        throw new ArgumentException("segment is null");
-                    }
-                    segments[i] = SysUtil.NameTable.Add(segment);
-                }
-            }
-            this.Scheme = SysUtil.NameTable.Add(scheme);
-            this.User = (user != null) ? SysUtil.NameTable.Add(user) : null;
-            this.Host = SysUtil.NameTable.Add(host);
-            this.Fragment = (fragment != null) ? SysUtil.NameTable.Add(fragment) : null;
-
-            // TODO (steveb): internalize parameter strings
-            _params = @params;
-#else
-            if(segments != null) {
-                for(int i = 0; i < segments.Length; ++i) {
-                    string segment = segments[i];
+                for(var i = 0; i < segments.Length; ++i) {
+                    var segment = segments[i];
                     if(string.IsNullOrEmpty(segment)) {
                         throw new ArgumentException("segment is null");
                     }
@@ -1123,15 +837,11 @@ namespace MindTouch.Dream {
             this.Host = host;
             this.Fragment = fragment;
             _params = @params;
-#endif
+
             // these strings are never internalized
             this.Password = password;
-            if(defaultPort.HasValue) {
-                this.Port = port;
-                this.UsesDefaultPort = defaultPort.Value;
-            } else {
-                this.Port = DeterminePort(scheme, port, out this.UsesDefaultPort);
-            }
+            this.Port = port;
+            this.UsesDefaultPort = defaultPort;
             this.TrailingSlash = trailingSlash;
             _segments = segments ?? EMPTY_ARRAY;
             _doubleEncode = doubleEncodeSegments;
@@ -1170,9 +880,9 @@ namespace MindTouch.Dream {
         /// </summary>
         public string Authority {
             get {
-                string userinfo = UserInfo;
+                var userinfo = UserInfo;
                 if(userinfo != null) {
-                    StringBuilder result = new StringBuilder();
+                    var result = new StringBuilder();
                     result.Append(userinfo);
                     result.Append('@');
                     result.Append(HostPort);
@@ -1190,10 +900,10 @@ namespace MindTouch.Dream {
                 if(User != null) {
                     if(Password != null) {
                         return User + ":" + Password;
-                    } else {
-                        return User;
                     }
-                } else if(Password != null) {
+                    return User;
+                }
+                if(Password != null) {
                     return ":" + Password;
                 }
                 return null;
@@ -1205,10 +915,10 @@ namespace MindTouch.Dream {
         /// </summary>
         public string Path {
             get {
-                StringBuilder result = new StringBuilder();
-                for(int i = 0; i < _segments.Length; ++i) {
+                var result = new StringBuilder();
+                foreach(var t in _segments) {
                     result.Append('/');
-                    result.Append(_segments[i]);
+                    result.Append(t);
                 }
                 if(TrailingSlash) {
                     result.Append('/');
@@ -1232,7 +942,7 @@ namespace MindTouch.Dream {
         public string HostPort {
             get {
                 if(!UsesDefaultPort) {
-                    StringBuilder result = new StringBuilder();
+                    var result = new StringBuilder();
                     result.Append(Host);
                     result.Append(':');
                     result.Append(Port);
@@ -1247,7 +957,7 @@ namespace MindTouch.Dream {
         /// </summary>
         public string SchemeHostPort {
             get {
-                StringBuilder uri = new StringBuilder();
+                var uri = new StringBuilder();
                 uri.Append(Scheme);
                 uri.Append("://");
                 uri.Append(HostPort);
@@ -1260,7 +970,7 @@ namespace MindTouch.Dream {
         /// </summary>
         public string SchemeHostPortPath {
             get {
-                StringBuilder result = new StringBuilder();
+                var result = new StringBuilder();
                 result.Append(Scheme);
                 result.Append("://");
                 result.Append(Host);
@@ -1279,9 +989,9 @@ namespace MindTouch.Dream {
         /// 
         public string PathQueryFragment {
             get {
-                StringBuilder result = new StringBuilder();
+                var result = new StringBuilder();
                 result.Append(Path);
-                string query = Query;
+                var query = Query;
                 if(query != null) {
                     result.Append("?");
                     result.Append(query);
@@ -1299,8 +1009,8 @@ namespace MindTouch.Dream {
         /// </summary>
         public string QueryFragment {
             get {
-                StringBuilder result = new StringBuilder();
-                string query = Query;
+                var result = new StringBuilder();
+                var query = Query;
                 if(query != null) {
                     result.Append("?");
                     result.Append(query);
@@ -1366,13 +1076,13 @@ namespace MindTouch.Dream {
                 break;
             case UriPathFormat.Decoded:
                 result = new string[_segments.Length];
-                for(int i = 0; i < result.Length; ++i) {
+                for(var i = 0; i < result.Length; ++i) {
                     result[i] = Decode(_segments[i]);
                 }
                 break;
             case UriPathFormat.Normalized:
                 result = new string[_segments.Length];
-                for(int i = 0; i < result.Length; ++i) {
+                for(var i = 0; i < result.Length; ++i) {
                     result[i] = Decode(_segments[i]).ToLowerInvariant();
                 }
                 break;
@@ -1389,7 +1099,7 @@ namespace MindTouch.Dream {
         /// <param name="format">Encoding format for segments.</param>
         /// <returns>Segment string.</returns>
         public string GetSegment(int index, UriPathFormat format) {
-            string result = _segments[index];
+            var result = _segments[index];
             switch(format) {
             case UriPathFormat.Original:
                 break;
@@ -1417,11 +1127,11 @@ namespace MindTouch.Dream {
             if(segments.Length == 0) {
                 return this;
             }
-            List<string> newSegments = new List<string>(_segments.Length + segments.Length);
+            var newSegments = new List<string>(_segments.Length + segments.Length);
             newSegments.AddRange(_segments);
-            bool trailingSlash = false;
-            for(int i = 0; i < segments.Length; ++i) {
-                string segment = segments[i];
+            var trailingSlash = false;
+            for(var i = 0; i < segments.Length; ++i) {
+                var segment = segments[i];
 
                 // check if segment is valid
                 if(string.IsNullOrEmpty(segment)) {
@@ -1454,15 +1164,15 @@ namespace MindTouch.Dream {
             if(string.IsNullOrEmpty(pathQueryFragment)) {
                 return this;
             }
-            XUri uri = this;
-            string[] pathQuery = pathQueryFragment.Split(new char[] { '?' }, 2);
-            string[] pathFragment = pathQueryFragment.Split(new char[] { '#' }, 2);
-            string path = pathQuery[0];
-            string query = (pathQuery.Length > 1) ? pathQuery[1] : null;
+            var uri = this;
+            var pathQuery = pathQueryFragment.Split(new[] { '?' }, 2);
+            var pathFragment = pathQueryFragment.Split(new[] { '#' }, 2);
+            var path = pathQuery[0];
+            var query = (pathQuery.Length > 1) ? pathQuery[1] : null;
             string fragment = null;
             if(pathFragment.Length > 1) {
                 if(query != null) {
-                    pathFragment = query.Split(new char[] { '#' }, 2);
+                    pathFragment = query.Split(new[] { '#' }, 2);
                     query = pathFragment[0];
                     fragment = pathFragment[1];
                 } else {
@@ -1475,11 +1185,7 @@ namespace MindTouch.Dream {
                 bool trailingSlash;
                 ParsePath(path, true, out segments, out trailingSlash);
                 uri = uri.At(segments);
-                if(trailingSlash) {
-                    uri = uri.WithTrailingSlash();
-                } else {
-                    uri = uri.WithoutTrailingSlash();
-                }
+                uri = trailingSlash ? uri.WithTrailingSlash() : uri.WithoutTrailingSlash();
             }
             if(query != null) {
                 uri = uri.WithParams(ParseParamsAsPairs(query));
@@ -1528,11 +1234,11 @@ namespace MindTouch.Dream {
             var result = new StringBuilder();
 
             // skip matching segments
-            int commonSegments = 0;
+            var commonSegments = 0;
             for(; (commonSegments < Segments.Length) && (commonSegments < uri.Segments.Length) && INVARIANT_IGNORE_CASE.Equals(Segments[commonSegments], uri.Segments[commonSegments]); ++commonSegments) { }
 
             // use '..' path for unmatched segments
-            for(int j = commonSegments; j < uri.Segments.Length; ++j) {
+            for(var j = commonSegments; j < uri.Segments.Length; ++j) {
                 if(result.Length > 0) {
                     result.Append("/");
                 }
@@ -1540,7 +1246,7 @@ namespace MindTouch.Dream {
             }
 
             // append mising segments
-            for(int j = commonSegments; j < Segments.Length; ++j) {
+            for(var j = commonSegments; j < Segments.Length; ++j) {
                 if(result.Length > 0) {
                     result.Append("/");
                 }
@@ -1575,7 +1281,7 @@ namespace MindTouch.Dream {
             }
 
             // skip matching segments
-            int commonSegments = 0;
+            var commonSegments = 0;
             for(; (commonSegments < Segments.Length) && (commonSegments < prefix.Segments.Length); ++commonSegments) {
                 if(!INVARIANT_IGNORE_CASE.Equals(Segments[commonSegments], prefix.Segments[commonSegments])) {
                     return false;
@@ -1609,26 +1315,26 @@ namespace MindTouch.Dream {
             }
 
             // skip matching segments
-            int commonSegments = 0;
+            var commonSegments = 0;
             for(; (commonSegments < Segments.Length) && (commonSegments < from.Segments.Length); ++commonSegments) {
                 if(!INVARIANT_IGNORE_CASE.Equals(Segments[commonSegments], from.Segments[commonSegments])) {
                     break;
                 }
             }
-            int upSegments = from.Segments.Length - commonSegments;
-            int copySegments = Segments.Length - commonSegments;
+            var upSegments = from.Segments.Length - commonSegments;
+            var copySegments = Segments.Length - commonSegments;
 
             // copy target segments
-            string[] segments = new string[to.Segments.Length + upSegments + copySegments];
+            var segments = new string[to.Segments.Length + upSegments + copySegments];
             Array.Copy(to.Segments, segments, to.Segments.Length);
 
             // create '..' segments for unmatched segments
-            for(int i = 0; i < upSegments; ++i) {
+            for(var i = 0; i < upSegments; ++i) {
                 segments[i + to.Segments.Length] = UP_SEGMENT;
             }
 
             // add original segments
-            for(int i = 0; i < copySegments; ++i) {
+            for(var i = 0; i < copySegments; ++i) {
                 segments[i + to.Segments.Length + upSegments] = Segments[i + commonSegments];
             }
 
@@ -1643,13 +1349,7 @@ namespace MindTouch.Dream {
         /// <returns>Array of parameter values, or <see cref="EMPTY_ARRAY"/> if key doesn't exist.</returns>
         public string[] GetParams(string key) {
             if(_params != null) {
-                List<string> result = new List<string>();
-                for(int i = 0; i < _params.Length; ++i) {
-                    if(INVARIANT_IGNORE_CASE.Equals(_params[i].Key, key)) {
-                        result.Add(_params[i].Value);
-                    }
-                }
-                return result.ToArray();
+                return (from t in _params where INVARIANT_IGNORE_CASE.Equals(t.Key, key) select t.Value).ToArray();
             }
             return EMPTY_ARRAY;
         }
@@ -1682,11 +1382,11 @@ namespace MindTouch.Dream {
         /// <returns>Parameter or default value.</returns>
         public string GetParam(string key, int index, string def) {
             if(_params != null) {
-                int counter = 0;
-                for(int i = 0; i < _params.Length; ++i) {
-                    if(INVARIANT_IGNORE_CASE.Equals(_params[i].Key, key)) {
+                var counter = 0;
+                foreach(var t in _params) {
+                    if(INVARIANT_IGNORE_CASE.Equals(t.Key, key)) {
                         if(counter == index) {
-                            return _params[i].Value;
+                            return t.Value;
                         }
                         ++counter;
                     }
@@ -1702,7 +1402,7 @@ namespace MindTouch.Dream {
         /// <param name="value">Query value.</param>
         /// <returns>New uri.</returns>
         public XUri With(string key, string value) {
-            return WithParams(new KeyValuePair<string, string>[] { new KeyValuePair<string, string>(key, value) });
+            return WithParams(new[] { new KeyValuePair<string, string>(key, value) });
         }
 
         /// <summary>
@@ -1711,7 +1411,7 @@ namespace MindTouch.Dream {
         /// <param name="args">Array of query key/value pairs.</param>
         /// <returns>New uri.</returns>
         public XUri WithParams(KeyValuePair<string, string>[] args) {
-            if((args == null) || (args.Length == 0)) {
+            if(args == null) {
                 return this;
             }
             KeyValuePair<string, string>[] newParams;
@@ -1736,14 +1436,17 @@ namespace MindTouch.Dream {
             }
 
             // convert name-value collection to list
-            List<KeyValuePair<string, string>> list = new List<KeyValuePair<string, string>>();
-            for(int i = 0; i < args.Count; ++i) {
-                string key = args.GetKey(i);
-                string values = args.Get(key);
+            var list = new List<KeyValuePair<string, string>>();
+            for(var i = 0; i < args.Count; ++i) {
+                var key = args.GetKey(i);
+
+                // TODO (steveb): this should probably be 'args.GetValues(i)' instead
+                var values = args.Get(key);
+
                 if(values != null) {
-                    foreach(string value in args.GetValues(i)) {
-                        list.Add(new KeyValuePair<string, string>(key, value));
-                    }
+                    var argValues = args.GetValues(i);
+                    Debug.Assert(argValues != null, "argValues != null");
+                    list.AddRange(argValues.Select(value => new KeyValuePair<string, string>(key, value)));
                 } else {
                     list.Add(new KeyValuePair<string, string>(key, null));
                 }
@@ -1766,7 +1469,7 @@ namespace MindTouch.Dream {
         /// <param name="query">Query string.</param>
         /// <returns>New uri.</returns>
         public XUri WithQuery(string query) {
-            if(string.IsNullOrEmpty(query)) {
+            if(query == null) {
                 return this;
             }
             return WithParams(ParseParamsAsPairs(query));
@@ -1845,7 +1548,7 @@ namespace MindTouch.Dream {
             if(count == _segments.Length) {
                 return this;
             }
-            string[] segments = new string[count];
+            var segments = new string[count];
             Array.Copy(_segments, segments, count);
             return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, segments, TrailingSlash, Params, Fragment, _doubleEncode);
         }
@@ -1862,8 +1565,8 @@ namespace MindTouch.Dream {
             if((count == 0) || (_segments.Length == 0)) {
                 return this;
             }
-            int offset = Math.Min(count, Segments.Length);
-            string[] segments = new string[Segments.Length - offset];
+            var offset = Math.Min(count, Segments.Length);
+            var segments = new string[Segments.Length - offset];
             if(segments.Length > 0) {
                 Array.Copy(Segments, offset, segments, 0, segments.Length);
             }
@@ -1890,11 +1593,10 @@ namespace MindTouch.Dream {
             if((count == 0) || (_segments.Length == 0)) {
                 return this;
             }
-            int begin = 0;
-            int end = Math.Max(0, Segments.Length - count);
-            string[] segments = new string[end - begin];
+            var end = Math.Max(0, Segments.Length - count);
+            var segments = new string[end];
             if(segments.Length > 0) {
-                Array.Copy(Segments, begin, segments, 0, segments.Length);
+                Array.Copy(Segments, 0, segments, 0, segments.Length);
             }
             return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, segments, TrailingSlash, Params, Fragment, _doubleEncode);
         }
@@ -1926,12 +1628,8 @@ namespace MindTouch.Dream {
             }
 
             // keep all non-matching keys
-            List<KeyValuePair<string, string>> rest = new List<KeyValuePair<string, string>>(_params.Length);
-            for(int i = 0; i < _params.Length; ++i) {
-                if(!INVARIANT_IGNORE_CASE.Equals(_params[i].Key, key)) {
-                    rest.Add(_params[i]);
-                }
-            }
+            var rest = new List<KeyValuePair<string, string>>(_params.Length);
+            rest.AddRange(_params.Where(t => !INVARIANT_IGNORE_CASE.Equals(t.Key, key)));
             return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, Segments, TrailingSlash, rest.ToArray(), Fragment, _doubleEncode);
         }
 
@@ -1990,7 +1688,9 @@ namespace MindTouch.Dream {
             if((port < -1) || (port > ushort.MaxValue)) {
                 throw new ArgumentException("port");
             }
-            return new XUri(Scheme, User, Password, Host, port, null, Segments, TrailingSlash, Params, Fragment, _doubleEncode);
+            bool usesDefaultPort;
+            port = XUriParser.DeterminePort(Scheme, port, out usesDefaultPort);
+            return new XUri(Scheme, User, Password, Host, port, usesDefaultPort, Segments, TrailingSlash, Params, Fragment, _doubleEncode);
         }
 
         /// <summary>
@@ -1998,7 +1698,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns>New uri.</returns>
         public XUri WithSegmentDoubleEncoding() {
-            return new XUri(Scheme, User, Password, Host, Port, null, Segments, TrailingSlash, Params, Fragment, true);
+            return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, Segments, TrailingSlash, Params, Fragment, true);
         }
 
         /// <summary>
@@ -2006,7 +1706,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns>New uri.</returns>
         public XUri WithoutSegmentDoubleEncoding() {
-            return new XUri(Scheme, User, Password, Host, Port, null, Segments, TrailingSlash, Params, Fragment, false);
+            return new XUri(Scheme, User, Password, Host, Port, UsesDefaultPort, Segments, TrailingSlash, Params, Fragment, false);
         }
 
         /// <summary>
@@ -2014,7 +1714,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns></returns>
         public Uri ToUri() {
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
 
             // add scheme
             result.Append(Scheme);
@@ -2040,8 +1740,8 @@ namespace MindTouch.Dream {
             }
 
             // add path
-            for(int i = 0; i < Segments.Length; ++i) {
-                string segment = Segments[i];
+            foreach(var t in Segments) {
+                var segment = t;
                 result.Append('/');
                 if(_doubleEncode) {
 
@@ -2075,7 +1775,7 @@ namespace MindTouch.Dream {
         /// Override of <see cref="object.Equals(object)"/>.
         /// </summary>
         public override bool Equals(object obj) {
-            XUri other = obj as XUri;
+            var other = obj as XUri;
             if(other == null) {
                 throw new ArgumentNullException("obj");
             }
@@ -2106,10 +1806,8 @@ namespace MindTouch.Dream {
             }
 
             // check path
-            for(int i = 0; i < Segments.Length; ++i) {
-                if(!INVARIANT_IGNORE_CASE.Equals(Segments[i], other.Segments[i])) {
-                    return false;
-                }
+            if(Segments.Where((t, i) => !INVARIANT_IGNORE_CASE.Equals(t, other.Segments[i])).Any()) {
+                return false;
             }
 
             // check fragment
@@ -2118,13 +1816,15 @@ namespace MindTouch.Dream {
             }
 
             // check query parameters
-            int paramCount = (Params != null) ? Params.Length : -1;
-            int otherParamCount = (other.Params != null) ? other.Params.Length : -1;
+            var paramCount = (Params != null) ? Params.Length : -1;
+            var otherParamCount = (other.Params != null) ? other.Params.Length : -1;
             if(paramCount != otherParamCount) {
                 return false;
             }
             if(paramCount > 0) {
-                for(int i = 0; i < paramCount; ++i) {
+                for(var i = 0; i < paramCount; ++i) {
+                    Debug.Assert(Params != null, "Params != null");
+                    Debug.Assert(other.Params != null, "other.Params != null");
                     if(!EqualsStrings(Params[i].Key, other.Params[i].Key, true) || !EqualsStrings(Params[i].Value, other.Params[i].Value, false)) {
                         return false;
                     }
@@ -2138,27 +1838,24 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns>Uri hashcode.</returns>
         public override int GetHashCode() {
-            StringComparer provider = INVARIANT_IGNORE_CASE;
-            int result = provider.GetHashCode(Scheme) ^ provider.GetHashCode(Host) ^ Port;
+            var result = INVARIANT_IGNORE_CASE.GetHashCode(Scheme) ^ INVARIANT_IGNORE_CASE.GetHashCode(Host) ^ Port;
 
             // add path
-            for(int i = 0; i < Segments.Length; ++i) {
-                result ^= provider.GetHashCode(Segments[i]);
-            }
+            result = Segments.Aggregate(result, (current, t) => current ^ INVARIANT_IGNORE_CASE.GetHashCode(t));
 
             // add query parameters
             if(Params != null) {
-                for(int i = 0; i < Params.Length; ++i) {
-                    result ^= provider.GetHashCode(Params[i].Key);
-                    if(Params[i].Value != null) {
-                        result ^= provider.GetHashCode(Params[i].Value);
+                foreach(var t in Params) {
+                    result ^= INVARIANT_IGNORE_CASE.GetHashCode(t.Key);
+                    if(t.Value != null) {
+                        result ^= INVARIANT_IGNORE_CASE.GetHashCode(t.Value);
                     }
                 }
             }
 
             // add fragment
             if(Fragment != null) {
-                result ^= provider.GetHashCode(Fragment);
+                result ^= INVARIANT_IGNORE_CASE.GetHashCode(Fragment);
             }
             return result;
         }
@@ -2177,7 +1874,7 @@ namespace MindTouch.Dream {
         /// <param name="includePassword">If <see langword="True"/> the user info password is replaced with 'xxx'.</param>
         /// <returns>Uri string.</returns>
         public string ToString(bool includePassword) {
-            StringBuilder result = new StringBuilder();
+            var result = new StringBuilder();
             result.Append(Scheme);
             result.Append("://");
 
@@ -2186,11 +1883,7 @@ namespace MindTouch.Dream {
                 result.Append(EncodeUserInfo(User));
                 if(Password != null) {
                     result.Append(":");
-                    if(includePassword) {
-                        result.Append(EncodeUserInfo(Password));
-                    } else {
-                        result.Append("xxx");
-                    }
+                    result.Append(includePassword ? EncodeUserInfo(Password) : "xxx");
                 }
                 result.Append("@");
             }
@@ -2205,9 +1898,9 @@ namespace MindTouch.Dream {
             }
 
             // add path
-            for(int i = 0; i < _segments.Length; ++i) {
+            foreach(var t in _segments) {
                 result.Append('/');
-                result.Append(_segments[i]);
+                result.Append(t);
             }
             if(TrailingSlash) {
                 result.Append('/');
@@ -2216,8 +1909,8 @@ namespace MindTouch.Dream {
             // add query
             if(_params != null) {
                 result.Append("?");
-                bool first = true;
-                foreach(KeyValuePair<string, string> pair in _params) {
+                var first = true;
+                foreach(var pair in _params) {
                     if(!first) {
                         result.Append("&");
                     }
@@ -2254,7 +1947,7 @@ namespace MindTouch.Dream {
         /// <param name="strict"><cref langword="True"/> to force a strict comparison.</param>
         /// <returns>Total number of uri token matching in sequence.</returns>
         public int Similarity(XUri other, bool strict) {
-            int score = 0;
+            var score = 0;
 
             // check scheme
             if(!HaveSameScheme(this, other, strict)) {
@@ -2274,8 +1967,8 @@ namespace MindTouch.Dream {
             ++score;
 
             // check path
-            int count = Math.Min(Segments.Length, other.Segments.Length);
-            for(int i = 0; i < count; ++i) {
+            var count = Math.Min(Segments.Length, other.Segments.Length);
+            for(var i = 0; i < count; ++i) {
                 if(!INVARIANT_IGNORE_CASE.Equals(Segments[i], other.Segments[i])) {
                     return 0;
                 }
@@ -2293,12 +1986,7 @@ namespace MindTouch.Dream {
             if(Segments.Length < segments.Length) {
                 return false;
             }
-            for(int i = 0; i < segments.Length; ++i) {
-                if(!INVARIANT_IGNORE_CASE.Equals(Segments[i], segments[i])) {
-                    return false;
-                }
-            }
-            return true;
+            return !segments.Where((t, i) => !INVARIANT_IGNORE_CASE.Equals(Segments[i], t)).Any();
         }
 
         //--- ISerializable Members ---
