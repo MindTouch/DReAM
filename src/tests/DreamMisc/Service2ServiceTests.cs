@@ -75,7 +75,7 @@ namespace MindTouch.Dream.Test {
             };
             var response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).GetAsync().Wait();
             Assert.IsTrue(response.IsSuccessful);
-            Assert.AreEqual("foo", receivedHost);
+            Assert.AreEqual("foo:80", receivedHost);
         }
 
         [Test]
@@ -103,7 +103,7 @@ namespace MindTouch.Dream.Test {
             };
             var response = _service1.AtLocalHost.GetAsync().Wait();
             Assert.IsTrue(response.IsSuccessful);
-            Assert.AreEqual("foo", receivedHost);
+            Assert.AreEqual("foo:80", receivedHost);
         }
     }
 }

@@ -1066,6 +1066,36 @@ namespace MindTouch.Dream.Test {
             Assert.AreNotEqual(resultHttp, resultHttps);
         }
 
+        [Test]
+        public void Changing_scheme_with_explicit_default_port_keeps_port() {
+            var uri = XUri.TryParse("http://example.com:80");
+            Assert.AreEqual(80, uri.Port, "original port");
+            Assert.AreEqual("http://example.com:80", uri.ToString(), "original uri");
+            uri = uri.WithScheme("https");
+            Assert.AreEqual(80, uri.Port, "new port");
+            Assert.AreEqual("https://example.com:80", uri.ToString(), "new uri");
+        }
+
+        [Test]
+        public void Changing_scheme_with_explicit_custom_port_keeps_port() {
+            var uri = XUri.TryParse("http://example.com:81");
+            Assert.AreEqual(81, uri.Port, "original port");
+            Assert.AreEqual("http://example.com:81", uri.ToString(), "original uri");
+            uri = uri.WithScheme("https");
+            Assert.AreEqual(81, uri.Port, "new port");
+            Assert.AreEqual("https://example.com:81", uri.ToString(), "new uri");
+        }
+
+        [Test]
+        public void Changing_scheme_with_implicit_port_hides_port() {
+            var uri = XUri.TryParse("http://example.com");
+            Assert.AreEqual("http://example.com", uri.ToString(), "original uri");
+            Assert.AreEqual(80, uri.Port, "original port");
+            uri = uri.WithScheme("https");
+            Assert.AreEqual(80, uri.Port, "port");
+            Assert.AreEqual("https://example.com", uri.ToString(), "new uri");
+        }
+
         private void AssertRelative(string uri, string relative, string common) {
             var x = new XUri(uri).GetRelativePathTo(new XUri(relative));
             Assert.AreEqual(common, x, string.Format("{0} relative to {1}", uri, relative));
