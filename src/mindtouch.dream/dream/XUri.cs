@@ -93,6 +93,11 @@ namespace MindTouch.Dream {
         //--- Constants ---
 
         /// <summary>
+        /// Regular expression used to parse a full Uri string.
+        /// </summary>
+        public const string URI_REGEX = @"(?<scheme>" + SCHEME_REGEX + @")://(?<userinfo>" + USERINFO_REGEX + @"@)?(?<host>" + HOST_REGEX + @")(?<port>:[\d]*)?(?<path>([/\\]" + SEGMENT_REGEX + @")*)(?<query>\?" + QUERY_REGEX + @")?(?<fragment>#" + FRAGMENT_REGEX + @")?";
+
+        /// <summary>
         /// Regular expression to match Uri scheme.
         /// </summary>
         public const string SCHEME_REGEX = @"[a-zA-Z][\w\+\-\.]*";
