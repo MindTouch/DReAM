@@ -53,7 +53,16 @@ namespace MindTouch.Aws {
                 _client = client;
                 _cache = new ExpiringHashSet<string>(timerFactory);
                 _cacheTimer = ((interval.TotalSeconds * 2 < 60) ? 60 : interval.TotalSeconds * 2 + 1).Seconds();
-                _pollTimer = timerFactory.New(tt => Coroutine.Invoke(PollSqs, new Result()).WhenDone(r => _pollTimer.Change(interval, TaskEnv.None)), null);
+                _pollTimer = timerFactory.New(tt => Coroutine.Invoke(PollSqs, new Result())
+                    .WhenDone(
+                        r => {
+                            if(_isDisposed) {
+                                return;
+                            }
+                            _pollTimer.Change(interval, TaskEnv.None);
+                        }),
+                        null
+                    );
                 _pollTimer.Change(0.Seconds(), TaskEnv.None);
             }
 
@@ -98,6 +107,7 @@ namespace MindTouch.Aws {
                         }
                     }
                 }
+                result.Return();
             }
 
             private void LogError(Exception e, string prefix) {
