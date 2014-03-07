@@ -214,6 +214,8 @@ namespace MindTouch.Collections {
                 // try to update _top's tag so no concurrent Steal operation will also pop the same entry
                 TopData newTopVal = new TopData(curTop.Tag + 1, curTop.Node, curTop.Index);
                 if(SysUtil.CAS(ref _top, curTop, newTopVal)) {
+
+                    // clear out the entry we read, so the GC can reclaim it
                     newBottom.Node.Data[newBottom.Index] = default(T);
 
                     // free old node if needed
@@ -284,6 +286,8 @@ namespace MindTouch.Collections {
 
             // try updating _top using CAS
             if(SysUtil.CAS(ref _top, curTop, newTop)) {
+
+                // clear out the entry we read, so the GC can reclaim it
                 SysUtil.CAS(ref curTop.Node.Data[curTop.Index], retVal, default(T));
 
                 // free old node
