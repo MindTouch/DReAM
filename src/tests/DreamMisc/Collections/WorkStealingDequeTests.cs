@@ -30,14 +30,14 @@ namespace MindTouch.Dream.Test.Collections {
         //--- Methods ---
         [Test]
         public void New_Count() {
-            var q = new WorkStealingDeque<int>();
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
         }
 
         [Test]
         public void New_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -46,8 +46,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -59,7 +59,7 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_Push_Count() {
-            var q = new WorkStealingDeque<int>();
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.Push(42);
@@ -68,8 +68,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_Push_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.Push(42);
@@ -82,8 +82,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -95,8 +95,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -115,8 +115,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_TryPop_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -138,8 +138,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_Push_x50_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             for(int i = 0; i < 50; ++i) {
@@ -156,8 +156,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_Push_x50_TryPop_x50_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             for(int i = 0; i < 50; ++i) {
@@ -174,8 +174,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_Push_x50_TryPop_x50_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             for(int i = 0; i < 50; ++i) {
@@ -195,8 +195,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_x50_TryPop_x50_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -219,8 +219,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_x31_TryPop_x31_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -243,8 +243,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_x32_TryPop_x32_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
@@ -267,8 +267,8 @@ namespace MindTouch.Dream.Test.Collections {
 
         [Test]
         public void New_TryPop_Push_x33_TryPop_x33_TryPop_Count() {
-            int value;
-            var q = new WorkStealingDeque<int>();
+            object value;
+            var q = new WorkStealingDeque<object>();
             Assert.AreEqual(0, q.Count);
 
             q.TryPop(out value);
