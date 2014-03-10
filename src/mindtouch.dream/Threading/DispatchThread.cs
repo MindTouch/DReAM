@@ -136,47 +136,8 @@ namespace MindTouch.Threading {
 
             // begin thread loop
             try {
-                while(true) {
-
-                    // check if queue has a work-item
-                    Action callback;
-                    if(!_inbox.TryPop(out callback)) {
-                        var result = new Result<DispatchWorkItem>(TimeSpan.MaxValue);
-
-                        // reset the dispatch queue for this thread
-                        AsyncUtil.CurrentDispatchQueue = null;
-
-                        // check if thread is associated with a host already
-                        if(_host == null) {
-
-                            // NOTE (steveb): this is a brand new thread without a host yet
-
-                            // return the thread to the dispatch scheduler
-                            DispatchThreadScheduler.ReleaseThread(this, result);
-                        } else {
-
-                            // request another work-item
-                            _host.RequestWorkItem(this, result);
-                        }
-
-                        // block until a work item is available
-                        result.Block();
-
-                        // check if we received a work item or an exception to shutdown
-                        if(result.HasException && (result.Exception is DispatchThreadShutdownException)) {
-
-                            // time to shut down
-                            _log.DebugFormat("DispatchThread #{0} destroyed", _id);
-                            return;
-                        }
-                        callback = result.Value.WorkItem;
-                        _queue = result.Value.DispatchQueue;
-
-                        // TODO (steveb): handle the weird case where _queue is null
-
-                        // set the dispatch queue for this thread
-                        AsyncUtil.CurrentDispatchQueue = _queue;
-                    }
+                Action callback;
+                while(GetNextWorkItem(out callback)) {
 
                     // execute work-item
                     if(callback != null) {
@@ -197,6 +158,48 @@ namespace MindTouch.Threading {
             } finally {
                 CurrentThread = null;
             }
+        }
+
+        private bool GetNextWorkItem(out Action callback) {
+            if(!_inbox.TryPop(out callback)) {
+                var result = new Result<DispatchWorkItem>(TimeSpan.MaxValue);
+
+                // reset the dispatch queue for this thread
+                AsyncUtil.CurrentDispatchQueue = null;
+                _queue = null;
+
+                // check if thread is associated with a host already
+                if(_host == null) {
+
+                    // NOTE (steveb): this is a brand new thread without a host yet
+
+                    // return the thread to the dispatch scheduler
+                    DispatchThreadScheduler.ReleaseThread(this, result);
+                } else {
+
+                    // request another work-item
+                    _host.RequestWorkItem(this, result);
+                }
+
+                // block until a work item is available
+                result.Block();
+
+                // check if we received a work item or an exception to shutdown
+                if(result.HasException && (result.Exception is DispatchThreadShutdownException)) {
+
+                    // time to shut down
+                    _log.DebugFormat("DispatchThread #{0} destroyed", _id);
+                    return false;
+                }
+                callback = result.Value.WorkItem;
+                _queue = result.Value.DispatchQueue;
+
+                // TODO (steveb): handle the weird case where _queue is null
+
+                // set the dispatch queue for this thread
+                AsyncUtil.CurrentDispatchQueue = _queue;
+            }
+            return true;
         }
     }
 }
