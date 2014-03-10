@@ -157,6 +157,7 @@ namespace MindTouch.Dream.Http {
             httpRequest.Method = verb;
             httpRequest.Timeout = System.Threading.Timeout.Infinite;
             httpRequest.ReadWriteTimeout = System.Threading.Timeout.Infinite;
+            httpRequest.ContentLength = request.ContentLength;
 
             // Note (arnec): httpRequest AutoRedirect is disabled because Plug is responsible for it (this allows redirects to follow
             // the appropriate handler instead staying stuck in http end point land
@@ -236,21 +237,23 @@ namespace MindTouch.Dream.Http {
                 }
 
                 // copy data
-                using(outStream) {
-                    Result<long> res;
-                    activity("pre yield CopyStream");
-                    yield return res = request.ToStream().CopyToStream(outStream, request.ContentLength, new Result<long>(TimeSpan.MaxValue)).Catch();
-                    activity("post yield CopyStream");
-                    if(res.HasException) {
-                        activity("pre HandleResponse 3");
-                        if(!HandleResponse(activity, res.Exception, null, response)) {
-                            _log.ErrorExceptionMethodCall(res.Exception, "HandleInvoke@AsyncUtil.CopyStream", verb, uri);
-                            try {
-                                httpRequest.Abort();
-                            } catch { }
-                        }
-                        yield break;
+                //(yurig): HttpWebRequest does some internal memory buffering, therefore copying the data syncronously is acceptable.
+                activity("pre CopyStream");
+                try {
+                    request.ToStream().CopyTo(outStream);
+                    activity("post CopyStream");
+                } catch (Exception e) {
+                    activity("post CopyStream");
+                    activity("pre HandleResponse 3");
+                    if(!HandleResponse(activity, e, null, response)) {
+                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@AsyncUtil.CopyStream", verb, uri);
+                        try {
+                            httpRequest.Abort();
+                        } catch { }
                     }
+                    yield break;
+                } finally {
+                    outStream.Close();
                 }
             }
             request = null;
