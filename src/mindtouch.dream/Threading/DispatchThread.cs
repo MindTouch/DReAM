@@ -160,6 +160,12 @@ namespace MindTouch.Threading {
             }
         }
 
+        /**
+         * (yurig): This method has been intentionally split from DispatchLoop()
+         * result.Block() inside causes Result<DispatchWorkItem> to never be disposed.
+         * By moving it into its own method we ensure its garbage collection as it is 
+         * popped off the stack. Do NOT inline this method into DispatchLoop().
+         */
         private bool GetNextWorkItem(out Action callback) {
             if(!_inbox.TryPop(out callback)) {
                 var result = new Result<DispatchWorkItem>(TimeSpan.MaxValue);
