@@ -899,7 +899,7 @@ namespace MindTouch.Dream.Test {
             [DreamFeatureParam("paramb", "string?", "")]
             public DreamMessage SyncFeatureParams(DreamContext context) {
                 var doc = new XDoc("params");
-                foreach(var paramAttribute in context.Feature.FeatureParamAttributes) {
+                foreach(var paramAttribute in context.Feature.FeatureParamAttributes.OrderBy(x => x.Name)) {
                     doc.Start("param").Attr("name", paramAttribute.Name).Value(context.GetParam(paramAttribute.Name)).End();
                 }
                 return Response(doc);

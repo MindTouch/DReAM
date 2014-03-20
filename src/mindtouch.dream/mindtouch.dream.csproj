@@ -86,6 +86,7 @@
     <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=b32731d11ce58905">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\redist\log4net.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="SgmlReaderDll, Version=1.5.2235.32957, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -303,6 +304,7 @@
     <Compile Include="Xml\XTypes.cs" />
     <Compile Include="Collections\EnumerableUtil.cs" />
     <Compile Include="Collections\DictionaryUtil.cs" />
+    <Compile Include="dream\XUriParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
