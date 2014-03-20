@@ -128,7 +128,7 @@ namespace MindTouch.Tasking {
         /// Total number of pending results in process.
         /// </summary>
         protected static int _pendingCounter;
-        private static LockFreeStack<AutoResetEvent> _resetEventStack = new LockFreeStack<AutoResetEvent>();
+        private static readonly LockFreeStack<AutoResetEvent> _resetEventStack = new LockFreeStack<AutoResetEvent>();
 
         //--- Class Constructor ---
         static AResult() {
