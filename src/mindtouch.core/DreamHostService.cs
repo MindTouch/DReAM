@@ -228,10 +228,6 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        private static void RequestQueueCallback(Action<Action> action, Action completion) {
-            action(completion);
-        }
-
         //--- Fields ---
         private readonly IContainer _container;
         private readonly ILifetimeScope _hostLifetimeScope;
@@ -264,7 +260,7 @@ namespace MindTouch.Dream {
         private string _rootRedirect;
         private string _debugMode;
         private bool _memorizeAliases;
-        private ProcessingQueue<Action<Action>> _requestQueue;
+        private volatile ProcessingQueue<Action<Action>> _requestQueue;
 
         //--- Constructors ---
         public DreamHostService() : this(null) { }
@@ -927,6 +923,9 @@ namespace MindTouch.Dream {
 
                 // BUG #810: announce to all root-level services that we're shutting down
 
+                // dismiss all pending requests
+                _requestQueue = null;
+
                 // shutdown all services, except host and sub-services (the latter should be cleaned-up by their owners)
                 _log.Debug("Stopping stand-alone services");
                 Dictionary<string, ServiceEntry> services;
@@ -1142,7 +1141,9 @@ namespace MindTouch.Dream {
             }
             var requestQueue = _requestQueue;
             if(requestQueue != null) {
-                requestQueue.TryEnqueue(completion => SubmitRequestAsync(verb, uri, user, request, response, completion));
+                if(!requestQueue.TryEnqueue(completion => SubmitRequestAsync(verb, uri, user, request, response, completion))) {
+                	throw new ShouldNeverHappenException();
+                }
                 return response;
             }
             return SubmitRequestAsync(verb, uri, user, request, response, () => {});
@@ -1444,9 +1445,6 @@ namespace MindTouch.Dream {
                         _requests[id] = requests;
                     }
                     if(requests.Count >= _reentrancyLimit) {
-                        if(completion != null) {
-                            Interlocked.Decrement(ref _connectionCounter);
-                        }
                         return new DreamMessage(DreamStatus.ServiceUnavailable, null, MimeType.TEXT, "The request exceeded the reentrancy limit for the server.");
                     }
                     requests.Add(uri);
@@ -1805,6 +1803,16 @@ namespace MindTouch.Dream {
                 directory.Add(feature.PathSegments, serviceUriSegmentsLength, feature);
             }
             return directory;
+        }
+
+        private void RequestQueueCallback(Action<Action> action, Action completion) {
+
+            // check if host was stopped
+            if(_requestQueue == null) {
+                completion();
+                return;
+            }
+            action(completion);
         }
 
         //--- Interface Methods ---
