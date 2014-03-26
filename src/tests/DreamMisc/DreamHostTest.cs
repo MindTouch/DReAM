@@ -206,7 +206,7 @@ namespace MindTouch.Dream.Test {
             Plug test = _host.At("convert").WithHeader(DreamHeaders.CONTENT_ENCODING, "base64");
             string response = test.Post(DreamMessage.Ok(MimeType.TEXT, base64)).ToText();
             string expected = "this is a base64 decoding test";
-            Assert.AreEqual(expected, response, "versit-xml did not match");
+            Assert.AreEqual(expected, response, "decoded base64 did not match");
         }
 
         [Test]
