@@ -157,7 +157,6 @@ namespace MindTouch.Dream.Http {
             httpRequest.Method = verb;
             httpRequest.Timeout = System.Threading.Timeout.Infinite;
             httpRequest.ReadWriteTimeout = System.Threading.Timeout.Infinite;
-            httpRequest.ContentLength = request.ContentLength;
 
             // Note (arnec): httpRequest AutoRedirect is disabled because Plug is responsible for it (this allows redirects to follow
             // the appropriate handler instead staying stuck in http end point land
