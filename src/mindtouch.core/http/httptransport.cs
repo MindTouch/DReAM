@@ -103,7 +103,7 @@ namespace MindTouch.Dream.Http {
             _sourceExternal = _uri.ToString();
             _authenticationSheme = authenticationSheme;
             _dreamInParamAuthtoken = dreamInParamAuthtoken;
-            ServerSignature = "Dream-HTTPAPI/" + DreamUtil.DreamVersion;
+            this.ServerSignature = "Dream-HTTPAPI/" + DreamUtil.DreamVersion;
         }
 
         //--- Methods ---
