@@ -24,7 +24,7 @@ using System;
 namespace MindTouch.Dream.Test {
 
     /// <summary>
-    /// Information about a <see cref="DreamHost"/> created by <see cref="DreamTestHelper.CreateRandomPortHost(MindTouch.Xml.XDoc)"/>
+    /// Information about a <see cref="DreamHost"/> created by <see cref="DreamTestHelper.CreateRandomPortHost(MindTouch.Xml.XDoc, Autofac.IContainer, int)"/>
     /// </summary>
     public class DreamHostInfo : IDisposable {
 

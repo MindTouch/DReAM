@@ -1072,7 +1072,9 @@ namespace MindTouch.Dream {
                 XDoc blueprint = CreateServiceBlueprint(GetType());
 
                 // start service
-                _requestQueue = new ProcessingQueue<Action<Action>>(RequestQueueCallback, _connectionLimit);
+                if(_connectionLimit > 0) {
+                    _requestQueue = new ProcessingQueue<Action<Action>>(RequestQueueCallback, _connectionLimit);
+                }
                 Coroutine.Invoke(StartService, this, blueprint, path, config, new Result<XDoc>()).Wait();
             } catch {
                 _running = false;
@@ -1143,7 +1145,7 @@ namespace MindTouch.Dream {
                 requestQueue.TryEnqueue(completion => SubmitRequestAsync(verb, uri, user, request, response, completion));
                 return response;
             }
-            return SubmitRequestAsync(verb, uri, user, request, response, null);
+            return SubmitRequestAsync(verb, uri, user, request, response, () => {});
         }
 
         private Result<DreamMessage> SubmitRequestAsync(string verb, XUri uri, IPrincipal user, DreamMessage request, Result<DreamMessage> response, Action completion) {
