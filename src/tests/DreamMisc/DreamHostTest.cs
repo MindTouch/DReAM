@@ -201,6 +201,15 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
+        public void DecodeBase64In() {
+            string base64 = "dGhpcyBpcyBhIGJhc2U2NCBkZWNvZGluZyB0ZXN0";
+            Plug test = _host.At("convert").WithHeader(DreamHeaders.CONTENT_ENCODING, "base64");
+            string response = test.Post(DreamMessage.Ok(MimeType.TEXT, base64)).ToText();
+            string expected = "this is a base64 decoding test";
+            Assert.AreEqual(expected, response, "decoded base64 did not match");
+        }
+
+        [Test]
         public void ServiceTest() {
             string sid = "http://services.mindtouch.com/dream/test/2007/03/sample";
             string sidInner = "http://services.mindtouch.com/dream/test/2007/03/sample-inner";
