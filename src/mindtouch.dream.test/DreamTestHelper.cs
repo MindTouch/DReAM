@@ -173,9 +173,13 @@ namespace MindTouch.Dream.Test {
         /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
         /// </summary>
         /// <param name="config">Additional configuration for the host.</param>
-        /// <param name="container">IoC Container to use.</param>
+        /// <param name="container">(optional) IoC Container to use.</param>
+        /// <param name="connectionLimit">(optional) Maximum number of concurrent requests to process.</param>
         /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost(XDoc config, IContainer container) {
+        public static DreamHostInfo CreateRandomPortHost(XDoc config = null, IContainer container = null, int connectionLimit = 10) {
+            if(config == null) {
+                config = new XDoc("config");
+            }
             var path = "/";
             if(!config["uri.public"].IsEmpty) {
                 path = config["uri.public"].AsText;
@@ -183,8 +187,11 @@ namespace MindTouch.Dream.Test {
             for(var i = 1; i <= 10; i++) {
                 var port = TestPortSource.GetAvailablePort();
                 var localhost = string.Format("http://localhost:{0}{1}", port, path);
-                UpdateElement(config, "http-port", port.ToString(CultureInfo.InvariantCulture));
+                UpdateElement(config, "http-port", port.ToInvariantString());
                 UpdateElement(config, "uri.public", localhost);
+                if(connectionLimit > 0) {
+                    UpdateElement(config, "connect-limit", connectionLimit.ToInvariantString());
+                }
                 var apikey = config["apikey"].Contents;
                 if(string.IsNullOrEmpty(apikey)) {
                     apikey = StringUtil.CreateAlphaNumericKey(32); //generate a random api key
@@ -194,7 +201,7 @@ namespace MindTouch.Dream.Test {
                 _log.DebugFormat("port:    {0}", port);
                 _log.DebugFormat("config:\r\n{0}", config.ToPrettyString());
                 try {
-                    var host = container == null ? new DreamHost(config) : new DreamHost(config, container);
+                    var host = (container == null) ? new DreamHost(config) : new DreamHost(config, container);
                     host.Self.At("load").With("name", "mindtouch.dream.test").Post(DreamMessage.Ok());
                     return new DreamHostInfo(Plug.New(localhost), host, apikey);
                 } catch(Exception e) {
@@ -202,22 +209,6 @@ namespace MindTouch.Dream.Test {
                 }
             }
             throw new InvalidOperationException("Unable to create a new host after 10 attempts");
-        }
-        /// <summary>
-        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
-        /// </summary>
-        /// <param name="config">Additional configuration for the host.</param>
-        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost(XDoc config) {
-            return CreateRandomPortHost(config, null);
-        }
-
-        /// <summary>
-        /// Create a <see cref="DreamHost"/> at a random port (to avoid collisions in tests).
-        /// </summary>
-        /// <returns>A <see cref="DreamHostInfo"/> instance for easy access to the host.</returns>
-        public static DreamHostInfo CreateRandomPortHost() {
-            return CreateRandomPortHost(new XDoc("config"));
         }
 
         private static void UpdateElement(XDoc config, string element, string value) {

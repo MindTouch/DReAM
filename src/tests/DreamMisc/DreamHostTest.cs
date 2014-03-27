@@ -373,37 +373,6 @@ namespace MindTouch.Dream.Test {
 
         // Note (arnec): these tests are separated from the above, since they require their own Dream host
 
-        private static readonly ILog _log = LogUtils.CreateLog();
-
-        [Test]
-        public void Hitting_connect_limit_returns_service_unavailable() {
-            int connectLimit = 5;
-            using(var hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config").Elem("connect-limit", connectLimit))) {
-                var mockService = MockService.CreateMockService(hostInfo);
-                int hitCounter = 0;
-                mockService.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> r) {
-                    int current = Interlocked.Increment(ref hitCounter);
-                    _log.DebugFormat("service call {0}", current);
-                    Thread.Sleep(1500);
-                    r.Return(DreamMessage.Ok());
-                };
-                List<Result<DreamMessage>> responses = new List<Result<DreamMessage>>();
-                for(int i = 0; i < connectLimit * 2; i++) {
-                    responses.Add(Plug.New(mockService.AtLocalHost.Uri.WithScheme("ext-http")).At(StringUtil.CreateAlphaNumericKey(6)).GetAsync());
-                    Thread.Sleep(100);
-                }
-                for(int i = 0; i < responses.Count; i++) {
-                    DreamMessage response = responses[i].Wait();
-                    if(i < connectLimit) {
-                        Assert.IsTrue(response.IsSuccessful);
-                    } else if(!response.IsSuccessful) {
-                        Assert.AreEqual(DreamStatus.ServiceUnavailable, response.Status);
-                    }
-                }
-                Assert.LessOrEqual(hitCounter, connectLimit);
-            }
-        }
-
         [Test]
         public void DreamIn_Origin_Host_and_Uri_are_not_stripped_if_the_host_doesn_not_require_DreamIn_Auth() {
             using(var hostinfo = DreamTestHelper.CreateRandomPortHost()) {

@@ -19,11 +19,14 @@
  * limitations under the License.
  */
 
+// ReSharper disable SuggestUseVarKeywordEverywhere
+// ReSharper disable SuggestUseVarKeywordEvident
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
-
 using MindTouch.IO;
 using MindTouch.Tasking;
 using MindTouch.Web;
@@ -37,12 +40,12 @@ namespace MindTouch.Dream.Http {
         internal class ActivityState {
 
             //--- Fields ---
-            private object _key = new object();
+            private readonly object _key = new object();
             private Queue<string> _messages = new Queue<string>();
-            private IDreamEnvironment _env;
-            private string _verb;
-            private string _uri;
-            private string _hostname;
+            private readonly IDreamEnvironment _env;
+            private readonly string _verb;
+            private readonly string _uri;
+            private readonly string _hostname;
 
             //--- Constructors ---
             internal ActivityState(IDreamEnvironment env, string verb, string uri, string hostname) {
@@ -61,7 +64,7 @@ namespace MindTouch.Dream.Http {
                             if(_messages.Count > 10) {
                                 _messages.Dequeue();
                             }
-                            _env.AddActivityDescription(_key, string.Format("Incoming ({2}): {0} {1} [{3}]", _verb, _uri.ToString(), _hostname, string.Join(" -> ", _messages.ToArray())));
+                            _env.AddActivityDescription(_key, string.Format("Incoming ({2}): {0} {1} [{3}]", _verb, _uri, _hostname, string.Join(" -> ", _messages.ToArray())));
                         }
                     } else {
                         _messages = null;
@@ -72,17 +75,17 @@ namespace MindTouch.Dream.Http {
         }
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
-        private IDreamEnvironment _env;
+        public readonly string ServerSignature;
+        private readonly IDreamEnvironment _env;
         private XUri _uri;
-        private int _minSimilarity;
+        private readonly int _minSimilarity;
         private HttpListener _listener;
-        private string _sourceInternal;
-        private string _sourceExternal;
-        private string _serverSignature;
-        private AuthenticationSchemes _authenticationSheme;
+        private readonly string _sourceInternal;
+        private readonly string _sourceExternal;
+        private readonly AuthenticationSchemes _authenticationSheme;
         private readonly string _dreamInParamAuthtoken;
 
         //--- Constructors ---
@@ -100,16 +103,7 @@ namespace MindTouch.Dream.Http {
             _sourceExternal = _uri.ToString();
             _authenticationSheme = authenticationSheme;
             _dreamInParamAuthtoken = dreamInParamAuthtoken;
-        }
-
-        //--- Properties ---
-        public string ServerSignature {
-            get {
-                if(_serverSignature == null) {
-                    _serverSignature = "Dream-HTTPAPI/" + DreamUtil.DreamVersion;
-                }
-                return _serverSignature;
-            }
+            this.ServerSignature = "Dream-HTTPAPI/" + DreamUtil.DreamVersion;
         }
 
         //--- Methods ---
@@ -117,9 +111,10 @@ namespace MindTouch.Dream.Http {
             _log.InfoMethodCall("Startup", _uri);
 
             // create listener and make it listen to the uri
-            _listener = new HttpListener();
-            _listener.IgnoreWriteExceptions = true;
-            _listener.AuthenticationSchemes = _authenticationSheme;
+            _listener = new HttpListener {
+                IgnoreWriteExceptions = true, 
+                AuthenticationSchemes = _authenticationSheme
+            };
             _listener.Prefixes.Add(_uri.ToString());
             try {
                 _listener.Start();
@@ -149,7 +144,6 @@ namespace MindTouch.Dream.Http {
 
         private void RequestHandler(IAsyncResult ar) {
             HttpListenerContext httpContext = null;
-            Action<string> activity = null;
             HttpListener listener = (HttpListener)ar.AsyncState;
 
             // try to finish getting the current context
@@ -175,6 +169,7 @@ namespace MindTouch.Dream.Http {
             if(httpContext == null) {
                 return;
             }
+            Action<string> activity = null;
             DreamMessage request = null;
             try {
 
@@ -186,6 +181,7 @@ namespace MindTouch.Dream.Http {
 
                 // create request message
                 request = new DreamMessage(DreamStatus.Ok, new DreamHeaders(httpContext.Request.Headers), MimeType.New(httpContext.Request.ContentType), httpContext.Request.ContentLength64, httpContext.Request.InputStream);
+                Debug.Assert(httpContext.Request.RemoteEndPoint != null, "httpContext.Request.RemoteEndPoint != null");
                 DreamUtil.PrepareIncomingMessage(request, httpContext.Request.ContentEncoding, prefixes[0], httpContext.Request.RemoteEndPoint.ToString(), httpContext.Request.UserAgent);
                 requestUri = requestUri.AuthorizeDreamInParams(request, _dreamInParamAuthtoken);
 

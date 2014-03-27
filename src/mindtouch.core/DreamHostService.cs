@@ -19,6 +19,9 @@
  * limitations under the License.
  */
 
+// ReSharper disable SuggestUseVarKeywordEverywhere
+// ReSharper disable SuggestUseVarKeywordEvident
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -261,6 +264,7 @@ namespace MindTouch.Dream {
         private string _rootRedirect;
         private string _debugMode;
         private bool _memorizeAliases;
+        private volatile ProcessingQueue<Action<Action>> _requestQueue;
 
         //--- Constructors ---
         public DreamHostService() : this(null) { }
@@ -291,7 +295,7 @@ namespace MindTouch.Dream {
         public Tuplet<DateTime, string>[] ActivityMessages {
             get {
                 lock(_activities) {
-                    return new List<Tuplet<DateTime, string>>(_activities.Values).ToArray();
+                    return _activities.Values.ToArray();
                 }
             }
         }
@@ -449,12 +453,11 @@ namespace MindTouch.Dream {
             }
             foreach(Type t in types) {
                 object[] dsa = t.GetCustomAttributes(typeof(DreamServiceAttribute), false);
-                if((dsa != null) && (dsa.Length > 0)) {
+                if(dsa.Length > 0) {
                     yield return Coroutine.Invoke(RegisterBlueprint, (XDoc)null, t, new Result());
                 }
             }
             response.Return(DreamMessage.Ok());
-            yield break;
         }
 
         [DreamFeature("GET:services", "Retrieve list of running services. (requires API key)")]
@@ -502,6 +505,7 @@ namespace MindTouch.Dream {
             if(sid == null) {
 
                 // let's first try just to load the type
+                Debug.Assert(typeName != null, "typeName != null");
                 type = Type.GetType(typeName, false);
                 if(type == null) {
 
@@ -587,14 +591,14 @@ namespace MindTouch.Dream {
         public Yield GetTest(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             int status = context.GetParam("status", (int)DreamStatus.Ok);
             XDoc doc = new XMessage(request);
-            doc["status"].ReplaceValue(status.ToString());
+            doc["status"].ReplaceValue(status.ToInvariantString());
             doc.Elem("verb", context.Verb);
             DreamMessage reply = new DreamMessage((DreamStatus)status, null, doc);
             string cookieValue = context.GetParam("cookie", null);
             if(cookieValue != null) {
                 reply.Cookies.Add(DreamCookie.NewSetCookie("test-cookie", cookieValue, Self.Uri, DateTime.UtcNow.AddHours(1.0)));
             }
-            if(StringUtil.EqualsInvariant(context.Verb, "HEAD")) {
+            if(context.Verb.EqualsInvariant("HEAD")) {
                 reply = new DreamMessage(reply.Status, null, MimeType.XML, new byte[0]);
                 reply.Headers.ContentLength = doc.ToString().Length;
                 response.Return(reply);
@@ -611,7 +615,9 @@ namespace MindTouch.Dream {
         }
 
         [DreamFeature("GET:status", "Show system status")]
+// ReSharper disable UnusedMember.Local
         private Yield GetStatus(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+// ReSharper restore UnusedMember.Local
             DateTime now = DateTime.UtcNow;
             XDoc result = new XDoc("status");
             result.WithXslTransform(context.AsPublicUri(context.Env.Self).At("resources", "status.xslt").Path);
@@ -627,7 +633,7 @@ namespace MindTouch.Dream {
             result.Start("aliases").Attr("count", _aliases.Count).Attr("href", self.At("status", "aliases")).End();
 
             // connections
-            result.Start("connections").Attr("count", _connectionCounter).Attr("limit", _connectionLimit).End();
+            result.Start("connections").Attr("active", _connectionCounter).Attr("pending", _requestQueue.Count).Attr("limit", _connectionLimit).End();
 
             // activities
             lock(_activities) {
@@ -740,7 +746,9 @@ namespace MindTouch.Dream {
         }
 
         [DreamFeature("GET:status/aliases", "Show system aliases")]
+// ReSharper disable UnusedMember.Local
         private Yield GetStatusAliases(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+// ReSharper restore UnusedMember.Local
             XDoc result = new XDoc("aliases");
 
             // host/aliases
@@ -770,7 +778,9 @@ namespace MindTouch.Dream {
         }
 
         [DreamFeature("GET:status/timers", "Show system timers")]
+// ReSharper disable UnusedMember.Local
         private Yield GetTimers(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+// ReSharper restore UnusedMember.Local
             var factories = TaskTimerFactory.Factories;
             var result = new XDoc("timers").Attr("count.factories", factories.Length);
             var allTimers = 0;
@@ -821,7 +831,9 @@ namespace MindTouch.Dream {
         }
 
         [DreamFeature("GET:status/activities", "Show system activities")]
+// ReSharper disable UnusedMember.Local
         private Yield GetStatusActiities(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+// ReSharper restore UnusedMember.Local
             DateTime now = DateTime.UtcNow;
             XDoc result = new XDoc("activities");
 
@@ -837,7 +849,9 @@ namespace MindTouch.Dream {
         }
 
         [DreamFeature("GET:status/features", "Show system features")]
+// ReSharper disable UnusedMember.Local
         private Yield GetStatusFeatures(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+// ReSharper restore UnusedMember.Local
             XDoc result;
             lock(_features) {
                 result = _features.ListAll();
@@ -847,7 +861,9 @@ namespace MindTouch.Dream {
         }
 
         [DreamFeature("GET:status/xmlnametable", "Show entries in XmlNameTable")]
+// ReSharper disable UnusedMember.Local
         private Yield GetStatusXmlNameTable(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+// ReSharper restore UnusedMember.Local
             var result = new XDoc("xmlnametable");
             var table = SysUtil.NameTable as LockFreeXmlNameTable;
             if(table != null) {
@@ -911,6 +927,9 @@ namespace MindTouch.Dream {
 
                 // BUG #810: announce to all root-level services that we're shutting down
 
+                // dismiss all pending requests
+                _requestQueue = null;
+
                 // shutdown all services, except host and sub-services (the latter should be cleaned-up by their owners)
                 _log.Debug("Stopping stand-alone services");
                 Dictionary<string, ServiceEntry> services;
@@ -968,6 +987,7 @@ namespace MindTouch.Dream {
                 throw new InvalidOperationException("already initialized");
             }
             try {
+
                 // initialize container
                 var containerConfig = config["components"];
                 if(!containerConfig.IsEmpty) {
@@ -995,7 +1015,7 @@ namespace MindTouch.Dream {
                     new DreamFeatureStage("dream.in.*", PrologueDreamIn, DreamAccess.Public)
                 };
                 _defaultEpilogues = new[] { 
-                    new DreamFeatureStage("dream.out.*", EpilogueDreamOut, DreamAccess.Public), 
+                    new DreamFeatureStage("dream.out.*", EpilogueDreamOut, DreamAccess.Public) 
                 };
 
                 // initialize identity
@@ -1055,6 +1075,9 @@ namespace MindTouch.Dream {
                 XDoc blueprint = CreateServiceBlueprint(GetType());
 
                 // start service
+                if(_connectionLimit > 0) {
+                    _requestQueue = new ProcessingQueue<Action<Action>>(RequestQueueCallback, _connectionLimit);
+                }
                 Coroutine.Invoke(StartService, this, blueprint, path, config, new Result<XDoc>()).Wait();
             } catch {
                 _running = false;
@@ -1120,10 +1143,17 @@ namespace MindTouch.Dream {
                     user = context.User;
                 }
             }
-            return SubmitRequestAsync(verb, uri, user, request, response, true);
+            var requestQueue = _requestQueue;
+            if(requestQueue != null) {
+                if(!requestQueue.TryEnqueue(completion => SubmitRequestAsync(verb, uri, user, request, response, completion))) {
+                	throw new ShouldNeverHappenException();
+                }
+                return response;
+            }
+            return SubmitRequestAsync(verb, uri, user, request, response, () => {});
         }
 
-        private Result<DreamMessage> SubmitRequestAsync(string verb, XUri uri, IPrincipal user, DreamMessage request, Result<DreamMessage> response, bool external) {
+        private Result<DreamMessage> SubmitRequestAsync(string verb, XUri uri, IPrincipal user, DreamMessage request, Result<DreamMessage> response, Action completion) {
             if(string.IsNullOrEmpty(verb)) {
                 throw new ArgumentNullException("verb");
             }
@@ -1146,10 +1176,11 @@ namespace MindTouch.Dream {
             try {
                 Interlocked.Increment(ref _requestCounter);
 
-                // check if connection limit was exceeded
-                DreamMessage failed = BeginRequest(external, uri, request);
+                // check if we were not able to begin processing the request
+                DreamMessage failed = BeginRequest(completion, uri, request);
                 if(failed != null) {
                     response.Return(failed);
+                    EndRequest(completion, uri, request);
                     return response;
                 }
 
@@ -1262,7 +1293,7 @@ namespace MindTouch.Dream {
                         response.Return(result);
 
                         // decrease counter for external requests
-                        EndRequest(external, uri, request);
+                        EndRequest(completion, uri, request);
                         return response;
                     }
                 }
@@ -1291,7 +1322,7 @@ namespace MindTouch.Dream {
                     response.Return(result);
 
                     // decrease counter for external requests
-                    EndRequest(external, uri, request);
+                    EndRequest(completion, uri, request);
                     return response;
                 }
 
@@ -1328,7 +1359,7 @@ namespace MindTouch.Dream {
                     }
 
                     // decrease counter for external requests
-                    EndRequest(external, uri, request);
+                    EndRequest(completion, uri, request);
 
                     // need to manually dispose of the context, since we're already attaching and detaching it by hand to TaskEnvs throughout the chain
                     if(response.IsCanceled) {
@@ -1360,12 +1391,12 @@ namespace MindTouch.Dream {
                         response.Throw(res.Exception);
 
                         // decrease counter for external requests
-                        EndRequest(external, uri, request);
+                        EndRequest(completion, uri, request);
                     })
                 );
             } catch(Exception e) {
                 response.Throw(e);
-                EndRequest(external, uri, request);
+                EndRequest(completion, uri, request);
             }
             return response;
         }
@@ -1393,16 +1424,9 @@ namespace MindTouch.Dream {
             }
         }
 
-        private DreamMessage BeginRequest(bool external, XUri uri, DreamMessage request) {
-
-            // check if connection limit was exceeded
-            if(external) {
-                int connections = Interlocked.Increment(ref _connectionCounter);
-                if((_connectionLimit > 0) && (connections > _connectionLimit)) {
-                    _log.WarnFormat("exceeded connectionlimit: {0}/{1}", connections, _connectionLimit);
-                    Interlocked.Decrement(ref _connectionCounter);
-                    return new DreamMessage(DreamStatus.ServiceUnavailable, null, MimeType.TEXT, "The server is currently experiencing heavy load and cannot complete the request.");
-                }
+        private DreamMessage BeginRequest(Action completion, XUri uri, DreamMessage request) {
+            if(completion != null) {
+                Interlocked.Increment(ref _connectionCounter);
             }
 
             // check if request is new or basd on an existing request
@@ -1425,9 +1449,6 @@ namespace MindTouch.Dream {
                         _requests[id] = requests;
                     }
                     if(requests.Count >= _reentrancyLimit) {
-                        if(external) {
-                            Interlocked.Decrement(ref _connectionCounter);
-                        }
                         return new DreamMessage(DreamStatus.ServiceUnavailable, null, MimeType.TEXT, "The request exceeded the reentrancy limit for the server.");
                     }
                     requests.Add(uri);
@@ -1436,10 +1457,7 @@ namespace MindTouch.Dream {
             return null;
         }
 
-        private void EndRequest(bool external, XUri uri, DreamMessage request) {
-            if(external) {
-                Interlocked.Decrement(ref _connectionCounter);
-            }
+        private void EndRequest(Action completion, XUri uri, DreamMessage request) {
 
             // decrease reentrancy request limit
             var id = request.Headers.DreamRequestId;
@@ -1453,6 +1471,10 @@ namespace MindTouch.Dream {
                         }
                     }
                 }
+            }
+            if(completion != null) {
+                Interlocked.Decrement(ref _connectionCounter);
+                completion();
             }
         }
 
@@ -1654,6 +1676,8 @@ namespace MindTouch.Dream {
         private Yield RegisterBlueprint(XDoc blueprint, Type type, Result response) {
 
             // check if type has already been registers
+            Debug.Assert(type != null, "type != null");
+            Debug.Assert(type.AssemblyQualifiedName != null, "type.AssemblyQualifiedName != null");
             if(_registeredTypes.ContainsKey(type.AssemblyQualifiedName)) {
                 response.Return();
                 yield break;
@@ -1724,7 +1748,7 @@ namespace MindTouch.Dream {
                     var found = string.Join(", ", methods.Select(m => m.DeclaringType.FullName + "!" + m.Name + "(" + string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name).ToArray()) + ")").ToArray());
                     throw new MissingMethodException(string.Format("found multiple definitions for {0}: {1}", methodName, found));
                 }
-                if(methods.Count() == 0) {
+                if(methods.None()) {
                     throw new MissingMethodException(string.Format("could not find {0} in class {1}", methodName, type.FullName));
                 }
                 MethodInfo method = methods.First();
@@ -1785,6 +1809,16 @@ namespace MindTouch.Dream {
             return directory;
         }
 
+        private void RequestQueueCallback(Action<Action> action, Action completion) {
+
+            // check if host was stopped
+            if(_requestQueue == null) {
+                completion();
+                return;
+            }
+            action(completion);
+        }
+
         //--- Interface Methods ---
         int IPlugEndpoint.GetScoreWithNormalizedUri(XUri uri, out XUri normalized) {
             int result;
@@ -1810,7 +1844,7 @@ namespace MindTouch.Dream {
         Yield IPlugEndpoint.Invoke(Plug plug, string verb, XUri uri, DreamMessage request, Result<DreamMessage> response) {
             UpdateInfoMessage(SOURCE_HOST, null);
             Result<DreamMessage> res = new Result<DreamMessage>(response.Timeout, TaskEnv.New());
-            SubmitRequestAsync(verb, uri, null, request, res, false);
+            SubmitRequestAsync(verb, uri, null, request, res, null);
             yield return res;
             response.Return(res);
         }
