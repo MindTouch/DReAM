@@ -206,7 +206,9 @@ namespace MindTouch.Dream {
         public static DreamMessage AccessDenied(string accessRealm, string reason) {
             _log.DebugFormat("Response: Unauthorized - {0}{1}", reason, DebugOnly_GetRequestPath());
             DreamMessage result = new DreamMessage(DreamStatus.Unauthorized, null, GetDefaultErrorResponse(DreamStatus.Unauthorized, "Unauthorized", reason));
-            result.Headers.Authenticate = string.Format("Basic realm=\"{0}\"", accessRealm);
+            if(!string.IsNullOrWhiteSpace(accessRealm)) {
+                result.Headers.Authenticate = string.Format("Basic realm=\"{0}\"", accessRealm);
+            }
             return result;
         }
 
