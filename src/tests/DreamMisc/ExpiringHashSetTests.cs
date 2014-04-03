@@ -307,8 +307,6 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Clear_Empty_Set() {
-
-            // http://bugs.developer.mindtouch.com/view.php?id=8739
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.Clear();
         }

@@ -47,7 +47,6 @@ namespace MindTouch.Dream {
     using DreamFeatureCoroutineHandler = CoroutineHandler<DreamContext, DreamMessage, Result<DreamMessage>>;
 
     [DreamService("MindTouch Dream Host", "Copyright (c) 2006-2014 MindTouch, Inc.",
-        Info = "http://developer.mindtouch.com/Dream/Reference/Services/Host",
         SID = new[] { 
             "sid://mindtouch.com/2007/03/dream/host",
             "http://services.mindtouch.com/dream/stable/2007/03/host" 

@@ -34,7 +34,6 @@ namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
     [DreamService("MindTouch Dream S3 Storage", "Copyright (c) 2010-2014 MindTouch, Inc.",
-        Info = "http://developer.mindtouch.com/Dream/Reference/Services/S3Storage",
         SID = new[] { 
             "sid://mindtouch.com/2010/10/dream/s3.storage",
             "sid://mindtouch.com/2010/10/dream/s3.storage.private",

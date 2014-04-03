@@ -34,7 +34,6 @@ namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
     [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2014 MindTouch, Inc.",
-        Info = "http://developer.mindtouch.com/Dream/Services/EmailService",
         SID = new[] { "sid://mindtouch.com/2009/01/dream/email" }
     )]
     [DreamServiceConfig("smtp-host", "hostname", "")]
