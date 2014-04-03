@@ -1,9 +1,9 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * This file is dual licensded under Apache License 2.0 and MIT X11.

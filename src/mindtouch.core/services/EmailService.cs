@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,8 +33,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2013 MindTouch, Inc.",
-        Info = "http://developer.mindtouch.com/Dream/Services/EmailService",
+    [DreamService("MindTouch Email Sender", "Copyright (c) 2006-2014 MindTouch, Inc.",
         SID = new[] { "sid://mindtouch.com/2009/01/dream/email" }
     )]
     [DreamServiceConfig("smtp-host", "hostname", "")]

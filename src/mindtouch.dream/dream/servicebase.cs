@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -325,7 +325,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
-        [DreamFeature("GET:@config", "Retrieve service configuration", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("GET:@config", "Retrieve service configuration")]
         protected virtual Yield GetConfig(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             if(IsStarted) {
                 response.Return(DreamMessage.Ok(Config));
@@ -345,7 +345,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
-        [DreamFeature("PUT:@config", "Initialize service", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("PUT:@config", "Initialize service")]
         protected virtual Yield PutConfig(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc config = request.ToDocument();
             if(config.Name != "config") {
@@ -403,7 +403,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
-        [DreamFeature("DELETE:@config", "Deinitialize service", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("DELETE:@config", "Deinitialize service")]
         protected virtual Yield DeleteConfig(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             if(IsStarted) {
                 _timerFactory.Dispose();
@@ -420,7 +420,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
-        [DreamFeature("GET:@blueprint", "Retrieve service blueprint", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("GET:@blueprint", "Retrieve service blueprint")]
         public virtual Yield GetServiceBlueprint(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             response.Return(DreamMessage.Ok(Blueprint));
             yield break;
@@ -433,7 +433,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
-        [DreamFeature("GET:@about", "Retrieve service description", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("GET:@about", "Retrieve service description")]
         public virtual Yield GetServiceInfo(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc blueprint = Blueprint;
             string title = blueprint["name"].AsText ?? "Service Blueprint";
@@ -553,7 +553,7 @@ namespace MindTouch.Dream {
         /// <param name="request">Request message.</param>
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
-        [DreamFeature("DELETE:", "Stop service", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("DELETE:", "Stop service")]
         [DreamFeatureStatus(DreamStatus.Ok, "Request completed successfully")]
         [DreamFeatureStatus(DreamStatus.Forbidden, "Insufficient permission")]
         protected virtual Yield DeleteService(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
@@ -561,7 +561,7 @@ namespace MindTouch.Dream {
             response.Return(DreamMessage.Ok());
         }
 
-        [DreamFeature("POST:@grants", "Adds a grant to this service for accessing another service.", Info = "http://developer.mindtouch.com/Dream/Reference/General/Generic_Features")]
+        [DreamFeature("POST:@grants", "Adds a grant to this service for accessing another service.")]
         internal Yield PostGrant(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             lock(Cookies) {
                 Cookies.Update(DreamCookie.ParseAllSetCookieNodes(request.ToDocument()), null);

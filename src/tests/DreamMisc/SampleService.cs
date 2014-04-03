@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +28,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Test {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Test Service", "Copyright (c) 2006-2013 MindTouch, Inc.", 
+    [DreamService("MindTouch Test Service", "Copyright (c) 2006-2014 MindTouch, Inc.", 
         Info = "http://www.mindtouch.com",
         SID = new string[] { "http://services.mindtouch.com/dream/test/2007/03/sample" }
     )]
@@ -70,7 +70,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("MindTouch Inner Test Service", "Copyright (c) 2006-2013 MindTouch, Inc.", 
+    [DreamService("MindTouch Inner Test Service", "Copyright (c) 2006-2014 MindTouch, Inc.", 
         Info = "http://www.mindtouch.com",
         SID = new string[] { "http://services.mindtouch.com/dream/test/2007/03/sample-inner" }
     )]
@@ -90,7 +90,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("MindTouch Bad Test Service", "Copyright (c) 2006-2013 MindTouch, Inc.",
+    [DreamService("MindTouch Bad Test Service", "Copyright (c) 2006-2014 MindTouch, Inc.",
         Info = "http://www.mindtouch.com",
         SID = new string[] { "http://services.mindtouch.com/dream/test/2007/03/bad" }
     )]

@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,8 +32,7 @@ using MindTouch.Xml;
 namespace MindTouch.Dream.Services {
     using Yield = IEnumerator<IYield>;
 
-    [DreamService("MindTouch Dream Storage", "Copyright (c) 2006-2013 MindTouch, Inc.",
-        Info = "http://developer.mindtouch.com/Dream/Reference/Services/Storage",
+    [DreamService("MindTouch Dream Storage", "Copyright (c) 2006-2014 MindTouch, Inc.",
         SID = new string[] { 
             "sid://mindtouch.com/2007/03/dream/storage",
             "sid://mindtouch.com/2007/07/dream/storage.private",
