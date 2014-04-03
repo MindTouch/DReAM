@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +31,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MindTouch, Inc.")]
 [assembly: AssemblyProduct("MindTouch Dream")]
-[assembly: AssemblyCopyright("Copyright (c) 2006-2013 MindTouch, Inc.")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2014 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -268,7 +268,7 @@ namespace MindTouch.Dream {
         }
 
         private static void PrintUsage() {
-            Console.WriteLine("MindTouch Console Host, Copyright (c) 2006-2013 MindTouch, Inc.");
+            Console.WriteLine("MindTouch Console Host, Copyright (c) 2006-2014 MindTouch, Inc.");
             Console.WriteLine("USAGE: mindtouch.host.exe [arg1] ... [argN]");
             Console.WriteLine("    config <filename>       host configuration xml file (default: built from command line)");
             Console.WriteLine("    public-uri <uri>        public uri for server for non local:// uris (default: http://localhost:8081)");

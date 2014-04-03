@@ -1,9 +1,9 @@
 ﻿/*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -567,7 +567,7 @@ namespace MindTouch.Dream.Test {
             Assert.AreEqual(doc.ToCompactString(), response.ToDocument().ToCompactString());
         }
 
-        [DreamService("MindTouch Feature Test Service", "Copyright (c) 2006-2013 MindTouch, Inc.",
+        [DreamService("MindTouch Feature Test Service", "Copyright (c) 2006-2014 MindTouch, Inc.",
             Info = "http://www.mindtouch.com",
             SID = new[] { "http://services.mindtouch.com/dream/test/2010/07/featuretestserver" }
         )]

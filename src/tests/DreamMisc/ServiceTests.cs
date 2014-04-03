@@ -1,9 +1,9 @@
 /*
  * MindTouch Dream - a distributed REST framework 
- * Copyright (C) 2006-2013 MindTouch, Inc.
+ * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
- * For community documentation and downloads visit wiki.developer.mindtouch.com;
+ * For community documentation and downloads visit mindtouch.com;
  * please review the licensing section.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -296,7 +296,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestService", "Copyright (c) 2011-2013 MindTouch, Inc.",
+    [DreamService("TestService", "Copyright (c) 2011-2014 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/AccessTestService" }
     )]
@@ -330,7 +330,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestParentService", "Copyright (c) 2011-2013 MindTouch, Inc.",
+    [DreamService("TestParentService", "Copyright (c) 2011-2014 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestParentService" }
     )]
@@ -401,7 +401,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestChildService", "Copyright (c) 2011-2013 MindTouch, Inc.",
+    [DreamService("TestChildService", "Copyright (c) 2011-2014 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestChildService" }
     )]
@@ -417,7 +417,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestBadStartService", "Copyright (c) 2011-2013 MindTouch, Inc.",
+    [DreamService("TestBadStartService", "Copyright (c) 2011-2014 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestBadStartService" }
     )]
@@ -437,7 +437,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestBadStopService", "Copyright (c) 2011-2013 MindTouch, Inc.",
+    [DreamService("TestBadStopService", "Copyright (c) 2011-2014 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestBadStopService" }
     )]
@@ -458,7 +458,7 @@ namespace MindTouch.Dream.Test {
         }
     }
 
-    [DreamService("TestEmptyService", "Copyright (c) 2011-2013 MindTouch, Inc.",
+    [DreamService("TestEmptyService", "Copyright (c) 2011-2014 MindTouch, Inc.",
         Info = "",
         SID = new[] { "sid://mindtouch.com/TestEmptyService" }
     )]
