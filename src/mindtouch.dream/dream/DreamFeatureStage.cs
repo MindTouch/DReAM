@@ -278,7 +278,7 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <returns>Attribute list</returns>
         public object[] GetMethodAttributes() {
-            return _methodAttributes ?? (_methodAttributes = _method.GetCustomAttributes(true));
+            return _methodAttributes ?? (_methodAttributes = _method.GetCustomAttributes(false));
         }
 
         private static void Assert(MethodInfo method, ParameterInfo param, params Type[] types) {
