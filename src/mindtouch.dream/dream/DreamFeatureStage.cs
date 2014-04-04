@@ -78,6 +78,7 @@ namespace MindTouch.Dream {
         private readonly MethodInfo _method;
         private readonly List<DreamFeatureAdapter> _plan;
         private readonly IDreamService _service;
+        private object[] _methodAttributes;
 
         //--- Constructors ---
 
@@ -270,6 +271,14 @@ namespace MindTouch.Dream {
                     response.Throw(e);
                 }
             }
+        }
+
+        /// <summary>
+        /// Get attributes of stage method
+        /// </summary>
+        /// <returns>Attribute list</returns>
+        public object[] GetMethodAttributes() {
+            return _methodAttributes ?? (_methodAttributes = _method.GetCustomAttributes(false));
         }
 
         private static void Assert(MethodInfo method, ParameterInfo param, params Type[] types) {
