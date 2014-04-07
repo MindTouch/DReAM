@@ -462,7 +462,6 @@ namespace MindTouch.Dream {
         [DreamFeature("GET:services", "Retrieve list of running services. (requires API key)")]
         internal Yield GetServices(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc result = new XDoc("services");
-            result.WithXslTransform(context.AsPublicUri(context.Env.Self).At("resources", "services.xslt").Path);
             lock(_services) {
                 result.Attr("count", _services.Count);
                 foreach(KeyValuePair<string, ServiceEntry> entry in _services) {
@@ -619,7 +618,6 @@ namespace MindTouch.Dream {
 // ReSharper restore UnusedMember.Local
             DateTime now = DateTime.UtcNow;
             XDoc result = new XDoc("status");
-            result.WithXslTransform(context.AsPublicUri(context.Env.Self).At("resources", "status.xslt").Path);
             XUri self = Self.Uri.With("apikey", context.GetParam("apikey", null));
 
             // host information

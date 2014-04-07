@@ -137,12 +137,6 @@
     <EmbeddedResource Include="resources\favicon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="resources\host\status.xslt" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="resources\host\services.xslt" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
