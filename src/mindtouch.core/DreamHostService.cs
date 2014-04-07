@@ -632,7 +632,7 @@ namespace MindTouch.Dream {
             result.Start("aliases").Attr("count", _aliases.Count).Attr("href", self.At("status", "aliases")).End();
 
             // connections
-            result.Start("connections").Attr("active", _connectionCounter).Attr("pending", _requestQueue.Count).Attr("limit", _connectionLimit).End();
+            result.Start("connections").Attr("count", _connectionCounter).Attr("pending", (_requestQueue != null) ? _requestQueue.Count : 0).Attr("limit", _connectionLimit).End();
 
             // activities
             lock(_activities) {

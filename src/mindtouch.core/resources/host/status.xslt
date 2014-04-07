@@ -21,7 +21,7 @@
         <li>Running since <xsl:value-of select="@created" /> (<xsl:call-template name="calc_age" />)</li>
         <li>Processed <xsl:value-of select="@requests" /> requests (<xsl:value-of select="@rate" /> requests/sec)</li>
         <li>Cache <xsl:value-of select="cache/@hits" /> hits, <xsl:value-of select="cache/@misses" /> misses (ratio <xsl:value-of select="number(cache/@hits) div (number(cache/@hits)+number(cache/@misses)) * 100" />%, <xsl:value-of select="cache/@count" /> messages, <xsl:value-of select="number(cache/@size) div 1048576" /> MB)</li>
-        <li><xsl:value-of select="connections/@count" /> connections (max <xsl:value-of select="connections/@limit" />)</li>
+        <li><xsl:value-of select="connections/@count" /> active connections (max <xsl:value-of select="connections/@limit" />), <xsl:value-of select="connections/@pending" /> pending connections</li>
 			  <li><a href="{services/@href}"><xsl:value-of select="services/@count" /> services</a></li>
 			  <li><a href="{aliases/@href}"><xsl:value-of select="aliases/@count" /> aliases</a></li>
 			  <li><a href="{features/@href}">feature list</a></li>
