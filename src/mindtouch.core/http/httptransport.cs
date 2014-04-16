@@ -40,7 +40,7 @@ namespace MindTouch.Dream.Http {
         internal class ActivityState {
 
             //--- Fields ---
-            private readonly object _key = new object();
+            private readonly object _key;
             private Queue<string> _messages = new Queue<string>();
             private readonly IDreamEnvironment _env;
             private readonly string _verb;
@@ -50,6 +50,7 @@ namespace MindTouch.Dream.Http {
             //--- Constructors ---
             internal ActivityState(IDreamEnvironment env, string verb, string uri, string hostname) {
                 _env = env;
+                _key = env.CreateActivityDescription();
                 _verb = verb;
                 _uri = uri;
                 _hostname = hostname;
