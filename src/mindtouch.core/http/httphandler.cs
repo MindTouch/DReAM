@@ -145,7 +145,7 @@ namespace MindTouch.Dream.Http {
 
         //--- Methods ---
         void IHttpHandler.ProcessRequest(HttpContext httpContext) {
-            var key = new object();
+            var key = _env.CreateActivityDescription();
             DreamMessage request = null;
             try {
                 string verb = httpContext.Request.HttpMethod;

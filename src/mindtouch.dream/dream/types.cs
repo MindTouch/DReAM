@@ -122,6 +122,11 @@ namespace MindTouch.Dream {
         void WaitUntilShutdown();
 
         /// <summary>
+        /// Create an activity object.
+        /// </summary>
+        object CreateActivityDescription();
+
+        /// <summary>
         /// Add an activity.
         /// </summary>
         /// <param name="key">Activity key.</param>
@@ -158,6 +163,20 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <param name="service"></param>
         void DisposeServiceContainer(IDreamService service);
+    }
+
+    /// <summary>
+    /// Provides an interface that allows to set the activity state reported by the DReAM host.
+    /// </summary>
+    public interface IDreamActivityDescription {
+        
+        //--- Methods ---
+
+        /// <summary>
+        /// Add activity description.
+        /// </summary>
+        /// <param name="description"></param>
+        void Add(string description);
     }
 
     /// <summary>
