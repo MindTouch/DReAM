@@ -35,7 +35,7 @@ namespace MindTouch.Tasking {
     public static class CoroutineUtil {
 
         //--- Types ---
-        private class SetAndContinue<T> : IYield, IContinuation {
+        private sealed class SetAndContinue<T> : IYield, IContinuation {
 
             //--- Fields ---
             private readonly Result<T> _result;
@@ -86,7 +86,7 @@ namespace MindTouch.Tasking {
             }
         }
 
-        private class LogExceptionAndContinue : IYield, IContinuation {
+        private sealed class LogExceptionAndContinue : IYield, IContinuation {
 
             //--- Fields ---
             private readonly AResult _result;
@@ -130,7 +130,7 @@ namespace MindTouch.Tasking {
             }
         }
 
-        private class EnumerateAll : IYield, IContinuation {
+        private sealed class EnumerateAll : IYield, IContinuation {
 
             //--- Fields ---
             private readonly IEnumerator<IYield> _results;
@@ -299,7 +299,7 @@ namespace MindTouch.Tasking {
         /// <param name="exception">Exception to examine.</param>
         /// <returns>The coroutine instance if the exception was thrown in the context of a coroutine, <see langword="null"/> otherwise.</returns>
         public static Coroutine GetCoroutineInfo(this Exception exception) {
-            if((exception == null) || (exception.Data == null)) {
+            if(exception == null) {
                 return null;
             }
             return exception.Data[COROUTINE_KEY] as Coroutine;
@@ -357,7 +357,7 @@ namespace MindTouch.Tasking {
         }
 
         internal static void SetCoroutineInfo(this Exception exception, Coroutine coroutine) {
-            if((coroutine != null) && (exception.Data != null) && (exception.Data[COROUTINE_KEY] == null)) {
+            if((coroutine != null) && (exception.Data[COROUTINE_KEY] == null)) {
                 exception.Data[COROUTINE_KEY] = coroutine;
             }
         }
