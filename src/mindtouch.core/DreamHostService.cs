@@ -86,16 +86,21 @@ namespace MindTouch.Dream {
         private sealed class DreamActivityDescription : IDreamActivityDescription {
 
             //--- Fields ---
-            private readonly DateTime _date = DateTime.UtcNow;
-            private volatile string _description;
+            private DateTime _date;
+            private string _description;
 
             //--- Methods ----
             public void Add(string description) {
-                _description = description;
+                lock(this) {
+                    _date = DateTime.UtcNow;
+                    _description = description;
+                }
             }
 
             public Tuplet<DateTime, string> ToTuplet() {
-                return new Tuplet<DateTime, string>(_date, _description);
+                lock(this) {
+                    return new Tuplet<DateTime, string>(_date, _description);                    
+                }
             }
         }
 
@@ -652,9 +657,9 @@ namespace MindTouch.Dream {
             var activities = ActivityMessages;
             result.Start("activities").Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
             foreach(Tuplet<DateTime, string> description in activities) {
-                result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-            }
-            result.End();
+                    result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
+                }
+                result.End();
 
             // infos
             lock(_infos) {
@@ -881,8 +886,8 @@ namespace MindTouch.Dream {
             var activities = ActivityMessages;
             result.Attr("count", activities.Length);
             foreach(Tuplet<DateTime, string> description in activities) {
-                result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-            }
+                    result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
+                }
             response.Return(DreamMessage.Ok(result));
             yield break;
         }
@@ -1163,7 +1168,7 @@ namespace MindTouch.Dream {
         public void RemoveActivityDescription(object key) {
             var activity = key as IDreamActivityDescription;
             if(activity != null) {
-                lock(_activities) {
+            lock(_activities) {
                     _activities.Remove(activity);
                 }
             }
