@@ -86,21 +86,16 @@ namespace MindTouch.Dream {
         private sealed class DreamActivityDescription : IDreamActivityDescription {
 
             //--- Fields ---
-            private DateTime _date;
-            private string _description;
+            private readonly DateTime _date = DateTime.UtcNow;
+            private volatile string _description;
 
             //--- Methods ----
             public void Add(string description) {
-                lock(this) {
-                    _date = DateTime.UtcNow;
-                    _description = description;
-                }
+                _description = description;
             }
 
             public Tuplet<DateTime, string> ToTuplet() {
-                lock(this) {
-                    return new Tuplet<DateTime, string>(_date, _description);                    
-                }
+                return new Tuplet<DateTime, string>(_date, _description);
             }
         }
 
