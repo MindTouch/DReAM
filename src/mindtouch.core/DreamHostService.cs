@@ -765,14 +765,16 @@ namespace MindTouch.Dream {
             var threads = AsyncUtil.Threads;
             result.Attr("count", threads.Count());
             foreach(var thread in threads) {
-                var stacktrace = AsyncUtil.GetStackTrace(thread).ToString();
                 result.Start("thread");
                 result.Attr("name", thread.Name);
                 result.Attr("id", thread.ManagedThreadId);
                 result.Attr("state", thread.ThreadState.ToString());
                 result.Attr("priority", thread.Priority.ToString());
                 if(thread.IsAlive) {
-                    XException.AddStackTrace(result, stacktrace);                    
+                    var stacktrace = AsyncUtil.GetStackTrace(thread);
+                    if(stacktrace != null) {
+                        XException.AddStackTrace(result, stacktrace.ToString());                    
+                    }
                 }
                 result.End();
             }

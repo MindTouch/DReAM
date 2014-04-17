@@ -1000,6 +1000,10 @@ namespace MindTouch.Tasking {
         /// <param name="thread">Thread to inspect.</param>
         /// <returns>Stack trace of the other thread, or null if the thread could not be suspended.</returns>
         public static StackTrace GetStackTrace(Thread thread) {
+            if(SysUtil.IsMono) {
+                return null;
+            }
+
             var autoresumeSuspendedThreadBackgroundThread = new ManualResetEventSlim();
             var exitEvent = new ManualResetEventSlim();
             try {
