@@ -652,9 +652,9 @@ namespace MindTouch.Dream {
             var activities = ActivityMessages;
             result.Start("activities").Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
             foreach(Tuplet<DateTime, string> description in activities) {
-                    result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-                }
-                result.End();
+                result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
+            }
+            result.End();
 
             // infos
             lock(_infos) {
@@ -765,20 +765,14 @@ namespace MindTouch.Dream {
             var threads = AsyncUtil.Threads;
             result.Attr("count", threads.Count());
             foreach(var thread in threads) {
+                var stacktrace = AsyncUtil.GetStackTrace(thread).ToString();
                 result.Start("thread");
                 result.Attr("name", thread.Name);
                 result.Attr("id", thread.ManagedThreadId);
                 result.Attr("state", thread.ThreadState.ToString());
                 result.Attr("priority", thread.Priority.ToString());
-                var data = AsyncUtil.ThreadData;
-                if(data != null) {
-                    result.Attr("data", data.ToString());
-                }
                 if(thread.IsAlive) {
-                    var stacktrace = AsyncUtil.GetStackTrace(thread);
-                    if(stacktrace != null) {
-                        XException.AddStackTrace(result, stacktrace.ToString());                    
-                    }
+                    XException.AddStackTrace(result, stacktrace);                    
                 }
                 result.End();
             }
@@ -881,8 +875,8 @@ namespace MindTouch.Dream {
             var activities = ActivityMessages;
             result.Attr("count", activities.Length);
             foreach(Tuplet<DateTime, string> description in activities) {
-                    result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-                }
+                result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
+            }
             response.Return(DreamMessage.Ok(result));
             yield break;
         }
@@ -1163,7 +1157,7 @@ namespace MindTouch.Dream {
         public void RemoveActivityDescription(object key) {
             var activity = key as IDreamActivityDescription;
             if(activity != null) {
-            lock(_activities) {
+                lock(_activities) {
                     _activities.Remove(activity);
                 }
             }
