@@ -62,7 +62,7 @@ namespace MindTouch.Tasking {
         /// </summary>
         public static readonly IDispatchQueue GlobalDispatchQueue;
        
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private static bool _inplaceActivation = true;
         private static readonly int _minThreads;
         private static readonly int _maxThreads;
