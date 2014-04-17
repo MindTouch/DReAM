@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Threading;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.Tasking;
