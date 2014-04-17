@@ -30,8 +30,6 @@ using System.Security.Cryptography.X509Certificates;
 #endif
 
 using System.Text;
-
-using MindTouch.IO;
 using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
@@ -45,15 +43,16 @@ namespace MindTouch.Dream.Http {
         internal class ActivityState {
 
             //--- Fields ---
-            private object _key = new object();
+            private readonly object _key;
             private Queue<string> _messages = new Queue<string>();
-            private IDreamEnvironment _env;
-            private string _verb;
-            private string _uri;
+            private readonly IDreamEnvironment _env;
+            private readonly string _verb;
+            private readonly string _uri;
 
             //--- Constructors ---
             internal ActivityState(IDreamEnvironment env, string verb, string uri) {
                 _env = env;
+                _key = env.CreateActivityDescription();
                 _verb = verb;
                 _uri = uri;
             }
@@ -78,7 +77,7 @@ namespace MindTouch.Dream.Http {
         }
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Class Constructor ---
         static HttpPlugEndpoint() {
@@ -120,7 +119,7 @@ namespace MindTouch.Dream.Http {
             if(context != null) {
                 activity = new ActivityState(context.Env, verb, uri.ToString()).Message;
             } else {
-                activity = delegate(string message) { };
+                activity = delegate { };
             }
             activity("pre Invoke");
             yield return res = Coroutine.Invoke(HandleInvoke, activity, plug, verb, uri, request, new Result<DreamMessage>(response.Timeout)).Catch();
@@ -171,7 +170,7 @@ namespace MindTouch.Dream.Http {
             //      retrieved in a timely manner but where the reading of the response body times out.
 
             httpRequest.KeepAlive = false;
-            httpRequest.ProtocolVersion = System.Net.HttpVersion.Version10;
+            httpRequest.ProtocolVersion = HttpVersion.Version10;
 
             // TODO (steveb): set default proxy
             //httpRequest.Proxy = WebProxy.GetDefaultProxy();
@@ -194,7 +193,7 @@ namespace MindTouch.Dream.Http {
 
             // add request headres
             foreach(KeyValuePair<string, string> header in request.Headers) {
-                HttpUtil.AddHeader(httpRequest, header.Key, header.Value);
+                httpRequest.AddHeader(header.Key, header.Value);
             }
 
             // send message stream
