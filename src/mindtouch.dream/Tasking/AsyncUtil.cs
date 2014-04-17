@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 using MindTouch.Dream;
@@ -56,7 +57,6 @@ namespace MindTouch.Tasking {
         public static readonly IDispatchQueue GlobalDispatchQueue;
        
         private static log4net.ILog _log = LogUtils.CreateLog();
-        private static readonly TimeSpan READ_TIMEOUT = TimeSpan.FromSeconds(30);
         private static bool _inplaceActivation = true;
         private static readonly int _minThreads;
         private static readonly int _maxThreads;
@@ -64,6 +64,7 @@ namespace MindTouch.Tasking {
         private static readonly int _maxPorts;
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
         private static readonly int? _maxStackSize;
+        private static readonly Dictionary<int, Thread> _threads = new Dictionary<int, Thread>();
 
         [ThreadStatic]
         private static IDispatchQueue _currentDispatchQueue;
@@ -125,12 +126,23 @@ namespace MindTouch.Tasking {
         }
 
         /// <summary>
-        /// The maximum stack size that Threads created by Dream (<see cref="ElasticThreadPool"/>, <see cref="Fork(System.Action)"/>, <see cref="ForkThread(System.Action)"/>, etc.)
+        /// The maximum stack size that Threads created by Dream (<see cref="ElasticThreadPool"/>, <see cref="Fork(System.Action)"/>, <see cref="CreateThread"/>, etc.)
         /// should use. If null, uses process default stack size.
         /// </summary>
         public static int? MaxStackSize {
             get { return _maxStackSize; }
         }
+
+        /// <summary>
+        /// Enumerate all created threads.
+        /// </summary>
+        public static IEnumerable<Thread> Threads {
+            get {
+                lock(_threads) {
+                    return _threads.Values.ToArray();
+                }
+            }
+        } 
 
         //--- Class Methods ---
 
@@ -204,7 +216,7 @@ namespace MindTouch.Tasking {
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
         public static Result ForkThread(Action handler, Result result) {
-            ForkThread(TaskEnv.Clone().MakeAction(handler, result));
+            CreateThread(TaskEnv.Clone().MakeAction(handler, result)).Start();
             return result;
         }
 
@@ -216,7 +228,7 @@ namespace MindTouch.Tasking {
         /// <param name="result">The <see cref="Result{T}"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
         public static Result<T> ForkThread<T>(Func<T> handler, Result<T> result) {
-            ForkThread(TaskEnv.Clone().MakeAction(handler, result));
+            CreateThread(TaskEnv.Clone().MakeAction(handler, result)).Start();
             return result;
         }
 
@@ -224,11 +236,24 @@ namespace MindTouch.Tasking {
         /// Dispatch an action to be executed with a new, dedicated backgrouns thread.
         /// </summary>
         /// <param name="handler">Action to enqueue for execution.</param>
-        private static void ForkThread(Action handler) {
-            var t = MaxStackSize.HasValue
-                ? new Thread(() => handler(), MaxStackSize.Value) { IsBackground = true }
-                : new Thread(() => handler()) { IsBackground = true };
-            t.Start();
+        public static Thread CreateThread(Action handler) {
+            Thread thread = null;
+            ThreadStart threadStart = () => {
+                try {
+                    handler();
+                } finally {
+                    lock(_threads) {
+                        _threads.Remove(thread.ManagedThreadId);
+                    }
+                }
+            };
+            thread = MaxStackSize.HasValue
+                ? new Thread(threadStart, MaxStackSize.Value) { IsBackground = true }
+                : new Thread(threadStart) { IsBackground = true };
+            lock(_threads) {
+                _threads[thread.ManagedThreadId] = thread;
+            }
+            return thread;
         }
 
         /// <summary>
@@ -967,6 +992,60 @@ namespace MindTouch.Tasking {
             if(thread != null) {
                 thread.EvictWorkItems();
             }            
+        }
+
+        /// <summary>
+        /// Get teh stack trace of another thread.
+        /// </summary>
+        /// <param name="thread">Thread to inspect.</param>
+        /// <returns>Stack trace of the other thread, or null if the thread could not be suspended.</returns>
+        public static StackTrace GetStackTrace(Thread thread) {
+            var autoresumeSuspendedThreadBackgroundThread = new ManualResetEventSlim();
+            var exitEvent = new ManualResetEventSlim();
+            try {
+                new Thread(() => {
+                    autoresumeSuspendedThreadBackgroundThread.Set();
+                    while(!exitEvent.Wait(200)) {
+                        try {
+#pragma warning disable 612,618
+                            thread.Resume();
+#pragma warning restore 612,618
+                        } catch(Exception) {
+
+                            // whatever happens, do never stop to resume the main-thread regularly until the main-thread has exited safely.
+                        }
+                    }
+                }).Start();
+                autoresumeSuspendedThreadBackgroundThread.Wait();
+
+                // from here, you have about 200ms to get the stack-trace.
+#pragma warning disable 612,618
+                thread.Suspend();
+#pragma warning restore 612,618
+                StackTrace stackTrace = null;
+                try {
+                    stackTrace = new StackTrace(thread, true);
+                } catch(ThreadStateException) {
+
+                    // failed to get stack trace, since the fallback-thread resumed the thread possible reasons:
+                    // 1.) This thread was just too slow
+                    // 2.) A deadlock occurred
+                    // automatic retry seems too risky here, so just return null.
+                }
+                try {
+#pragma warning disable 612,618
+                    thread.Resume();
+#pragma warning restore 612,618
+                } catch(ThreadStateException) {
+
+                    // thread is running again already
+                }
+                return stackTrace;
+            } finally {
+
+                // just signal the backup-thread to stop
+                exitEvent.Set();
+            }
         }
     }
 }
