@@ -757,6 +757,28 @@ namespace MindTouch.Dream {
             yield break;
         }
 
+        [DreamFeature("GET:status/threads", "Show information about all threads")]
+// ReSharper disable UnusedMember.Local
+        private XDoc GetThreads() {
+// ReSharper restore UnusedMember.Local
+            XDoc result = new XDoc("threads");
+            var threads = AsyncUtil.Threads;
+            result.Attr("count", threads.Count());
+            foreach(var thread in threads) {
+                var stacktrace = AsyncUtil.GetStackTrace(thread).ToString();
+                result.Start("thread");
+                result.Attr("name", thread.Name);
+                result.Attr("id", thread.ManagedThreadId);
+                result.Attr("state", thread.ThreadState.ToString());
+                result.Attr("priority", thread.Priority.ToString());
+                if(thread.IsAlive) {
+                    XException.AddStackTrace(result, stacktrace);                    
+                }
+                result.End();
+            }
+            return result;
+        }
+
         [DreamFeature("GET:status/aliases", "Show system aliases")]
 // ReSharper disable UnusedMember.Local
         private Yield GetStatusAliases(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
