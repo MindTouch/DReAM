@@ -62,7 +62,7 @@ namespace MindTouch.Tasking {
         /// </summary>
         public static readonly IDispatchQueue GlobalDispatchQueue;
        
-        private static readonly log4net.ILog _log = LogUtils.CreateLog();
+        private static log4net.ILog _log = LogUtils.CreateLog();
         private static bool _inplaceActivation = true;
         private static readonly int _minThreads;
         private static readonly int _maxThreads;
@@ -70,9 +70,8 @@ namespace MindTouch.Tasking {
         private static readonly int _maxPorts;
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
         private static readonly int? _maxStackSize;
-        private static readonly Dictionary<int, Thread> _threads = new Dictionary<int, Thread>();
         private static readonly Dictionary<int, BoxedObject> _threadsData = new Dictionary<int, BoxedObject>();
-        
+
         [ThreadStatic]
         private static IDispatchQueue _currentDispatchQueue;
 
@@ -261,8 +260,6 @@ namespace MindTouch.Tasking {
                     handler();
                 } finally {
                     lock(_threads) {
-                        _threadData = null;
-                        _threadsData.Remove(thread.ManagedThreadId);
                         _threads.Remove(thread.ManagedThreadId);
                     }
                 }
@@ -272,7 +269,6 @@ namespace MindTouch.Tasking {
                 : new Thread(threadStart) { IsBackground = true };
             lock(_threads) {
                 _threads[thread.ManagedThreadId] = thread;
-                _threadsData[thread.ManagedThreadId] = _threadData = new BoxedObject();
             }
             return thread;
         }
