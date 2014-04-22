@@ -796,4 +796,31 @@ namespace MindTouch.Dream {
             return result.ToString();
         }
     }
+
+    /// <summary>
+    /// This class encapsulates a call to ToString() which will be executed once and and only when requested.
+    /// </summary>
+    public class LazyToString {
+        
+        //--- Fields ---
+        private string _value;
+        private Func<string> _writer;
+
+        //--- Constructors ---
+        public LazyToString(Func<string> writer) {
+            _writer = writer;
+        }
+
+        //--- Methods ---
+        public override string ToString() {
+            var writer = _writer;
+            if(writer != null) {
+                lock(this) {
+                    _value = writer();
+                    _writer = null;
+                }
+            }
+            return _value ?? "(not value set)";
+        }
+    }
 }

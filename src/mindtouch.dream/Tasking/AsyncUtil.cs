@@ -49,6 +49,12 @@ namespace MindTouch.Tasking {
         //--- Types ---
         private delegate void AvailableThreadsDelegate(out int availableThreads, out int availablePorts);
 
+        private class BoxedObject {
+            
+            //--- Fields ---
+            public volatile object Value;
+        }
+
         //--- Class Fields ---
 
         /// <summary>
@@ -65,9 +71,13 @@ namespace MindTouch.Tasking {
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
         private static readonly int? _maxStackSize;
         private static readonly Dictionary<int, Thread> _threads = new Dictionary<int, Thread>();
-
+        private static readonly Dictionary<int, BoxedObject> _threadsData = new Dictionary<int, BoxedObject>();
+        
         [ThreadStatic]
         private static IDispatchQueue _currentDispatchQueue;
+
+        [ThreadStatic]
+        private static BoxedObject _threadData;
 
         //--- Constructors ---
         static AsyncUtil() {
@@ -142,7 +152,15 @@ namespace MindTouch.Tasking {
                     return _threads.Values.ToArray();
                 }
             }
-        } 
+        }
+
+        /// <summary>
+        /// Data associated with current thread.
+        /// </summary>
+        public static object ThreadData {
+            get { return (_threadData != null) ? _threadData.Value : null; }
+            set { _threadData.Value = value; }
+        }
 
         //--- Class Methods ---
 
@@ -243,6 +261,8 @@ namespace MindTouch.Tasking {
                     handler();
                 } finally {
                     lock(_threads) {
+                        _threadData = null;
+                        _threadsData.Remove(thread.ManagedThreadId);
                         _threads.Remove(thread.ManagedThreadId);
                     }
                 }
@@ -252,6 +272,7 @@ namespace MindTouch.Tasking {
                 : new Thread(threadStart) { IsBackground = true };
             lock(_threads) {
                 _threads[thread.ManagedThreadId] = thread;
+                _threadsData[thread.ManagedThreadId] = _threadData = new BoxedObject();
             }
             return thread;
         }
