@@ -151,7 +151,7 @@ namespace MindTouch.Tasking {
                     return _threads.Values.ToArray();
                 }
             }
-        }
+        } 
 
         /// <summary>
         /// Data associated with current thread.
@@ -260,6 +260,8 @@ namespace MindTouch.Tasking {
                     handler();
                 } finally {
                     lock(_threads) {
+                        _threadData = null;
+                        _threadsData.Remove(thread.ManagedThreadId);
                         _threads.Remove(thread.ManagedThreadId);
                     }
                 }
@@ -269,6 +271,7 @@ namespace MindTouch.Tasking {
                 : new Thread(threadStart) { IsBackground = true };
             lock(_threads) {
                 _threads[thread.ManagedThreadId] = thread;
+                _threadsData[thread.ManagedThreadId] = _threadData = new BoxedObject();
             }
             return thread;
         }
