@@ -74,6 +74,9 @@ namespace MindTouch.Dream.Http {
                 // process message
                 var response = _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue)).Block();
                 request.Close();
+                if(response.HasException) {
+                    _log.ErrorExceptionFormat(response.Exception, "Request Failed [{0}:{1}]: {2}", verb, requestUri.Path, response.Exception.Message);
+                }
                 var item = response.HasException ? DreamMessage.InternalError(response.Exception) : response.Value;
 
                 // set status

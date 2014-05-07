@@ -1352,6 +1352,12 @@ namespace MindTouch.Dream {
                     } else if(result.Exception is DreamCachedResponseException) {
                         message = ((DreamCachedResponseException)result.Exception).Response;
                     } else {
+                        _log.ErrorExceptionFormat(response.Exception, "Failed Feature '{0}' Chain [{1}:{2}]: {3}",
+                            feature.MainStage.Name,
+                            verb,
+                            localFeatureUri.Path,
+                            response.Exception.Message
+                        );
                         message = DreamMessage.InternalError(result.Exception);
                     }
 

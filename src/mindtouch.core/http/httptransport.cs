@@ -194,7 +194,7 @@ namespace MindTouch.Dream.Http {
                 _env.UpdateInfoMessage(_sourceExternal, null);
                 string verb = httpContext.Request.HttpMethod;
                 _env.SubmitRequestAsync(verb, requestUri, httpContext.User, request, new Result<DreamMessage>(TimeSpan.MaxValue))
-                    .WhenDone(result => Coroutine.Invoke(ResponseHandler, request, result, httpContext, activity, new Result(TimeSpan.MaxValue)));
+                    .WhenDone(result => Coroutine.Invoke(ResponseHandler, verb, requestUri, request, result, httpContext, activity, new Result(TimeSpan.MaxValue)));
             } catch(Exception ex) {
                 _log.ErrorExceptionMethodCall(ex, "RequestHandler");
                 if(request != null) {
@@ -224,11 +224,14 @@ namespace MindTouch.Dream.Http {
             }
         }
 
-        private Yield ResponseHandler(DreamMessage request, Result<DreamMessage> response, HttpListenerContext httpContext, Action<string> activity, Result result) {
+        private Yield ResponseHandler(string verb, XUri requestUri, DreamMessage request, Result<DreamMessage> response, HttpListenerContext httpContext, Action<string> activity, Result result) {
             DreamMessage item = null;
             request.Close();
             try {
                 activity("begin ResponseHandler");
+                if(response.HasException) {
+                    _log.ErrorExceptionFormat(response.Exception, "Request Failed [{0}:{1}]: {2}", verb, requestUri.Path, response.Exception.Message);
+                }
                 item = response.HasException ? DreamMessage.InternalError(response.Exception) : response.Value;
 
                 // set status
