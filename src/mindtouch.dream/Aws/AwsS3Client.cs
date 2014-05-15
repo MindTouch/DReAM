@@ -100,10 +100,10 @@ namespace MindTouch.Aws {
                 var expiration = fileHandle.Expiration ?? DateTime.UtcNow.Add(fileHandle.TimeToLive.Value);
                 p = p.WithHeader(EXPIRE, expiration.ToEpoch().ToString())
                     .WithHeader(TTL, fileHandle.TimeToLive.Value.TotalSeconds.ToString());
-                if(!string.IsNullOrEmpty(fileHandle.CacheControl)) {
-                    p = p.WithHeader(CACHE_CONTROL, fileHandle.CacheControl);
-                }
                 _expirationEntries.SetOrUpdate(path, expiration, fileHandle.TimeToLive.Value);
+            }
+            if(!string.IsNullOrEmpty(fileHandle.CacheControl)) {
+                p = p.WithHeader(CACHE_CONTROL, fileHandle.CacheControl);
             }
             var request = DreamMessage.Ok(fileHandle.MimeType, fileHandle.Size, fileHandle.Stream);
             var response = p.Put(request, new Result<DreamMessage>()).Wait();

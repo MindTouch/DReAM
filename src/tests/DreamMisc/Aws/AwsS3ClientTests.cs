@@ -235,7 +235,7 @@ namespace MindTouch.Dream.Test.Aws {
                 .WithBody(data)
                 .Returns(DreamMessage.Ok())
                 .ExpectAtLeastOneCall();
-            var handle = AwsTestHelpers.CreateFileHandle(data, 1.Seconds());
+            var handle = AwsTestHelpers.CreateFileHandle(data, null);
             handle.CacheControl = "max-age=29030400, public";
             _client.PutFile("foo/bar", handle);
         }
