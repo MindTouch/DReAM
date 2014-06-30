@@ -103,7 +103,7 @@ namespace MindTouch {
             var chunk = new List<T>(chunkSize);
             foreach(var x in source) {
                 chunk.Add(x);
-                if(chunk.Count <= chunkSize) {
+                if(chunk.Count < chunkSize) {
                     continue;
                 }
                 yield return chunk;
