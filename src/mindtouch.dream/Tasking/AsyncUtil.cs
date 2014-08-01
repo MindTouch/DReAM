@@ -158,7 +158,11 @@ namespace MindTouch.Tasking {
         /// </summary>
         public static object ThreadData {
             get { return (_threadData != null) ? _threadData.Value : null; }
-            set { _threadData.Value = value; }
+            set {
+                if(_threadData != null) {
+                    _threadData.Value = value;
+                }
+            }
         }
 
         //--- Class Methods ---
@@ -1011,64 +1015,6 @@ namespace MindTouch.Tasking {
             var thread = DispatchThread.CurrentThread;
             if(thread != null) {
                 thread.EvictWorkItems();
-            }            
-        }
-
-        /// <summary>
-        /// Get teh stack trace of another thread.
-        /// </summary>
-        /// <param name="thread">Thread to inspect.</param>
-        /// <returns>Stack trace of the other thread, or null if the thread could not be suspended.</returns>
-        public static StackTrace GetStackTrace(Thread thread) {
-            if(SysUtil.IsMono) {
-                return null;
-            }
-
-            var autoresumeSuspendedThreadBackgroundThread = new ManualResetEventSlim();
-            var exitEvent = new ManualResetEventSlim();
-            try {
-                new Thread(() => {
-                    autoresumeSuspendedThreadBackgroundThread.Set();
-                    while(!exitEvent.Wait(200)) {
-                        try {
-#pragma warning disable 612,618
-                            thread.Resume();
-#pragma warning restore 612,618
-                        } catch(Exception) {
-
-                            // whatever happens, do never stop to resume the main-thread regularly until the main-thread has exited safely.
-                        }
-                    }
-                }).Start();
-                autoresumeSuspendedThreadBackgroundThread.Wait();
-
-                // from here, you have about 200ms to get the stack-trace.
-#pragma warning disable 612,618
-                thread.Suspend();
-#pragma warning restore 612,618
-                StackTrace stackTrace = null;
-                try {
-                    stackTrace = new StackTrace(thread, true);
-                } catch(ThreadStateException) {
-
-                    // failed to get stack trace, since the fallback-thread resumed the thread possible reasons:
-                    // 1.) This thread was just too slow
-                    // 2.) A deadlock occurred
-                    // automatic retry seems too risky here, so just return null.
-                }
-                try {
-#pragma warning disable 612,618
-                    thread.Resume();
-#pragma warning restore 612,618
-                } catch(ThreadStateException) {
-
-                    // thread is running again already
-                }
-                return stackTrace;
-            } finally {
-
-                // just signal the backup-thread to stop
-                exitEvent.Set();
             }
         }
     }

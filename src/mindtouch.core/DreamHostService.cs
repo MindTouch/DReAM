@@ -774,12 +774,6 @@ namespace MindTouch.Dream {
                 if(data != null) {
                     result.Attr("data", data.ToString());
                 }
-                if(thread.IsAlive) {
-                    var stacktrace = AsyncUtil.GetStackTrace(thread);
-                    if(stacktrace != null) {
-                        XException.AddStackTrace(result, stacktrace.ToString());                    
-                    }
-                }
                 result.End();
             }
             return result;
