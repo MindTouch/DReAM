@@ -70,9 +70,8 @@ namespace MindTouch.Tasking {
         private static readonly int _maxPorts;
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
         private static readonly int? _maxStackSize;
-        private static readonly Dictionary<int, Thread> _threads = new Dictionary<int, Thread>();
-        private static readonly Dictionary<int, BoxedObject> _threadsData = new Dictionary<int, BoxedObject>();
-        
+        private static readonly Dictionary<int, Tuple<Thread, BoxedObject>> _threads = new Dictionary<int, Tuple<Thread, BoxedObject>>();
+
         [ThreadStatic]
         private static IDispatchQueue _currentDispatchQueue;
 
@@ -146,10 +145,10 @@ namespace MindTouch.Tasking {
         /// <summary>
         /// Enumerate all created threads.
         /// </summary>
-        public static IEnumerable<Thread> Threads {
+        public static IEnumerable<Tuple<Thread, object>> ThreadInfos {
             get {
                 lock(_threads) {
-                    return _threads.Values.ToArray();
+                    return _threads.Values.Select(tuple => new Tuple<Thread, object>(tuple.Item1, tuple.Item2.Value)).ToArray();
                 }
             }
         }
@@ -157,10 +156,10 @@ namespace MindTouch.Tasking {
         /// <summary>
         /// Data associated with current thread.
         /// </summary>
-        public static object ThreadData {
+        public static object ThreadInfo {
             get { return (_threadData != null) ? _threadData.Value : null; }
             set {
-                if(_threadData != null) {
+                if(_threadData == null) {
                     _threadData.Value = value;
                 }
             }
@@ -261,12 +260,21 @@ namespace MindTouch.Tasking {
         public static Thread CreateThread(Action handler) {
             Thread thread = null;
             ThreadStart threadStart = () => {
+
+                // initialize thread data
+                _threadData = new BoxedObject();
+                lock(_threads) {
+                    _threads[thread.ManagedThreadId] = new Tuple<Thread, BoxedObject>(thread, _threadData);
+                }
+
+                // run thread
                 try {
                     handler();
                 } finally {
+
+                    // clean-up thread data
+                    _threadData = null;
                     lock(_threads) {
-                        _threadData = null;
-                        _threadsData.Remove(thread.ManagedThreadId);
                         _threads.Remove(thread.ManagedThreadId);
                     }
                 }
@@ -274,10 +282,6 @@ namespace MindTouch.Tasking {
             thread = MaxStackSize.HasValue
                 ? new Thread(threadStart, MaxStackSize.Value) { IsBackground = true }
                 : new Thread(threadStart) { IsBackground = true };
-            lock(_threads) {
-                _threads[thread.ManagedThreadId] = thread;
-                _threadsData[thread.ManagedThreadId] = _threadData = new BoxedObject();
-            }
             return thread;
         }
 
