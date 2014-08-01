@@ -91,7 +91,9 @@ namespace MindTouch.Dream {
 
             //--- Methods ----
             public void Add(string description) {
-                _description = description;
+                lock(this) {
+                    _description = description;
+                }
             }
 
             public Tuplet<DateTime, string> ToTuplet() {
@@ -762,15 +764,16 @@ namespace MindTouch.Dream {
         private XDoc GetThreads() {
 // ReSharper restore UnusedMember.Local
             XDoc result = new XDoc("threads");
-            var threads = AsyncUtil.Threads;
-            result.Attr("count", threads.Count());
-            foreach(var thread in threads) {
+            var threadinfos = AsyncUtil.ThreadInfos;
+            result.Attr("count", threadinfos.Count());
+            foreach(var threadinfo in threadinfos) {
+                var thread = threadinfo.Item1;
+                var data = threadinfo.Item2;
                 result.Start("thread");
                 result.Attr("name", thread.Name);
                 result.Attr("id", thread.ManagedThreadId);
                 result.Attr("state", thread.ThreadState.ToString());
                 result.Attr("priority", thread.Priority.ToString());
-                var data = AsyncUtil.ThreadData;
                 if(data != null) {
                     result.Attr("data", data.ToString());
                 }
