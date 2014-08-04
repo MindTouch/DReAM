@@ -340,23 +340,6 @@ namespace MindTouch.Dream {
         }
 
         /// <summary>
-        /// Add a host activity.
-        /// </summary>
-        /// <param name="key">Activity key.</param>
-        /// <param name="description">Description of activity.</param>
-        public void AddActivityDescription(object key, string description) {
-            _env.AddActivityDescription(key, description);
-        }
-
-        /// <summary>
-        /// Remove a host activity.
-        /// </summary>
-        /// <param name="key">Activity key.</param>
-        public void RemoveActivityDescription(object key) {
-            _env.RemoveActivityDescription(key);
-        }
-
-        /// <summary>
         /// Update the host's info message.
         /// </summary>
         /// <param name="source">Message source.</param>

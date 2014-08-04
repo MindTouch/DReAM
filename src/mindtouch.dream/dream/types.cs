@@ -124,20 +124,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Create an activity object.
         /// </summary>
-        object CreateActivityDescription();
-
-        /// <summary>
-        /// Add an activity.
-        /// </summary>
-        /// <param name="key">Activity key.</param>
-        /// <param name="description">Activity description.</param>
-        void AddActivityDescription(object key, string description);
-
-        /// <summary>
-        /// Remove an activity.
-        /// </summary>
-        /// <param name="key">Activity key.</param>
-        void RemoveActivityDescription(object key);
+        IDreamActivityDescription CreateActivityDescription();
 
         /// <summary>
         /// Update the information message for a source.
@@ -157,8 +144,8 @@ namespace MindTouch.Dream {
         /// <param name="registrationCallback"></param>
         /// <returns></returns>
         ILifetimeScope CreateServiceLifetimeScope(IDreamService service, Action<IContainer,ContainerBuilder> registrationCallback);
-
         /// <summary>
+        
         /// Must be called at <see cref="IDreamService"/> shutdown to dispose of the service level container.
         /// </summary>
         /// <param name="service"></param>
@@ -169,14 +156,27 @@ namespace MindTouch.Dream {
     /// Provides an interface that allows to set the activity state reported by the DReAM host.
     /// </summary>
     public interface IDreamActivityDescription {
-        
+
+        //--- Properties ---
+
+        /// <summary>
+        /// Gets or sets the description.
+        /// </summary>
+        /// <value>The description.</value>
+        string Description { get; set; }
+
         //--- Methods ---
 
         /// <summary>
-        /// Add activity description.
+        /// Releases all resource used by the <see cref="MindTouch.Dream.IDreamActivityDescription"/> object.
         /// </summary>
-        /// <param name="description"></param>
-        void Add(string description);
+        /// <remarks>Call <see cref="Dispose"/> when you are finished using the
+        /// <see cref="MindTouch.Dream.IDreamActivityDescription"/>. The <see cref="Dispose"/> method leaves the
+        /// <see cref="MindTouch.Dream.IDreamActivityDescription"/> in an unusable state. After calling
+        /// <see cref="Dispose"/>, you must release all references to the
+        /// <see cref="MindTouch.Dream.IDreamActivityDescription"/> so the garbage collector can reclaim the memory that
+        /// the <see cref="MindTouch.Dream.IDreamActivityDescription"/> was occupying.</remarks>
+        void Dispose();
     }
 
     /// <summary>

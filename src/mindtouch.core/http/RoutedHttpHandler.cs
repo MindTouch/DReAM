@@ -55,12 +55,12 @@ namespace MindTouch.Dream.Http {
 
         //--- Methods ---
         void IHttpHandler.ProcessRequest(HttpContext httpContext) {
-            var key = _env.CreateActivityDescription();
+            var activity = _env.CreateActivityDescription();
             DreamMessage request = null;
             try {
                 string verb = httpContext.Request.HttpMethod;
                 XUri requestUri = HttpUtil.FromHttpContext(httpContext);
-                _env.AddActivityDescription(key, string.Format("Incoming: {0} {1}", verb, requestUri));
+                activity.Description = string.Format("Incoming: {0} {1}", verb, requestUri);
                 _log.DebugMethodCall("ProcessRequest", verb, requestUri);
 
                 // create request message
@@ -120,7 +120,7 @@ namespace MindTouch.Dream.Http {
                     httpContext.Response.Close();
                 }
             } finally {
-                _env.RemoveActivityDescription(key);
+                activity.Dispose();
             }
         }
     }
