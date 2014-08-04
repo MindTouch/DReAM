@@ -93,7 +93,7 @@ namespace MindTouch.Tasking {
         private static IDispatchQueue _currentDispatchQueue;
 
         [ThreadStatic]
-        private static BoxedObject _threadData;
+        private static BoxedObject _threadInfo;
 
         //--- Constructors ---
         static AsyncUtil() {
@@ -174,10 +174,10 @@ namespace MindTouch.Tasking {
         /// Data associated with current thread.
         /// </summary>
         public static object ThreadInfo {
-            get { return (_threadData != null) ? _threadData.Value : null; }
+            get { return (_threadInfo != null) ? _threadInfo.Value : null; }
             set {
-                if(_threadData == null) {
-                    _threadData.Value = value;
+                if(_threadInfo == null) {
+                    _threadInfo.Value = value;
                 }
             }
         }
@@ -279,9 +279,9 @@ namespace MindTouch.Tasking {
             ThreadStart threadStart = () => {
 
                 // initialize thread data
-                _threadData = new BoxedObject();
+                _threadInfo = new BoxedObject();
                 lock(_threads) {
-                    _threads[thread.ManagedThreadId] = new KeyValuePair<Thread, BoxedObject>(thread, _threadData);
+                    _threads[thread.ManagedThreadId] = new KeyValuePair<Thread, BoxedObject>(thread, _threadInfo);
                 }
 
                 // run thread
@@ -290,7 +290,7 @@ namespace MindTouch.Tasking {
                 } finally {
 
                     // clean-up thread data
-                    _threadData = null;
+                    _threadInfo = null;
                     lock(_threads) {
                         _threads.Remove(thread.ManagedThreadId);
                     }

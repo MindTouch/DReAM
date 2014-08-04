@@ -90,7 +90,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Current Activity messages.
         /// </summary>
-        Tuplet<DateTime, string>[] ActivityMessages { get; }
+        IDreamActivityDescription[] ActivityMessages { get; }
 
         //--- Methods ---
 
@@ -158,6 +158,12 @@ namespace MindTouch.Dream {
     public interface IDreamActivityDescription {
 
         //--- Properties ---
+
+        /// <summary>
+        /// Gets the date time.
+        /// </summary>
+        /// <value>The date time.</value>
+        DateTime Created { get; }
 
         /// <summary>
         /// Gets or sets the description.

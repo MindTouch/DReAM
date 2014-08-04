@@ -45,11 +45,12 @@ namespace MindTouch.Dream.Test {
 
         public static int GetAvailablePort() {
 
-            // mono 3.4 on OSX doesn't implement GetIPGlobalProperties(); so we get an excetpion; we'll try something els
+            // mono 3.4 on OSX doesn't implement GetIPGlobalProperties(); so if 
+            // we get an excetpion, we'll try to find an available port using 
+            // another method.
             bool supportsGetIPGlobalProperties = true;
             try {
-
-                var properties = IPGlobalProperties.GetIPGlobalProperties();
+                IPGlobalProperties.GetIPGlobalProperties();
             } catch(NotSupportedException) {
                 supportsGetIPGlobalProperties = false;
             }
