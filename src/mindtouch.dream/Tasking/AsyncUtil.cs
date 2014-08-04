@@ -42,6 +42,23 @@ namespace MindTouch.Tasking {
     public class AsyncAllAlternatesFailed : Exception { }
 
     /// <summary>
+    /// Data structure capturing the thread and its custom information object.
+    /// </summary>
+    public struct ThreadInfo {
+
+        //--- Fields ---
+        public readonly Thread Thread;
+        public readonly object Info;
+
+        //--- Contructors ---
+        public ThreadInfo(Thread thread, object info) {
+            this.Thread = thread;
+            this.Info = info;
+        }
+
+    }
+
+    /// <summary>
     /// Static utility class containing extension and helper methods for handling asynchronous execution.
     /// </summary>
     public static class AsyncUtil {
@@ -70,7 +87,7 @@ namespace MindTouch.Tasking {
         private static readonly int _maxPorts;
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
         private static readonly int? _maxStackSize;
-        private static readonly Dictionary<int, Tuple<Thread, BoxedObject>> _threads = new Dictionary<int, Tuple<Thread, BoxedObject>>();
+        private static readonly Dictionary<int, KeyValuePair<Thread, BoxedObject>> _threads = new Dictionary<int, KeyValuePair<Thread, BoxedObject>>();
 
         [ThreadStatic]
         private static IDispatchQueue _currentDispatchQueue;
@@ -145,10 +162,10 @@ namespace MindTouch.Tasking {
         /// <summary>
         /// Enumerate all created threads.
         /// </summary>
-        public static IEnumerable<Tuple<Thread, object>> ThreadInfos {
+        public static IEnumerable<ThreadInfo> Threads {
             get {
                 lock(_threads) {
-                    return _threads.Values.Select(tuple => new Tuple<Thread, object>(tuple.Item1, tuple.Item2.Value)).ToArray();
+                    return _threads.Values.Select(tuple => new ThreadInfo(tuple.Key, tuple.Value.Value)).ToArray();
                 }
             }
         }
@@ -264,7 +281,7 @@ namespace MindTouch.Tasking {
                 // initialize thread data
                 _threadData = new BoxedObject();
                 lock(_threads) {
-                    _threads[thread.ManagedThreadId] = new Tuple<Thread, BoxedObject>(thread, _threadData);
+                    _threads[thread.ManagedThreadId] = new KeyValuePair<Thread, BoxedObject>(thread, _threadData);
                 }
 
                 // run thread

@@ -88,11 +88,34 @@ namespace MindTouch.Dream {
             //--- Fields ---
             private readonly DateTime _date = DateTime.UtcNow;
             private volatile string _description;
+            private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities;
+
+            //--- Constructors ---
+            internal DreamActivityDescription(Dictionary<IDreamActivityDescription, DreamActivityDescription> activities) {
+                _activities = activities;
+                lock(_activities) {
+                    _activities[this] = this;
+                }
+            }
+
+            //--- Properties ---
+            public string Description { 
+                get {
+                    lock(this) {
+                        return _description;
+                    }
+                }
+                set {
+                    lock(this) {
+                        _description = value;
+                    }
+                }
+            }
 
             //--- Methods ----
-            public void Add(string description) {
-                lock(this) {
-                    _description = description;
+            public void Dispose() {
+                lock(_activities) {
+                    _activities.Remove(this);
                 }
             }
 
@@ -767,15 +790,13 @@ namespace MindTouch.Dream {
             var threadinfos = AsyncUtil.ThreadInfos;
             result.Attr("count", threadinfos.Count());
             foreach(var threadinfo in threadinfos) {
-                var thread = threadinfo.Item1;
-                var data = threadinfo.Item2;
                 result.Start("thread");
-                result.Attr("name", thread.Name);
-                result.Attr("id", thread.ManagedThreadId);
-                result.Attr("state", thread.ThreadState.ToString());
-                result.Attr("priority", thread.Priority.ToString());
-                if(data != null) {
-                    result.Attr("data", data.ToString());
+                result.Attr("name", threadinfo.Thread.Name);
+                result.Attr("id", threadinfo.Thread.ManagedThreadId);
+                result.Attr("state", threadinfo.Thread.ThreadState.ToString());
+                result.Attr("priority", threadinfo.Thread.Priority.ToString());
+                if(threadinfo.Info != null) {
+                    result.Attr("data", threadinfo.Info.ToString());
                 }
                 result.End();
             }
@@ -1142,28 +1163,8 @@ namespace MindTouch.Dream {
             _shutdown.WaitOne();
         }
 
-        public object CreateActivityDescription() {
-            var result = new DreamActivityDescription();
-            lock(_activities) {
-                _activities[result] = result;
-            }
-            return result;
-        }
-
-        public void AddActivityDescription(object key, string description) {
-            var activity = key as IDreamActivityDescription;
-            if(activity != null) {
-                activity.Add(description);
-            }
-        }
-
-        public void RemoveActivityDescription(object key) {
-            var activity = key as IDreamActivityDescription;
-            if(activity != null) {
-                lock(_activities) {
-                    _activities.Remove(activity);
-                }
-            }
+        public IDreamActivityDescription CreateActivityDescription() {
+            return new DreamActivityDescription(_activities);
         }
 
         public void UpdateInfoMessage(string source, string message) {
