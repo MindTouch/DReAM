@@ -43,7 +43,7 @@ namespace MindTouch.Dream.Http {
         internal class ActivityState {
 
             //--- Fields ---
-            private readonly object _key;
+            private readonly IDreamActivityDescription _activity;
             private Queue<string> _messages = new Queue<string>();
             private readonly IDreamEnvironment _env;
             private readonly string _verb;
@@ -52,7 +52,7 @@ namespace MindTouch.Dream.Http {
             //--- Constructors ---
             internal ActivityState(IDreamEnvironment env, string verb, string uri) {
                 _env = env;
-                _key = env.CreateActivityDescription();
+                _activity = env.CreateActivityDescription();
                 _verb = verb;
                 _uri = uri;
             }
@@ -66,11 +66,11 @@ namespace MindTouch.Dream.Http {
                             if(_messages.Count > 10) {
                                 _messages.Dequeue();
                             }
-                            _env.AddActivityDescription(_key, string.Format("Outgoing: {0} {1} [{2}]", _verb, _uri, string.Join(" -> ", _messages.ToArray())));
+                            _activity.Description = string.Format("Outgoing: {0} {1} [{2}]", _verb, _uri, string.Join(" -> ", _messages.ToArray()));
                         }
                     } else {
                         _messages = null;
-                        _env.RemoveActivityDescription(_key);
+                        _activity.Dispose();
                     }
                 }
             }
