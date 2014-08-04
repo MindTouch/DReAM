@@ -53,8 +53,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public const int DEFAULT_PACKETSIZE = 1024;
 
-        private const int BUFFER_SIZE = 32768;
-
         //--- Class Fields ---
         private static string _version;
 
@@ -85,11 +83,6 @@ namespace MindTouch.Dream {
         public static void PrepareIncomingMessage(DreamMessage message, Encoding contentEncoding, string transport, string requestClientIp, string userAgent) {
             if(message == null) {
                 throw new ArgumentNullException("message");
-            }
-
-            // set content-encoding
-            if(contentEncoding != null) {
-                message.Headers.ContentEncoding = contentEncoding.WebName;
             }
 
             // set dream-transport information (i.e. point of entry)
