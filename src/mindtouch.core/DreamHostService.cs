@@ -86,7 +86,7 @@ namespace MindTouch.Dream {
         private sealed class DreamActivityDescription : IDreamActivityDescription {
 
             //--- Fields ---
-            private readonly DateTime _date = DateTime.UtcNow;
+            private readonly DateTime _created = DateTime.UtcNow;
             private volatile string _description;
             private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities;
 
@@ -99,6 +99,8 @@ namespace MindTouch.Dream {
             }
 
             //--- Properties ---
+            public DateTime Created { get { return _created; } }
+
             public string Description { 
                 get {
                     lock(this) {
@@ -117,10 +119,6 @@ namespace MindTouch.Dream {
                 lock(_activities) {
                     _activities.Remove(this);
                 }
-            }
-
-            public Tuplet<DateTime, string> ToTuplet() {
-                return new Tuplet<DateTime, string>(_date, _description);
             }
         }
 
@@ -272,6 +270,13 @@ namespace MindTouch.Dream {
             yield break;
         }
 
+        private static void PopulateActivities(XDoc result, DateTime now, IDreamActivityDescription[] activities) {
+            result.Attr("count", activities.Length);
+            foreach(var description in activities) {
+                result.Start("description").Attr("created", description.Created).Attr("age", (now - description.Created).TotalSeconds).Value(description.Description).End();
+            }
+        }
+
         //--- Fields ---
         private readonly IContainer _container;
         private readonly ILifetimeScope _hostLifetimeScope;
@@ -332,10 +337,10 @@ namespace MindTouch.Dream {
 
         public XUri LocalMachineUri { get { return _localMachineUri; } }
 
-        public Tuplet<DateTime, string>[] ActivityMessages {
+        public IDreamActivityDescription[] ActivityMessages {
             get {
                 lock(_activities) {
-                    return _activities.Values.Select(v => v.ToTuplet()).ToArray();
+                    return _activities.Values.ToArray();
                 }
             }
         }
@@ -675,10 +680,8 @@ namespace MindTouch.Dream {
 
             // activities
             var activities = ActivityMessages;
-            result.Start("activities").Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
-            foreach(Tuplet<DateTime, string> description in activities) {
-                result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-            }
+            result.Start("activities");
+            PopulateActivities(result, now, activities);
             result.End();
 
             // infos
@@ -893,14 +896,11 @@ namespace MindTouch.Dream {
         private Yield GetStatusActiities(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
 // ReSharper restore UnusedMember.Local
             DateTime now = DateTime.UtcNow;
-            XDoc result = new XDoc("activities");
 
             // host/aliases
             var activities = ActivityMessages;
-            result.Attr("count", activities.Length);
-            foreach(Tuplet<DateTime, string> description in activities) {
-                result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-            }
+            var result = new XDoc("activities");
+            PopulateActivities(result, now, activities);
             response.Return(DreamMessage.Ok(result));
             yield break;
         }

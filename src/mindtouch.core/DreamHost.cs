@@ -261,7 +261,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Current host activity.
         /// </summary>
-        public Tuplet<DateTime, string>[] ActivityMessages { get { return _env.ActivityMessages; } }
+        public IDreamActivityDescription[] ActivityMessages { get { return _env.ActivityMessages; } }
 
         //--- Methods ---
 
