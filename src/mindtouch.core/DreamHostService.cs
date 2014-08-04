@@ -787,7 +787,7 @@ namespace MindTouch.Dream {
         private XDoc GetThreads() {
 // ReSharper restore UnusedMember.Local
             XDoc result = new XDoc("threads");
-            var threadinfos = AsyncUtil.ThreadInfos;
+            var threadinfos = AsyncUtil.Threads;
             result.Attr("count", threadinfos.Count());
             foreach(var threadinfo in threadinfos) {
                 result.Start("thread");
