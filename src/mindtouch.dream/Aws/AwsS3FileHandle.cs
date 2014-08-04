@@ -60,5 +60,10 @@ namespace MindTouch.Aws {
         /// File time-to-live.
         /// </summary>
         public TimeSpan? TimeToLive { get; set; }
+
+        /// <summary>
+        /// File cache control directive.
+        /// </summary>
+        public string CacheControl { get; set; }
     }
 }

@@ -127,7 +127,13 @@ namespace MindTouch.Dream {
                     request = result.Value;
                 }
             } catch(Exception e) {
-                request = DreamMessage.InternalError(e);
+                if(result.HasException) {
+                    _log.ErrorExceptionFormat(result.Exception, "handler for {0}:{1} failed ({2}), cascading via processing exception '{3}'", _context.Verb, _context.Uri.ToString(false), _previousName, e);
+                    request = DreamMessage.InternalError(result.Exception);
+                } else {
+                    _log.ErrorExceptionFormat(e, "handler for {0}:{1} failed completing stage '{2}'", _context.Verb, _context.Uri.ToString(false), _previousName);
+                    request = DreamMessage.InternalError(e);
+                }
             }
 
             // check if feature handler can handle this message
@@ -141,6 +147,7 @@ namespace MindTouch.Dream {
         }
 
         private void Handler_DreamMessage(DreamMessage request) {
+            var attachedToTaskEnv = false;
             try {
 
                 // grabbing context from FeatureChain (must remove it again from env before env completes, so that it doesn't get disposed)
@@ -148,6 +155,7 @@ namespace MindTouch.Dream {
                     throw new InvalidOperationException("cannot go to next feature state with disposed context");
                 }
                 _context.AttachToCurrentTaskEnv();
+                attachedToTaskEnv = true;
 
                 // check if request is authorized for service
                 if((_stage.Access != DreamAccess.Public) && (_context.Feature.Service.Self != null) && (_stage.Access > _context.Feature.Service.DetermineAccess(_context, request))) {
@@ -169,6 +177,7 @@ namespace MindTouch.Dream {
 
                     // removing context from env so that shared context is not disposed
                     _context.DetachFromTaskEnv();
+                    attachedToTaskEnv = false;
                     _response.Return(DreamMessage.Forbidden("insufficient access privileges"));
                 } else {
 
@@ -191,6 +200,9 @@ namespace MindTouch.Dream {
                     _stage.Invoke(_context, request, inner);
                 }
             } catch(Exception ex) {
+                if(attachedToTaskEnv) {
+                    _context.DetachFromTaskEnv();
+                }
                 _response.Throw(ex);
             }
         }

@@ -224,5 +224,20 @@ namespace MindTouch.Dream.Test.Aws {
             Assert.IsNull(_client.GetDataInfo("foo/bar/", false));
             MockPlug.VerifyAll();
         }
+
+        [Test]
+        public void Send_cache_control_header_when_writing_object() {
+            var data = AwsTestHelpers.CreateRandomDocument();
+            MockPlug.Setup(AwsTestHelpers.AWS.S3Uri)
+                .Verb("PUT")
+                .At(_config.RootedPath("foo", "bar"))
+                .WithHeader("Cache-Control", "max-age=29030400, public")
+                .WithBody(data)
+                .Returns(DreamMessage.Ok())
+                .ExpectAtLeastOneCall();
+            var handle = AwsTestHelpers.CreateFileHandle(data, null);
+            handle.CacheControl = "max-age=29030400, public";
+            _client.PutFile("foo/bar", handle);
+        }
     }
 }

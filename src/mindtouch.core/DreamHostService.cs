@@ -188,10 +188,12 @@ namespace MindTouch.Dream {
                     request = DreamMessage.BadRequest(string.Format("{0} input format not supported", format));
                     break;
                 }
-            } else if("base64".EqualsInvariantIgnoreCase(request.Headers.ContentEncoding)) {
-                byte[] bytes = Convert.FromBase64String(request.ToText());
-                request = new DreamMessage(request.Status, request.Headers, request.ContentType, bytes);
-                request.Headers.ContentEncoding = null;
+            } else if(request.Headers.ContentEncoding != null) {
+                if("base64".EqualsInvariantIgnoreCase(request.Headers.ContentEncoding)) {
+                    byte[] bytes = Convert.FromBase64String(request.ToText());
+                    request = new DreamMessage(request.Status, request.Headers, request.ContentType, bytes);
+                    request.Headers.ContentEncoding = null;
+                }
             }
             response.Return(request);
             yield break;
@@ -1404,6 +1406,12 @@ namespace MindTouch.Dream {
                     } else if(result.Exception is DreamCachedResponseException) {
                         message = ((DreamCachedResponseException)result.Exception).Response;
                     } else {
+                        _log.ErrorExceptionFormat(response.Exception, "Failed Feature '{0}' Chain [{1}:{2}]: {3}",
+                            feature.MainStage.Name,
+                            verb,
+                            localFeatureUri.Path,
+                            response.Exception.Message
+                        );
                         message = DreamMessage.InternalError(result.Exception);
                     }
 

@@ -36,6 +36,7 @@ namespace MindTouch.Aws {
         //--- Constants ---
         private const string EXPIRE = "X-Amz-Meta-Expire";
         private const string TTL = "X-Amz-Meta-TTL";
+        private const string CACHE_CONTROL = "Cache-Control";
 
         //--- Class Fields ---
         private static readonly ILog _log = LogUtils.CreateLog();
@@ -100,6 +101,9 @@ namespace MindTouch.Aws {
                 p = p.WithHeader(EXPIRE, expiration.ToEpoch().ToString())
                     .WithHeader(TTL, fileHandle.TimeToLive.Value.TotalSeconds.ToString());
                 _expirationEntries.SetOrUpdate(path, expiration, fileHandle.TimeToLive.Value);
+            }
+            if(!string.IsNullOrEmpty(fileHandle.CacheControl)) {
+                p = p.WithHeader(CACHE_CONTROL, fileHandle.CacheControl);
             }
             var request = DreamMessage.Ok(fileHandle.MimeType, fileHandle.Size, fileHandle.Stream);
             var response = p.Put(request, new Result<DreamMessage>()).Wait();
