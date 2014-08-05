@@ -266,7 +266,7 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        private static void PopulateActivities(XDoc doc, DateTime now, IDreamActivityDescription[] activities) {
+        private void PopulateActivities(XDoc doc, XUri self, DateTime now, IDreamActivityDescription[] activities) {
             doc.Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
             foreach(var description in activities) {
                 doc.Start("description").Attr("created", description.Created).Attr("age", (now - description.Created).TotalSeconds).Value(description.Description).End();
@@ -677,7 +677,7 @@ namespace MindTouch.Dream {
             // activities
             var activities = ActivityMessages;
             result.Start("activities");
-            PopulateActivities(result, now, activities);
+            PopulateActivities(result, self, now, activities);
             result.End();
 
             // infos
@@ -894,9 +894,10 @@ namespace MindTouch.Dream {
             DateTime now = DateTime.UtcNow;
 
             // host/aliases
+            XUri self = Self.Uri.With("apikey", context.GetParam("apikey", null));
             var activities = ActivityMessages;
             var result = new XDoc("activities");
-            PopulateActivities(result, now, activities);
+            PopulateActivities(result, self, now, activities);
             response.Return(DreamMessage.Ok(result));
             yield break;
         }
