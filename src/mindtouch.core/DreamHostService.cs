@@ -87,7 +87,7 @@ namespace MindTouch.Dream {
 
             //--- Fields ---
             private readonly DateTime _created = DateTime.UtcNow;
-            private volatile string _description;
+            private string _description;
             private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities;
 
             //--- Constructors ---
@@ -101,16 +101,12 @@ namespace MindTouch.Dream {
             //--- Properties ---
             public DateTime Created { get { return _created; } }
 
-            public string Description { 
+            public string Description {
                 get {
-                    lock(this) {
-                        return _description;
-                    }
+                    return _description;
                 }
                 set {
-                    lock(this) {
-                        _description = value;
-                    }
+                    _description = value;
                 }
             }
 
@@ -188,12 +184,10 @@ namespace MindTouch.Dream {
                     request = DreamMessage.BadRequest(string.Format("{0} input format not supported", format));
                     break;
                 }
-            } else if(request.Headers.ContentEncoding != null) {
-                if("base64".EqualsInvariantIgnoreCase(request.Headers.ContentEncoding)) {
+            } else if("base64".EqualsInvariantIgnoreCase(request.Headers.ContentEncoding)) {
                     byte[] bytes = Convert.FromBase64String(request.ToText());
                     request = new DreamMessage(request.Status, request.Headers, request.ContentType, bytes);
                     request.Headers.ContentEncoding = null;
-                }
             }
             response.Return(request);
             yield break;
@@ -272,10 +266,10 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        private static void PopulateActivities(XDoc result, DateTime now, IDreamActivityDescription[] activities) {
-            result.Attr("count", activities.Length);
+        private static void PopulateActivities(XDoc doc, DateTime now, IDreamActivityDescription[] activities) {
+            doc.Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
             foreach(var description in activities) {
-                result.Start("description").Attr("created", description.Created).Attr("age", (now - description.Created).TotalSeconds).Value(description.Description).End();
+                doc.Start("description").Attr("created", description.Created).Attr("age", (now - description.Created).TotalSeconds).Value(description.Description).End();
             }
         }
 
@@ -801,7 +795,7 @@ namespace MindTouch.Dream {
                 result.Attr("state", threadinfo.Thread.ThreadState.ToString());
                 result.Attr("priority", threadinfo.Thread.Priority.ToString());
                 if(threadinfo.Info != null) {
-                    result.Attr("data", threadinfo.Info.ToString());
+                    result.Attr("info", threadinfo.Info.ToString());
                 }
                 result.End();
             }
