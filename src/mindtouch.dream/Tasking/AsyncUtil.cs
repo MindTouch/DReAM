@@ -55,7 +55,6 @@ namespace MindTouch.Tasking {
             this.Thread = thread;
             this.Info = info;
         }
-
     }
 
     /// <summary>
@@ -165,7 +164,7 @@ namespace MindTouch.Tasking {
         public static IEnumerable<ThreadInfo> Threads {
             get {
                 lock(_threads) {
-                    return _threads.Values.Select(tuple => new ThreadInfo(tuple.Key, tuple.Value.Value)).ToArray();
+                    return _threads.Values.Select(kv => new ThreadInfo(kv.Key, kv.Value.Value)).ToArray();
                 }
             }
         }
@@ -176,7 +175,7 @@ namespace MindTouch.Tasking {
         public static object ThreadInfo {
             get { return (_threadInfo != null) ? _threadInfo.Value : null; }
             set {
-                if(_threadInfo == null) {
+                if(_threadInfo != null) {
                     _threadInfo.Value = value;
                 }
             }
@@ -275,13 +274,12 @@ namespace MindTouch.Tasking {
         /// </summary>
         /// <param name="handler">Action to enqueue for execution.</param>
         public static Thread CreateThread(Action handler) {
-            Thread thread = null;
             ThreadStart threadStart = () => {
 
                 // initialize thread data
                 _threadInfo = new BoxedObject();
                 lock(_threads) {
-                    _threads[thread.ManagedThreadId] = new KeyValuePair<Thread, BoxedObject>(thread, _threadInfo);
+                    _threads[Thread.CurrentThread.ManagedThreadId] = new KeyValuePair<Thread, BoxedObject>(Thread.CurrentThread, _threadInfo);
                 }
 
                 // run thread
@@ -290,16 +288,15 @@ namespace MindTouch.Tasking {
                 } finally {
 
                     // clean-up thread data
-                    _threadInfo = null;
                     lock(_threads) {
-                        _threads.Remove(thread.ManagedThreadId);
+                        _threads.Remove(Thread.CurrentThread.ManagedThreadId);
                     }
+                    _threadInfo = null;
                 }
             };
-            thread = MaxStackSize.HasValue
+            return MaxStackSize.HasValue
                 ? new Thread(threadStart, MaxStackSize.Value) { IsBackground = true }
                 : new Thread(threadStart) { IsBackground = true };
-            return thread;
         }
 
         /// <summary>
