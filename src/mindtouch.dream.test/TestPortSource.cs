@@ -86,17 +86,17 @@ namespace MindTouch.Dream.Test {
                                 TcpListener tcpListener = new TcpListener(ipAddress, port);
                                 tcpListener.Start();
                                 tcpListener.Stop();
-                            } catch (SocketException) {
+                            } catch(SocketException) {
                                 _used.Add(port);
                             }
                             return port;
                         }
                     }
                 }
+                _log.DebugFormat("Ran out of ports, restarting in new range");
+                Initialize();
+                return GetAvailablePort();
             }
-            _log.DebugFormat("Ran out of ports, restarting in new range");
-            Initialize();
-            return GetAvailablePort();
         }
 
         private static void Initialize() {
