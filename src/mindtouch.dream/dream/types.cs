@@ -155,7 +155,7 @@ namespace MindTouch.Dream {
     /// <summary>
     /// Provides an interface that allows to set the activity state reported by the DReAM host.
     /// </summary>
-    public interface IDreamActivityDescription {
+    public interface IDreamActivityDescription : IDisposable {
 
         //--- Properties ---
 
