@@ -185,9 +185,9 @@ namespace MindTouch.Dream {
                     break;
                 }
             } else if("base64".EqualsInvariantIgnoreCase(request.Headers.ContentEncoding)) {
-                    byte[] bytes = Convert.FromBase64String(request.ToText());
-                    request = new DreamMessage(request.Status, request.Headers, request.ContentType, bytes);
-                    request.Headers.ContentEncoding = null;
+                byte[] bytes = Convert.FromBase64String(request.ToText());
+                request = new DreamMessage(request.Status, request.Headers, request.ContentType, bytes);
+                request.Headers.ContentEncoding = null;
             }
             response.Return(request);
             yield break;
