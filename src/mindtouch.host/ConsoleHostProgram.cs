@@ -202,10 +202,10 @@ namespace MindTouch.Dream {
                                     Console.WriteLine("Timer retries: {0}", taskTimerStats.Retries);
 
                                     // show activities
-                                    Tuplet<DateTime, string>[] activities = _host.ActivityMessages;
+                                    var activities = _host.ActivityMessages;
                                     Console.WriteLine("Host activities: {0}", activities.Length);
-                                    foreach(Tuplet<DateTime, string> activity in activities) {
-                                        Console.WriteLine("* {0}: {1}", activity.Item1.ToString(XDoc.RFC_DATETIME_FORMAT), activity.Item2);
+                                    foreach(var activity in activities) {
+                                        Console.WriteLine("* {0}: {1}", activity.Created.ToString(XDoc.RFC_DATETIME_FORMAT), activity.Description);
                                     }
 
                                     // show pending tasks

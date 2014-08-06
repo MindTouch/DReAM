@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using MindTouch.Dream;
+using MindTouch.Tasking;
 
 namespace MindTouch.Threading.Timer {
     using ClockCallback = Action<DateTime, TimeSpan>;
@@ -59,7 +60,10 @@ namespace MindTouch.Threading.Timer {
             _intervalMilliseconds = 100;
 
             // start-up the tick thread for all global timed callbacks
-            new Thread(MasterTickThread) { Priority = ThreadPriority.Highest, IsBackground = true, Name = "GlobalClock" }.Start();
+            var thread = AsyncUtil.CreateThread(MasterTickThread);
+            thread.Priority = ThreadPriority.Highest;
+            thread.Name = "GlobalClock";
+            thread.Start();
         }
 
         //--- Class Methods ---
@@ -149,7 +153,7 @@ namespace MindTouch.Threading.Timer {
             return true;
         }
 
-        private static void MasterTickThread(object _unused) {
+        private static void MasterTickThread() {
             DateTime last = DateTime.UtcNow;
             while(_running) {
 

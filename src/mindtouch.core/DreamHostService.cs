@@ -83,6 +83,41 @@ namespace MindTouch.Dream {
             }
         }
 
+        private sealed class DreamActivityDescription : IDreamActivityDescription {
+
+            //--- Fields ---
+            private readonly DateTime _created = DateTime.UtcNow;
+            private string _description;
+            private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities;
+
+            //--- Constructors ---
+            internal DreamActivityDescription(Dictionary<IDreamActivityDescription, DreamActivityDescription> activities) {
+                _activities = activities;
+                lock(_activities) {
+                    _activities[this] = this;
+                }
+            }
+
+            //--- Properties ---
+            public DateTime Created { get { return _created; } }
+
+            public string Description {
+                get {
+                    return _description;
+                }
+                set {
+                    _description = value;
+                }
+            }
+
+            //--- Methods ----
+            public void Dispose() {
+                lock(_activities) {
+                    _activities.Remove(this);
+                }
+            }
+        }
+
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
 
@@ -231,12 +266,19 @@ namespace MindTouch.Dream {
             yield break;
         }
 
+        private void PopulateActivities(XDoc doc, XUri self, DateTime now, IDreamActivityDescription[] activities) {
+            doc.Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
+            foreach(var description in activities) {
+                doc.Start("description").Attr("created", description.Created).Attr("age", (now - description.Created).TotalSeconds).Value(description.Description).End();
+            }
+        }
+
         //--- Fields ---
         private readonly IContainer _container;
         private readonly ILifetimeScope _hostLifetimeScope;
         private readonly Dictionary<IDreamService, ILifetimeScope> _serviceLifetimeScopes = new Dictionary<IDreamService, ILifetimeScope>();
         private readonly XUriMap<XUri> _aliases = new XUriMap<XUri>();
-        private readonly Dictionary<object, Tuplet<DateTime, string>> _activities = new Dictionary<object, Tuplet<DateTime, string>>();
+        private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities = new Dictionary<IDreamActivityDescription, DreamActivityDescription>();
         private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
@@ -291,7 +333,7 @@ namespace MindTouch.Dream {
 
         public XUri LocalMachineUri { get { return _localMachineUri; } }
 
-        public Tuplet<DateTime, string>[] ActivityMessages {
+        public IDreamActivityDescription[] ActivityMessages {
             get {
                 lock(_activities) {
                     return _activities.Values.ToArray();
@@ -633,13 +675,10 @@ namespace MindTouch.Dream {
             result.Start("connections").Attr("count", _connectionCounter).Attr("pending", (_requestQueue != null) ? _requestQueue.Count : 0).Attr("limit", _connectionLimit).End();
 
             // activities
-            lock(_activities) {
-                result.Start("activities").Attr("count", _activities.Count).Attr("href", self.At("status", "activities"));
-                foreach(Tuplet<DateTime, string> description in _activities.Values) {
-                    result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-                }
-                result.End();
-            }
+            var activities = ActivityMessages;
+            result.Start("activities");
+            PopulateActivities(result, self, now, activities);
+            result.End();
 
             // infos
             lock(_infos) {
@@ -742,6 +781,27 @@ namespace MindTouch.Dream {
             yield break;
         }
 
+        [DreamFeature("GET:status/threads", "Show information about all threads")]
+// ReSharper disable UnusedMember.Local
+        private XDoc GetThreads() {
+// ReSharper restore UnusedMember.Local
+            XDoc result = new XDoc("threads");
+            var threadinfos = AsyncUtil.Threads;
+            result.Attr("count", threadinfos.Count());
+            foreach(var threadinfo in threadinfos) {
+                result.Start("thread");
+                result.Attr("name", threadinfo.Thread.Name);
+                result.Attr("id", threadinfo.Thread.ManagedThreadId);
+                result.Attr("state", threadinfo.Thread.ThreadState.ToString());
+                result.Attr("priority", threadinfo.Thread.Priority.ToString());
+                if(threadinfo.Info != null) {
+                    result.Attr("info", threadinfo.Info.ToString());
+                }
+                result.End();
+            }
+            return result;
+        }
+
         [DreamFeature("GET:status/aliases", "Show system aliases")]
 // ReSharper disable UnusedMember.Local
         private Yield GetStatusAliases(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
@@ -832,15 +892,12 @@ namespace MindTouch.Dream {
         private Yield GetStatusActiities(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
 // ReSharper restore UnusedMember.Local
             DateTime now = DateTime.UtcNow;
-            XDoc result = new XDoc("activities");
 
             // host/aliases
-            lock(_activities) {
-                result.Attr("count", _activities.Count);
-                foreach(Tuplet<DateTime, string> description in _activities.Values) {
-                    result.Start("description").Attr("created", description.Item1).Attr("age", (now - description.Item1).TotalSeconds).Value(description.Item2).End();
-                }
-            }
+            XUri self = Self.Uri.With("apikey", context.GetParam("apikey", null));
+            var activities = ActivityMessages;
+            var result = new XDoc("activities");
+            PopulateActivities(result, self, now, activities);
             response.Return(DreamMessage.Ok(result));
             yield break;
         }
@@ -1103,16 +1160,8 @@ namespace MindTouch.Dream {
             _shutdown.WaitOne();
         }
 
-        public void AddActivityDescription(object key, string description) {
-            lock(_activities) {
-                _activities[key] = new Tuplet<DateTime, string>(DateTime.UtcNow, description);
-            }
-        }
-
-        public void RemoveActivityDescription(object key) {
-            lock(_activities) {
-                _activities.Remove(key);
-            }
+        public IDreamActivityDescription CreateActivityDescription() {
+            return new DreamActivityDescription(_activities);
         }
 
         public void UpdateInfoMessage(string source, string message) {

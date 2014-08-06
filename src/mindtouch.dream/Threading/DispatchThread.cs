@@ -20,7 +20,6 @@
  */
 
 using System;
-using System.Threading;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.Tasking;
@@ -55,9 +54,7 @@ namespace MindTouch.Threading {
         internal DispatchThread() {
 
             // create new thread
-            var thread = AsyncUtil.MaxStackSize.HasValue
-                ? new Thread(DispatchLoop, AsyncUtil.MaxStackSize.Value) { IsBackground = true }
-                : new Thread(DispatchLoop) { IsBackground = true };
+            var thread = AsyncUtil.CreateThread(DispatchLoop);
 
             //  assign ID
             _id = thread.ManagedThreadId;

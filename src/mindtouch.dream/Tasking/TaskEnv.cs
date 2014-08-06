@@ -345,7 +345,7 @@ namespace MindTouch.Tasking {
         }
 
         private IEnumerable<object> BeginReset() {
-            IEnumerable<object> values = null;
+            IEnumerable<object> values;
             lock(_syncRoot) {
                 if(_referenceCount > 0) {
                     _log.WarnFormat("resetting task environment with a ref count of {0}", _referenceCount);
@@ -684,7 +684,6 @@ namespace MindTouch.Tasking {
                     } else {
                         _log.WarnFormat("The action was unexpectedly called more than once ({0} times), later executions did not try to release the environment", execution);
                     }
-
 
                     // check if a result object was provided
                     if(result != null) {

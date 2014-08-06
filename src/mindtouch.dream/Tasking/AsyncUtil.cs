@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 using MindTouch.Dream;
@@ -41,12 +42,34 @@ namespace MindTouch.Tasking {
     public class AsyncAllAlternatesFailed : Exception { }
 
     /// <summary>
+    /// Data structure capturing the thread and its custom information object.
+    /// </summary>
+    public struct ThreadInfo {
+
+        //--- Fields ---
+        public readonly Thread Thread;
+        public readonly object Info;
+
+        //--- Contructors ---
+        public ThreadInfo(Thread thread, object info) {
+            this.Thread = thread;
+            this.Info = info;
+        }
+    }
+
+    /// <summary>
     /// Static utility class containing extension and helper methods for handling asynchronous execution.
     /// </summary>
     public static class AsyncUtil {
 
         //--- Types ---
         private delegate void AvailableThreadsDelegate(out int availableThreads, out int availablePorts);
+
+        private class BoxedObject {
+            
+            //--- Fields ---
+            public volatile object Value;
+        }
 
         //--- Class Fields ---
 
@@ -55,8 +78,7 @@ namespace MindTouch.Tasking {
         /// </summary>
         public static readonly IDispatchQueue GlobalDispatchQueue;
        
-        private static log4net.ILog _log = LogUtils.CreateLog();
-        private static readonly TimeSpan READ_TIMEOUT = TimeSpan.FromSeconds(30);
+        private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private static bool _inplaceActivation = true;
         private static readonly int _minThreads;
         private static readonly int _maxThreads;
@@ -64,9 +86,13 @@ namespace MindTouch.Tasking {
         private static readonly int _maxPorts;
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
         private static readonly int? _maxStackSize;
+        private static readonly Dictionary<int, KeyValuePair<Thread, BoxedObject>> _threads = new Dictionary<int, KeyValuePair<Thread, BoxedObject>>();
 
         [ThreadStatic]
         private static IDispatchQueue _currentDispatchQueue;
+
+        [ThreadStatic]
+        private static BoxedObject _threadInfo;
 
         //--- Constructors ---
         static AsyncUtil() {
@@ -125,11 +151,34 @@ namespace MindTouch.Tasking {
         }
 
         /// <summary>
-        /// The maximum stack size that Threads created by Dream (<see cref="ElasticThreadPool"/>, <see cref="Fork(System.Action)"/>, <see cref="ForkThread(System.Action)"/>, etc.)
+        /// The maximum stack size that Threads created by Dream (<see cref="ElasticThreadPool"/>, <see cref="Fork(System.Action)"/>, <see cref="CreateThread"/>, etc.)
         /// should use. If null, uses process default stack size.
         /// </summary>
         public static int? MaxStackSize {
             get { return _maxStackSize; }
+        }
+
+        /// <summary>
+        /// Enumerate all created threads.
+        /// </summary>
+        public static IEnumerable<ThreadInfo> Threads {
+            get {
+                lock(_threads) {
+                    return _threads.Values.Select(kv => new ThreadInfo(kv.Key, kv.Value.Value)).ToArray();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Data associated with current thread.
+        /// </summary>
+        public static object ThreadInfo {
+            get { return (_threadInfo != null) ? _threadInfo.Value : null; }
+            set {
+                if(_threadInfo != null) {
+                    _threadInfo.Value = value;
+                }
+            }
         }
 
         //--- Class Methods ---
@@ -204,7 +253,7 @@ namespace MindTouch.Tasking {
         /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
         public static Result ForkThread(Action handler, Result result) {
-            ForkThread(TaskEnv.Clone().MakeAction(handler, result));
+            CreateThread(TaskEnv.Clone().MakeAction(handler, result)).Start();
             return result;
         }
 
@@ -216,7 +265,7 @@ namespace MindTouch.Tasking {
         /// <param name="result">The <see cref="Result{T}"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the action's execution.</returns>
         public static Result<T> ForkThread<T>(Func<T> handler, Result<T> result) {
-            ForkThread(TaskEnv.Clone().MakeAction(handler, result));
+            CreateThread(TaskEnv.Clone().MakeAction(handler, result)).Start();
             return result;
         }
 
@@ -224,11 +273,30 @@ namespace MindTouch.Tasking {
         /// Dispatch an action to be executed with a new, dedicated backgrouns thread.
         /// </summary>
         /// <param name="handler">Action to enqueue for execution.</param>
-        private static void ForkThread(Action handler) {
-            var t = MaxStackSize.HasValue
-                ? new Thread(() => handler(), MaxStackSize.Value) { IsBackground = true }
-                : new Thread(() => handler()) { IsBackground = true };
-            t.Start();
+        public static Thread CreateThread(Action handler) {
+            ThreadStart threadStart = () => {
+
+                // initialize thread data
+                _threadInfo = new BoxedObject();
+                lock(_threads) {
+                    _threads[Thread.CurrentThread.ManagedThreadId] = new KeyValuePair<Thread, BoxedObject>(Thread.CurrentThread, _threadInfo);
+                }
+
+                // run thread
+                try {
+                    handler();
+                } finally {
+
+                    // clean-up thread data
+                    lock(_threads) {
+                        _threads.Remove(Thread.CurrentThread.ManagedThreadId);
+                    }
+                    _threadInfo = null;
+                }
+            };
+            return MaxStackSize.HasValue
+                ? new Thread(threadStart, MaxStackSize.Value) { IsBackground = true }
+                : new Thread(threadStart) { IsBackground = true };
         }
 
         /// <summary>
@@ -966,7 +1034,7 @@ namespace MindTouch.Tasking {
             var thread = DispatchThread.CurrentThread;
             if(thread != null) {
                 thread.EvictWorkItems();
-            }            
+            }
         }
     }
 }

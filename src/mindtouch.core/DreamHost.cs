@@ -261,7 +261,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Current host activity.
         /// </summary>
-        public Tuplet<DateTime, string>[] ActivityMessages { get { return _env.ActivityMessages; } }
+        public IDreamActivityDescription[] ActivityMessages { get { return _env.ActivityMessages; } }
 
         //--- Methods ---
 
@@ -337,23 +337,6 @@ namespace MindTouch.Dream {
         /// </remarks>
         public void WaitUntilShutdown() {
             _env.WaitUntilShutdown();
-        }
-
-        /// <summary>
-        /// Add a host activity.
-        /// </summary>
-        /// <param name="key">Activity key.</param>
-        /// <param name="description">Description of activity.</param>
-        public void AddActivityDescription(object key, string description) {
-            _env.AddActivityDescription(key, description);
-        }
-
-        /// <summary>
-        /// Remove a host activity.
-        /// </summary>
-        /// <param name="key">Activity key.</param>
-        public void RemoveActivityDescription(object key) {
-            _env.RemoveActivityDescription(key);
         }
 
         /// <summary>

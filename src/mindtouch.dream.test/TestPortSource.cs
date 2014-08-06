@@ -24,6 +24,7 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using log4net;
+using System.Net;
 
 namespace MindTouch.Dream.Test {
     public static class TestPortSource {
@@ -43,26 +44,53 @@ namespace MindTouch.Dream.Test {
         //--- Class Methods ---
 
         public static int GetAvailablePort() {
+
+            // mono 3.4 on OSX doesn't implement GetIPGlobalProperties(); so if 
+            // we get an excetpion, we'll try to find an available port using 
+            // another method.
+            bool supportsGetIPGlobalProperties = true;
+            try {
+                IPGlobalProperties.GetIPGlobalProperties();
+            } catch(NotSupportedException) {
+                supportsGetIPGlobalProperties = false;
+            }
             lock(_used) {
-                foreach(var conn in IPGlobalProperties.GetIPGlobalProperties()
-                    .GetActiveTcpConnections()
-                    .Where(x => x.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork)
-                    .OrderBy(x => x.LocalEndPoint.ToString())
+                if(supportsGetIPGlobalProperties) {
+                    foreach(var conn in IPGlobalProperties.GetIPGlobalProperties()
+                        .GetActiveTcpConnections()
+                        .Where(x => x.LocalEndPoint.AddressFamily == AddressFamily.InterNetwork)
+                        .OrderBy(x => x.LocalEndPoint.ToString())
                     ) {
-                    _used.Add(conn.LocalEndPoint.Port);
-                }
-                foreach(var listener in IPGlobalProperties.GetIPGlobalProperties()
-                    .GetActiveTcpListeners()
-                    .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
-                    .OrderBy(x => x.Port)
+                        _used.Add(conn.LocalEndPoint.Port);
+                    }
+                    foreach(var listener in IPGlobalProperties.GetIPGlobalProperties()
+                        .GetActiveTcpListeners()
+                        .Where(x => x.AddressFamily == AddressFamily.InterNetwork)
+                        .OrderBy(x => x.Port)
                     ) {
-                    _used.Add(listener.Port);
-                }
-                for(var i = 0; i < 5000; i++) {
-                    var port = _random.Next(_rangeStart, _rangeEnd);
-                    if(!_used.Contains(port)) {
-                        _used.Add(port);
-                        return port;
+                        _used.Add(listener.Port);
+                    }
+                    for(var i = 0; i < 5000; i++) {
+                        var port = _random.Next(_rangeStart, _rangeEnd);
+                        if(!_used.Contains(port)) {
+                            _used.Add(port);
+                            return port;
+                        }
+                    }
+                } else {
+                    var ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
+                    for(var i = 0; i < 5000; i++) {
+                        var port = _random.Next(_rangeStart, _rangeEnd);
+                        if(!_used.Contains(port)) {
+                            try {
+                                TcpListener tcpListener = new TcpListener(ipAddress, port);
+                                tcpListener.Start();
+                                tcpListener.Stop();
+                            } catch(SocketException) {
+                                _used.Add(port);
+                            }
+                            return port;
+                        }
                     }
                 }
                 _log.DebugFormat("Ran out of ports, restarting in new range");
