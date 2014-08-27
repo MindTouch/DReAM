@@ -214,18 +214,19 @@ namespace MindTouch.Data.Db {
                 if(verbose) {
                     Console.WriteLine("Executing method: {0}", method);
                 }
-                if(!dryrun) {
-                    try { site.TestConnection(); } catch(Exception) {
-                        System.Threading.Thread.Sleep(5000);
-                        site.TestConnection();
-                    }
-                    try {
-                        site.ExecuteMethod(method);
-                    } catch(Exception ex) {
-                        Console.WriteLine("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace);
-                        if(!checkdb) {
-                            break;
-                        }
+                if(dryrun) {
+                    continue;    
+                }
+                try { site.TestConnection(); } catch(Exception) {
+                    System.Threading.Thread.Sleep(5000);
+                    site.TestConnection();
+                }
+                try {
+                    site.ExecuteMethod(method);
+                } catch(Exception ex) {
+                    Console.WriteLine("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace);
+                    if(!checkdb) {
+                        break;
                     }
                 }
             }
