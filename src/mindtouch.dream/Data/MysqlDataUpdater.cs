@@ -26,7 +26,8 @@ namespace MindTouch.Data {
     public class MysqlDataUpdater : ADataUpdater {
 
         //--- Fields ---
-        private DataCatalog _dataCatalog;
+        private readonly DataCatalog _dataCatalog;
+        private readonly string _dbName;
         
         //--- Constructors ---
         public MysqlDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version, uint timeout) {
@@ -41,6 +42,7 @@ namespace MindTouch.Data {
             
             // initialize the data catalog
             var dataFactory = new DataFactory("MySql.Data", "?");
+            _dbName = dbname;
             var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword, timeout);
             _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
@@ -51,19 +53,12 @@ namespace MindTouch.Data {
             _dataCatalog.TestConnection();
         }
 
-        public void ChangeDatabase(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
-            var dataFactory = new DataFactory("MySql.Data", "?");
-            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword, timeout);
-            _dataCatalog = new DataCatalog(dataFactory, connectionString);
-            _dataCatalog.TestConnection();
-        }
-
         protected override object CreateActivatorInstance(Type dataUpgradeType) {
-            return Activator.CreateInstance(dataUpgradeType, _dataCatalog);
+            return Activator.CreateInstance(dataUpgradeType, _dataCatalog, _dbName);
         }
 
         private string BuildConnectionString(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
-            StringBuilder connectionString = new StringBuilder();
+            var connectionString = new StringBuilder();
             connectionString.AppendFormat("Server={0};", server);
             connectionString.AppendFormat("Port={0};", port);
             connectionString.AppendFormat("Database={0};", dbname);

@@ -199,6 +199,7 @@ namespace MindTouch.Dream.Test {
         public void invoke_custom_method() {
             _dataUpdater.ExecuteCustomMethod("CustomMethod1", _testAssembly);
             Assert.AreEqual("CustomMethod1", DummyUpgradeClass.ExecutedMethods.First()._methodName, "The wrong method was executed");
+            Assert.AreEqual(1, DummyUpgradeClass.ExecutedMethods.Count, "Only the custom method should have been executed");
         }
 
         [Test]
@@ -206,6 +207,7 @@ namespace MindTouch.Dream.Test {
             var parameters = new string[4] {"--param1", "value1", "--param2", "value2"};
             _dataUpdater.ExecuteCustomMethod("CustomMethod2", _testAssembly, parameters);
             Assert.AreEqual("CustomMethod2", DummyUpgradeClass.ExecutedMethods.First()._methodName, "The wrong method was executed");
+            Assert.AreEqual(1, DummyUpgradeClass.ExecutedMethods.Count, "Only the custom method should have been executed");
             Assert.AreEqual(parameters, DummyUpgradeClass.ExecutedMethods.First()._args, "The proper arguments were not passed in to the custom method");
         }
 

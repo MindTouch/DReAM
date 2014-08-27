@@ -133,11 +133,9 @@ namespace MindTouch.Data.Db {
 
             // Begin Parsing DLL
             var dllAssembly = Assembly.LoadFile(updateDLL);
-
-            // Instatiate Mysql Upgrade class
             MysqlDataUpdater mysqlSchemaUpdater = null;
-
             if(listDatabases) {
+
                 // Read list of databases if listDatabases is true
                 var databaseList = new List<DBConnection>();
 
@@ -151,29 +149,19 @@ namespace MindTouch.Data.Db {
                     }
                 }
                 foreach(var db in databaseList) {
-                    if(mysqlSchemaUpdater == null) {
-                        try {
-                            mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
-                            if(sourceVersion != null) {
-                                mysqlSchemaUpdater.SourceVersion = sourceVersion;
-                            }
-                        } catch(VersionInfoException) {
-                            PrintErrorAndExit("You entered an incorrect version numbner.");
-                        } catch(Exception) {
-                                
-                            // If there is any problem creating the connection we will just keep going
-                            errors++;
-                            errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
-                            continue;
+                    try {
+                        mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
+                        if(sourceVersion != null) {
+                            mysqlSchemaUpdater.SourceVersion = sourceVersion;
                         }
-                    } else {
-                        try {
-                            mysqlSchemaUpdater.ChangeDatabase(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, timeout);
-                        } catch(Exception) {
-                            errors++;
-                            errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
-                            continue;
-                        }
+                    } catch(VersionInfoException) {
+                        PrintErrorAndExit("You entered an incorrect version numbner.");
+                    } catch(Exception) {
+
+                        // If there is any problem creating the connection we will just keep going
+                        errors++;
+                        errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
+                        continue;
                     }
                     if(verbose) {
                         Console.WriteLine("\n--- Updating database {0} on server {1}", db.dbName, db.dbServer);
@@ -195,7 +183,6 @@ namespace MindTouch.Data.Db {
                 // Run update
                 RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
             }
-
             if(errors > 0) {
                 Console.WriteLine("\nThere were {0} errors:", errors);
                 foreach(var error in errorStrings) {
