@@ -74,7 +74,7 @@ namespace MindTouch.Data.Db {
             string dbusername = "root", dbname = "", dbserver = "localhost", dbpassword = null, updateDLL = null, 
                    targetVersion = null, sourceVersion = null, customMethod = null;
             string[] param = null;
-            int dbport = 3306, exit = 0, errors = 0;
+            int dbport = 3306, exitCode = 0, errors = 0;
             uint timeout = UInt32.MaxValue;
             bool showHelp = false, dryrun = false, verbose = false, listDatabases = false, checkDb = false;
             var errorStrings = new List<string>();
@@ -89,12 +89,12 @@ namespace MindTouch.Data.Db {
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s },
                 { "n=|port=", "Database port (default: 3306)", n => {dbport = Int32.Parse(n);}},
                 { "o=|timeout=", "Sets the database's Default Command Timeout", o => { timeout = UInt32.Parse(o); }},
-                { "c=|custom", "Custom method to invoke", c => {customMethod = c;}},
-                { "i|info", "Display verbose information (default: false)", i => {verbose = true;}},
-                { "f|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true;}},
+                { "c=|custom", "Custom method to invoke", c => { customMethod = c; }},
+                { "i|info", "Display verbose information (default: false)", i => { verbose = true; }},
+                { "noop|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true; }},
                 { "l|listdb" , "List of databases separated by EOF", l => { listDatabases = true; }},
-                { "t|checkdb", "Run database tests and nothing else", t => { checkDb = true; } },
-                { "h|?|help", "show help text", h => { verbose = true; }},
+                { "t|checkdb", "Run database tests and nothing else", t => { checkDb = true; }},
+                { "h|?|help", "show help text", h => { showHelp = true; }},
             };
             if(args == null || args.Length == 0) {
                 showHelp = true;
@@ -107,130 +107,125 @@ namespace MindTouch.Data.Db {
                         showHelp = true;
                     } else {
                         updateDLL = Path.GetFullPath(trailingOptions.First());
-                        param = trailingOptions.SubArray<string>(1);
+                        param = trailingOptions.SubArray(1);
                     }
                 } catch(InvalidOperationException) {
-                    exit = -3;
+                    exitCode = -3;
                     Console.Error.WriteLine("Invalid arguments");
                     showHelp = true;
                 }
             }
-            if(!showHelp) {
-
-                // Check Arguments
-                CheckArg(updateDLL, "No DLL file was specified");
-                if(!listDatabases) {
-                    CheckArg(dbpassword, string.Format("No Database password specified for database {0}", dbname));
-                }
-
-                // If there are no custom methods specified we need a version number
-                if(customMethod == null) {
-                    CheckArg(dbname, "No Database was specified");
-                }
-
-                // Begin Parsing DLL
-                var dllAssembly = Assembly.LoadFile(updateDLL);
-
-                // Instatiate Mysql Upgrade class
-                MysqlDataUpdater mysqlSchemaUpdater = null;
-
-                if(listDatabases) {
-                    // Read list of databases if listDatabases is true
-                    var databaseList = new List<DBConnection>();
-
-                    // Read the db names from input
-                    // format: dbname[;dbserver;dbuser;dbpassword]
-                    string line = null;
-                    while(!string.IsNullOrEmpty(line = Console.ReadLine())) {
-                        var connection = DBConnection.Parse(line, dbserver, dbusername, dbpassword);
-                        if(connection != null) {
-                            databaseList.Add(connection);
-                        }
-                    }
-                    foreach(var db in databaseList) {
-                        if(mysqlSchemaUpdater == null) {
-                            try {
-                                mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
-                                if(sourceVersion != null) {
-                                    mysqlSchemaUpdater.SourceVersion = sourceVersion;
-                                }
-                            } catch(VersionInfoException) {
-                                PrintErrorAndExit("You entered an incorrect version numbner.");
-                            } catch(Exception) {
-                                
-                                // If there is any problem creating the connection we will just keep going
-                                errors++;
-                                errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
-                                continue;
-                            }
-                        } else {
-                            try {
-                                mysqlSchemaUpdater.ChangeDatabase(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, timeout);
-                            } catch (Exception) {
-                                errors++;
-                                errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
-                                continue;
-                            }
-                        }
-                        if(verbose) {
-                            Console.WriteLine(string.Format("\n--- Updating database {0} on server {1}", db.dbName, db.dbServer));
-                        }
-                        
-                        // Run methods on database
-                        RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, targetVersion, verbose, dryrun, checkDb);
-                    }
-                } else {
-                    try {
-                        mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
-                        if(sourceVersion != null) {
-                            mysqlSchemaUpdater.SourceVersion = sourceVersion;
-                        }
-                    } catch(VersionInfoException) {
-                        PrintErrorAndExit("You entered an incorrect version numner.");
-                    }
-
-                    // Run update
-                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, targetVersion, verbose, dryrun, checkDb);
-                }
-            }
-            else {
+            if(showHelp) {
                 ShowHelp(options);
-            } 
+                return exitCode;
+            }
+
+            // Check Arguments
+            CheckArg(updateDLL, "No DLL file was specified");
+            if(!listDatabases) {
+                CheckArg(dbpassword, string.Format("No Database password specified for database {0}", dbname));
+            }
+
+            // If there are no custom methods specified we need a version number
+            if(customMethod == null) {
+                CheckArg(dbname, "No Database was specified");
+            }
+
+            // Begin Parsing DLL
+            var dllAssembly = Assembly.LoadFile(updateDLL);
+
+            // Instatiate Mysql Upgrade class
+            MysqlDataUpdater mysqlSchemaUpdater = null;
+
+            if(listDatabases) {
+                // Read list of databases if listDatabases is true
+                var databaseList = new List<DBConnection>();
+
+                // Read the db names from input
+                // format: dbname[;dbserver;dbuser;dbpassword]
+                string line = null;
+                while(!string.IsNullOrEmpty(line = Console.ReadLine())) {
+                    var connection = DBConnection.Parse(line, dbserver, dbusername, dbpassword);
+                    if(connection != null) {
+                        databaseList.Add(connection);
+                    }
+                }
+                foreach(var db in databaseList) {
+                    if(mysqlSchemaUpdater == null) {
+                        try {
+                            mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
+                            if(sourceVersion != null) {
+                                mysqlSchemaUpdater.SourceVersion = sourceVersion;
+                            }
+                        } catch(VersionInfoException) {
+                            PrintErrorAndExit("You entered an incorrect version numbner.");
+                        } catch(Exception) {
+                                
+                            // If there is any problem creating the connection we will just keep going
+                            errors++;
+                            errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
+                            continue;
+                        }
+                    } else {
+                        try {
+                            mysqlSchemaUpdater.ChangeDatabase(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, timeout);
+                        } catch(Exception) {
+                            errors++;
+                            errorStrings.Add(string.Format("There was an error connecting to database {0} on {1}", db.dbName, db.dbServer));
+                            continue;
+                        }
+                    }
+                    if(verbose) {
+                        Console.WriteLine("\n--- Updating database {0} on server {1}", db.dbName, db.dbServer);
+                    }
+
+                    // Run methods on database
+                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
+                }
+            } else {
+                try {
+                    mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
+                    if(sourceVersion != null) {
+                        mysqlSchemaUpdater.SourceVersion = sourceVersion;
+                    }
+                } catch(VersionInfoException) {
+                    PrintErrorAndExit("You entered an incorrect version numner.");
+                }
+
+                // Run update
+                RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
+            }
 
             if(errors > 0) {
-                Console.WriteLine(string.Format("\nThere were {0} errors:", errors));
+                Console.WriteLine("\nThere were {0} errors:", errors);
                 foreach(var error in errorStrings) {
                     Console.WriteLine("---" + error);
                 }
             }
-            return exit;
+            return exitCode;
         }
 
-        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethod, string[] param, string targetVersion, bool verbose, bool dryrun, bool checkdb) {
+        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethod, string[] param, bool verbose, bool dryrun, bool checkdb) {
             
             // Execute custom methods
-            if(customMethod != null && !checkdb) {
+            if(customMethod != null) {
                 if(verbose) {
-                    Console.WriteLine(String.Format("Executing custom method: {0}", customMethod));
+                    Console.WriteLine("Executing custom method: {0}", customMethod);
                 }
                 if(!dryrun) {
                     site.ExecuteCustomMethod(customMethod.Trim(), dllAssembly, param);
                 }
+                return;
             }
 
             // Execute update methods
             site.LoadMethods(dllAssembly);
-            List<string> methods;
-            if(checkdb) {
-                methods = site.GetDataIntegrityMethods();
-            } else {
-                methods = site.GetMethods();
-            }
+            var methods = checkdb ? site.GetDataIntegrityMethods() : site.GetMethods();
 
             // Execute each method
             foreach(var method in methods) {
                 if(verbose) {
-                    Console.WriteLine(String.Format("Executing method: {0}", method));
+                    Console.WriteLine("Executing method: {0}", method);
                 }
                 if(!dryrun) {
                     try { site.TestConnection(); } catch(Exception) {
@@ -240,10 +235,8 @@ namespace MindTouch.Data.Db {
                     try {
                         site.ExecuteMethod(method);
                     } catch(Exception ex) {
-                        Console.WriteLine(string.Format("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace));
-                        if(checkdb) {
-                            continue;
-                         } else {
+                        Console.WriteLine("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace);
+                        if(!checkdb) {
                             break;
                         }
                     }
@@ -268,14 +261,5 @@ namespace MindTouch.Data.Db {
             Console.Error.WriteLine("ERROR: " + message);
             Environment.Exit(-1);
         }
-
-        private static void OutputException(Exception exception) {
-            if(exception.InnerException != null) {
-                OutputException(exception.InnerException);
-            }
-            Console.Error.WriteLine("----------------------------------");
-            Console.Error.WriteLine(exception);
-        }
-        
     }
 }
