@@ -217,7 +217,9 @@ namespace MindTouch.Data.Db {
                 if(dryrun) {
                     continue;    
                 }
-                try { site.TestConnection(); } catch(Exception) {
+                try {
+                    site.TestConnection();
+                } catch(Exception) {
                     System.Threading.Thread.Sleep(5000);
                     site.TestConnection();
                 }
