@@ -222,7 +222,6 @@ namespace MindTouch.Collections {
                     entry.Removed = true;
                     _expirationLookup.Remove(entry.Key);
                     _orderedExpirations.RemoveAt(0);
-                    _log.DebugFormat("expired item with key '{0}'", entry.Key);
                     if(EntriesExpired == null) {
                         continue;
                     }
