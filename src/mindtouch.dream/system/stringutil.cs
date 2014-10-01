@@ -74,12 +74,11 @@ namespace System {
         /// </summary>
         public static readonly string[] EmptyArray = new string[0];
 
-        private static char[] _alphanum_chars;
-        private static RNGCryptoServiceProvider _generator = new RNGCryptoServiceProvider();
+        private static readonly char[] _alphanum_chars;
+        private static readonly RNGCryptoServiceProvider _generator = new RNGCryptoServiceProvider();
         private static Dictionary<string, Sgml.Entity> _literals;
         private static Dictionary<string, string> _entities;
-        private static Regex _specialSymbolRegEx = new Regex("[&<>\x00\x22\u0080-\uFFFF]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static Regex _htmlEntitiesRegEx = new Regex("&(?<value>#(x[a-f0-9]+|[0-9]+)|[a-z0-9]+);", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        private static readonly Regex _htmlEntitiesRegEx = new Regex("&(?<value>#(x[a-f0-9]+|[0-9]+)|[a-z0-9]+);", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         //--- Class Constructor ---
         static StringUtil() {
@@ -263,28 +262,44 @@ namespace System {
         /// <param name="useEntityNames">If <see langword="True"/>, encodes html entity using entity name rather than numeric entity code.</param>
         /// <returns>Encoded string.</returns>
         public static string EncodeHtmlEntities(this string text, Encoding encoding, bool useEntityNames) {
-            return _specialSymbolRegEx.Replace(text, m => {
-                string v = m.Groups[0].Value;
-                switch(v) {
-                case "\0":
-                    return "";
-                case "&":
-                    return "&amp;";
-                case "<":
-                    return "&lt;";
-                case ">":
-                    return "&gt;";
-                case "\"":
-                    return "&quot;";
-                }
+            var buffer = new StringBuilder(2 * text.Length);
+            foreach(var c in text) {
+                switch(c) {
+                case '&':
+                    buffer.Append("&amp;");
+                    break;
+                case '<':
+                    buffer.Append("&lt;");
+                    break;
+                case '>':
+                    buffer.Append("&gt;");
+                    break;
+                case '"':
+                    buffer.Append("&quot;");
+                    break;
+                default:
 
-                // default case
-                Sgml.Entity e;
-                if(useEntityNames && LiteralNameLookup.TryGetValue(v, out e)) {
-                    return "&" + e.Name + ";";
+                    // XML does not allow CTRL characters other than LF, CR, and TAB
+                    if((c >= ' ') || (c == '\r') || (c == '\n') || (c == '\t')) {
+                        Sgml.Entity e;
+                        if(c < '\x80') {
+                            buffer.Append(c);
+                        } else if(useEntityNames && LiteralNameLookup.TryGetValue(new string(new[] { c }), out e)) {
+                            buffer.Append('&');
+                            buffer.Append(e.Name);
+                            buffer.Append(';');
+                        } else if(Encoding.ASCII.Equals(encoding)) {
+                            buffer.Append("&#");
+                            buffer.Append((int)c);
+                            buffer.Append(';');
+                        } else {
+                            buffer.Append(c);
+                        }
+                    }
+                    break;
                 }
-                return Encoding.ASCII.Equals(encoding) ? "&#" + (int)v[0] + ";" : v;
-            }, int.MaxValue);
+            }
+            return buffer.ToString();
         }
 
         /// <summary>

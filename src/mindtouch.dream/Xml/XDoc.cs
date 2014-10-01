@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -90,6 +91,7 @@ namespace MindTouch.Xml {
 
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private static readonly Regex _elementRegex = new Regex(@"(?<name>.+)\[(?<index>\d+)\]$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _htmlEntitiesRegEx = new Regex("&#(?<value>(x[a-f0-9]+|[0-9]+));", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         //--- Class Properties ---
         /// <summary>
@@ -288,11 +290,34 @@ namespace MindTouch.Xml {
         }
 
         internal static string RemoveInvalidXmlChars(string value) {
-            return value.Replace("\0", "");
+
+            // XML does not allow CTRL characters other than LF, CR, and TAB
+            var buffer = new StringBuilder(value.Length);
+            foreach(var c in value.Where(c => (c >= ' ') || (c == '\r') || (c == '\n') || (c == '\t'))) {
+                buffer.Append(c);
+            }
+            return buffer.ToString();
         }
 
-        private static string RemoveInvalidXmlEntities(string value) {
-            return value.Replace("&#x0;", "");
+        private static string RemoveInvalidXmlEntities(string text) {
+            return _htmlEntitiesRegEx.Replace(text, m => {
+                var v = m.Groups["value"].Value;
+                int value;
+                if(char.ToLowerInvariant(v[0]) == 'x') {
+                    if(!int.TryParse(v.Substring(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture.NumberFormat, out value)) {
+                        return m.Value;
+                    }
+                } else {
+                    if(!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture.NumberFormat, out value)) {
+                        return m.Value;
+                    }
+                }
+                var c = (char)value;
+                if((c >= ' ') || (c == '\r') || (c == '\n') || (c == '\t')) {
+                    return c.ToString(CultureInfo.InvariantCulture);
+                }
+                return string.Empty;
+            }, int.MaxValue);
         }
 
         //--- Fields ---
@@ -2661,8 +2686,8 @@ namespace MindTouch.Xml {
                 foreach(XmlNode node in _doc.ChildNodes) {
                     if(node is XmlProcessingInstruction) {
                         result.Append(node.OuterXml);
-                    }
                 }
+            }
             }
             result.Append(RemoveInvalidXmlEntities(_root.OuterXml));
             return result.ToString();

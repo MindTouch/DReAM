@@ -1113,6 +1113,72 @@ namespace MindTouch.Xml.Test {
             Assert.AreEqual("<root name=\"foobar\" />", new string(Encoding.UTF8.GetChars(stream.ToArray())));
         }
 
+
+
+        [Test]
+        public void XmlIllegalChar_in_xml_element_ToString() {
+            var doc = new XDoc("root").Value("foo\u0001bar");
+            Assert.AreEqual("<root>foobar</root>", doc.ToString());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_element_ToPrettyString() {
+            var doc = new XDoc("root").Value("foo\u0001bar");
+            Assert.AreEqual("<root>foobar</root>", doc.ToPrettyString());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_element_ToCompactString() {
+            var doc = new XDoc("root").Value("foo\u0001bar");
+            Assert.AreEqual("<root>foobar</root>", doc.ToCompactString());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_element_ToXHtml() {
+            var doc = new XDoc("root").Value("foo\u0001bar");
+            Assert.AreEqual("<root>foobar</root>", doc.ToXHtml());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_element_WriteTo() {
+            var doc = new XDoc("root").Value("foo\u0001bar");
+            var stream = new MemoryStream();
+            doc.WriteTo(stream, Encoding.UTF8);
+            Assert.AreEqual("<root>foobar</root>", new string(Encoding.UTF8.GetChars(stream.ToArray())));
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_attribute_ToString() {
+            var doc = new XDoc("root").Attr("name", "foo\u0001bar");
+            Assert.AreEqual("<root name=\"foobar\" />", doc.ToString());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_attribute_ToPrettyString() {
+            var doc = new XDoc("root").Attr("name", "foo\u0001bar");
+            Assert.AreEqual("<root name=\"foobar\" />", doc.ToPrettyString());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_attribute_ToCompactString() {
+            var doc = new XDoc("root").Attr("name", "foo\u0001bar");
+            Assert.AreEqual("<root name=\"foobar\" />", doc.ToCompactString());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_attribute_ToXHtml() {
+            var doc = new XDoc("root").Attr("name", "foo\u0001bar");
+            Assert.AreEqual("<root name=\"foobar\"></root>", doc.ToXHtml());
+        }
+
+        [Test]
+        public void XmlIllegalChar_in_xml_attribute_WriteTo() {
+            var doc = new XDoc("root").Attr("name", "foo\u0001bar");
+            var stream = new MemoryStream();
+            doc.WriteTo(stream, Encoding.UTF8);
+            Assert.AreEqual("<root name=\"foobar\" />", new string(Encoding.UTF8.GetChars(stream.ToArray())));
+        }
+
         [TearDown]
         public void TearDown() {
         }
