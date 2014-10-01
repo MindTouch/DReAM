@@ -290,11 +290,27 @@ namespace MindTouch.Xml {
         }
 
         internal static string RemoveInvalidXmlChars(string value) {
+            var i = 0;
+            for(; i < value.Length; ++i) {
+                var c = value[i];
 
-            // XML does not allow CTRL characters other than LF, CR, and TAB
+                // XML does not allow CTRL characters other than LF, CR, and TAB
+                if((c < ' ') && (c != '\r') && (c != '\n') && (c != '\t')) {
+                    break;
+                }
+            }
+            if(i == value.Length) {
+                return value;
+            }
+
+            // remove illegal XML characters
             var buffer = new StringBuilder(value.Length);
-            foreach(var c in value.Where(c => (c >= ' ') || (c == '\r') || (c == '\n') || (c == '\t'))) {
-                buffer.Append(c);
+            buffer.Append(value, 0, i++);
+            for(; i < value.Length; ++i) {
+                var c = value[i];
+                if((c >= ' ') || (c == '\r') || (c == '\n') || (c == '\t')) {
+                    buffer.Append(c);
+                }
             }
             return buffer.ToString();
         }

@@ -282,7 +282,7 @@ namespace System {
                     // XML does not allow CTRL characters other than LF, CR, and TAB
                     if((c >= ' ') || (c == '\r') || (c == '\n') || (c == '\t')) {
                         Sgml.Entity e;
-                        if(c < '\x80') {
+                        if(c < '\u0080') {
                             buffer.Append(c);
                         } else if(useEntityNames && LiteralNameLookup.TryGetValue(new string(new[] { c }), out e)) {
                             buffer.Append('&');
