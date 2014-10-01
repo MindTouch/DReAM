@@ -144,8 +144,8 @@ namespace MindTouch.Dream {
         /// <param name="registrationCallback"></param>
         /// <returns></returns>
         ILifetimeScope CreateServiceLifetimeScope(IDreamService service, Action<IContainer,ContainerBuilder> registrationCallback);
+
         /// <summary>
-        
         /// Must be called at <see cref="IDreamService"/> shutdown to dispose of the service level container.
         /// </summary>
         /// <param name="service"></param>
@@ -170,19 +170,6 @@ namespace MindTouch.Dream {
         /// </summary>
         /// <value>The description.</value>
         string Description { get; set; }
-
-        //--- Methods ---
-
-        /// <summary>
-        /// Releases all resource used by the <see cref="MindTouch.Dream.IDreamActivityDescription"/> object.
-        /// </summary>
-        /// <remarks>Call <see cref="Dispose"/> when you are finished using the
-        /// <see cref="MindTouch.Dream.IDreamActivityDescription"/>. The <see cref="Dispose"/> method leaves the
-        /// <see cref="MindTouch.Dream.IDreamActivityDescription"/> in an unusable state. After calling
-        /// <see cref="Dispose"/>, you must release all references to the
-        /// <see cref="MindTouch.Dream.IDreamActivityDescription"/> so the garbage collector can reclaim the memory that
-        /// the <see cref="MindTouch.Dream.IDreamActivityDescription"/> was occupying.</remarks>
-        void Dispose();
     }
 
     /// <summary>
