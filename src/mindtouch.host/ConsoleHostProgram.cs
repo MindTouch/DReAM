@@ -21,9 +21,11 @@
 
 using System;
 using System.IO;
-
+using System.Threading;
 using MindTouch.Tasking;
 using MindTouch.Xml;
+using Mono.Unix;
+using Mono.Unix.Native;
 
 namespace MindTouch.Dream {
     internal class DreamConsoleHost {
@@ -132,6 +134,11 @@ namespace MindTouch.Dream {
                     _host.RunScripts(config, null);
                 });
                 Console.WriteLine("-------------------- ready {0} secs", time.TotalSeconds);
+
+                // for UNIX systems, let's also listen to SIGTERM
+                if(SysUtil.IsUnix) {
+                    new Thread(SigTermHandler) { IsBackground = true }.Start();
+                }
 
                 // check if we can use the console
                 if(useTty) {
@@ -255,10 +262,16 @@ namespace MindTouch.Dream {
                 TaskTimerFactory.ShutdownAll();
                 if(_host != null) {
                     _host.Dispose();
-                    _host = null;
                 }
             }
             return 0;
+        }
+
+        private static void SigTermHandler() {
+            Console.WriteLine("(initializing SIGTERM handler)");
+            UnixSignal.WaitAny(new[] { new UnixSignal(Signum.SIGTERM) });
+            TaskTimerFactory.ShutdownAll();
+            _host.Dispose();
         }
 
         private static void WriteError(string setting, string error) {

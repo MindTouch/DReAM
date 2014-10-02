@@ -251,7 +251,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// <see langword="True"/> if the host is running.
         /// </summary>
-        public bool IsRunning { get { return _env.IsRunning; } }
+        public bool IsRunning { get { return (_env != null) && _env.IsRunning; } }
 
         /// <summary>
         /// Root local:// uri for this host.
