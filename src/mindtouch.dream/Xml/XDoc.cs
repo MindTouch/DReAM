@@ -1876,6 +1876,19 @@ namespace MindTouch.Xml {
         }
 
         /// <summary>
+        /// Make this XDoc instance become equivalent to the supplied one.
+        /// </summary>
+        /// <param name="doc"></param>
+        public void Become(XDoc doc) {
+            _doc = doc._doc;
+            _root = doc._root;
+            _list = doc._list;
+            _index = doc._index;
+            _nsManager = doc._nsManager;
+            _exclusive = doc._exclusive;
+        }
+
+        /// <summary>
         /// Replaces this XDoc instance with another one.
         /// </summary>
         /// <param name="doc">Replacement XDoc instance.</param>
