@@ -1019,39 +1019,5 @@ namespace System {
             }
             throw new InvalidOperationException("this should never happen");
         }
-
-        #region --- Obsolete ---
-        /// <summary>
-        /// Resize(T[], int) is obsolete. Use SubArray(T[], int) instead.
-        /// </summary>
-        [Obsolete("Resize(T[], int) is obsolete. Use SubArray(T[], int) instead.")]
-        public static T[] Resize<T>(T[] array, int length) {
-            return SubArray(array, 0, length);
-        }
-
-        /// <summary>
-        /// AsHash&lt;K, V&gt;() is obsolete. Use IEnumerable&lt;T&gt;.ToDictionary&lt;T, K&gt;() extension method instead (requires System.Linq)
-        /// </summary>
-        [Obsolete("AsHash<K, V> is obsolete. Use IEnumerable<T>.ToDictionary extension method instead (requires System.Linq)")]
-        public static Dictionary<K, V> AsHash<K, V>(this IEnumerable<V> collection, Converter<V, K> makeKey) {
-            return collection == null ? new Dictionary<K, V>() : collection.ToDictionary(v => makeKey(v), true);
-        }
-
-        /// <summary>
-        /// Select(IEnumerable&lt;T&gt;, Predicate&lt;T&gt;) is obsolete. Use IEnumerable&lt;T&gt;.Where(Func&lt;T, bool&gt;) instead (requires System.Linq).
-        /// </summary>
-        [Obsolete("Select(IEnumerable<T>, Predicate<T>) is obsolete. Use IEnumerable<T>.Where(Func<T, bool>) instead (requires System.Linq).")]
-        public static List<T> Select<T>(IEnumerable<T> collection, Predicate<T> predicate) {
-            return collection.Where(e => predicate(e)).ToList();
-        }
-
-        /// <summary>
-        /// Convert(IEnumerable&lt;TInput&gt;, Converter&lt;TInput, TOutput&gt;) is obsolete. Use IEnumerable&lt;TInput&gt;.Select(Func&lt;TInput, TOutput&gt;) instead (requires System.Linq).
-        /// </summary>
-        [Obsolete("Convert(IEnumerable<TInput>, Converter<TInput, TOutput>) is obsolete. Use IEnumerable<TInput>.Select(Func<TInput, TOutput>) instead (requires System.Linq).")]
-        public static List<TOutput> Convert<TInput, TOutput>(IEnumerable<TInput> collection, Converter<TInput, TOutput> converter) {
-            return collection.Select(e => converter(e)).ToList();
-        }
-        #endregion
     }
 }
