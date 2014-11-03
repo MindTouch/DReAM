@@ -120,7 +120,6 @@
     <Compile Include="DreamMiscTest.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ExpiringHashSetTests.cs" />
-    <Compile Include="InMemoryKeyValueCacheTests.cs" />
     <Compile Include="JsonUtilTests.cs" />
     <Compile Include="LockTests.cs" />
     <Compile Include="MockDataCatalogTests.cs" />

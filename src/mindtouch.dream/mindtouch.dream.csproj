@@ -145,12 +145,6 @@
     <Compile Include="system\GitUriAttribute.cs" />
     <Compile Include="system\ShouldNeverHappenException.cs" />
     <Compile Include="IO\BinaryFormatterSerializer.cs" />
-    <Compile Include="Cache\IKeyValueCache.cs" />
-    <Compile Include="Cache\IKeyValueCacheFactory.cs" />
-    <Compile Include="Cache\InMemoryKeyValueCacheFactory.cs" />
-    <Compile Include="Cache\InMemoryKeyValueCache.cs" />
-    <Compile Include="Cache\KeyValueCacheEx.cs" />
-    <Compile Include="Cache\KeyValueCacheFactory.cs" />
     <Compile Include="IO\SerializerProxy.cs" />
     <Compile Include="Collections\BlockingQueue.cs" />
     <Compile Include="Collections\ChunkedArray.cs" />
