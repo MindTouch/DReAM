@@ -109,7 +109,7 @@ namespace MindTouch.Dream.Http {
 
         //--- Methods ---
         public void Startup() {
-            _log.InfoMethodCall("Startup", _uri);
+            _log.InfoMethodCall("Startup", _uri.ToString(false));
 
             // create listener and make it listen to the uri
             _listener = new HttpListener {
@@ -120,7 +120,7 @@ namespace MindTouch.Dream.Http {
             try {
                 _listener.Start();
             } catch(Exception x) {
-                _log.WarnExceptionFormat(x, "Unable to start listening on '{0}'", _uri);
+                _log.WarnExceptionFormat(x, "Unable to start listening on '{0}'", _uri.ToString(false));
                 throw;
             }
             _listener.BeginGetContext(RequestHandler, _listener);
@@ -130,7 +130,7 @@ namespace MindTouch.Dream.Http {
         }
 
         public void Shutdown() {
-            _log.InfoMethodCall("Shutdown", _uri);
+            _log.InfoMethodCall("Shutdown", _uri.ToString(false));
             Plug.RemoveEndpoint(this);
             _uri = null;
 
