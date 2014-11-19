@@ -1350,11 +1350,11 @@ namespace MindTouch.Dream {
 
                     // check if any feature was found
                     if((features == null) || (features.Count == 0)) {
-                        string msg = verb + " URI: " + uri.WithoutCredentials() + " LOCAL: " + localFeatureUri.WithoutCredentials() + " PUBLIC: " + publicUri + " TRANSPORT: " + transport;
+                        string msg = verb + " URI: " + uri.ToString(false) + " LOCAL: " + localFeatureUri.ToString(false) + " PUBLIC: " + publicUri + " TRANSPORT: " + transport;
                         _log.WarnMethodCall("ProcessRequest: feature not found", msg);
                         result = DreamMessage.NotFound("resource not found");
                     } else {
-                        string msg = verb + " " + uri.WithoutCredentials();
+                        string msg = verb + " " + uri.ToString(false);
                         _log.WarnMethodCall("ProcessRequest: method not allowed", msg);
                         List<string> methods = new List<string>();
                         foreach(DreamFeature entry in features) {
@@ -1468,7 +1468,7 @@ namespace MindTouch.Dream {
             lock(_serviceLifetimeScopes) {
                 ILifetimeScope serviceLifetimeScope;
                 if(!_serviceLifetimeScopes.TryGetValue(service, out serviceLifetimeScope)) {
-                    _log.WarnFormat("LifetimeScope for service '{0}' at '{1}' already gone.", service, service.Self.Uri);
+                    _log.WarnFormat("LifetimeScope for service '{0}' at '{1}' already gone.", service, service.Self.Uri.ToString(false));
                     return;
                 }
                 serviceLifetimeScope.Dispose();
@@ -1701,7 +1701,7 @@ namespace MindTouch.Dream {
             // deactivate service
             DreamMessage deleteResponse = Plug.New(uri).At("@config").Delete(new Result<DreamMessage>(TimeSpan.MaxValue)).Wait();
             if(!deleteResponse.IsSuccessful) {
-                _log.InfoMethodCall("StopService: Delete failed", uri, deleteResponse.Status);
+                _log.InfoMethodCall("StopService: Delete failed", uri.ToString(false), deleteResponse.Status);
             }
 
             // deactivate features
@@ -1720,7 +1720,7 @@ namespace MindTouch.Dream {
                 entries = _services.Values.Where(entry => uri == entry.Owner).ToList();
             }
             foreach(ServiceEntry entry in entries) {
-                _log.WarnMethodCall("StopService: child service was not shutdown properly", entry.Service.Self);
+                _log.WarnMethodCall("StopService: child service was not shutdown properly", entry.Service.Self.Uri.ToString(false));
                 StopService(entry.Service.Self);
             }
         }
