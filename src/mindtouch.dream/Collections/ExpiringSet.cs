@@ -72,7 +72,7 @@ namespace MindTouch.Collections {
         private readonly bool _autoRefresh;
         private readonly List<Entry> _orderedExpirations = new List<Entry>();
         private readonly Dictionary<TKey, Entry> _expirationLookup = new Dictionary<TKey, Entry>();
-        private TaskTimer _expireTimer;
+        private readonly TaskTimer _expireTimer;
 
         //--- Events ---
         public event EventHandler CollectionChanged;
