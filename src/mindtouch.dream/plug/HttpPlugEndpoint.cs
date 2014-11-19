@@ -206,7 +206,7 @@ namespace MindTouch.Dream.Http {
                 } catch(Exception e) {
                     activity("pre HandleResponse 1");
                     if(!HandleResponse(activity, e, null, response)) {
-                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@BeginGetRequestStream", verb, uri);
+                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@BeginGetRequestStream", verb, uri.ToString(false));
                         try {
                             httpRequest.Abort();
                         } catch { }
@@ -226,7 +226,7 @@ namespace MindTouch.Dream.Http {
                 } catch(Exception e) {
                     activity("pre HandleResponse 2");
                     if(!HandleResponse(activity, e, null, response)) {
-                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@EndGetRequestStream", verb, uri);
+                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@EndGetRequestStream", verb, uri.ToString(false));
                         try {
                             httpRequest.Abort();
                         } catch { }
@@ -244,7 +244,7 @@ namespace MindTouch.Dream.Http {
                     activity("post CopyStream");
                     activity("pre HandleResponse 3");
                     if(!HandleResponse(activity, e, null, response)) {
-                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@AsyncUtil.CopyStream", verb, uri);
+                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@AsyncUtil.CopyStream", verb, uri.ToString(false));
                         try {
                             httpRequest.Abort();
                         } catch { }
@@ -265,7 +265,7 @@ namespace MindTouch.Dream.Http {
             } catch(Exception e) {
                 activity("pre HandleResponse 4");
                 if(!HandleResponse(activity, e, null, response)) {
-                    _log.ErrorExceptionMethodCall(e, "HandleInvoke@BeginGetResponse", verb, uri);
+                    _log.ErrorExceptionMethodCall(e, "HandleInvoke@BeginGetResponse", verb, uri.ToString(false));
                     try {
                         httpRequest.Abort();
                     } catch { }
@@ -280,7 +280,7 @@ namespace MindTouch.Dream.Http {
             if(async.HasException) {
                 activity("pre HandleResponse 5");
                 if(!HandleResponse(activity, async.Exception, null, response)) {
-                    _log.ErrorExceptionMethodCall(async.Exception, "HandleInvoke@BeginGetResponse", verb, uri);
+                    _log.ErrorExceptionMethodCall(async.Exception, "HandleInvoke@BeginGetResponse", verb, uri.ToString(false));
                     try {
                         httpRequest.Abort();
                     } catch { }
@@ -300,7 +300,7 @@ namespace MindTouch.Dream.Http {
                 } catch(Exception e) {
                     activity("pre HandleResponse 7");
                     if(!HandleResponse(activity, e, null, response)) {
-                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@EndGetResponse", verb, uri);
+                        _log.ErrorExceptionMethodCall(e, "HandleInvoke@EndGetResponse", verb, uri.ToString(false));
                         try {
                             httpRequest.Abort();
                         } catch { }
