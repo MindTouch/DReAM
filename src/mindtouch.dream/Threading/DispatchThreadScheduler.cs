@@ -71,7 +71,6 @@ namespace MindTouch.Threading {
             // TODO (steveb): we should base this on available memory (e.g. total_memory / 2 / 1MB_stack_size_per_thread)
             _maxThreads = ReadAppSetting("max-dispatch-threads", 1000);
 
-
             // add maintenance callback
             GlobalClock.AddCallback("DispatchThreadScheduler", Tick);
 

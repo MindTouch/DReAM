@@ -42,7 +42,7 @@ namespace MindTouch.Dream {
     public sealed class DreamFeatureStage {
 
         //--- Types ---
-        private class DreamFeatureAdapter {
+        private sealed class DreamFeatureAdapter {
             public readonly string ArgumentName;
             private readonly Func<DreamContext, DreamMessage, Result<DreamMessage>, object> _invocation;
 
@@ -58,9 +58,6 @@ namespace MindTouch.Dream {
 
         //--- Constants ---
         private const string UNNAMED = "--unnamed--";
-
-        //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
 
@@ -123,8 +120,6 @@ namespace MindTouch.Dream {
                 _handler = (CoroutineHandler<DreamContext, DreamMessage, Result<DreamMessage>>)Delegate.CreateDelegate(typeof(CoroutineHandler<DreamContext, DreamMessage, Result<DreamMessage>>), service, method);
             } else {
 
-                // TODO (arnec): Eventually DreamMessage should have a DreamMessage<T> with custom serializers allowing arbitrary return types
-
                 // validate method return type
                 if(method.ReturnType != typeof(Yield) && method.ReturnType != typeof(DreamMessage) && method.ReturnType != typeof(XDoc)) {
                     throw new InvalidCastException(string.Format("feature handler '{0}' has return type {1}, but should be either DreamMessage or IEnumerator<IYield>", method.Name, method.ReturnType));
@@ -132,96 +127,56 @@ namespace MindTouch.Dream {
 
                 // create an execution plan for fetching the necessary parameters to invoke the method
                 _plan = new List<DreamFeatureAdapter>();
-                foreach(var param in method.GetParameters()) {
-                    var attributes = param.GetCustomAttributes(false);
-                    QueryAttribute queryParam = (QueryAttribute)attributes.FirstOrDefault(i => i is QueryAttribute);
-                    PathAttribute pathParam = (PathAttribute)attributes.FirstOrDefault(i => i is PathAttribute);
-                    HeaderAttribute header = (HeaderAttribute)attributes.FirstOrDefault(i => i is HeaderAttribute);
-                    CookieAttribute cookie = (CookieAttribute)attributes.FirstOrDefault(i => i is CookieAttribute);
+                foreach(var param in parameters) {
 
-                    // check attribute-based parameters
-                    if(queryParam != null) {
-
-                        // check if a single or a list of query parameters are requested
+                    // check name-based parameters
+                    if(param.Name.EqualsInvariant("verb")) {
+                        Assert(method, param, typeof(string));
+                        _plan.Add(new DreamFeatureAdapter(param.Name, GetContextVerb));
+                    } else if(param.Name.EqualsInvariant("path")) {
+                        Assert(method, param, typeof(string[]), typeof(string));
                         if(param.ParameterType == typeof(string)) {
-                            _plan.Add(MakeContextParamGetter(queryParam.Name ?? param.Name));
-                        } else if(param.ParameterType == typeof(string[])) {
-                            _plan.Add(MakeContextParamListGetter(queryParam.Name ?? param.Name));
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetContextFeatureSubpath));
                         } else {
-                            _plan.Add(MakeConvertingContextParamGetter(queryParam.Name ?? param.Name, param.ParameterType));
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetContextFeatureSubpathSegments));
                         }
-                    } else if(pathParam != null) {
-                        if(param.ParameterType == typeof(string)) {
-                            _plan.Add(MakeContextParamGetter(pathParam.Name ?? param.Name));
-                        } else {
-                            _plan.Add(MakeConvertingContextParamGetter(pathParam.Name ?? param.Name, param.ParameterType));
-                        }
-                    } else if(cookie != null) {
-                        Assert(method, param, typeof(string), typeof(DreamCookie));
+                    } else if(param.Name.EqualsInvariant("uri")) {
+                        Assert(method, param, typeof(XUri));
+                        _plan.Add(new DreamFeatureAdapter(param.Name, GetContextUri));
+                    } else if(param.Name.EqualsInvariant("body")) {
+                        Assert(method, param, typeof(XDoc), typeof(string), typeof(Stream), typeof(byte[]));
 
-                        // check which cookie type is requested
-                        if(param.ParameterType == typeof(string)) {
-                            _plan.Add(MakeRequestCookieValueGetter(cookie.Name ?? param.Name));
-                        } else if(param.ParameterType == typeof(DreamCookie)) {
-                            _plan.Add(MakeRequestCookieGetter(cookie.Name ?? param.Name));
+                        // check which body type is requested
+                        if(param.ParameterType == typeof(XDoc)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsDocument));
+                        } else if(param.ParameterType == typeof(string)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsText));
+                        } else if(param.ParameterType == typeof(Stream)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsStream));
+                        } else if(param.ParameterType == typeof(byte[])) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsBytes));
                         } else {
                             throw new ShouldNeverHappenException();
                         }
-                    } else if(header != null) {
-                        Assert(method, param, typeof(string));
-                        _plan.Add(MakeRequestHeaderGetter(header.Name ?? param.Name));
                     } else {
 
-                        // check name-based parameters
-                        if(param.Name.EqualsInvariant("verb")) {
-                            Assert(method, param, typeof(string));
-                            _plan.Add(new DreamFeatureAdapter(param.Name, GetContextVerb));
-                        } else if(param.Name.EqualsInvariant("path")) {
-
-                            Assert(method, param, typeof(string[]), typeof(string));
-                            if(param.ParameterType == typeof(string)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetContextFeatureSubpath));
-                            } else {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetContextFeatureSubpathSegments));
-                            }
-                        } else if(param.Name.EqualsInvariant("uri")) {
-                            Assert(method, param, typeof(XUri));
-                            _plan.Add(new DreamFeatureAdapter(param.Name, GetContextUri));
-                        } else if(param.Name.EqualsInvariant("body")) {
-                            Assert(method, param, typeof(XDoc), typeof(string), typeof(Stream), typeof(byte[]));
-
-                            // check which body type is requested
-                            if(param.ParameterType == typeof(XDoc)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsDocument));
-                            } else if(param.ParameterType == typeof(string)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsText));
-                            } else if(param.ParameterType == typeof(Stream)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsStream));
-                            } else if(param.ParameterType == typeof(byte[])) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetRequestAsBytes));
-                            } else {
-                                throw new ShouldNeverHappenException();
-                            }
+                        // check type-based parameters
+                        if(param.ParameterType == typeof(DreamContext)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetContext));
+                        } else if(param.ParameterType == typeof(DreamMessage)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetRequest));
+                        } else if(param.ParameterType == typeof(Result<DreamMessage>)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetMessageResponse));
+                        } else if(param.ParameterType == typeof(Result<XDoc>)) {
+                            _plan.Add(new DreamFeatureAdapter(param.Name, GetDocumentResponse));
+                        } else if(param.ParameterType == typeof(DreamCookie)) {
+                            _plan.Add(MakeRequestCookieGetter(param.Name));
+                        } else if(param.ParameterType == typeof(string)) {
+                            _plan.Add(MakeContextParamGetter(param.Name));
+                        } else if(param.ParameterType == typeof(string[])) {
+                            _plan.Add(MakeContextParamListGetter(param.Name));
                         } else {
-
-                            // check type-based parameters
-                            if(param.ParameterType == typeof(DreamContext)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetContext));
-                            } else if(param.ParameterType == typeof(DreamMessage)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetRequest));
-                            } else if(param.ParameterType == typeof(Result<DreamMessage>)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetMessageResponse));
-                            } else if(param.ParameterType == typeof(Result<XDoc>)) {
-                                _plan.Add(new DreamFeatureAdapter(param.Name, GetDocumentResponse));
-                            } else if(param.ParameterType == typeof(DreamCookie)) {
-                                _plan.Add(MakeRequestCookieGetter(param.Name));
-                            } else if(param.ParameterType == typeof(string)) {
-                                _plan.Add(MakeContextParamGetter(param.Name));
-                            } else if(param.ParameterType == typeof(string[])) {
-                                _plan.Add(MakeContextParamListGetter(param.Name));
-                            } else {
-                                _plan.Add(MakeConvertingContextParamGetter(param.Name, param.ParameterType));
-                            }
+                            _plan.Add(MakeConvertingContextParamGetter(param.Name, param.ParameterType));
                         }
                     }
                 }
@@ -244,11 +199,11 @@ namespace MindTouch.Dream {
 
                     // build parameter list
                     var arguments = new object[_plan.Count];
-                    for(int i = 0; i < _plan.Count; ++i) {
+                    for(var i = 0; i < _plan.Count; ++i) {
                         try {
                             arguments[i] = _plan[i].Invoke(context, request, response);
-                        } catch(DreamException e) {
-                            throw e;
+                        } catch(DreamException) {
+                            throw;
                         } catch(Exception e) {
                             throw new FeatureArgumentParseException(_plan[i].ArgumentName, e);
                         }
@@ -290,10 +245,8 @@ namespace MindTouch.Dream {
                     throw new InvalidCastException(string.Format("feature handler '{0}' parameter '{1}' has type {3}, but should be {2}", method.Name, param.Name, types[0], param.ParameterType));
                 }
             } else {
-                foreach(var type in types) {
-                    if(type == param.ParameterType) {
-                        return;
-                    }
+                if(types.Any(type => type == param.ParameterType)) {
+                    return;
                 }
                 var allowedTypes = string.Join(", ", (from type in types select type.FullName).ToArray());
                 throw new InvalidCastException(string.Format("feature handler '{0}' parameter '{1}' has type {3}, but should be one of {2}", method.Name, param.Name, allowedTypes, param.ParameterType));
@@ -379,21 +332,10 @@ namespace MindTouch.Dream {
             });
         }
 
-        private static DreamFeatureAdapter MakeRequestHeaderGetter(string name) {
-            return new DreamFeatureAdapter(name, (context, request, response) => request.Headers[name]);
-        }
-
         private static DreamFeatureAdapter MakeRequestCookieGetter(string name) {
             return new DreamFeatureAdapter(
                 name,
                 (context, request, response) => (from cookie in request.Headers.Cookies where cookie.Name.EqualsInvariant(name) select cookie).FirstOrDefault()
-            );
-        }
-
-        private static DreamFeatureAdapter MakeRequestCookieValueGetter(string name) {
-            return new DreamFeatureAdapter(
-                name,
-                (context, request, response) => (from cookie in request.Headers.Cookies where cookie.Name.EqualsInvariant(name) select cookie.Value).FirstOrDefault()
             );
         }
     }

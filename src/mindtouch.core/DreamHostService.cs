@@ -120,6 +120,7 @@ namespace MindTouch.Dream {
 
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly Dictionary<Type, ILookup<string, MethodInfo>> _methodInfoCache = new Dictionary<Type, ILookup<string, MethodInfo>>();
 
         //--- Class Constructors ---
         static DreamHostService() {
@@ -266,12 +267,26 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        private void PopulateActivities(XDoc doc, XUri self, DateTime now, IDreamActivityDescription[] activities) {
+        private static void PopulateActivities(XDoc doc, XUri self, DateTime now, IDreamActivityDescription[] activities) {
             doc.Attr("count", activities.Length).Attr("href", self.At("status", "activities"));
             foreach(var description in activities) {
                 doc.Start("description").Attr("created", description.Created).Attr("age", (now - description.Created).TotalSeconds).Value(description.Description).End();
             }
         }
+
+        private static ILookup<string, MethodInfo> GetMethodInfos(Type type) {
+            ILookup<string, MethodInfo> result;
+            lock(_methodInfoCache) {
+                if(_methodInfoCache.TryGetValue(type, out result)) {
+                    return result;
+                }
+            }
+            result = (from m in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod) where (m.GetCustomAttributes(typeof(DreamFeatureAttribute), false).Length > 0) select m).ToLookup(methodInfo => methodInfo.Name);
+            lock(_methodInfoCache) {
+                _methodInfoCache[type] = result;
+            }
+            return result;
+        } 
 
         //--- Fields ---
         private readonly IContainer _container;
@@ -448,7 +463,7 @@ namespace MindTouch.Dream {
                 response.Return(DreamMessage.NotFound("type not found"));
                 yield break;
             }
-            yield return Coroutine.Invoke(RegisterBlueprint, blueprint, type, new Result());
+            RegisterBlueprint(blueprint, type);
             response.Return(DreamMessage.Ok());
         }
 
@@ -495,7 +510,7 @@ namespace MindTouch.Dream {
             foreach(Type t in types) {
                 object[] dsa = t.GetCustomAttributes(typeof(DreamServiceAttribute), false);
                 if(dsa.Length > 0) {
-                    yield return Coroutine.Invoke(RegisterBlueprint, (XDoc)null, t, new Result());
+                    RegisterBlueprint(null, t);
                 }
             }
             response.Return(DreamMessage.Ok());
@@ -562,7 +577,7 @@ namespace MindTouch.Dream {
                     }
                 }
                 blueprint = CreateServiceBlueprint(type);
-                yield return Coroutine.Invoke(RegisterBlueprint, (XDoc)null, type, new Result());
+                RegisterBlueprint(null, type);
             } else {
 
                 // validate blueprints
@@ -575,9 +590,6 @@ namespace MindTouch.Dream {
 
                 // if blueprint wasn't found, try finding it by type name
                 if((blueprint == null) && (blueprints != null) && (blueprints.Count == 0)) {
-
-                    // TODO (steveb): we can make this faster once we have a global URI cache/registry service
-
                     type = CoreUtil.FindBuiltInTypeBySID(sid);
                     if(type != null) {
                         blueprint = CreateServiceBlueprint(type);
@@ -1016,9 +1028,6 @@ namespace MindTouch.Dream {
             // invoke base.Stop
             yield return Coroutine.Invoke(base.Stop, new Result()).CatchAndLog(_log);
 
-            // BUG #835: we should use a counter and timeout to shutdown properly
-            Thread.Sleep(2000);
-
             // deinitialize fields
             _blueprints = null;
             _registeredTypes.Clear();
@@ -1350,11 +1359,11 @@ namespace MindTouch.Dream {
 
                     // check if any feature was found
                     if((features == null) || (features.Count == 0)) {
-                        string msg = verb + " URI: " + uri + " LOCAL: " + localFeatureUri + " PUBLIC: " + publicUri + " TRANSPORT: " + transport;
+                        string msg = verb + " URI: " + uri.ToString(false) + " LOCAL: " + localFeatureUri.ToString(false) + " PUBLIC: " + publicUri + " TRANSPORT: " + transport;
                         _log.WarnMethodCall("ProcessRequest: feature not found", msg);
                         result = DreamMessage.NotFound("resource not found");
                     } else {
-                        string msg = verb + " " + uri;
+                        string msg = verb + " " + uri.ToString(false);
                         _log.WarnMethodCall("ProcessRequest: method not allowed", msg);
                         List<string> methods = new List<string>();
                         foreach(DreamFeature entry in features) {
@@ -1468,7 +1477,7 @@ namespace MindTouch.Dream {
             lock(_serviceLifetimeScopes) {
                 ILifetimeScope serviceLifetimeScope;
                 if(!_serviceLifetimeScopes.TryGetValue(service, out serviceLifetimeScope)) {
-                    _log.WarnFormat("LifetimeScope for service '{0}' at '{1}' already gone.", service, service.Self.Uri);
+                    _log.WarnFormat("LifetimeScope for service '{0}' at '{1}' already gone.", service, service.Self.Uri.ToString(false));
                     return;
                 }
                 serviceLifetimeScope.Dispose();
@@ -1701,7 +1710,7 @@ namespace MindTouch.Dream {
             // deactivate service
             DreamMessage deleteResponse = Plug.New(uri).At("@config").Delete(new Result<DreamMessage>(TimeSpan.MaxValue)).Wait();
             if(!deleteResponse.IsSuccessful) {
-                _log.InfoMethodCall("StopService: Delete failed", uri, deleteResponse.Status);
+                _log.InfoMethodCall("StopService: Delete failed", uri.ToString(false), deleteResponse.Status);
             }
 
             // deactivate features
@@ -1720,19 +1729,18 @@ namespace MindTouch.Dream {
                 entries = _services.Values.Where(entry => uri == entry.Owner).ToList();
             }
             foreach(ServiceEntry entry in entries) {
-                _log.WarnMethodCall("StopService: child service was not shutdown properly", entry.Service.Self);
+                _log.WarnMethodCall("StopService: child service was not shutdown properly", entry.Service.Self.Uri.ToString(false));
                 StopService(entry.Service.Self);
             }
         }
 
-        private Yield RegisterBlueprint(XDoc blueprint, Type type, Result response) {
+        private void RegisterBlueprint(XDoc blueprint, Type type) {
 
             // check if type has already been registers
             Debug.Assert(type != null, "type != null");
             Debug.Assert(type.AssemblyQualifiedName != null, "type.AssemblyQualifiedName != null");
             if(_registeredTypes.ContainsKey(type.AssemblyQualifiedName)) {
-                response.Return();
-                yield break;
+                return;
             }
             if(!type.IsA<IDreamService>()) {
                 throw new DreamAbortException(DreamMessage.BadRequest("class is not derived from IDreamService"));
@@ -1771,9 +1779,6 @@ namespace MindTouch.Dream {
             lock(_registeredTypes) {
                 _registeredTypes[type.AssemblyQualifiedName] = type;
             }
-
-            // indicate we're done
-            response.Return();
         }
 
         private DreamFeatureDirectory CreateServiceFeatureDirectory(IDreamService service, XDoc blueprint, XDoc config) {
@@ -1787,6 +1792,7 @@ namespace MindTouch.Dream {
             // compile list of active service features, combined by suffix
             int serviceUriSegmentsLength = serviceUri.Segments.Length;
             DreamFeatureDirectory directory = new DreamFeatureDirectory();
+            var methodInfos = GetMethodInfos(type);
             foreach(XDoc featureBlueprint in blueprint["features/feature"]) {
                 string methodName = featureBlueprint["method"].Contents;
                 string pattern = featureBlueprint["pattern"].AsText;
@@ -1795,7 +1801,7 @@ namespace MindTouch.Dream {
                 bool atConfig = pattern.ContainsInvariantIgnoreCase("@config");
 
                 // locate method
-                var methods = (from m in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance) where m.Name.EqualsInvariant(methodName) && (m.GetCustomAttributes(typeof(DreamFeatureAttribute), false).Length > 0) select m);
+                var methods = methodInfos[methodName];
                 if(methods.Count() > 1) {
                     var found = string.Join(", ", methods.Select(m => m.DeclaringType.FullName + "!" + m.Name + "(" + string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name).ToArray()) + ")").ToArray());
                     throw new MissingMethodException(string.Format("found multiple definitions for {0}: {1}", methodName, found));

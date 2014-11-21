@@ -19,12 +19,6 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using log4net;
-
-using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
 
@@ -34,10 +28,12 @@ namespace MindTouch.Dream.Test {
 
     [TestFixture]
     public class DreamHostTest {
-        private static readonly ILog _log = LogUtils.CreateLog();
 
+        //--- Fields ---
         private Plug _host;
         private DreamHostInfo _hostinfo;
+
+        //--- Methods ---
 
         [SetUp]
         public void Init() {
