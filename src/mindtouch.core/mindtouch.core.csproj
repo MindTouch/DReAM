@@ -113,7 +113,6 @@
     <Compile Include="DreamApplication.cs" />
     <Compile Include="http\DreamRouteHandler.cs" />
     <Compile Include="http\RoutedHttpHandler.cs" />
-    <Compile Include="http\httphandler.cs" />
     <Compile Include="http\httptransport.cs" />
     <Compile Include="ioformatter.cs" />
     <Compile Include="serviceactivator.cs" />

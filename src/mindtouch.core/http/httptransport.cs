@@ -153,6 +153,8 @@ namespace MindTouch.Dream.Http {
             } catch(ObjectDisposedException) {
                 _log.Debug("dropping out of request handler, since listener was disposed");
                 return;
+            } catch(HttpListenerException) {
+                _log.Debug("EndGetContext() failed, most likely because the I/O operation was aborted by either a thread exit or an application request");
             } catch(Exception e) {
                 _log.WarnExceptionFormat(e, "unable to finish acquiring the request context, unable to handle request");
             }
