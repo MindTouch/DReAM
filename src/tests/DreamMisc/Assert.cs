@@ -26,5 +26,9 @@ namespace MindTouch {
         public static void AreEqual(XDoc expected, XDoc actual) {
             NUnit.Framework.Assert.IsTrue(expected.Equals(actual));
         }
+
+        public static void AreEqual(XDoc expected, XDoc actual, string message) {
+            NUnit.Framework.Assert.IsTrue(expected.Equals(actual), message);
+        }
     }
 }
