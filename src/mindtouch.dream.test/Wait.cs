@@ -78,8 +78,8 @@ namespace MindTouch.Dream.Test {
                 if(condition()) {
                     return true;
                 }
+                Thread.Sleep(50);
             }
-            Thread.Sleep(50);
             return false;
         }
     }

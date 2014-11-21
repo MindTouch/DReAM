@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-using System;
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -37,7 +37,7 @@ namespace MindTouch.Dream.Test {
     // ReSharper disable InconsistentNaming
     [TestFixture]
     public class DreamFeatureTests {
-        private static readonly ILog _log = LogUtils.CreateLog();
+
         private DreamHostInfo _hostInfo;
         private Plug _plug;
         private XDoc _blueprint;
@@ -80,27 +80,11 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_inject_path_parameters() {
-            AssertFeature(
-                "GET:sync/{x}/{y}",
-                _plug.At("sync", "xx", "yy"),
-                new XDoc("r").Elem("x", "xx").Elem("y", "yy"));
-        }
-
-        [Test]
         public void Can_inject_path_parameters_without_attribute() {
             AssertFeature(
                 "GET:sync/noattr/{x}/{y}",
                 _plug.At("sync", "noattr", "xx", "yy"),
                 new XDoc("r").Elem("x", "xx").Elem("y", "yy"));
-        }
-
-        [Test]
-        public void Can_inject_path_parameter_and_cast_to_int() {
-            AssertFeature(
-                "GET:sync/int/{x}",
-                _plug.At("sync", "int", "123"),
-                new XDoc("r").Elem("x", "123"));
         }
 
         [Test]
@@ -120,27 +104,11 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_inject_path_parameter_and_cast_to_bool() {
-            AssertFeature(
-                "GET:sync/bool/{x}",
-                _plug.At("sync", "bool", "true"),
-                new XDoc("r").Elem("x", true));
-        }
-
-        [Test]
         public void Can_inject_path_parameter_and_cast_to_bool_without_attribute() {
             AssertFeature(
                 "GET:sync/noattr/bool/{x}",
                 _plug.At("sync", "noattr", "bool", "true"),
                 new XDoc("r").Elem("x", true));
-        }
-
-        [Test]
-        public void Can_inject_path_parameter_and_cast_to_enum() {
-            AssertFeature(
-                "GET:sync/enum/{x}",
-                _plug.At("sync", "enum", DreamStatus.SeeOther.ToString()),
-                new XDoc("r").Elem("x", DreamStatus.SeeOther));
         }
 
         [Test]
@@ -152,27 +120,11 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_inject_mixed_type_path_parameter_and_cast_appropriately() {
-            AssertFeature(
-                "GET:sync/mixed/{x}/{y}/{z}",
-                _plug.At("sync", "mixed", "123", "true", DreamStatus.SeeOther.ToString()),
-                new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther));
-        }
-
-        [Test]
         public void Can_inject_mixed_type_path_parameter_and_cast_appropriately_without_attribute() {
             AssertFeature(
                 "GET:sync/noattr/mixed/{x}/{y}/{z}",
                 _plug.At("sync", "noattr", "mixed", "123", "true", DreamStatus.SeeOther.ToString()),
                 new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther));
-        }
-
-        [Test]
-        public void Can_inject_query_args() {
-            AssertFeature(
-                "GET:sync/queryargs",
-                _plug.At("sync", "queryargs").With("x", "xx").With("y", "yy"),
-                new XDoc("r").Elem("x", "xx").Elem("y", "yy"));
         }
 
         [Test]
@@ -192,27 +144,11 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_inject_list_query_args() {
-            AssertFeature(
-                "GET:sync/multiqueryargs",
-                _plug.At("sync", "multiqueryargs").With("x", "1").With("x", "2").With("x", "3").With("y", "yy"),
-                new XDoc("r").Elem("x", "1:2:3").Elem("y", "yy"));
-        }
-
-        [Test]
         public void Can_inject_list_query_args_without_attributes() {
             AssertFeature(
                 "GET:sync/multiqueryargs/noattr",
                 _plug.At("sync", "multiqueryargs", "noattr").With("x", "1").With("x", "2").With("x", "3").With("y", "yy"),
                 new XDoc("r").Elem("x", "1:2:3").Elem("y", "yy"));
-        }
-
-        [Test]
-        public void Can_inject_query_args_and_cast_to_int() {
-            AssertFeature(
-                "GET:sync/queryargs/int",
-                _plug.At("sync", "queryargs", "int").With("x", "123"),
-                new XDoc("r").Elem("x", "123"));
         }
 
         [Test]
@@ -248,14 +184,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_inject_query_args_and_cast_to_bool() {
-            AssertFeature(
-                "GET:sync/queryargs/bool",
-                _plug.At("sync", "queryargs", "bool").With("x", "true"),
-                new XDoc("r").Elem("x", true));
-        }
-
-        [Test]
         public void Can_inject_query_args_and_cast_to_bool_without_attribute() {
             AssertFeature(
                 "GET:sync/queryargs/noattr/bool",
@@ -285,14 +213,6 @@ namespace MindTouch.Dream.Test {
                 "GET:sync/queryargs/noattr/nullablebool",
                 _plug.At("sync", "queryargs", "noattr", "nullablebool"),
                 new XDoc("r").Elem("x", "null"));
-        }
-
-        [Test]
-        public void Can_inject_query_args_and_cast_to_enum() {
-            AssertFeature(
-                "GET:sync/queryargs/enum",
-                _plug.At("sync", "queryargs", "enum").With("x", DreamStatus.SeeOther.ToString()),
-                new XDoc("r").Elem("x", DreamStatus.SeeOther));
         }
 
         [Test]
@@ -328,82 +248,11 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void Can_inject_mixed_type_query_args_and_cast_appropriately() {
-            AssertFeature(
-                "GET:sync/queryargs/mixed",
-                _plug.At("sync", "queryargs", "mixed").With("x", "123").With("y", "true").With("z", DreamStatus.SeeOther.ToString()),
-                new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther));
-        }
-
-        [Test]
         public void Can_inject_mixed_type_query_args_and_cast_appropriately_without_attribute() {
             AssertFeature(
                 "GET:sync/queryargs/noattr/mixed",
                 _plug.At("sync", "queryargs", "noattr", "mixed").With("x", "123").With("y", "true").With("z", DreamStatus.SeeOther.ToString()),
                 new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther));
-        }
-
-        [Test]
-        public void Can_inject_mixed_type_query_args_and_path_parameters_and_cast_appropriately() {
-            AssertFeature(
-                "GET:sync/mixed/{x}/{z}",
-                _plug.At("sync", "mixed", "123", DreamStatus.SeeOther.ToString())
-                    .With("y", "true")
-                    .With("v", 1.2),
-                new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther).Elem("v", "1.2"));
-        }
-
-        [Test]
-        public void Can_inject_mixed_type_query_args_and_path_parameters_and_cast_appropriately_under_non_us_locale() {
-            System.Globalization.CultureInfo old = System.Threading.Thread.CurrentThread.CurrentCulture;
-            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("FR-fr");
-            AssertFeature(
-                "GET:sync/mixed/{x}/{z}",
-                _plug.At("sync", "mixed", "123", DreamStatus.SeeOther.ToString())
-                    .With("y", "true")
-                    .With("v", 1.2),
-                new XDoc("r").Elem("x", "123").Elem("y", "true").Elem("z", DreamStatus.SeeOther).Elem("v", "1.2"));
-            System.Threading.Thread.CurrentThread.CurrentCulture = old;
-        }
-
-        [Test]
-        public void Can_inject_headers() {
-            AssertFeature(
-                "GET:sync/headers",
-                _plug.At("sync", "headers").WithHeader("x", "xx").WithHeader("y", "yy"),
-                new XDoc("r").Elem("x", "xx").Elem("y", "yy"));
-        }
-
-        [Test]
-        public void Can_inject_cookie_strings() {
-            var jar = new DreamCookieJar();
-            jar.Update(new DreamCookie("x", "xx", _plug), _plug);
-            jar.Update(new DreamCookie("y", "yy", _plug), _plug);
-            AssertFeature(
-                "GET:sync/cookies/string",
-                _plug.At("sync", "cookies", "string").WithCookieJar(jar),
-                new XDoc("r").Elem("x", "xx").Elem("y", "yy"));
-        }
-
-        [Test]
-        public void Can_inject_cookie_objects() {
-            var jar = new DreamCookieJar();
-            jar.Update(new DreamCookie("x", "xx", _plug), _plug);
-            jar.Update(new DreamCookie("y", "yy", _plug), _plug);
-            AssertFeature(
-                "GET:sync/cookies/obj",
-                _plug.At("sync", "cookies", "obj").WithCookieJar(jar),
-                new XDoc("r").Elem("x", "xx").Elem("y", "yy"));
-        }
-
-        [Test]
-        public void Can_inject_cookie_objects_without_cookie_attribute() {
-            var jar = new DreamCookieJar();
-            jar.Update(new DreamCookie("x", "xx", _plug), _plug);
-            AssertFeature(
-                "GET:sync/cookies/obj",
-                _plug.At("sync", "cookies", "obj").WithCookieJar(jar),
-                new XDoc("r").Elem("x", "xx"));
         }
 
         [Test]
@@ -591,14 +440,6 @@ namespace MindTouch.Dream.Test {
                 yield break;
             }
 
-            [DreamFeature("GET:sync/{x}/{y}", "")]
-            public DreamMessage SyncXY(
-                [Path] string x,
-                [Path] string y
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y));
-            }
-
             [DreamFeature("GET:sync/noattr/{x}/{y}", "")]
             public DreamMessage SyncXYNoAttr(
                 string x,
@@ -607,23 +448,9 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", x).Elem("y", y));
             }
 
-            [DreamFeature("GET:sync/int/{x}", "")]
-            public DreamMessage SyncIntPathArg(
-                [Path] int x
-            ) {
-                return Response(new XDoc("r").Elem("x", x));
-            }
-
             [DreamFeature("GET:sync/noattr/int/{x}", "")]
             public DreamMessage SyncIntPathArgNoAttr(
                 int x
-            ) {
-                return Response(new XDoc("r").Elem("x", x));
-            }
-
-            [DreamFeature("GET:sync/bool/{x}", "")]
-            public DreamMessage SyncBoolPathArg(
-                [Path] bool x
             ) {
                 return Response(new XDoc("r").Elem("x", x));
             }
@@ -635,27 +462,11 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", x));
             }
 
-            [DreamFeature("GET:sync/enum/{x}", "")]
-            public DreamMessage SyncEnumPathArg(
-                [Path] DreamStatus x
-            ) {
-                return Response(new XDoc("r").Elem("x", x));
-            }
-
             [DreamFeature("GET:sync/noattr/enum/{x}", "")]
             public DreamMessage SyncEnumPathArgNoAttr(
                 DreamStatus x
             ) {
                 return Response(new XDoc("r").Elem("x", x));
-            }
-
-            [DreamFeature("GET:sync/mixed/{x}/{y}/{z}", "")]
-            public DreamMessage SyncMixedPathArg(
-                [Path] int x,
-                [Path] bool y,
-                [Path] DreamStatus z
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y).Elem("z", z));
             }
 
             [DreamFeature("GET:sync/noattr/mixed/{x}/{y}/{z}", "")]
@@ -667,28 +478,12 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", x).Elem("y", y).Elem("z", z));
             }
 
-            [DreamFeature("GET:sync/multiqueryargs", "")]
-            public DreamMessage SyncMultiQueryArgs(
-                [Query] string[] x,
-                [Query] string y
-            ) {
-                return Response(new XDoc("r").Elem("x", string.Join(":", x)).Elem("y", y));
-            }
-
             [DreamFeature("GET:sync/multiqueryargs/noattr", "")]
             public DreamMessage SyncMultiQueryArgsNoAttr(
                 string[] x,
                 string y
             ) {
                 return Response(new XDoc("r").Elem("x", string.Join(":", x)).Elem("y", y));
-            }
-
-            [DreamFeature("GET:sync/queryargs", "")]
-            public DreamMessage SyncQueryArgs(
-                [Query] string x,
-                [Query] string y
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y));
             }
 
             [DreamFeature("GET:sync/queryargs/noattr", "")]
@@ -699,13 +494,6 @@ namespace MindTouch.Dream.Test {
                 if(x == null) { x = "null"; }
                 if(y == null) { y = "null"; }
                 return Response(new XDoc("r").Elem("x", x).Elem("y", y));
-            }
-
-            [DreamFeature("GET:sync/queryargs/int", "")]
-            public DreamMessage SyncQueryargsIntPathArg(
-                [Query] int x
-            ) {
-                return Response(new XDoc("r").Elem("x", x));
             }
 
             [DreamFeature("GET:sync/queryargs/noattr/int", "")]
@@ -723,13 +511,6 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", v));
             }
 
-            [DreamFeature("GET:sync/queryargs/bool", "")]
-            public DreamMessage SyncQueryargsBoolPathArg(
-                [Query] bool x
-            ) {
-                return Response(new XDoc("r").Elem("x", x));
-            }
-
             [DreamFeature("GET:sync/queryargs/noattr/bool", "")]
             public DreamMessage SyncQueryargsBoolPathArgNoAttr(
                 bool x
@@ -743,13 +524,6 @@ namespace MindTouch.Dream.Test {
             ) {
                 var v = x.HasValue ? x.ToString() : "null";
                 return Response(new XDoc("r").Elem("x", v));
-            }
-
-            [DreamFeature("GET:sync/queryargs/enum", "")]
-            public DreamMessage SyncQueryargsEnumPathArg(
-                [Query] DreamStatus x
-            ) {
-                return Response(new XDoc("r").Elem("x", x));
             }
 
             [DreamFeature("GET:sync/queryargs/noattr/enum", "")]
@@ -767,15 +541,6 @@ namespace MindTouch.Dream.Test {
                 return Response(new XDoc("r").Elem("x", v));
             }
 
-            [DreamFeature("GET:sync/queryargs/mixed", "")]
-            public DreamMessage SyncQueryargsMixedPathArg(
-                [Query] int x,
-                [Query] bool y,
-                [Query] DreamStatus z
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y).Elem("z", z));
-            }
-
             [DreamFeature("GET:sync/queryargs/noattr/mixed", "")]
             public DreamMessage SyncQueryargsMixedPathArgNoAttr(
                 int x,
@@ -783,40 +548,6 @@ namespace MindTouch.Dream.Test {
                 DreamStatus z
             ) {
                 return Response(new XDoc("r").Elem("x", x).Elem("y", y).Elem("z", z));
-            }
-
-            [DreamFeature("GET:sync/mixed/{x}/{z}", "")]
-            public DreamMessage SyncMixedArgs(
-                int x,
-                bool y,
-                [Path] DreamStatus z,
-                [Query] Decimal v
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y).Elem("z", z).Elem("v", v));
-            }
-
-            [DreamFeature("GET:sync/headers", "")]
-            public DreamMessage SyncHeaders(
-                [Header] string x,
-                [Header] string y
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y));
-            }
-
-            [DreamFeature("GET:sync/cookies/string", "")]
-            public DreamMessage SyncStringCookies(
-                [Cookie] string x,
-                [Cookie] string y
-            ) {
-                return Response(new XDoc("r").Elem("x", x).Elem("y", y));
-            }
-
-            [DreamFeature("GET:sync/cookies/obj", "")]
-            public DreamMessage SyncDreamCookies(
-                [Cookie] DreamCookie x,
-                [Cookie] string y
-            ) {
-                return Response(new XDoc("r").Elem("x", x.Value).Elem("y", y));
             }
 
             [DreamFeature("GET:sync/cookies/obj/noattr", "")]

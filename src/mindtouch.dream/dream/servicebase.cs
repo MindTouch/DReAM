@@ -47,6 +47,7 @@ namespace MindTouch.Dream {
 
         //--- Class Fields ---
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
+        private static readonly Dictionary<Type, XDoc> _blueprints = new Dictionary<Type, XDoc>();
 
         //--- Class Methods ---
 
@@ -59,7 +60,13 @@ namespace MindTouch.Dream {
             if(type == null) {
                 throw new ArgumentNullException("type");
             }
-            XDoc result = new XDoc("blueprint");
+            XDoc result;
+            lock(_blueprints) {
+                if(_blueprints.TryGetValue(type, out result)) {
+                    return result;
+                }
+            }
+            result = new XDoc("blueprint");
 
             // load assembly
             Dictionary<string, string> assemblySettings = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -136,14 +143,6 @@ namespace MindTouch.Dream {
 
                 // retrieve feature parameter descriptions, filters, prologues, and epilogues
                 Attribute[] paramAttributes = Attribute.GetCustomAttributes(method, typeof(DreamFeatureParamAttribute), false);
-                var pathAttributes = method.GetParameters().Select(p => {
-                    var attr = (PathAttribute)p.GetCustomAttributes(typeof(PathAttribute), false).FirstOrDefault();
-                    return ((attr != null) && (attr.Name == null)) ? new PathAttribute { Description = attr.Description, Name = p.Name } : attr;
-                }).Where(p => p != null);
-                var queryAttributes = method.GetParameters().Select(q => {
-                    var attr = (QueryAttribute)q.GetCustomAttributes(typeof(QueryAttribute), false).FirstOrDefault();
-                    return ((attr != null) && (attr.Name == null)) ? new QueryAttribute { Description = attr.Description, Name = q.Name } : attr;
-                }).Where(q => q != null);
                 Attribute[] statusAttributes = Attribute.GetCustomAttributes(method, typeof(DreamFeatureStatusAttribute), false);
                 foreach(DreamFeatureAttribute featureAttrib in featureAttributes) {
                     result.Start("feature");
@@ -167,22 +166,6 @@ namespace MindTouch.Dream {
                         result.End();
                     }
 
-                    // add parameter descriptions (as seen on the method parameters)
-                    foreach(PathAttribute pathAttrib in pathAttributes) {
-                        result.Start("param")
-                            .Elem("name", "{" + pathAttrib.Name + "}")
-                            .Elem("description", pathAttrib.Description)
-                        .End();
-                    }
-
-                    // add parameter descriptions (as seen on the method parameters)
-                    foreach(QueryAttribute queryAttrib in queryAttributes) {
-                        result.Start("param")
-                            .Elem("name", queryAttrib.Name)
-                            .Elem("description", queryAttrib.Description)
-                        .End();
-                    }
-
                     // add status codes
                     foreach(DreamFeatureStatusAttribute paramAttrib in statusAttributes) {
                         result.Start("status");
@@ -197,7 +180,11 @@ namespace MindTouch.Dream {
                 }
             }
             result.End();
-            return result.EndAll();
+            result.EndAll();
+            lock(_blueprints) {
+                _blueprints[type] = result;
+            }
+            return result;
         }
 
         //--- Fields ---
