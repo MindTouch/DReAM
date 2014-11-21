@@ -281,7 +281,7 @@ namespace MindTouch.Dream {
                     return result;
                 }
             }
-            result = (from m in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod) where (m.GetCustomAttributes(typeof(DreamFeatureAttribute), false).Length > 0) select m).ToLookup(methodInfo => methodInfo.Name.ToLowerInvariant());
+            result = (from m in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod) where (m.GetCustomAttributes(typeof(DreamFeatureAttribute), false).Length > 0) select m).ToLookup(methodInfo => methodInfo.Name);
             lock(_methodInfoCache) {
                 _methodInfoCache[type] = result;
             }
@@ -1801,7 +1801,7 @@ namespace MindTouch.Dream {
                 bool atConfig = pattern.ContainsInvariantIgnoreCase("@config");
 
                 // locate method
-                var methods = methodInfos[methodName.ToLowerInvariant()];
+                var methods = methodInfos[methodName];
                 if(methods.Count() > 1) {
                     var found = string.Join(", ", methods.Select(m => m.DeclaringType.FullName + "!" + m.Name + "(" + string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name).ToArray()) + ")").ToArray());
                     throw new MissingMethodException(string.Format("found multiple definitions for {0}: {1}", methodName, found));
