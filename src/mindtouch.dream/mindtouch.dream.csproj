@@ -255,7 +255,6 @@
     <Compile Include="plug\ResourcePlugEndpoint.cs" />
     <Compile Include="dream\servicebase.cs" />
     <Compile Include="dream\types.cs" />
-    <Compile Include="plug\XriPlugEndpoint.cs" />
     <Compile Include="dream\XUri.cs" />
     <Compile Include="dream\XUriMap.cs" />
     <Compile Include="LogUtils.cs" />
