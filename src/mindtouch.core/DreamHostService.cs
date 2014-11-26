@@ -604,7 +604,7 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        [DreamFeature("*:test", "Test communication with Host service.")]
+        [DreamFeature("*:test", "Test communication with Host service.", Hidden = true)]
         [DreamFeatureParam("status", "int?", "Response status code to reply with (default = 200)")]
         [DreamFeatureParam("cookie", "string?", "Include Set-Cookie in response")]
         public Yield GetTest(DreamContext context, DreamMessage request, Result<DreamMessage> response) {

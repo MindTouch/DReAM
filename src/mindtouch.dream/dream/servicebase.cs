@@ -440,7 +440,7 @@ namespace MindTouch.Dream {
                             .Value(" ")
                             .Start("a").Attr("href", blueprint["info"].Contents).Value("(more)").End()
                             .Value(" ")
-                            .Start("a").Attr("href", Self.Uri.At("@blueprint").Path).Value("(blueprint)").End()
+                            .Start("a").Attr("href", Self.Uri.At("@blueprint")).Value("(blueprint)").End()
                         .End();
 
                 // only show configuration information if requested
