@@ -422,7 +422,7 @@ namespace MindTouch.Dream {
         [DreamFeatureParam("hidden", "string?", "show internal, private, obsolete, and hidden features, as well as service configuration information (default: false)")]
         public virtual Yield GetServiceInfo(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc blueprint = Blueprint;
-            bool hidden = context.GetParam("hidden", false);
+            bool showHidden = context.GetParam("hidden", false);
             string title = blueprint["name"].AsText ?? "Service Blueprint";
             XDoc result = new XDoc("html").Attr("xmlns", "http://www.w3.org/1999/xhtml")
                 .Start("head")
@@ -444,7 +444,7 @@ namespace MindTouch.Dream {
                         .End();
 
                 // only show configuration information if requested
-                if(hidden) {
+                if(showHidden) {
                     XDoc config = blueprint["configuration"];
                     if(!config.IsEmpty) {
                         result.Elem("h2", "Configuration");
@@ -486,7 +486,7 @@ namespace MindTouch.Dream {
                         if(modifier != null) {
 
                             // don't show internal/private/hidden features
-                            if(!hidden) {
+                            if(!showHidden) {
                                 if(modifier != "public") {
                                     continue;
                                 }
@@ -500,7 +500,7 @@ namespace MindTouch.Dream {
                         if(modifier != null) {
 
                             // don't show obsolete features
-                            if(!hidden) {
+                            if(!showHidden) {
                                 continue;
                             }
                             modifiers.Add("OBSOLETE => " + modifier);
