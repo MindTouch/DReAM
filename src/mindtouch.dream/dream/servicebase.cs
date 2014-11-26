@@ -419,7 +419,7 @@ namespace MindTouch.Dream {
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
         [DreamFeature("GET:@about", "Retrieve service description")]
-        [DreamFeatureParam("hidden", "string?", "show internal, private, and hidden features (default: false)")]
+        [DreamFeatureParam("hidden", "string?", "show internal, private, obsolete, and hidden features, as well as service configuration information (default: false)")]
         public virtual Yield GetServiceInfo(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc blueprint = Blueprint;
             bool hidden = context.GetParam("hidden", false);
@@ -443,21 +443,23 @@ namespace MindTouch.Dream {
                             .Start("a").Attr("href", Self.Uri.At("@blueprint").Path).Value("(blueprint)").End()
                         .End();
 
-                // show configuration information
-                XDoc config = blueprint["configuration"];
-                if(!config.IsEmpty) {
-                    result.Elem("h2", "Configuration");
-                    result.Start("ul");
-                    foreach(XDoc entry in config["entry"]) {
-                        result.Start("li");
-                        if(entry["valuetype"].Contents != string.Empty) {
-                            result.Value(string.Format("{0} = {1} : {2}", entry["name"].Contents, entry["valuetype"].Contents, entry["description"].Contents));
-                        } else {
-                            result.Value(string.Format("{0} : {1}", entry["name"].Contents, entry["description"].Contents));
+                // only show configuration information if requested
+                if(hidden) {
+                    XDoc config = blueprint["configuration"];
+                    if(!config.IsEmpty) {
+                        result.Elem("h2", "Configuration");
+                        result.Start("ul");
+                        foreach(XDoc entry in config["entry"]) {
+                            result.Start("li");
+                            if(entry["valuetype"].Contents != string.Empty) {
+                                result.Value(string.Format("{0} = {1} : {2}", entry["name"].Contents, entry["valuetype"].Contents, entry["description"].Contents));
+                            } else {
+                                result.Value(string.Format("{0} : {1}", entry["name"].Contents, entry["description"].Contents));
+                            }
+                            result.End();
                         }
                         result.End();
                     }
-                    result.End();
                 }
 
                 // sort features by signature then verb
@@ -496,6 +498,11 @@ namespace MindTouch.Dream {
                         }
                         modifier = feature["obsolete"].AsText;
                         if(modifier != null) {
+
+                            // don't show obsolete features
+                            if(!hidden) {
+                                continue;
+                            }
                             modifiers.Add("OBSOLETE => " + modifier);
                         }
                         if(modifiers.Count > 0) {
