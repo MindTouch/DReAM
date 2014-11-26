@@ -214,36 +214,7 @@ namespace MindTouch.Dream {
         //      name        ::= "{" id "}"
         //      id          ::= ( 'a'..'z' | 'A'..'Z' | '0'..'9' | '-' | '.' | '_' | '~' | '%' | '!' | '$' | '&' | '\'' | '(' | ')' | '*' | '+' | ',' | ';' | '=' | ':' | '@' )*
 
-        //--- Fields ---
-        private string _pattern;
-        private string _description;
-        private string _info;
-        private string _version = "*";
-        private string _obsolete = null;
-
         //--- Constructors ---
-
-        /// <summary>
-        /// Obsolete: This form of the attribute construtor is deprecated. Please DreamFeatureAttribute(string,string) instead.
-        /// </summary>
-        [Obsolete("This form of the attribute construtor is deprecated. Please DreamFeatureAttribute(string,string) instead.")]
-        public DreamFeatureAttribute(string path, string signature, string verb, string description, string info) {
-
-            // remove trailing slash
-            if((path.Length > 0) && (path[path.Length - 1] == '/')) {
-                path = path.Substring(0, path.Length - 1);
-            }
-
-            // add initial slash
-            if((signature.Length == 0) || (signature[0] != '/')) {
-                signature = "/" + signature;
-            }
-
-            // initialize fields
-            _pattern = verb + ":" + path + signature;
-            _description = description;
-            _info = info;
-        }
 
         /// <summary>
         /// Create new attribute.
@@ -251,8 +222,9 @@ namespace MindTouch.Dream {
         /// <param name="pattern">The Uri pattern that this feature responds to.</param>
         /// <param name="description">Description of the <see cref="DreamFeature"/>.</param>
         public DreamFeatureAttribute(string pattern, string description) {
-            _pattern = pattern;
-            _description = description;
+            this.Obsolete = null;
+            this.Pattern = pattern;
+            this.Description = description;
         }
 
         //--- Properties ---	
@@ -260,42 +232,22 @@ namespace MindTouch.Dream {
         /// <summary>
         /// The Uri pattern that this feature responds to.
         /// </summary>
-        public string Pattern {
-            get { return _pattern; }
-            set { _pattern = value; }
-        }
+        public string Pattern { get; set; }
 
         /// <summary>
         /// Description of the <see cref="DreamFeature"/>.
         /// </summary>
-        public string Description {
-            get { return _description; }
-            set { _description = value; }
-        }
-
-        /// <summary>
-        /// Information Uri for this <see cref="DreamFeature"/>.
-        /// </summary>
-        public string Info {
-            get { return _info; }
-            set { _info = value; }
-        }
-
-        /// <summary>
-        /// <see cref="DreamFeature"/> Version.
-        /// </summary>
-        public string Version {
-            get { return _version; }
-            set { _version = value; }
-        }
+        public string Description { get; set; }
 
         /// <summary>
         /// True if this feature is obsolete.
         /// </summary>
-        public string Obsolete {
-            get { return _obsolete; }
-            set { _obsolete = value; }
-        }
+        public string Obsolete { get; set; }
+
+        /// <summary>
+        /// True if the feature should be omitted from @about.
+        /// </summary>
+        public bool Hidden { get; set; }
     }
 
     /// <summary>

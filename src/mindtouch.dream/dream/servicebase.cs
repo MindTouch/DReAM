@@ -149,10 +149,8 @@ namespace MindTouch.Dream {
                     result.Elem("obsolete", featureAttrib.Obsolete);
                     result.Elem("pattern", featureAttrib.Pattern);
                     result.Elem("description", featureAttrib.Description);
-                    string info = featureAttrib.Info ?? serviceAttrib.Info;
-                    if(info != null) {
-                        result.Elem("info", info);
-                    }
+                    result.Elem("info", serviceAttrib.Info);
+                    result.Elem("hidden", featureAttrib.Hidden);
                     result.Elem("method", method.Name);
 
                     // add parameter descriptions (as seen on the method definition)
@@ -421,8 +419,10 @@ namespace MindTouch.Dream {
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
         [DreamFeature("GET:@about", "Retrieve service description")]
+        [DreamFeatureParam("hidden", "string?", "show internal, private, and hidden features (default: false)")]
         public virtual Yield GetServiceInfo(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc blueprint = Blueprint;
+            bool hidden = context.GetParam("hidden", false);
             string title = blueprint["name"].AsText ?? "Service Blueprint";
             XDoc result = new XDoc("html").Attr("xmlns", "http://www.w3.org/1999/xhtml")
                 .Start("head")
@@ -482,6 +482,16 @@ namespace MindTouch.Dream {
                         // add modifiers
                         string modifier = feature["access"].AsText;
                         if(modifier != null) {
+
+                            // don't show internal/private/hidden features
+                            if(!hidden) {
+                                if(modifier != "public") {
+                                    continue;
+                                }
+                                if((feature["hidden"].AsText ?? "false") != "false") {
+                                    continue;
+                                }
+                            }
                             modifiers.Add(modifier);
                         }
                         modifier = feature["obsolete"].AsText;
