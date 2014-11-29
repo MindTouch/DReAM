@@ -90,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArrayUtilTests.cs" />
+    <Compile Include="Assert.cs" />
     <Compile Include="AutofacTests.cs" />
     <Compile Include="AutoMockPlugTests.cs" />
     <Compile Include="Aws\AwsS3ClientTests.cs" />
