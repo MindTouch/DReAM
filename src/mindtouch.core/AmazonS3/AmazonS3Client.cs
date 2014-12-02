@@ -100,7 +100,7 @@ namespace MindTouch.Dream.AmazonS3 {
                 var expiration = fileHandle.Expiration ?? DateTime.UtcNow.Add(fileHandle.TimeToLive.Value);
                 p = p.WithHeader(EXPIRE, expiration.ToEpoch().ToString())
                     .WithHeader(TTL, fileHandle.TimeToLive.Value.TotalSeconds.ToString());
-                _expirationEntries.SetExpiration(path, expiration, fileHandle.TimeToLive.Value);
+                _expirationEntries.SetOrUpdate(path, expiration, fileHandle.TimeToLive.Value);
             }
             var request = DreamMessage.Ok(fileHandle.MimeType, fileHandle.Size, fileHandle.Stream);
             var response = p.Put(request, new Result<DreamMessage>()).Wait();
@@ -155,7 +155,7 @@ namespace MindTouch.Dream.AmazonS3 {
                     response.Close();
                     return null;
                 }
-                _expirationEntries.SetExpiration(path, expiration.Value, ttl.Value);
+                _expirationEntries.SetOrUpdate(path, expiration.Value, ttl.Value);
             }
             var filehandle = new AmazonS3FileHandle {
                 Expiration = expiration,

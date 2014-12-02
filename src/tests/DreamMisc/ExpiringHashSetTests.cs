@@ -47,7 +47,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
             set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, ttl);
+            set.SetOrUpdate(i, ttl);
             Assert.IsTrue(changed.WaitOne(5000));
             Assert.IsTrue(expired.WaitOne(5000));
             Assert.AreEqual(i, entry.Value);
@@ -61,9 +61,9 @@ namespace MindTouch.Dream.Test {
             var changed = false;
             var ttl = 10.Seconds();
             var set = new ExpiringHashSet<string>(TaskTimerFactory.Current);
-            set.SetExpiration("a", ttl);
-            set.SetExpiration("b", ttl);
-            set.SetExpiration("v", ttl);
+            set.SetOrUpdate("a", ttl);
+            set.SetOrUpdate("b", ttl);
+            set.SetOrUpdate("v", ttl);
             set.CollectionChanged += (s, e) => changed = true;
             Assert.AreEqual(3, set.Count());
             Assert.IsFalse(changed);
@@ -82,11 +82,11 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => {
                 entry = e.Entry;
-                set.RemoveExpiration(e.Entry.Value);
+                set.Delete(e.Entry.Value);
                 expired.Set();
             };
             set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, ttl);
+            set.SetOrUpdate(i, ttl);
             Assert.IsTrue(changed.WaitOne(5000));
             Assert.IsTrue(expired.WaitOne(5000));
             Assert.AreEqual(i, entry.Value);
@@ -104,7 +104,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
             set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, when);
+            set.SetOrUpdate(i, when);
             Assert.IsTrue(changed.WaitOne(5000));
             Assert.IsTrue(expired.WaitOne(5000));
             Assert.AreEqual(i, entry.Value);
@@ -118,7 +118,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             var v = 42;
             var when = DateTime.UtcNow.AddDays(1);
-            set.SetExpiration(v, when);
+            set.SetOrUpdate(v, when);
             var entry = set[v];
             Assert.AreEqual(v, entry.Value);
             Assert.AreEqual(when, entry.When);
@@ -129,7 +129,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             var v = 42;
             var ttl = TimeSpan.FromSeconds(10);
-            set.SetExpiration(v, ttl);
+            set.SetOrUpdate(v, ttl);
             var entry = set[v];
             Assert.AreEqual(v, entry.Value);
             Assert.AreEqual(ttl, entry.TTL);
@@ -144,8 +144,8 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { expiredEntries.Add(e.Entry.Value); expired = true; };
             set.CollectionChanged += (s, e) => { changed = true; };
-            set.SetExpiration(12, ttl);
-            set.SetExpiration(21, ttl);
+            set.SetOrUpdate(12, ttl);
+            set.SetOrUpdate(21, ttl);
             Assert.IsFalse(expired, "expired was triggered");
             Assert.IsTrue(changed, "changed wasn't triggered");
             changed = false;
@@ -166,11 +166,12 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
             set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, ttl);
+            set.SetOrUpdate(i, ttl);
             Assert.IsTrue(changed.WaitOne(2000));
             changed.Reset();
             Assert.IsFalse(expired.WaitOne(2000));
-            set.SetExpiration(i, TimeSpan.FromSeconds(1));
+            TimeSpan ttl1 = TimeSpan.FromSeconds(1);
+            set.SetOrUpdate(i, ttl1);
             Assert.IsTrue(changed.WaitOne(5000));
             Assert.IsTrue(expired.WaitOne(5000));
         }
@@ -180,7 +181,8 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             var n = 10;
             for(var i = 1; i <= n; i++) {
-                set.SetExpiration(i, TimeSpan.FromSeconds(i));
+                TimeSpan ttl = TimeSpan.FromSeconds(i);
+                set.SetOrUpdate(i, ttl);
             }
             var items = from x in set select x;
             Assert.AreEqual(n, items.Count());
@@ -200,7 +202,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
             set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, ttl);
+            set.SetOrUpdate(i, ttl);
             Assert.IsTrue(changed.WaitOne(500));
             changed.Reset();
             Thread.Sleep(500);
@@ -222,10 +224,10 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
             set.CollectionChanged += (s, e) => changed.Set();
-            set.SetExpiration(i, ttl);
+            set.SetOrUpdate(i, ttl);
             Assert.IsTrue(changed.WaitOne(2000));
             changed.Set();
-            set.RemoveExpiration(i);
+            set.Delete(i);
             Assert.IsTrue(changed.WaitOne(2000));
             Assert.IsFalse(expired.WaitOne(2000));
         }
@@ -236,11 +238,16 @@ namespace MindTouch.Dream.Test {
             var entries = new List<int>();
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entries.Add(e.Entry.Value); expired.Set(); };
-            set.SetExpiration(3, TimeSpan.FromMilliseconds(1600));
-            set.SetExpiration(2, TimeSpan.FromMilliseconds(1500));
-            set.SetExpiration(5, TimeSpan.FromMilliseconds(3000));
-            set.SetExpiration(4, TimeSpan.FromMilliseconds(2000));
-            set.SetExpiration(1, TimeSpan.FromMilliseconds(500));
+            TimeSpan ttl = TimeSpan.FromMilliseconds(1600);
+            set.SetOrUpdate(3, ttl);
+            TimeSpan ttl1 = TimeSpan.FromMilliseconds(1500);
+            set.SetOrUpdate(2, ttl1);
+            TimeSpan ttl2 = TimeSpan.FromMilliseconds(3000);
+            set.SetOrUpdate(5, ttl2);
+            TimeSpan ttl3 = TimeSpan.FromMilliseconds(2000);
+            set.SetOrUpdate(4, ttl3);
+            TimeSpan ttl4 = TimeSpan.FromMilliseconds(500);
+            set.SetOrUpdate(1, ttl4);
             Assert.IsTrue(expired.WaitOne(1000));
             Assert.AreEqual(1, entries.Count);
             Assert.IsTrue(Wait.For(() => entries.Count == 5, TimeSpan.FromSeconds(5000)));
@@ -255,9 +262,11 @@ namespace MindTouch.Dream.Test {
             set.EntryExpired += (s, e) => { entries.Add(e.Entry.Value); expired.Set(); };
             var n = 1000;
             for(var i = 0; i < n; i++) {
-                set.SetExpiration(i, TimeSpan.FromMinutes(10));
+                TimeSpan ttl = TimeSpan.FromMinutes(10);
+                set.SetOrUpdate(i, ttl);
             }
-            set.SetExpiration(100000, TimeSpan.FromSeconds(2));
+            TimeSpan ttl1 = TimeSpan.FromSeconds(2);
+            set.SetOrUpdate(100000, ttl1);
             Assert.IsTrue(expired.WaitOne(4000));
             Assert.AreEqual(1, entries.Count);
             Assert.AreEqual(n, set.Count());
@@ -269,7 +278,7 @@ namespace MindTouch.Dream.Test {
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             var expireTime = DateTime.UtcNow.AddSeconds(10);
-            set.SetExpiration(i, expireTime);
+            set.SetOrUpdate(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
             AssertEx.AreEqual(ttl, entry.TTL);
@@ -282,7 +291,7 @@ namespace MindTouch.Dream.Test {
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current, true);
             var expireTime = DateTime.UtcNow.AddSeconds(10);
-            set.SetExpiration(i, expireTime);
+            set.SetOrUpdate(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
             AssertEx.AreEqual(ttl, entry.TTL);
@@ -297,7 +306,7 @@ namespace MindTouch.Dream.Test {
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current, true);
             var expireTime = DateTime.UtcNow.AddSeconds(10);
-            set.SetExpiration(k, expireTime);
+            set.SetOrUpdate(k, expireTime);
             var when = set[k].When;
             Thread.Sleep(200);
             Assert.AreEqual(when, set[k].When);

@@ -224,28 +224,6 @@ namespace MindTouch.Dream {
         //--- Constructors ---
 
         /// <summary>
-        /// Obsolete: This form of the attribute construtor is deprecated. Please DreamFeatureAttribute(string,string) instead.
-        /// </summary>
-        [Obsolete("This form of the attribute construtor is deprecated. Please DreamFeatureAttribute(string,string) instead.")]
-        public DreamFeatureAttribute(string path, string signature, string verb, string description, string info) {
-
-            // remove trailing slash
-            if((path.Length > 0) && (path[path.Length - 1] == '/')) {
-                path = path.Substring(0, path.Length - 1);
-            }
-
-            // add initial slash
-            if((signature.Length == 0) || (signature[0] != '/')) {
-                signature = "/" + signature;
-            }
-
-            // initialize fields
-            _pattern = verb + ":" + path + signature;
-            _description = description;
-            _info = info;
-        }
-
-        /// <summary>
         /// Create new attribute.
         /// </summary>
         /// <param name="pattern">The Uri pattern that this feature responds to.</param>
