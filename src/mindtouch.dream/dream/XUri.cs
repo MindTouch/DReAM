@@ -1432,34 +1432,6 @@ namespace MindTouch.Dream {
         }
 
         /// <summary>
-        /// This method is obsolete. Please use <see cref="WithParams(System.Collections.Generic.KeyValuePair{string,string}[])"/> instead
-        /// </summary>
-        [Obsolete("Please use 'WithParams(KeyValuePair<string, string>[] args)' instead")]
-        public XUri WithParams(NameValueCollection args) {
-            if(args == null) {
-                return this;
-            }
-
-            // convert name-value collection to list
-            var list = new List<KeyValuePair<string, string>>();
-            for(var i = 0; i < args.Count; ++i) {
-                var key = args.GetKey(i);
-
-                // TODO (steveb): this should probably be 'args.GetValues(i)' instead
-                var values = args.Get(key);
-
-                if(values != null) {
-                    var argValues = args.GetValues(i);
-                    Debug.Assert(argValues != null, "argValues != null");
-                    list.AddRange(argValues.Select(value => new KeyValuePair<string, string>(key, value)));
-                } else {
-                    list.Add(new KeyValuePair<string, string>(key, null));
-                }
-            }
-            return WithParams(list.ToArray());
-        }
-
-        /// <summary>
         /// Create new XUri based on the current instance with parameters from another uri added.
         /// </summary>
         /// <param name="uri">Other uri.</param>

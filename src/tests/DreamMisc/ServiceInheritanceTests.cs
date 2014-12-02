@@ -45,7 +45,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Parent_blueprint_has_all_members() {
-            DreamMessage response = _parent.AtLocalHost.At("@blueprint").GetAsync().Wait();
+            DreamMessage response = _parent.AtLocalHost.At("@blueprint").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             XDoc blueprint = response.ToDocument();
             Assert.AreEqual("public", blueprint["features/feature[pattern='GET:public']/access"].AsText);
@@ -56,7 +56,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Child_blueprint_has_all_members_except_private() {
-            DreamMessage response = _child.AtLocalHost.At("@blueprint").GetAsync().Wait();
+            DreamMessage response = _child.AtLocalHost.At("@blueprint").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             XDoc blueprint = response.ToDocument();
             Assert.AreEqual("public", blueprint["features/feature[pattern='GET:public']/access"].AsText);

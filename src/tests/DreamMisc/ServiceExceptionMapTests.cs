@@ -59,27 +59,27 @@ namespace MindTouch.Dream.Test {
        
         [Test]
         public void Should_return_successfully() {
-            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "never").GetAsync().Wait();
+            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "never").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
         }
 
         [Test]
         public void Map_plain_exception_to_badrequest_in_main() {
-            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "main").GetAsync().Wait();
+            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "main").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.BadRequest, response.Status);
         }
 
         [Test]
         public void Map_plain_exception_to_badrequest_in_prologue() {
-            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "prologue").GetAsync().Wait();
+            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "prologue").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.BadRequest, response.Status);
         }
 
         [Test]
         public void Map_plain_exception_to_badrequest_in_epilogue() {
-            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "epilogue").GetAsync().Wait();
+            var response = _serviceInfo.AtLocalHost.At("test").With("throwwhere", "epilogue").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.BadRequest, response.Status);
         }
@@ -89,7 +89,7 @@ namespace MindTouch.Dream.Test {
             var response = _serviceInfo.AtLocalHost.At("test")
                 .With("throwwhere", "main")
                 .With("throwwhat", "custom")
-                .GetAsync().Wait();
+                .Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.NotAcceptable, response.Status);
         }
@@ -99,7 +99,7 @@ namespace MindTouch.Dream.Test {
             var response = _serviceInfo.AtLocalHost.At("test")
                 .With("throwwhere", "prologue")
                 .With("throwwhat", "custom")
-                .GetAsync().Wait();
+                .Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.NotAcceptable, response.Status);
         }
@@ -109,7 +109,7 @@ namespace MindTouch.Dream.Test {
             var response = _serviceInfo.AtLocalHost.At("test")
                 .With("throwwhere", "epilogue")
                 .With("throwwhat", "custom")
-                .GetAsync().Wait();
+                .Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.NotAcceptable, response.Status);
         }
@@ -119,7 +119,7 @@ namespace MindTouch.Dream.Test {
             var response = _serviceInfo.AtLocalHost.At("test")
                 .With("throwwhere", "main")
                 .With("throwwhat", "forbidden")
-                .GetAsync().Wait();
+                .Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Forbidden, response.Status);
         }
@@ -129,7 +129,7 @@ namespace MindTouch.Dream.Test {
             var response = _serviceInfo.AtLocalHost.At("test")
                 .With("throwwhere", "prologue")
                 .With("throwwhat", "forbidden")
-                .GetAsync().Wait();
+                .Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Forbidden, response.Status);
         }
@@ -139,7 +139,7 @@ namespace MindTouch.Dream.Test {
             var response = _serviceInfo.AtLocalHost.At("test")
                 .With("throwwhere", "epilogue")
                 .With("throwwhat", "forbidden")
-                .GetAsync().Wait();
+                .Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Forbidden, response.Status);
         }

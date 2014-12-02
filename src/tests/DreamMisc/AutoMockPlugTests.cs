@@ -58,10 +58,10 @@ namespace MindTouch.Dream.Test {
             AutoMockPlug autoPlug = MockPlug.Register(new XUri("http://auto/plug"));
             autoPlug.Expect("POST");
             AsyncUtil.Fork(() => {
-                Plug.New("http://auto/plug/a").PostAsync().Block();
-                Plug.New("http://auto/plug/b").PostAsync().Block();
-                Plug.New("http://auto/plug/c").PostAsync().Block();
-                Plug.New("http://auto/plug/d").PostAsync().Block();
+                Plug.New("http://auto/plug/a").Post(new Result<DreamMessage>()).Block();
+                Plug.New("http://auto/plug/b").Post(new Result<DreamMessage>()).Block();
+                Plug.New("http://auto/plug/c").Post(new Result<DreamMessage>()).Block();
+                Plug.New("http://auto/plug/d").Post(new Result<DreamMessage>()).Block();
             }, new Result());
             Assert.IsFalse(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(15)), autoPlug.VerificationFailure);
             Assert.IsTrue(autoPlug.HasInterceptsInExcessOfExpectations);
@@ -109,8 +109,8 @@ namespace MindTouch.Dream.Test {
         public void Autoplug_without_expectations_should_still_fail_on_excess() {
             AutoMockPlug autoPlug = MockPlug.Register(new XUri("http://auto/plug"));
             AsyncUtil.Fork(() => {
-                Plug.New("http://auto/plug/b").PutAsync(new XDoc("foo"));
-                Plug.New("http://auto/plug/a").PostAsync();
+                Plug.New("http://auto/plug/b").Put(new XDoc("foo"), new Result<DreamMessage>());
+                Plug.New("http://auto/plug/a").Post(new Result<DreamMessage>());
             }, new Result());
             Assert.IsFalse(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
             Assert.AreEqual(2, autoPlug.ExcessInterceptions.Length);
@@ -119,7 +119,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Excess_expectations_are_BadRequest() {
             AutoMockPlug autoPlug = MockPlug.Register(new XUri("http://auto/plug"));
-            DreamMessage message = Plug.New("http://auto/plug/a").GetAsync().Wait();
+            DreamMessage message = Plug.New("http://auto/plug/a").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(message.IsSuccessful);
             Assert.AreEqual(DreamStatus.BadRequest, message.Status);
             Assert.IsFalse(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
@@ -130,7 +130,7 @@ namespace MindTouch.Dream.Test {
         public void Can_match_request_DreamMessages_for_expectation() {
             AutoMockPlug autoPlug = MockPlug.Register(new XUri("http://auto/plug"));
             autoPlug.Expect().Verb("POST").Uri(new XUri("http://auto/plug/a")).Request(DreamMessage.Ok(MimeType.TEXT_UTF8, "blah"));
-            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").PostAsync(DreamMessage.Ok(MimeType.TEXT_UTF8, "blah")), new Result());
+            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").Post(DreamMessage.Ok(MimeType.TEXT_UTF8, "blah"), new Result<DreamMessage>()), new Result());
             Assert.IsTrue(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
         }
 
@@ -140,7 +140,7 @@ namespace MindTouch.Dream.Test {
             autoPlug.Expect().Verb("GET").Uri(new XUri("http://auto/plug/a"))
                 .RequestHeader("Foo", "123")
                 .RequestHeader("Bar", "right");
-            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").WithHeader("Foo", "123").WithHeader("Bar", "wrong").GetAsync(), new Result());
+            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").WithHeader("Foo", "123").WithHeader("Bar", "wrong").Get(new Result<DreamMessage>()), new Result());
             Assert.IsFalse(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
             Assert.AreEqual("Expectations were unmet:\r\nExpectation #1: Expected header 'Bar:\r\nExpected: right\r\nGot:      wrong\r\n", autoPlug.VerificationFailure);
         }
@@ -151,7 +151,7 @@ namespace MindTouch.Dream.Test {
             autoPlug.Expect().Verb("GET").Uri(new XUri("http://auto/plug/a"))
                 .RequestHeader("Foo", "123")
                 .RequestHeader("Bar", "required");
-            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").WithHeader("Foo", "123").GetAsync(), new Result());
+            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").WithHeader("Foo", "123").Get(new Result<DreamMessage>()), new Result());
             Assert.IsFalse(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
             Assert.AreEqual("Expectations were unmet:\r\nExpectation #1: Expected header 'Bar', got none\r\n", autoPlug.VerificationFailure);
         }
@@ -160,7 +160,7 @@ namespace MindTouch.Dream.Test {
         public void Ignores_excess_headers() {
             AutoMockPlug autoPlug = MockPlug.Register(new XUri("http://auto/plug"));
             autoPlug.Expect().Verb("POST").Uri(new XUri("http://auto/plug/a"));
-            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").WithHeader("Foo", "123").PostAsync(), new Result());
+            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").WithHeader("Foo", "123").Post(new Result<DreamMessage>()), new Result());
             Assert.IsTrue(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
         }
 
@@ -168,7 +168,7 @@ namespace MindTouch.Dream.Test {
         public void Matches_request_doc_to_expectations() {
             AutoMockPlug autoPlug = MockPlug.Register(new XUri("http://auto/plug"));
             autoPlug.Expect().Verb("POST").Uri(new XUri("http://auto/plug/a")).RequestDocument(new XDoc("foo"));
-            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").PostAsync(new XDoc("foo")), new Result());
+            AsyncUtil.Fork(() => Plug.New("http://auto/plug/a").Post(new XDoc("foo"), new Result<DreamMessage>()), new Result());
             Assert.IsTrue(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
         }
 
@@ -179,8 +179,8 @@ namespace MindTouch.Dream.Test {
             autoPlug.Expect().Verb("GET").Uri(new XUri("http://auto/plug/a")).RequestHeader("Foo", "baz");
             Plug p = Plug.New("http://auto/plug/a");
             AsyncUtil.Fork(() => {
-                p.WithHeader("Foo", "").GetAsync().Block();
-                p.WithHeader("Foo", "baz").GetAsync().Block();
+                p.WithHeader("Foo", "").Get(new Result<DreamMessage>()).Block();
+                p.WithHeader("Foo", "baz").Get(new Result<DreamMessage>()).Block();
             }, new Result());
             Assert.IsTrue(autoPlug.WaitAndVerify(TimeSpan.FromSeconds(1)), autoPlug.VerificationFailure);
         }

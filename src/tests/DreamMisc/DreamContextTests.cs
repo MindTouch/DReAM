@@ -44,7 +44,7 @@ namespace MindTouch.Dream.Test {
             var config = new XDoc("config")
                .Elem("path", "test")
                .Elem("sid", "sid://mindtouch.com/DreamContextTestService");
-            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).PostAsync(config).Wait();
+            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Post(config, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, result.ToText());
             _plug = Plug.New(_hostInfo.LocalHost.Uri.WithoutQuery()).At("test");
             DreamContextTestService.ContextVar = null;
@@ -58,7 +58,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void ContextVar_is_disposed_after_request() {
             _log.Debug("starting test");
-            var response = _plug.At("ping").GetAsync().Wait();
+            var response = _plug.At("ping").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
             Assert.IsTrue(DreamContextTestService.ContextVar.IsDisposed);
         }
@@ -66,7 +66,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Exception_translators_get_proper_context() {
             _log.Debug("starting test");
-            var response = _plug.At("exception").GetAsync().Wait();
+            var response = _plug.At("exception").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
             Assert.IsTrue(DreamContextTestService.ContextVar.IsDisposed);
         }
@@ -74,43 +74,43 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void FeatureChain_does_not_touch_disposed_context() {
             _log.Debug("starting test");
-            var response = _plug.At("disposal").GetAsync().Wait();
+            var response = _plug.At("disposal").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
         [Test]
         public void State_set_in_prologue_is_available_to_feature() {
-            var response = _plug.At("prologue").GetAsync().Wait();
+            var response = _plug.At("prologue").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
         [Test]
         public void State_set_in_feature_is_available_to_epilogue() {
-            var response = _plug.At("epilogue").GetAsync().Wait();
+            var response = _plug.At("epilogue").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
         [Test]
         public void State_set_in_prologue_is_available_to_epilogue() {
-            var response = _plug.At("prologueepilogue").GetAsync().Wait();
+            var response = _plug.At("prologueepilogue").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
         [Test]
         public void Can_call_coroutine_without_affecting_state() {
-            var response = _plug.At("callcoroutine").GetAsync().Wait();
+            var response = _plug.At("callcoroutine").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
         [Test]
         public void Can_call_plug_without_affecting_state() {
-            var response = _plug.At("callplug").GetAsync().Wait();
+            var response = _plug.At("callplug").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
         [Test]
         public void Can_call_and_spawn_separate_context_without_affecting_state() {
-            var response = _plug.At("spawn").GetAsync().Wait();
+            var response = _plug.At("spawn").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.GetErrorString());
         }
 
@@ -236,7 +236,7 @@ namespace MindTouch.Dream.Test {
                 context.SetState(ContextVar);
                 Result<DreamMessage> sub;
                 _log.Debug("calling plug");
-                yield return sub = Self.At("calledplug").GetAsync();
+                yield return sub = Self.At("calledplug").Get(new Result<DreamMessage>());
                 _log.Debug("return from plug");
                 if(!sub.Value.IsSuccessful) {
                     response.Return(sub.Value);

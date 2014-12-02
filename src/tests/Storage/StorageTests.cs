@@ -186,7 +186,7 @@ namespace MindTouch.Dream.Storage.Test {
 
             _storage.At("foo", "bar").Delete();
 
-            DreamMessage response = _storage.At("foo", "bar").GetAsync().Wait();
+            DreamMessage response = _storage.At("foo", "bar").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.NotFound, response.Status);
 
@@ -199,14 +199,14 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Delete_of_random_path_is_ok() {
-            DreamMessage response = _storage.At("foo", "bar", "baz").DeleteAsync().Wait();
+            DreamMessage response = _storage.At("foo", "bar", "baz").Delete(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Ok, response.Status);
         }
 
         [Test]
         public void Head_on_folder_is_ok() {
-            DreamMessage response = _storage.HeadAsync().Wait();
+            DreamMessage response = _storage.Head(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(DreamStatus.Ok, response.Status);
         }
@@ -268,7 +268,7 @@ namespace MindTouch.Dream.Storage.Test {
 
             // get file and compare contents
             _log.DebugFormat("Checking for expired file at: {0}", DateTime.UtcNow);
-            DreamMessage response = _storage.At(_fileUri).GetAsync().Wait();
+            DreamMessage response = _storage.At(_fileUri).Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.NotFound, response.Status);
         }
 
@@ -297,45 +297,45 @@ namespace MindTouch.Dream.Storage.Test {
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
 
             // get file and compare contents
-            DreamMessage response = _storage.At(_fileUri).GetAsync().Wait();
+            DreamMessage response = _storage.At(_fileUri).Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.NotFound, response.Status);
         }
 
         [Test]
         public void Access_to_host_shared_private_service_should_be_forbidden() {
-            DreamMessage response = _hostInfo.LocalHost.At("host", "$store").GetAsync().Wait();
+            DreamMessage response = _hostInfo.LocalHost.At("host", "$store").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Service_can_store_and_retrieve_file() {
-            DreamMessage response = _testService.AtPath("create-retrieve-delete").PostAsync().Wait();
+            DreamMessage response = _testService.AtPath("create-retrieve-delete").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Service_can_store_and_retrieve_head() {
-            DreamMessage response = _testService.AtPath("create-retrievehead-delete").PostAsync().Wait();
+            DreamMessage response = _testService.AtPath("create-retrievehead-delete").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Service_storage_will_expire_file() {
-            DreamMessage response = _testService.AtPath("create-expire").PostAsync().Wait();
+            DreamMessage response = _testService.AtPath("create-expire").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Service_can_store_and_retrieve_file_from_another_services_shared_private_storage() {
-            DreamMessage response = _testCrossService.AtPath("create-retrieve-delete").PostAsync().Wait();
+            DreamMessage response = _testCrossService.AtPath("create-retrieve-delete").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Services_can_manipulate_shared_private_storage() {
-            DreamMessage response = _testService.AtPath("shared-create").PostAsync().Wait();
+            DreamMessage response = _testService.AtPath("shared-create").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
-            response = _testCrossService.AtPath("shared-retrieve-delete").PostAsync().Wait();
+            response = _testCrossService.AtPath("shared-retrieve-delete").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
@@ -352,7 +352,7 @@ namespace MindTouch.Dream.Storage.Test {
             config.Elem("sid", "sid://mindtouch.com/2007/03/dream/storage");
             config.Elem("folder", _storageFolder);
             //DreamMessage result = _host.Self.At("services").PostAsync(config).Wait();          
-            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).PostAsync(config).Wait();
+            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Post(config, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, result.ToText());
 
             // initialize storage plug
@@ -360,7 +360,7 @@ namespace MindTouch.Dream.Storage.Test {
         }
 
         private void DestroyStorageService() {
-            DreamMessage response = _storage.DeleteAsync().Wait();
+            DreamMessage response = _storage.Delete(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
 
         }
@@ -454,7 +454,7 @@ namespace MindTouch.Dream.Storage.Test {
 
                 // get file and compare contents
                 _log.DebugFormat("Checking for expired file at: {0}", DateTime.UtcNow);
-                DreamMessage getResponse = Storage.AtPath(TEST_FILE_URI).GetAsync().Wait();
+                DreamMessage getResponse = Storage.AtPath(TEST_FILE_URI).Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.NotFound, getResponse.Status);
 
                 response.Return(DreamMessage.Ok());

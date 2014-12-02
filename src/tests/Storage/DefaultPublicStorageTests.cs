@@ -32,10 +32,10 @@ namespace MindTouch.Dream.Storage.Test {
             using(DreamHostInfo hostInfo = DreamTestHelper.CreateRandomPortHost()) {
                 MockServiceInfo mock = MockService.CreateMockService(hostInfo);
                 mock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
-                    DreamMessage r = Plug.New((context.Service as MockService).Storage.Uri.WithoutLastSegment()).GetAsync().Wait();
+                    DreamMessage r = Plug.New((context.Service as MockService).Storage.Uri.WithoutLastSegment()).Get(new Result<DreamMessage>()).Wait();
                     response2.Return(r);
                 };
-                DreamMessage response = mock.AtLocalMachine.GetAsync().Wait();
+                DreamMessage response = mock.AtLocalMachine.Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.Forbidden, response.Status);
             }
         }
@@ -47,11 +47,11 @@ namespace MindTouch.Dream.Storage.Test {
                 mock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
                     DreamMessage r = Plug.New((context.Service as MockService).Storage.Uri.WithoutLastSegment())
                         .At("foo.txt")
-                        .PutAsync(DreamMessage.Ok(MimeType.TEXT, "bar"))
+                        .Put(DreamMessage.Ok(MimeType.TEXT, "bar"), new Result<DreamMessage>())
                         .Wait();
                     response2.Return(r);
                 };
-                DreamMessage response = mock.AtLocalMachine.GetAsync().Wait();
+                DreamMessage response = mock.AtLocalMachine.Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.Forbidden, response.Status);
             }
         }

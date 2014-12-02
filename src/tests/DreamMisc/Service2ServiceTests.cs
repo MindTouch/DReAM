@@ -52,16 +52,16 @@ namespace MindTouch.Dream.Test {
                 hitCounter++;
                 r.Return(DreamMessage.Ok());
             };
-            var response = _service1.AtLocalHost.GetAsync().Wait();
+            var response = _service1.AtLocalHost.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(1, hitCounter);
-            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).GetAsync().Wait();
+            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(2, hitCounter);
-            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("bar").WithPort(80)).GetAsync().Wait();
+            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("bar").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(3, hitCounter);
-            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("baz").WithPort(80)).GetAsync().Wait();
+            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("baz").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful);
             Assert.AreEqual(3, hitCounter);
         }
@@ -73,7 +73,7 @@ namespace MindTouch.Dream.Test {
                 receivedHost = request.Headers.Host;
                 r.Return(DreamMessage.Ok());
             };
-            var response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).GetAsync().Wait();
+            var response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual("foo:80", receivedHost);
         }
@@ -85,7 +85,7 @@ namespace MindTouch.Dream.Test {
                 receivedHost = request.Headers.Host;
                 r.Return(DreamMessage.Ok());
             };
-            var response = Plug.New(_service1.AtLocalHost.Uri.WithScheme("ext-http")).With("dream.in.host", "proxy").GetAsync().Wait();
+            var response = Plug.New(_service1.AtLocalHost.Uri.WithScheme("ext-http")).With("dream.in.host", "proxy").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual("proxy", receivedHost);
         }
@@ -101,7 +101,7 @@ namespace MindTouch.Dream.Test {
                 receivedHost = request.Headers.Host;
                 r.Return(DreamMessage.Ok());
             };
-            var response = _service1.AtLocalHost.GetAsync().Wait();
+            var response = _service1.AtLocalHost.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual("foo:80", receivedHost);
         }

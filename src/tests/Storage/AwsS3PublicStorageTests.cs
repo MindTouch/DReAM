@@ -88,10 +88,10 @@ namespace MindTouch.Dream.Storage.Test {
         [Test]
         public void Default_public_storage_root_cannot_be_read() {
             _mockService.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
-                var r = Plug.New((context.Service as MockService).Storage.Uri.WithoutLastSegment()).GetAsync().Wait();
+                var r = Plug.New((context.Service as MockService).Storage.Uri.WithoutLastSegment()).Get(new Result<DreamMessage>()).Wait();
                 response2.Return(r);
             };
-            var response = _mockService.AtLocalMachine.GetAsync().Wait();
+            var response = _mockService.AtLocalMachine.Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.Forbidden, response.Status);
             _s3ClientMock.Verify(x => x.PutFile(It.IsAny<string>(), It.IsAny<AwsS3FileHandle>()), Times.Never());
         }
@@ -101,18 +101,18 @@ namespace MindTouch.Dream.Storage.Test {
             _mockService.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response2) {
                 var r = Plug.New((context.Service as MockService).Storage.Uri.WithoutLastSegment())
                     .At("foo.txt")
-                    .PutAsync(DreamMessage.Ok(MimeType.TEXT, "bar"))
+                    .Put(DreamMessage.Ok(MimeType.TEXT, "bar"), new Result<DreamMessage>())
                     .Wait();
                 response2.Return(r);
             };
-            var response = _mockService.AtLocalMachine.GetAsync().Wait();
+            var response = _mockService.AtLocalMachine.Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.Forbidden, response.Status);
             _s3ClientMock.Verify(x => x.PutFile(It.IsAny<string>(), It.IsAny<AwsS3FileHandle>()), Times.Never());
         }
 
         [Test]
         public void Access_to_host_shared_private_service_should_be_forbidden() {
-            var response = _hostInfo.LocalHost.At("host", "$store").GetAsync().Wait();
+            var response = _hostInfo.LocalHost.At("host", "$store").Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.Forbidden, response.Status);
         }
 
