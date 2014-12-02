@@ -265,15 +265,6 @@ namespace MindTouch.Tasking {
                 InitTaskEnv(true);
                 return _env;
             }
-            set {
-                if(HasCompletion) {
-                    throw new InvalidOperationException("Env can no longer be changed");
-                }
-                if(value == null) {
-                    throw new ArgumentNullException("value");
-                }
-                _env = value;
-            }
         }
 
         /// <summary>
