@@ -160,7 +160,6 @@ namespace MindTouch.Tasking {
         /// </summary>
         protected TaskEnv _env;
 
-
         private TimeSpan _timeout;
         private Exception _exception;
         private Action _completion;
@@ -559,8 +558,12 @@ namespace MindTouch.Tasking {
         private void InitTaskEnv(bool alwaysInitialize) {
 
             // check if environment is not yet initialized; unless requested, we only initialize _env if we also have a _cleanup callback
-            if(_env == null && (alwaysInitialize || HasCleanup)) {
-                _env = TaskEnv.Clone();
+            if((_env == null) && (alwaysInitialize || HasCleanup)) {
+                lock(this) {
+                    if(_env == null) {
+                        _env = TaskEnv.Clone();
+                    }
+                }
             }
         }
 
