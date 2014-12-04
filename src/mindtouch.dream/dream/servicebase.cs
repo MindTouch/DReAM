@@ -149,10 +149,7 @@ namespace MindTouch.Dream {
                     result.Elem("obsolete", featureAttrib.Obsolete);
                     result.Elem("pattern", featureAttrib.Pattern);
                     result.Elem("description", featureAttrib.Description);
-                    string info = featureAttrib.Info ?? serviceAttrib.Info;
-                    if(info != null) {
-                        result.Elem("info", info);
-                    }
+                    result.Elem("hidden", featureAttrib.Hidden);
                     result.Elem("method", method.Name);
 
                     // add parameter descriptions (as seen on the method definition)
@@ -421,8 +418,10 @@ namespace MindTouch.Dream {
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
         [DreamFeature("GET:@about", "Retrieve service description")]
+        [DreamFeatureParam("hidden", "bool?", "show internal, private, obsolete, and hidden features, as well as service configuration information (default: false)")]
         public virtual Yield GetServiceInfo(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc blueprint = Blueprint;
+            bool showHidden = context.GetParam("hidden", false);
             string title = blueprint["name"].AsText ?? "Service Blueprint";
             XDoc result = new XDoc("html").Attr("xmlns", "http://www.w3.org/1999/xhtml")
                 .Start("head")
@@ -440,24 +439,26 @@ namespace MindTouch.Dream {
                             .Value(" ")
                             .Start("a").Attr("href", blueprint["info"].Contents).Value("(more)").End()
                             .Value(" ")
-                            .Start("a").Attr("href", Self.Uri.At("@blueprint").Path).Value("(blueprint)").End()
+                            .Start("a").Attr("href", Self.Uri.At("@blueprint")).Value("(blueprint)").End()
                         .End();
 
-                // show configuration information
-                XDoc config = blueprint["configuration"];
-                if(!config.IsEmpty) {
-                    result.Elem("h2", "Configuration");
-                    result.Start("ul");
-                    foreach(XDoc entry in config["entry"]) {
-                        result.Start("li");
-                        if(entry["valuetype"].Contents != string.Empty) {
-                            result.Value(string.Format("{0} = {1} : {2}", entry["name"].Contents, entry["valuetype"].Contents, entry["description"].Contents));
-                        } else {
-                            result.Value(string.Format("{0} : {1}", entry["name"].Contents, entry["description"].Contents));
+                // only show configuration information if requested
+                if(showHidden) {
+                    XDoc config = blueprint["configuration"];
+                    if(!config.IsEmpty) {
+                        result.Elem("h2", "Configuration");
+                        result.Start("ul");
+                        foreach(XDoc entry in config["entry"]) {
+                            result.Start("li");
+                            if(entry["valuetype"].Contents != string.Empty) {
+                                result.Value(string.Format("{0} = {1} : {2}", entry["name"].Contents, entry["valuetype"].Contents, entry["description"].Contents));
+                            } else {
+                                result.Value(string.Format("{0} : {1}", entry["name"].Contents, entry["description"].Contents));
+                            }
+                            result.End();
                         }
                         result.End();
                     }
-                    result.End();
                 }
 
                 // sort features by signature then verb
@@ -482,10 +483,25 @@ namespace MindTouch.Dream {
                         // add modifiers
                         string modifier = feature["access"].AsText;
                         if(modifier != null) {
+
+                            // don't show internal/private/hidden features
+                            if(!showHidden) {
+                                if(modifier != "public") {
+                                    continue;
+                                }
+                                if((feature["hidden"].AsText ?? "false") != "false") {
+                                    continue;
+                                }
+                            }
                             modifiers.Add(modifier);
                         }
                         modifier = feature["obsolete"].AsText;
                         if(modifier != null) {
+
+                            // don't show obsolete features
+                            if(!showHidden) {
+                                continue;
+                            }
                             modifiers.Add("OBSOLETE => " + modifier);
                         }
                         if(modifiers.Count > 0) {
