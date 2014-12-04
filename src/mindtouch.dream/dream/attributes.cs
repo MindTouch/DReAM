@@ -222,7 +222,6 @@ namespace MindTouch.Dream {
         /// <param name="pattern">The Uri pattern that this feature responds to.</param>
         /// <param name="description">Description of the <see cref="DreamFeature"/>.</param>
         public DreamFeatureAttribute(string pattern, string description) {
-            this.Obsolete = null;
             this.Pattern = pattern;
             this.Description = description;
         }

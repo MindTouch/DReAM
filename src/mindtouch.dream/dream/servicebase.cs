@@ -149,7 +149,6 @@ namespace MindTouch.Dream {
                     result.Elem("obsolete", featureAttrib.Obsolete);
                     result.Elem("pattern", featureAttrib.Pattern);
                     result.Elem("description", featureAttrib.Description);
-                    result.Elem("info", serviceAttrib.Info);
                     result.Elem("hidden", featureAttrib.Hidden);
                     result.Elem("method", method.Name);
 
@@ -419,7 +418,7 @@ namespace MindTouch.Dream {
         /// <param name="response">Response synchronization handle.</param>
         /// <returns>Iterator used by <see cref="Coroutine"/> to invoke the feature.</returns>
         [DreamFeature("GET:@about", "Retrieve service description")]
-        [DreamFeatureParam("hidden", "string?", "show internal, private, obsolete, and hidden features, as well as service configuration information (default: false)")]
+        [DreamFeatureParam("hidden", "bool?", "show internal, private, obsolete, and hidden features, as well as service configuration information (default: false)")]
         public virtual Yield GetServiceInfo(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             XDoc blueprint = Blueprint;
             bool showHidden = context.GetParam("hidden", false);
