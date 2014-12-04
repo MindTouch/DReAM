@@ -1180,21 +1180,36 @@ namespace MindTouch.Dream {
 
         private Result<DreamMessage> SubmitRequestAsync(string verb, XUri uri, IPrincipal user, DreamMessage request, Result<DreamMessage> response, Action completion) {
             if(string.IsNullOrEmpty(verb)) {
+                if(completion != null) {
+                    completion();
+                }
                 throw new ArgumentNullException("verb");
             }
             if(uri == null) {
+                if(completion != null) {
+                    completion();
+                }
                 throw new ArgumentNullException("uri");
             }
             if(request == null) {
+                if(completion != null) {
+                    completion();
+                }
                 throw new ArgumentNullException("request");
             }
             if(response == null) {
+                if(completion != null) {
+                    completion();
+                }
                 throw new ArgumentNullException("response");
             }
 
             // ensure environment is still running
             if(!IsRunning) {
                 response.Return(DreamMessage.InternalError("host not running"));
+                if(completion != null) {
+                    completion();
+                }
                 return response;
             }
 
