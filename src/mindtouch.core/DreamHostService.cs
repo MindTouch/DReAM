@@ -392,39 +392,6 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        [DreamFeature("GET:blueprints", "Retrieve list of all blueprints")]
-        public Yield GetAllBlueprints(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            XDoc result = new XDoc("list");
-            Dictionary<string, XDoc> blueprints = _blueprints;
-            if(blueprints != null) {
-                lock(blueprints) {
-                    foreach(XDoc entry in blueprints.Values) {
-                        result.Add(entry);
-                    }
-                }
-            }
-            response.Return(DreamMessage.Ok(result));
-            yield break;
-        }
-
-        [DreamFeature("GET:blueprints/{sid-or-typename}", "Retrieve a blueprint")]
-        public Yield GetBlueprints(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
-            string sid = context.GetSuffix(0, UriPathFormat.Original);
-            XDoc result = null;
-            Dictionary<string, XDoc> blueprints = _blueprints;
-            if(blueprints != null) {
-                lock(blueprints) {
-                    blueprints.TryGetValue(sid, out result);
-                }
-            }
-            if(result != null) {
-                response.Return(DreamMessage.Ok(result));
-            } else {
-                response.Return(DreamMessage.NotFound(string.Format("could not find blueprint for {0}", sid)));
-            }
-            yield break;
-        }
-
         [DreamFeature("GET:resources/{resource}", "Retrieve embedded resource")]
         public Yield GetErrorXsl(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             string resource = context.GetParam("resource");
@@ -637,7 +604,7 @@ namespace MindTouch.Dream {
             yield break;
         }
 
-        [DreamFeature("*:test", "Test communication with Host service.")]
+        [DreamFeature("*:test", "Test communication with Host service.", Hidden = true)]
         [DreamFeatureParam("status", "int?", "Response status code to reply with (default = 200)")]
         [DreamFeatureParam("cookie", "string?", "Include Set-Cookie in response")]
         public Yield GetTest(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
@@ -662,6 +629,9 @@ namespace MindTouch.Dream {
 
         [DreamFeature("POST:convert", "Convert a document to another format. (requires API key)")]
         internal Yield PostConvert(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
+
+            // TODO (2014-11-25, steveb): what is this used for?
+
             response.Return(DreamMessage.Ok(request.ContentType, request.ToBytes()));
             yield break;
         }
