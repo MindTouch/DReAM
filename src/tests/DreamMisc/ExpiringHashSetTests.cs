@@ -170,8 +170,7 @@ namespace MindTouch.Dream.Test {
             Assert.IsTrue(changed.WaitOne(2000));
             changed.Reset();
             Assert.IsFalse(expired.WaitOne(2000));
-            TimeSpan ttl1 = TimeSpan.FromSeconds(1);
-            set.SetOrUpdate(i, ttl1);
+            set.SetOrUpdate(i, TimeSpan.FromSeconds(1));
             Assert.IsTrue(changed.WaitOne(5000));
             Assert.IsTrue(expired.WaitOne(5000));
         }
@@ -181,8 +180,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             var n = 10;
             for(var i = 1; i <= n; i++) {
-                TimeSpan ttl = TimeSpan.FromSeconds(i);
-                set.SetOrUpdate(i, ttl);
+                set.SetOrUpdate(i, TimeSpan.FromSeconds(i));
             }
             var items = from x in set select x;
             Assert.AreEqual(n, items.Count());
@@ -238,16 +236,11 @@ namespace MindTouch.Dream.Test {
             var entries = new List<int>();
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entries.Add(e.Entry.Value); expired.Set(); };
-            TimeSpan ttl = TimeSpan.FromMilliseconds(1600);
-            set.SetOrUpdate(3, ttl);
-            TimeSpan ttl1 = TimeSpan.FromMilliseconds(1500);
-            set.SetOrUpdate(2, ttl1);
-            TimeSpan ttl2 = TimeSpan.FromMilliseconds(3000);
-            set.SetOrUpdate(5, ttl2);
-            TimeSpan ttl3 = TimeSpan.FromMilliseconds(2000);
-            set.SetOrUpdate(4, ttl3);
-            TimeSpan ttl4 = TimeSpan.FromMilliseconds(500);
-            set.SetOrUpdate(1, ttl4);
+            set.SetOrUpdate(3, TimeSpan.FromMilliseconds(1600));
+            set.SetOrUpdate(2, TimeSpan.FromMilliseconds(1500));
+            set.SetOrUpdate(5, TimeSpan.FromMilliseconds(3000));
+            set.SetOrUpdate(4, TimeSpan.FromMilliseconds(2000));
+            set.SetOrUpdate(1, TimeSpan.FromMilliseconds(500));
             Assert.IsTrue(expired.WaitOne(1000));
             Assert.AreEqual(1, entries.Count);
             Assert.IsTrue(Wait.For(() => entries.Count == 5, TimeSpan.FromSeconds(5000)));
@@ -262,11 +255,9 @@ namespace MindTouch.Dream.Test {
             set.EntryExpired += (s, e) => { entries.Add(e.Entry.Value); expired.Set(); };
             var n = 1000;
             for(var i = 0; i < n; i++) {
-                TimeSpan ttl = TimeSpan.FromMinutes(10);
-                set.SetOrUpdate(i, ttl);
+                set.SetOrUpdate(i, TimeSpan.FromMinutes(10));
             }
-            TimeSpan ttl1 = TimeSpan.FromSeconds(2);
-            set.SetOrUpdate(100000, ttl1);
+            set.SetOrUpdate(100000, TimeSpan.FromSeconds(2));
             Assert.IsTrue(expired.WaitOne(4000));
             Assert.AreEqual(1, entries.Count);
             Assert.AreEqual(n, set.Count());
