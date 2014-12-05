@@ -75,7 +75,7 @@ namespace MindTouch.Dream.Test {
                     }
                     response.Return(DreamMessage.Ok());
                 };
-                var r = Plug.New(mock.AtLocalHost.Uri.WithScheme("ext-http")).GetAsync().Wait();
+                var r = Plug.New(mock.AtLocalHost.Uri.WithScheme("ext-http")).Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
             }
         }
@@ -90,7 +90,7 @@ namespace MindTouch.Dream.Test {
                     }
                     response.Return(DreamMessage.Ok());
                 };
-                var r = mock.AtLocalHost.GetAsync().Wait();
+                var r = mock.AtLocalHost.Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
             }
         }
@@ -114,7 +114,7 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalHost.Uri.WithScheme("ext-http").At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).WithHeader("h", "y").WithoutAutoRedirects().GetAsync().Wait();
+                var r = Plug.New(uri).WithHeader("h", "y").WithoutAutoRedirects().Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.Found, r.Status, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect called incorrectly");
                 Assert.AreEqual(redirectUri.ToString(), r.Headers.Location.ToString());
@@ -156,7 +156,7 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalHost.Uri.WithScheme("ext-http").At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).WithHeader("h", "y").GetAsync().Wait();
+                var r = Plug.New(uri).WithHeader("h", "y").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target called incorrectly");
@@ -201,13 +201,13 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalHost.Uri.WithScheme("ext-http").At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).With("q", "x").GetAsync().Wait();
+                var r = Plug.New(uri).With("q", "x").Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.BadRequest, r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect without forward called incorrectly");
                 Assert.AreEqual(0, targetCalled, "target without forward called incorrectly");
                 redirectCalled = 0;
                 targetCalled = 0;
-                r = Plug.New(uri).With("q", "x").With("forward", "true").GetAsync().Wait();
+                r = Plug.New(uri).With("q", "x").With("forward", "true").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect with forward called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target with forward called incorrectly");
@@ -247,7 +247,7 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalHost.Uri.WithScheme("ext-http").At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).WithHeader("h", "y").GetAsync().Wait();
+                var r = Plug.New(uri).WithHeader("h", "y").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target called incorrectly");
@@ -290,13 +290,13 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalHost.Uri.WithScheme("ext-http").At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).With("q", "x").GetAsync().Wait();
+                var r = Plug.New(uri).With("q", "x").Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.BadRequest, r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect without forward called incorrectly");
                 Assert.AreEqual(0, targetCalled, "target without forward called incorrectly");
                 redirectCalled = 0;
                 targetCalled = 0;
-                r = Plug.New(uri).With("q", "x").With("forward", "true").GetAsync().Wait();
+                r = Plug.New(uri).With("q", "x").With("forward", "true").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect with forward called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target with forward called incorrectly");
@@ -322,7 +322,7 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalMachine.At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).WithHeader("h", "y").WithoutAutoRedirects().GetAsync().Wait();
+                var r = Plug.New(uri).WithHeader("h", "y").WithoutAutoRedirects().Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.Found, r.Status, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect called incorrectly");
                 Assert.AreEqual(redirectUri.ToString(), r.Headers.Location.ToString());
@@ -364,7 +364,7 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalMachine.At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).WithHeader("h", "y").GetAsync().Wait();
+                var r = Plug.New(uri).WithHeader("h", "y").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target called incorrectly");
@@ -409,13 +409,13 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalMachine.At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).With("q", "x").GetAsync().Wait();
+                var r = Plug.New(uri).With("q", "x").Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.BadRequest, r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect without forward called incorrectly");
                 Assert.AreEqual(0, targetCalled, "target without forward called incorrectly");
                 redirectCalled = 0;
                 targetCalled = 0;
-                r = Plug.New(uri).With("q", "x").With("forward", "true").GetAsync().Wait();
+                r = Plug.New(uri).With("q", "x").With("forward", "true").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect with forward called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target with forward called incorrectly");
@@ -455,7 +455,7 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalMachine.At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).WithHeader("h", "y").GetAsync().Wait();
+                var r = Plug.New(uri).WithHeader("h", "y").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target called incorrectly");
@@ -498,13 +498,13 @@ namespace MindTouch.Dream.Test {
                 };
                 var uri = mock.AtLocalMachine.At("redirect");
                 _log.DebugFormat("calling redirect service at {0}", uri);
-                var r = Plug.New(uri).With("q", "x").GetAsync().Wait();
+                var r = Plug.New(uri).With("q", "x").Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.BadRequest, r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect without forward called incorrectly");
                 Assert.AreEqual(0, targetCalled, "target without forward called incorrectly");
                 redirectCalled = 0;
                 targetCalled = 0;
-                r = Plug.New(uri).With("q", "x").With("forward", "true").GetAsync().Wait();
+                r = Plug.New(uri).With("q", "x").With("forward", "true").Get(new Result<DreamMessage>()).Wait();
                 Assert.IsTrue(r.IsSuccessful, r.HasDocument ? r.ToDocument()["message"].AsText : "request failed: " + r.Status);
                 Assert.AreEqual(1, redirectCalled, "redirect with forward called incorrectly");
                 Assert.AreEqual(1, targetCalled, "target with forward called incorrectly");
@@ -529,7 +529,7 @@ namespace MindTouch.Dream.Test {
                 var uri = mock.AtLocalMachine.At("redirect");
                 var redirects = 10;
                 var expectedCalls = redirects + 1;
-                var r = Plug.New(uri).WithAutoRedirects(10).GetAsync().Wait();
+                var r = Plug.New(uri).WithAutoRedirects(10).Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.Found, r.Status);
                 Assert.AreEqual(expectedCalls, totalCalls, "redirect without forward called incorrectly");
                 Assert.AreEqual(uri.With("c", expectedCalls.ToString()).ToString(), r.Headers.Location.ToString());
@@ -717,7 +717,7 @@ namespace MindTouch.Dream.Test {
                 for(var i = 0; i <= 4; i++) {
                     Stream stream = new MockAsyncReadableStream(150 * 1024 * 1024);
                     _log.DebugFormat("uploading {0}", i);
-                    var response = mockPlug.PutAsync(new DreamMessage(DreamStatus.Ok, null, MimeType.BINARY, stream.Length, stream)).Wait();
+                    var response = mockPlug.Put(new DreamMessage(DreamStatus.Ok, null, MimeType.BINARY, stream.Length, stream), new Result<DreamMessage>()).Wait();
                     if(!response.IsSuccessful) {
                         _log.DebugFormat("upload failed");
                         Assert.Fail(string.Format("unable to upload: {0}", response.ToText()));

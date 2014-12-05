@@ -429,7 +429,7 @@ namespace MindTouch.Xml.Test {
                 Assert.AreEqual(uri, doc["uri"].AsUri);
                 response.Return(DreamMessage.Ok(doc));
             };
-            DreamMessage result = mock.AtLocalMachine.PostAsync().Wait();
+            DreamMessage result = mock.AtLocalMachine.Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, "failure in service");
             Assert.AreEqual(mock.AtLocalHost.Uri.WithoutQuery(), result.ToDocument()["uri"].AsUri);
         }

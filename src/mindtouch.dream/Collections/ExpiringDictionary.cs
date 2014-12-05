@@ -22,6 +22,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using MindTouch.Tasking;
 
 namespace MindTouch.Collections {
@@ -281,9 +282,7 @@ namespace MindTouch.Collections {
 
         //--- IEnumerable Members ---
         IEnumerator<Entry> IEnumerable<Entry>.GetEnumerator() {
-            foreach(var entry in _set.GetEntries()) {
-                yield return Entry.FromExpiringSetEntry(entry);
-            }
+            return _set.GetEntries().Select(Entry.FromExpiringSetEntry).GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator() {

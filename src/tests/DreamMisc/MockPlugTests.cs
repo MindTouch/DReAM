@@ -80,7 +80,7 @@ namespace MindTouch.Dream.Test {
                 firstCalled++;
                 r2.Return(DreamMessage.Ok());
             });
-            Assert.IsTrue(Plug.New(uri).GetAsync().Wait().IsSuccessful);
+            Assert.IsTrue(Plug.New(uri).Get(new Result<DreamMessage>()).Wait().IsSuccessful);
             Assert.AreEqual(1, firstCalled);
             MockPlug.Deregister(uri);
             int secondCalled = 0;
@@ -88,7 +88,7 @@ namespace MindTouch.Dream.Test {
                 secondCalled++;
                 r2.Return(DreamMessage.Ok());
             });
-            Assert.IsTrue(Plug.New(uri).GetAsync().Wait().IsSuccessful);
+            Assert.IsTrue(Plug.New(uri).Get(new Result<DreamMessage>()).Wait().IsSuccessful);
             Assert.AreEqual(1, firstCalled);
             Assert.AreEqual(1, secondCalled);
         }
@@ -104,7 +104,7 @@ namespace MindTouch.Dream.Test {
             MockPlug.Register(new XUri("http://www.mindtouch.com/bar"), delegate(Plug p, string v, XUri u, DreamMessage r, Result<DreamMessage> r2) {
                 r2.Return(DreamMessage.Ok());
             });
-            Assert.IsTrue(Plug.New(uri).GetAsync().Wait().IsSuccessful);
+            Assert.IsTrue(Plug.New(uri).Get(new Result<DreamMessage>()).Wait().IsSuccessful);
             Assert.AreEqual(1, firstCalled);
             MockPlug.DeregisterAll();
             int secondCalled = 0;
@@ -115,7 +115,7 @@ namespace MindTouch.Dream.Test {
             MockPlug.Register(new XUri("http://www.mindtouch.com/bar"), delegate(Plug p, string v, XUri u, DreamMessage r, Result<DreamMessage> r2) {
                 r2.Return(DreamMessage.Ok());
             });
-            Assert.IsTrue(Plug.New(uri).GetAsync().Wait().IsSuccessful);
+            Assert.IsTrue(Plug.New(uri).Get(new Result<DreamMessage>()).Wait().IsSuccessful);
             Assert.AreEqual(1, firstCalled);
             Assert.AreEqual(1, secondCalled);
         }
@@ -138,7 +138,7 @@ namespace MindTouch.Dream.Test {
                 calledResponse.Return(DreamMessage.Ok());
             });
 
-            DreamMessage response = Plug.New("http://www.mindtouch.com").At("foo").GetAsync().Wait();
+            DreamMessage response = Plug.New("http://www.mindtouch.com").At("foo").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             Assert.AreEqual(1, called);
             Assert.AreEqual("GET", calledVerb);
@@ -164,7 +164,7 @@ namespace MindTouch.Dream.Test {
             });
 
             Plug plug = Plug.New("http://www.mindtouch.com").At("foo");
-            DreamMessage response = plug.GetAsync().Wait();
+            DreamMessage response = plug.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             Assert.AreEqual(1, called);
             Assert.AreEqual("GET", calledVerb);
@@ -190,7 +190,7 @@ namespace MindTouch.Dream.Test {
                 calledResponse.Return(DreamMessage.Ok());
             });
             XDoc doc = new XDoc("message").Elem("foo");
-            DreamMessage response = Plug.New("http://www.mindtouch.com").At("foo").PostAsync(doc).Wait();
+            DreamMessage response = Plug.New("http://www.mindtouch.com").At("foo").Post(doc, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             Assert.AreEqual(1, called);
             Assert.AreEqual("POST", calledVerb);
@@ -217,7 +217,7 @@ namespace MindTouch.Dream.Test {
                 calledResponse.Return(DreamMessage.Ok(responseDoc));
             });
             XDoc doc = new XDoc("message").Elem("foo");
-            DreamMessage response = Plug.New("http://www.mindtouch.com").At("foo").GetAsync().Wait();
+            DreamMessage response = Plug.New("http://www.mindtouch.com").At("foo").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             Assert.AreEqual(1, called);
             Assert.AreEqual("GET", calledVerb);
@@ -232,13 +232,13 @@ namespace MindTouch.Dream.Test {
                 resetEvent.Set();
                 r2.Return(DreamMessage.Ok());
             });
-            Plug.New("http://foo/bar").PostAsync();
+            Plug.New("http://foo/bar").Post(new Result<DreamMessage>());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "no async failed");
-            AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result());
+            AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").Post(new Result<DreamMessage>()), new Result()), new Result());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "async failed");
-            AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result());
+            AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").Post(new Result<DreamMessage>()), new Result()), new Result());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "nested async failed");
-            AsyncUtil.Fork(() => AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").PostAsync(), new Result()), new Result()), new Result());
+            AsyncUtil.Fork(() => AsyncUtil.Fork(() => AsyncUtil.Fork(() => Plug.New("http://foo/bar").Post(new Result<DreamMessage>()), new Result()), new Result()), new Result());
             Assert.IsTrue(resetEvent.WaitOne(1000, false), "double async failed");
         }
 

@@ -142,7 +142,7 @@ namespace MindTouch.Dream.Test {
         [Ignore("xri stuff not working right")]
         [Test]
         public void XriTest() {
-            DreamMessage result = Plug.New("xri://=roy").GetAsync().Wait();
+            DreamMessage result = Plug.New("xri://=roy").Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual("XRDS", result.ToDocument().Name);
         }
     }

@@ -141,14 +141,14 @@ namespace MindTouch.Dream.Test {
             XDoc config = new XDoc("config")
                 .Elem("path", "parent")
                 .Elem("sid", "sid://mindtouch.com/TestParentService");
-            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).PostAsync(config).Wait();
+            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Post(config, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, result.ToText());
             Plug localhost = Plug.New(_hostInfo.LocalHost.Uri.WithoutQuery());
-            result = localhost.At("parent", "child", "test").GetAsync().Wait();
+            result = localhost.At("parent", "child", "test").Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.NotFound, result.Status, result.ToText());
-            result = localhost.At("parent", "createchild").GetAsync().Wait();
+            result = localhost.At("parent", "createchild").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, result.ToText());
-            result = localhost.At("parent", "child", "test").GetAsync().Wait();
+            result = localhost.At("parent", "child", "test").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, result.ToText());
         }
 
@@ -171,7 +171,7 @@ namespace MindTouch.Dream.Test {
                 p = p.With("id", i);
                 ids.Add(i.ToString());
             }
-            DreamMessage result = p.GetAsync().Wait();
+            DreamMessage result = p.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful);
             List<string> seen = new List<string>();
             foreach(XDoc id in result.ToDocument()["id"]) {
@@ -211,11 +211,11 @@ namespace MindTouch.Dream.Test {
                  .Elem("sid", "sid://mindtouch.com/TestParentService");
             var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
             Plug parent = serviceInfo.WithPrivateKey().AtLocalHost;
-            var response = parent.At("createbadstartchild").With("throw", "true").GetAsync().Wait();
+            var response = parent.At("createbadstartchild").With("throw", "true").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful, response.ToText());
             response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual(0, response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestBadStartService']")].ListLength);
-            response = parent.At("createbadstartchild").With("throw", "false").GetAsync().Wait();
+            response = parent.At("createbadstartchild").With("throw", "false").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual(1, response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestBadStartService']")].ListLength);
@@ -229,7 +229,7 @@ namespace MindTouch.Dream.Test {
             var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
             var response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual("/bad", response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestBadStopService']/path")].Contents);
-            response = serviceInfo.WithPrivateKey().AtLocalHost.DeleteAsync().Wait();
+            response = serviceInfo.WithPrivateKey().AtLocalHost.Delete(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual(0, response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestBadStopService']")].ListLength);
@@ -245,11 +245,11 @@ namespace MindTouch.Dream.Test {
                  .Elem("sid", "sid://mindtouch.com/TestParentService");
             var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
             Plug parent = serviceInfo.WithPrivateKey().AtLocalHost;
-            var response = parent.At("createbadchild").GetAsync().Wait();
+            var response = parent.At("createbadchild").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual(1, response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestBadStopService']")].ListLength);
-            response = parent.At("destroybadchild").GetAsync().Wait();
+            response = parent.At("destroybadchild").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual(0, response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestBadStopService']")].ListLength);
@@ -276,11 +276,11 @@ namespace MindTouch.Dream.Test {
                  .Elem("sid", "sid://mindtouch.com/TestParentService");
             var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
             Plug parent = serviceInfo.WithPrivateKey().AtLocalHost;
-            var response = parent.At("createchild").GetAsync().Wait();
+            var response = parent.At("createchild").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
             response = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Get();
             Assert.AreEqual(1, response.ToDocument()[string.Format("service[sid='sid://mindtouch.com/TestChildService']")].ListLength);
-            response = parent.At("createchild").GetAsync().Wait();
+            response = parent.At("createchild").Get(new Result<DreamMessage>()).Wait();
             Assert.IsFalse(response.IsSuccessful, response.ToText());
         }
 
@@ -291,7 +291,7 @@ namespace MindTouch.Dream.Test {
                  .Elem("sid", "sid://mindtouch.com/TestParentService");
             var serviceInfo = DreamTestHelper.CreateService(_hostInfo, config);
             Plug parent = serviceInfo.WithPrivateKey().AtLocalHost;
-            var response = parent.At("createandretychild").GetAsync().Wait();
+            var response = parent.At("createandretychild").Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
     }
@@ -389,7 +389,7 @@ namespace MindTouch.Dream.Test {
         [DreamFeature("*:destroybadchild", "test")]
         public Yield DestroyBadChild(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
             if(_badChild != null) {
-                yield return _badChild.DeleteAsync().CatchAndLog(_log);
+                yield return _badChild.Delete(new Result<DreamMessage>()).CatchAndLog(_log);
             }
             response.Return(DreamMessage.Ok());
             yield break;

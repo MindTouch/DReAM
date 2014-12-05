@@ -79,14 +79,6 @@ namespace MindTouch.Dream {
         }
 
         /// <summary>
-        /// Obsolete: Use <see cref="Ok(System.Collections.Generic.KeyValuePair{string,string}[])"/> instead.
-        /// </summary>
-        [Obsolete("Use DreamMessage.Ok(KeyValuePair<string, string>[] values) instead.")]
-        public static DreamMessage Ok(XUri uri) {
-            return new DreamMessage(DreamStatus.Ok, null, MimeType.FORM_URLENCODED, uri.Query);
-        }
-
-        /// <summary>
         /// New Message with HTTP status: Ok (200).
         /// </summary>
         /// <param name="values">Name/value pair body.</param>
@@ -876,49 +868,5 @@ namespace MindTouch.Dream {
                 }
             }
         }
-
-        #region --- Obsolete Methods ---
-
-        /// <summary>
-        /// AsDocument() is obsolete. Use <see cref="ToDocument"/> instead.
-        /// </summary>
-        [Obsolete("AsDocument() is obsolete. Use ToDocument() instead.")]
-        public XDoc AsDocument() {
-            return ToDocument();
-        }
-
-        /// <summary>
-        /// AsStream() is obsolete. Use <see cref="ToStream"/> instead.
-        /// </summary>
-        [Obsolete("AsStream() is obsolete. Use ToStream() instead.")]
-        public Stream AsStream() {
-            return ToStream();
-        }
-
-        /// <summary>
-        /// AsBytes() is obsolete. Use <see cref="ToBytes"/> instead.
-        /// </summary>
-        [Obsolete("AsBytes() is obsolete. Use ToBytes() instead.")]
-        public byte[] AsBytes() {
-            return ToBytes();
-        }
-
-        /// <summary>
-        /// AsText() is obsolete. Use <see cref="ToText"/> instead.
-        /// </summary>
-        [Obsolete("AsText() is obsolete. Use ToText() instead.")]
-        public string AsText() {
-            return ToText();
-        }
-
-        /// <summary>
-        /// AsTextReader() is obsolete. Use <see cref="ToTextReader"/> instead.
-        /// </summary>
-        /// <returns></returns>
-        [Obsolete("AsTextReader() is obsolete. Use ToTextReader() instead.")]
-        public TextReader AsTextReader() {
-            return ToTextReader();
-        }
-        #endregion
     }
 }

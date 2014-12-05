@@ -62,7 +62,7 @@ namespace MindTouch.Dream.Test {
 
         protected override Yield Stop(Result result) {
             if(_inner != null) {
-                yield return _inner.DeleteAsync().CatchAndLog(_log);
+                yield return _inner.Delete(new Result<DreamMessage>()).CatchAndLog(_log);
                 _inner = null;
             }
             yield return Coroutine.Invoke(base.Stop, new Result());

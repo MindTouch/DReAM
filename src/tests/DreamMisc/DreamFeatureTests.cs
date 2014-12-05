@@ -54,7 +54,7 @@ namespace MindTouch.Dream.Test {
             var config = new XDoc("config")
                .Elem("path", "test")
                .Elem("sid", "http://services.mindtouch.com/dream/test/2010/07/featuretestserver");
-            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).PostAsync(config).Wait();
+            DreamMessage result = _hostInfo.LocalHost.At("host", "services").With("apikey", _hostInfo.ApiKey).Post(config, new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful, result.ToText());
             _plug = Plug.New(_hostInfo.LocalHost.Uri.WithoutQuery()).At("test");
             _blueprint = _plug.At("@blueprint").Get().ToDocument();
@@ -645,7 +645,7 @@ namespace MindTouch.Dream.Test {
 
             protected override Yield Stop(Result result) {
                 if(_inner != null) {
-                    yield return _inner.DeleteAsync().CatchAndLog(_log);
+                    yield return _inner.Delete(new Result<DreamMessage>()).CatchAndLog(_log);
                     _inner = null;
                 }
                 yield return Coroutine.Invoke(base.Stop, new Result());

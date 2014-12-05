@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
 
@@ -50,7 +51,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Host_Blueprint_should_be_publicly_accessible() {
             Plug local = Plug.New(_host.Uri.WithoutQuery()).At("@blueprint");
-            DreamMessage response = local.GetAsync().Wait();
+            DreamMessage response = local.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
         }
 
@@ -84,14 +85,14 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void TestHostBadResponse() {
             Plug test = _host.At("test").With("status", (int)DreamStatus.BadRequest);
-            DreamMessage response = test.PostAsync(DreamMessage.Ok()).Wait();
+            DreamMessage response = test.Post(DreamMessage.Ok(), new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.BadRequest, response.Status);
         }
 
         [Test]
         public void TestHostNotFound() {
             Plug test = _host.At("test").With("status", (int)DreamStatus.NotFound);
-            DreamMessage response = test.PostAsync(DreamMessage.Ok()).Wait();
+            DreamMessage response = test.Post(DreamMessage.Ok(), new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.NotFound, response.Status);
         }
 
@@ -246,7 +247,7 @@ namespace MindTouch.Dream.Test {
         public void BadServiceTest() {
             string sid = "http://services.mindtouch.com/dream/test/2007/03/bad";
             _host.At("blueprints").Post(new XDoc("blueprint").Elem("assembly", "test.mindtouch.dream").Elem("class", "MindTouch.Dream.Test.SampleBadService"));
-            DreamMessage response = _host.At("services").PostAsync(new XDoc("config").Start("path").Value("sample").End().Start("sid").Value(sid).End()).Wait();
+            DreamMessage response = _host.At("services").Post(new XDoc("config").Start("path").Value("sample").End().Start("sid").Value(sid).End(), new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.InternalError, response.Status);
         }
 
@@ -260,7 +261,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Can_get_host_timers_xml() {
-            var response = _hostinfo.LocalHost.At("host", "status", "timers").With("apikey", _hostinfo.ApiKey).GetAsync().Wait();
+            var response = _hostinfo.LocalHost.At("host", "status", "timers").With("apikey", _hostinfo.ApiKey).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
         }
 

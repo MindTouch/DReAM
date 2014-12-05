@@ -68,7 +68,6 @@ namespace MindTouch.Threading {
 
         //--- Fields ---
         private object _placeholder;
-        private IDispatchQueue _dispatchQueue;
         private System.Diagnostics.StackTrace _stacktrace = DebugUtil.GetStackTrace();
         private bool _captured;
 
@@ -80,47 +79,6 @@ namespace MindTouch.Threading {
         public bool HasCompleted { get { return ReferenceEquals(_placeholder, USED); } }
 
         //--- Methods ---
-
-        /// <summary>
-        /// Ensure the receiver continuation is executed on the current thread.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">The RendezVousEvent is already pinned to an IDispatchQueue.</exception>
-        [Obsolete("PinToThread is obsolete.  Use the continuation to dispatch to the desired thread.")]
-        public void PinToThread() {
-
-            // TODO 2.0 (steveb): remove implementation
-
-            PinTo(SynchronizationContext.Current);
-        }
-
-        /// <summary>
-        /// Ensure the receiver continuation is executed on the given synchronization context.
-        /// </summary>
-        /// <param name="context">Synchronization context for the receiver continuation.</param>
-        /// <exception cref="InvalidOperationException">The RendezVousEvent is already pinned to an IDispatchQueue.</exception>
-        [Obsolete("PinTo is obsolete.  Use the continuation to dispatch to the desired thread.")]
-        public void PinTo(SynchronizationContext context) {
-
-            // TODO 2.0 (steveb): remove implementation
-
-            PinTo(new SynchronizationDispatchQueue(context));
-        }
-
-        /// <summary>
-        /// Ensure the receiver continuation is executed on the given IDispatchQueue.
-        /// </summary>
-        /// <param name="dispatchQueue">IDispatchQueue for the receiver continuation.</param>
-        /// <exception cref="InvalidOperationException">The RendezVousEvent is already pinned to an IDispatchQueue.</exception>
-        [Obsolete("PinTo is obsolete.  Use the continuation to dispatch to the desired thread.")]
-        public void PinTo(IDispatchQueue dispatchQueue) {
-
-            // TODO 2.0 (steveb): remove implementation
-
-            if(_dispatchQueue != null) {
-                throw new InvalidOperationException("RendezVousEvent is already pinned to an IDispatchQueue");
-            }
-            _dispatchQueue = dispatchQueue;
-        }
 
         /// <summary>
         /// Signal the RendezVousEvent.  If a receiver continuation is present, trigger it.  
@@ -144,16 +102,12 @@ namespace MindTouch.Threading {
                     }
                 }
                 _placeholder = USED;
-                if(_dispatchQueue != null) {
-                    _dispatchQueue.QueueWorkItem(handler);
-                } else {
-                    try {
-                        handler();
-                    } catch(Exception e) {
+                try {
+                    handler();
+                } catch(Exception e) {
 
-                        // log exception, but ignore it; outer task is immune to it
-                        _log.WarnExceptionMethodCall(e, "Signal: unhandled exception in continuation");
-                    }
+                    // log exception, but ignore it; outer task is immune to it
+                    _log.WarnExceptionMethodCall(e, "Signal: unhandled exception in continuation");
                 }
             }
         }
@@ -176,16 +130,12 @@ namespace MindTouch.Threading {
                     throw new InvalidOperationException("event has already a continuation");
                 }
                 _placeholder = USED;
-                if(_dispatchQueue != null) {
-                    _dispatchQueue.QueueWorkItem(handler);
-                } else {
-                    try {
-                        handler();
-                    } catch(Exception e) {
+                try {
+                    handler();
+                } catch(Exception e) {
 
-                        // log exception, but ignore it; outer task is immune to it
-                        _log.WarnExceptionMethodCall(e, "Wait: unhandled exception in continuation");
-                    }
+                    // log exception, but ignore it; outer task is immune to it
+                    _log.WarnExceptionMethodCall(e, "Wait: unhandled exception in continuation");
                 }
             } else {
                 Interlocked.Increment(ref _pendingCounter);

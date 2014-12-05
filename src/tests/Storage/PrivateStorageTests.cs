@@ -82,19 +82,19 @@ namespace MindTouch.Dream.Storage.Test {
 
         [Test]
         public void Service_can_store_and_retrieve_file() {
-            DreamMessage response = testService.AtPath("create-retrieve-delete").PostAsync().Wait();
+            DreamMessage response = testService.AtPath("create-retrieve-delete").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Service_can_store_and_retrieve_head() {
-            DreamMessage response = testService.AtPath("create-retrievehead-delete").PostAsync().Wait();
+            DreamMessage response = testService.AtPath("create-retrievehead-delete").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
         [Test]
         public void Service_storage_will_expire_file() {
-            DreamMessage response = testService.AtPath("create-expire").PostAsync().Wait();
+            DreamMessage response = testService.AtPath("create-expire").Post(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful, response.ToText());
         }
 
@@ -196,7 +196,7 @@ namespace MindTouch.Dream.Storage.Test {
 
             // get file and compare contents
             _log.DebugFormat("Checking for expired file at: {0}", DateTime.UtcNow);
-            DreamMessage getResponse = Storage.AtPath(TEST_FILE_URI).GetAsync().Wait();
+            DreamMessage getResponse = Storage.AtPath(TEST_FILE_URI).Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.NotFound, getResponse.Status);
 
             response.Return(DreamMessage.Ok());
