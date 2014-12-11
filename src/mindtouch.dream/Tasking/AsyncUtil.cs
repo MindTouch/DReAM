@@ -303,11 +303,20 @@ namespace MindTouch.Tasking {
         /// De-schedule the current execution environment to sleep for some period.
         /// </summary>
         /// <param name="duration">Time to sleep.</param>
+        /// <param name="result">The <see cref="Result"/>instance to be returned by this method.</param>
         /// <returns>Synchronization handle to continue execution after the sleep period.</returns>
-        public static Result Sleep(TimeSpan duration) {
-            Result result = new Result(TimeSpan.MaxValue);
+        public static Result Sleep(TimeSpan duration, Result result) {
             TaskTimerFactory.Current.New(duration, _ => result.Return(), null, TaskEnv.New());
             return result;
+        }
+
+        /// <summary>
+        /// Blocks the thread for specified amount of time.
+        /// </summary>
+        /// <param name="timeout">Sleep time for thread.</param>
+        public static void Sleep(TimeSpan timeout) {
+            DispatchThreadEvictWorkItems();
+            Thread.Sleep(timeout);
         }
 
         /// <summary>
@@ -1011,15 +1020,6 @@ namespace MindTouch.Tasking {
         public static bool WaitFor(MonitorSemaphore monitor, TimeSpan timeout) {
             DispatchThreadEvictWorkItems();
             return monitor.Wait(timeout);
-        }
-
-        /// <summary>
-        /// Blocks the thread for specified amount of time.
-        /// </summary>
-        /// <param name="timeout">Sleep time for thread.</param>
-        public static void Wait(TimeSpan timeout) {
-            DispatchThreadEvictWorkItems();
-            Thread.Sleep(timeout);
         }
 
         private static int? WaitForExit(Process process, TimeSpan retryTime) {

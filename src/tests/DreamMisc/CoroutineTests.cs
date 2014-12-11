@@ -47,7 +47,7 @@ namespace MindTouch.Dream.Test {
         }
 
         private static Yield Yield_Ret(int p, Result<int> result) {
-            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10));
+            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10), new Result(TimeSpan.MaxValue));
             result.Return(p);
         }
 
@@ -56,7 +56,7 @@ namespace MindTouch.Dream.Test {
         }
 
         private static Yield Yield_Throw(int p, Result<int> result) {
-            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10));
+            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10), new Result(TimeSpan.MaxValue));
             throw new IntentionalException();
         }
 
@@ -66,13 +66,13 @@ namespace MindTouch.Dream.Test {
         }
 
         private static Yield Yield_Ret_Throw(int p, Result<int> result) {
-            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10));
+            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10), new Result(TimeSpan.MaxValue));
             result.Return(p);
             throw new IntentionalException();
         }
 
         private static Yield Ret_Yield_Throw(int p, Result<int> result) {
-            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10));
+            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10), new Result(TimeSpan.MaxValue));
             result.Return(p);
             throw new IntentionalException();
         }
@@ -278,7 +278,7 @@ namespace MindTouch.Dream.Test {
 
         private Yield BubbleCoroutine(int depth, Result result) {
             _log.DebugFormat("{0} levels remaining", depth);
-            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10));
+            yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(10), new Result(TimeSpan.MaxValue));
             if(depth > 0) {
                 _log.Debug("invoking BubbleCoroutine again");
                 yield return Coroutine.Invoke(BubbleCoroutine, depth - 1, new Result());
