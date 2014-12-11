@@ -1013,6 +1013,24 @@ namespace MindTouch.Tasking {
             return monitor.Wait(timeout);
         }
 
+        /// <summary>
+        /// Blocks the thread for specified amount of time.
+        /// </summary>
+        /// <param name="timeout">Sleep time for thread.</param>
+        public static void Wait(TimeSpan timeout) {
+            DispatchThreadEvictWorkItems();
+            Thread.Sleep(timeout);
+        }
+
+        /// <summary>
+        /// Blocks the thread for specified amount of time.
+        /// </summary>
+        /// <param name="milliseconds">Sleep time for thread.</param>
+        public static void Wait(int milliseconds) {
+            DispatchThreadEvictWorkItems();
+            Thread.Sleep(milliseconds);
+        }
+
         private static int? WaitForExit(Process process, TimeSpan retryTime) {
 
             //NOTE (arnec): WaitForExit is unreliable on mono, so we have to loop on ExitCode to make sure
