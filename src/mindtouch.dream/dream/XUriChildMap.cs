@@ -148,7 +148,7 @@ namespace MindTouch.Dream {
         /// Get all matching reference objects for uri that are also in the filter list.
         /// </summary>
         /// <param name="uri">Uri to find child uri's for.</param>
-        /// <param name="filter">Collection of of matchable reference objects.</param>
+        /// <param name="filter">Collection of matchable reference objects.</param>
         /// <returns>Filtered collection of reference objects.</returns>
         public ICollection<T> GetMatches(XUri uri, ICollection<T> filter) {
             string scheme = _ignoreScheme ? "any" : uri.Scheme;

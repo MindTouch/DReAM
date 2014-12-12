@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using MindTouch.Extensions.Time;
 using log4net;
 using MindTouch.Collections;
 using MindTouch.Tasking;
@@ -181,7 +182,7 @@ namespace MindTouch.Threading {
 
                 // wait until all threads have been decommissioned
                 while(ThreadCount > 0) {
-                    Thread.Sleep(100);
+                    AsyncUtil.Sleep(100.Milliseconds());
                 }
 
                 // discard all reserved threads

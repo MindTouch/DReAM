@@ -358,7 +358,7 @@ namespace MindTouch.Dream.Test.Aws {
                 var received = new List<AwsSqsMessage>(r.Value);
                 if(!received.Any()) {
                     _log.DebugFormat("{0}: no messages in queue, sleeping before retry", Id);
-                    AsyncUtil.Sleep(1.Seconds()).WhenDone(r2 => Receive());
+                    AsyncUtil.Sleep(1.Seconds(), new Result(TimeSpan.MaxValue)).WhenDone(r2 => Receive());
                     return;
                 }
                 _log.DebugFormat("{0}: received {1} messages", Id, received.Count);

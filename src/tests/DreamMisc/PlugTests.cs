@@ -739,7 +739,7 @@ namespace MindTouch.Dream.Test {
                     }
                     total += read.Value;
                     //fake some latency
-                    yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(1));
+                    yield return AsyncUtil.Sleep(TimeSpan.FromMilliseconds(1), new Result(TimeSpan.MaxValue));
                 }
                 _log.DebugFormat("read {0}/{1} bytes", total, request.ContentLength);
                 if(total != request.ContentLength) {
