@@ -21,6 +21,8 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using MindTouch.Extensions.Time;
+using MindTouch.Tasking;
 
 namespace MindTouch.Dream.Test {
 
@@ -61,7 +63,7 @@ namespace MindTouch.Dream.Test {
                 if(waitresult.Success) {
                     return waitresult.Value;
                 }
-                Thread.Sleep(50);
+                AsyncUtil.Sleep(50.Milliseconds());
             }
             throw new TimeoutException("gave up waiting for value");
         }
@@ -78,7 +80,7 @@ namespace MindTouch.Dream.Test {
                 if(condition()) {
                     return true;
                 }
-                Thread.Sleep(50);
+                AsyncUtil.Sleep(50.Milliseconds());
             }
             return false;
         }

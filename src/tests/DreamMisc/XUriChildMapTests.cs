@@ -147,7 +147,6 @@ namespace MindTouch.Dream.Test {
             expected = new string[] {  "https1" };
             matches = map.GetMatches(new XUri("https://y/y/z"));
             CheckExpectations(expected, matches);
-
         }
 
         [Test]
@@ -171,7 +170,18 @@ namespace MindTouch.Dream.Test {
             expected = new string[] { "http1", "https1" };
             matches = map.GetMatches(new XUri("foo://y/y/z"));
             CheckExpectations(expected, matches);
+        }
 
+        [Test]
+        public void GetIdenticalMatches() {
+            var map = new XUriChildMap<string>();
+            map.Add(new XUri("channel:///deki/a/b/c"), "x");
+            map.Add(new XUri("channel:///deki/a/b/c"), "y");
+            map.Add(new XUri("channel:///deki/a/b/*"), "z");
+
+            var expected = new[] { "x", "y", "z" };
+            IEnumerable<string> matches = map.GetMatches(new XUri("channel:///deki/a/b/c"));
+            CheckExpectations(expected, matches);
         }
 
         private void CheckExpectations(string[] expected, IEnumerable<string> matches) {
@@ -182,5 +192,4 @@ namespace MindTouch.Dream.Test {
             }
         }
     }
-
 }
