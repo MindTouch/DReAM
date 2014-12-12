@@ -146,7 +146,7 @@ namespace MindTouch.Dream {
 
                     // wait for user input then exit
                     while(_host.IsRunning) {
-                        System.Threading.Thread.Sleep(250);
+                        Thread.Sleep(250);
                         #region Interactive Key Handler
                         if(Console.KeyAvailable) {
                             ConsoleKeyInfo key = Console.ReadKey(true);

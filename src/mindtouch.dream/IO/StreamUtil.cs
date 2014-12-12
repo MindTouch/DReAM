@@ -25,7 +25,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-
+using MindTouch.Extensions.Time;
 using MindTouch.Tasking;
 using MindTouch.Text;
 
@@ -559,7 +559,7 @@ namespace MindTouch.IO {
                 } catch(UnauthorizedAccessException e) {
                     _log.TraceExceptionMethodCall(e, "FileOpenExclusive", filename, attempts);
                 }
-                Thread.Sleep((attempts + 1) * Randomizer.Next(100));
+                AsyncUtil.Sleep(((attempts + 1) * Randomizer.Next(100)).Milliseconds());
             }
             return null;
         }

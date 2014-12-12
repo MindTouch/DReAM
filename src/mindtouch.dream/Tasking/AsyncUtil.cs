@@ -1033,7 +1033,7 @@ namespace MindTouch.Tasking {
                 try {
                     return process.ExitCode;
                 } catch(InvalidOperationException) {
-                    Thread.Sleep(TimeSpan.FromMilliseconds(50));
+                    Sleep(TimeSpan.FromMilliseconds(50));
                 }
             } while(end > DateTime.UtcNow);
             return null;
