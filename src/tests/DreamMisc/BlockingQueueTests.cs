@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using MindTouch.Collections;
+using MindTouch.Threading.Timer;
 using NUnit.Framework;
 using System.Linq;
 
@@ -77,11 +78,11 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Dequeue_times_out_as_specified() {
             BlockingQueue<string> q = new BlockingQueue<string>();
-            DateTime start = DateTime.Now;
+            DateTime start = GlobalClock.UtcNow;
             string x;
             Assert.IsFalse(q.TryDequeue(TimeSpan.FromSeconds(1), out x));
             Assert.IsNull(x);
-            TimeSpan elapsed = DateTime.Now.Subtract(start);
+            TimeSpan elapsed = GlobalClock.UtcNow.Subtract(start);
             Assert.GreaterOrEqual(elapsed.TotalSeconds, 0.95);
             Assert.LessOrEqual(elapsed.TotalSeconds, 1.1d);
         }
@@ -227,9 +228,9 @@ namespace MindTouch.Dream.Test {
 
         private void MultiConsumer(object state) {
             Tuplet<BlockingQueue<string>, string, TimeSpan, ManualResetEvent> v = (Tuplet<BlockingQueue<string>, string, TimeSpan, ManualResetEvent>)state;
-            DateTime start = DateTime.Now;
+            DateTime start = GlobalClock.UtcNow;
             v.Item1.TryDequeue(v.Item3, out v.Item2);
-            v.Item3 = DateTime.Now.Subtract(start);
+            v.Item3 = GlobalClock.UtcNow.Subtract(start);
             v.Item4.Set();
         }
 

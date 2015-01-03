@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MindTouch.Dream;
 using MindTouch.Tasking;
+using MindTouch.Threading.Timer;
 
 namespace MindTouch.Collections {
 
@@ -146,7 +147,7 @@ namespace MindTouch.Collections {
 
         public void RefreshExpiration(Entry entry) {
             lock(_expirationLookup) {
-                var when = DateTime.UtcNow + entry.TTL;
+                var when = GlobalClock.UtcNow + entry.TTL;
 
                 // Note (arnec): Only refreshing on half second resolution w/ autoRefresh, since it could cause a lot of refresh churn  
                 if(_autoRefresh && Math.Abs(entry.When.Subtract(when).TotalMilliseconds) <= 500) {
@@ -201,7 +202,7 @@ namespace MindTouch.Collections {
         }
 
         private void OnExpire(TaskTimer timer) {
-            var now = DateTime.UtcNow;
+            var now = GlobalClock.UtcNow;
             List<Entry> expirations = null;
             lock(_expirationLookup) {
 

@@ -90,7 +90,7 @@ namespace MindTouch.Threading {
                 if(_cpus == null) {
                     return 0;
                 }
-                DateTime now = DateTime.UtcNow;
+                DateTime now = GlobalClock.UtcNow;
                 if(now > _nextCpuCounterRead) {
                     _nextCpuCounterRead = now.AddSeconds(0.25);
                     _lastCpuValue = _cpus.NextValue();

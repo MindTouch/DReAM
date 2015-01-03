@@ -23,6 +23,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using MindTouch.Tasking;
+using MindTouch.Threading.Timer;
 
 namespace MindTouch.Collections {
 
@@ -138,7 +139,7 @@ namespace MindTouch.Collections {
         /// <param name="value">The value in the set</param>
         /// <param name="ttl">The time-to-live from right now</param>
         public bool SetOrUpdate(T value, TimeSpan ttl) {
-            var when = DateTime.UtcNow + ttl;
+            var when = GlobalClock.UtcNow + ttl;
             return _set.SetExpiration(value, value, when, ttl, true);
         }
 
@@ -148,7 +149,7 @@ namespace MindTouch.Collections {
         /// <param name="value">The value in the set</param>
         /// <param name="when">The absolute expiration time of the item</param>
         public bool SetOrUpdate(T value, DateTime when) {
-            var ttl = when - DateTime.UtcNow;
+            var ttl = when - GlobalClock.UtcNow;
             return _set.SetExpiration(value, value, when, ttl, true);
         }
 

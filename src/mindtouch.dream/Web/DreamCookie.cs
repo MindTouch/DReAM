@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using MindTouch.Dream;
+using MindTouch.Threading.Timer;
 using MindTouch.Xml;
 
 namespace MindTouch.Web {
@@ -338,7 +339,7 @@ namespace MindTouch.Web {
                 } else if(StringUtil.EqualsInvariantIgnoreCase(name, "path")) {
                     path = value;
                 } else if(StringUtil.EqualsInvariantIgnoreCase(name, "max-age")) {
-                    expires = DateTime.UtcNow.AddSeconds(int.Parse(value, NumberFormatInfo.InvariantInfo));
+                    expires = GlobalClock.UtcNow.AddSeconds(int.Parse(value, NumberFormatInfo.InvariantInfo));
                 } else if(StringUtil.EqualsInvariantIgnoreCase(name, "expires")) {
                     expires = ParseCookieDateTimeString(value);
                 } else if(StringUtil.EqualsInvariantIgnoreCase(name, "port")) {
@@ -677,7 +678,7 @@ namespace MindTouch.Web {
         /// <see langword="True"/> if the cookie is already exipired.
         /// </summary>
         public bool Expired {
-            get { return DateTime.UtcNow > Expires; }
+            get { return GlobalClock.UtcNow > Expires; }
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ using System.Threading;
 using MindTouch.Dream;
 using MindTouch.IO;
 using MindTouch.Threading;
+using MindTouch.Threading.Timer;
 
 namespace MindTouch.Tasking {
     using Yield = IEnumerator<IYield>;
@@ -1027,7 +1028,7 @@ namespace MindTouch.Tasking {
             //NOTE (arnec): WaitForExit is unreliable on mono, so we have to loop on ExitCode to make sure
             //              the process really has exited
 
-            DateTime end = DateTime.UtcNow.Add(retryTime);
+            DateTime end = GlobalClock.UtcNow.Add(retryTime);
             process.WaitForExit();
             do {
                 try {
@@ -1035,7 +1036,7 @@ namespace MindTouch.Tasking {
                 } catch(InvalidOperationException) {
                     Sleep(TimeSpan.FromMilliseconds(50));
                 }
-            } while(end > DateTime.UtcNow);
+            } while(end > GlobalClock.UtcNow);
             return null;
         }
 

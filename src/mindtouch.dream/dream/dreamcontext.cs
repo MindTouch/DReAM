@@ -29,6 +29,7 @@ using System.Text;
 using Autofac;
 using MindTouch.Security.Cryptography;
 using MindTouch.Tasking;
+using MindTouch.Threading.Timer;
 using MindTouch.Web;
 
 namespace MindTouch.Dream {
@@ -121,7 +122,7 @@ namespace MindTouch.Dream {
         public readonly DreamMessage Request;
 
         // TODO (arnec): StartTime should eventually be mirroed with EndTime and a Duration attribute on features
-        //               for now it's just the time the request started that should be used instead of DateTime.UtcNow
+        //               for now it's just the time the request started that should be used instead of GlobalClock.UtcNow
         /// <summary>
         /// Time the request started.
         /// </summary>
@@ -188,7 +189,7 @@ namespace MindTouch.Dream {
             this.Feature.ExtractArguments(this.Uri, out _suffixes, out _pathParams);
             this.ServerUri = serverUri;
             this.Request = request;
-            this.StartTime = DateTime.UtcNow;
+            this.StartTime = GlobalClock.UtcNow;
             _publicUri = publicUri;
             _culture = culture;
             _requestContainerFactory = requestContainerFactory;
@@ -230,7 +231,7 @@ namespace MindTouch.Dream {
             this.Feature.ExtractArguments(this.Uri, out _suffixes, out _pathParams);
             this.ServerUri = serverUri;
             this.Request = request;
-            this.StartTime = DateTime.UtcNow;
+            this.StartTime = GlobalClock.UtcNow;
             _publicUri = publicUri;
             _culture = culture;
             _requestContainerFactory = requestContainerFactory;
@@ -790,7 +791,7 @@ namespace MindTouch.Dream {
                 }
 
                 // determine 'now' date-time
-                DateTime now = DateTime.UtcNow;
+                DateTime now = GlobalClock.UtcNow;
                 DateTime? request_date = Request.Headers.Date;
                 if(request_date.HasValue) {
                     now = (request_date.Value > now) ? request_date.Value : now;

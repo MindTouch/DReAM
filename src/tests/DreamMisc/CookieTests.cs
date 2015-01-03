@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Net;
 
 using MindTouch.Tasking;
+using MindTouch.Threading.Timer;
 using MindTouch.Web;
 using MindTouch.Xml;
 
@@ -361,7 +362,7 @@ namespace MindTouch.Dream.Test {
                 "foo",
                 "bar",
                 new XUri("http://abc.com/path"),
-                DateTime.Now.AddDays(1),
+                GlobalClock.UtcNow.AddDays(1),
                 true,
                 "blah blah",
                 new XUri("http://comment.com/blah"));
@@ -385,7 +386,7 @@ namespace MindTouch.Dream.Test {
                 "foo",
                 "bar",
                 new XUri("http://abc.com/path"),
-                DateTime.Now.AddDays(1),
+                GlobalClock.UtcNow.AddDays(1),
                 true,
                 "blah blah",
                 new XUri("http://comment.com/blah"));
@@ -434,7 +435,7 @@ namespace MindTouch.Dream.Test {
         [Test]
         public void Set_Fetch_cookie_from_jar_for_https() {
             List<DreamCookie> setcookies = new List<DreamCookie>();
-            setcookies.Add(DreamCookie.NewSetCookie("authtoken", "1_633698885517217440_64e1d64e732341bde1797f20fe2ab824", new XUri("http:///"), DateTime.UtcNow.AddDays(2)));
+            setcookies.Add(DreamCookie.NewSetCookie("authtoken", "1_633698885517217440_64e1d64e732341bde1797f20fe2ab824", new XUri("http:///"), GlobalClock.UtcNow.AddDays(2)));
             DreamCookieJar jar = new DreamCookieJar();
             jar.Update(setcookies,new XUri("https://admin:pass@wikiaddress//@api/deki/users/authenticate"));
             List<DreamCookie> cookies = jar.Fetch(new XUri("https://wikiaddress//@api/deki/Pages/home/files,subpages"));

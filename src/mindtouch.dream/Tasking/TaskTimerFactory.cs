@@ -180,10 +180,10 @@ namespace MindTouch.Tasking {
         private readonly Type _ownerType;
         private readonly PriorityQueue<TaskTimer> _queue = new PriorityQueue<TaskTimer>(Compare);
         private readonly Dictionary<TaskTimer, object> _pending = new Dictionary<TaskTimer, object>();
-        private DateTime _maintenance = DateTime.UtcNow;
+        private DateTime _maintenance = GlobalClock.UtcNow;
         private volatile bool _running = true;
         private int _counter;
-        private DateTime _last = DateTime.UtcNow;
+        private DateTime _last = GlobalClock.UtcNow;
         private volatile bool _shutdown;
 
         //--- Constructors ---
@@ -220,7 +220,7 @@ namespace MindTouch.Tasking {
         /// <summary>
         /// Time until the next <see cref="TaskTimer"/> maintenance.
         /// </summary>
-        public TimeSpan NextMaintenance { get { return _maintenance - DateTime.UtcNow; } }
+        public TimeSpan NextMaintenance { get { return _maintenance - GlobalClock.UtcNow; } }
 
         /// <summary>
         /// A collection of all timers currently pending.

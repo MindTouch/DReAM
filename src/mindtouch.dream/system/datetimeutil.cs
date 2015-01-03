@@ -20,6 +20,7 @@
  */
 
 using System.Globalization;
+using MindTouch.Threading.Timer;
 
 namespace System {
 
@@ -42,7 +43,7 @@ namespace System {
         /// </summary>
         public static DateTime UtcToday {
             get {
-                return DateTime.UtcNow.Date;
+                return GlobalClock.UtcNow.Date;
             }
         }
 

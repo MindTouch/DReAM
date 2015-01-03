@@ -25,6 +25,7 @@
 using System;
 using System.Threading;
 using MindTouch.Tasking;
+using MindTouch.Threading.Timer;
 
 // TODO (steveb): change namespace to MindTouch.Tasking
 namespace MindTouch.Dream {
@@ -167,7 +168,7 @@ namespace MindTouch.Dream {
         /// <param name="env">The environment to use for invocation.</param>
         public void Change(TimeSpan timespan, TaskEnv env) {
             if(timespan != TimeSpan.MaxValue) {
-                Change(DateTime.UtcNow.Add(timespan), env);
+                Change(GlobalClock.UtcNow.Add(timespan), env);
             } else {
                 Change(DateTime.MaxValue, env);
             }
@@ -179,7 +180,7 @@ namespace MindTouch.Dream {
         /// <param name="when">The absolute time.</param>
         /// <param name="env">The environment to use for invocation.</param>
         public void Change(DateTime when, TaskEnv env) {
-            DateTime now = DateTime.UtcNow;
+            DateTime now = GlobalClock.UtcNow;
 
             // determine new status
             int next;
