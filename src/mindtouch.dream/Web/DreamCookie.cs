@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using MindTouch.Dream;
-using MindTouch.Threading.Timer;
 using MindTouch.Xml;
 
 namespace MindTouch.Web {

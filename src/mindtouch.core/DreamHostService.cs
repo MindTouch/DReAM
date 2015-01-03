@@ -39,7 +39,6 @@ using MindTouch.Collections;
 using MindTouch.Dream.IO;
 using MindTouch.Tasking;
 using MindTouch.Threading;
-using MindTouch.Threading.Timer;
 using MindTouch.Web;
 using MindTouch.Xml;
 

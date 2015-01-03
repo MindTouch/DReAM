@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using MindTouch.Threading.Timer;
 using log4net;
 using MindTouch.IO;
 

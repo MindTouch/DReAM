@@ -25,7 +25,6 @@ using System.Linq;
 using MindTouch.Dream;
 using MindTouch.Tasking;
 using MindTouch.Extensions.Time;
-using MindTouch.Threading.Timer;
 
 namespace MindTouch.Aws {
     public class InMemorySqsClient : IAwsSqsClient, IDisposable {

@@ -29,7 +29,6 @@ using System.Text;
 using Autofac;
 using MindTouch.Security.Cryptography;
 using MindTouch.Tasking;
-using MindTouch.Threading.Timer;
 using MindTouch.Web;
 
 namespace MindTouch.Dream {

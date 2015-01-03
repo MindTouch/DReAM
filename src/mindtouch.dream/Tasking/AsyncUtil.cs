@@ -29,7 +29,6 @@ using System.Threading;
 using MindTouch.Dream;
 using MindTouch.IO;
 using MindTouch.Threading;
-using MindTouch.Threading.Timer;
 
 namespace MindTouch.Tasking {
     using Yield = IEnumerator<IYield>;

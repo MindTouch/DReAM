@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Linq;
 using MindTouch.Dream;
 using MindTouch.Tasking;
-using MindTouch.Threading.Timer;
 
 namespace MindTouch.Collections {
 

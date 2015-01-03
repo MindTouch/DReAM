@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Net;
 
 using MindTouch.Tasking;
-using MindTouch.Threading.Timer;
 using MindTouch.Web;
 using MindTouch.Xml;
 

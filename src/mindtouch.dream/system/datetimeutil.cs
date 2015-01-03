@@ -20,7 +20,6 @@
  */
 
 using System.Globalization;
-using MindTouch.Threading.Timer;
 
 namespace System {
 

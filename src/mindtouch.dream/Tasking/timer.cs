@@ -25,7 +25,6 @@
 using System;
 using System.Threading;
 using MindTouch.Tasking;
-using MindTouch.Threading.Timer;
 
 // TODO (steveb): change namespace to MindTouch.Tasking
 namespace MindTouch.Dream {

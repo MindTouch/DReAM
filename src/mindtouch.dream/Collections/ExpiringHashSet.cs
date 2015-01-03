@@ -23,7 +23,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using MindTouch.Tasking;
-using MindTouch.Threading.Timer;
 
 namespace MindTouch.Collections {
 

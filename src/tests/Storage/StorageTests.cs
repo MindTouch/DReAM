@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using MindTouch.Threading.Timer;
 using log4net;
 using log4net.Config;
 

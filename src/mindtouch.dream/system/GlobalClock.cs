@@ -19,13 +19,13 @@
  * limitations under the License.
  */
 
-using System;
 using System.Collections.Generic;
 using System.Threading;
+using MindTouch;
 using MindTouch.Dream;
 using MindTouch.Tasking;
 
-namespace MindTouch.Threading.Timer {
+namespace System {
     using ClockCallback = Action<DateTime, TimeSpan>;
     using NamedClockCallback = KeyValuePair<string, Action<DateTime, TimeSpan>>;
 

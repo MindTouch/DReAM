@@ -25,7 +25,6 @@ using System.Diagnostics;
 
 using MindTouch.Collections;
 using MindTouch.Tasking;
-using MindTouch.Threading.Timer;
 
 namespace MindTouch.Threading {
     internal static class DispatchThreadScheduler {
