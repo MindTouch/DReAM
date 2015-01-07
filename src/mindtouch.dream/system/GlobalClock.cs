@@ -122,7 +122,8 @@ namespace System {
         /// <summary>
         /// Fast-forward time for the global clock.
         /// </summary>
-        /// <param name="time"></param>
+        /// <param name="time">Timespan to fast-forward the global clock (cannot be negative).</param>
+        /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
         public static void FastForward(TimeSpan time) {
             if(time < TimeSpan.Zero) {
                 throw new ArgumentException("time cannot be negative");
