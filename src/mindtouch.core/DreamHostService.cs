@@ -86,7 +86,7 @@ namespace MindTouch.Dream {
         private sealed class DreamActivityDescription : IDreamActivityDescription {
 
             //--- Fields ---
-            private readonly DateTime _created = DateTime.UtcNow;
+            private readonly DateTime _created = GlobalClock.UtcNow;
             private string _description;
             private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities;
 
@@ -298,7 +298,7 @@ namespace MindTouch.Dream {
         private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
-        private readonly DateTime _created = DateTime.UtcNow;
+        private readonly DateTime _created = GlobalClock.UtcNow;
         private IServiceActivator _serviceActivator;
         private DreamFeatureStage[] _defaultPrologues;
         private DreamFeatureStage[] _defaultEpilogues;
@@ -615,7 +615,7 @@ namespace MindTouch.Dream {
             DreamMessage reply = new DreamMessage((DreamStatus)status, null, doc);
             string cookieValue = context.GetParam("cookie", null);
             if(cookieValue != null) {
-                reply.Cookies.Add(DreamCookie.NewSetCookie("test-cookie", cookieValue, Self.Uri, DateTime.UtcNow.AddHours(1.0)));
+                reply.Cookies.Add(DreamCookie.NewSetCookie("test-cookie", cookieValue, Self.Uri, GlobalClock.UtcNow.AddHours(1.0)));
             }
             if(context.Verb.EqualsInvariant("HEAD")) {
                 reply = new DreamMessage(reply.Status, null, MimeType.XML, new byte[0]);
@@ -640,7 +640,7 @@ namespace MindTouch.Dream {
 // ReSharper disable UnusedMember.Local
         private Yield GetStatus(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
 // ReSharper restore UnusedMember.Local
-            DateTime now = DateTime.UtcNow;
+            DateTime now = GlobalClock.UtcNow;
             XDoc result = new XDoc("status");
             XUri self = Self.Uri.With("apikey", context.GetParam("apikey", null));
 
@@ -835,7 +835,7 @@ namespace MindTouch.Dream {
                     result.Attr("abandoned", true);
                 }
                 var next = factory.Next;
-                var now = DateTime.UtcNow;
+                var now = GlobalClock.UtcNow;
                 var timerCount = 0;
                 if(next != null) {
                     timerCount++;
@@ -873,7 +873,7 @@ namespace MindTouch.Dream {
 // ReSharper disable UnusedMember.Local
         private Yield GetStatusActiities(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
 // ReSharper restore UnusedMember.Local
-            DateTime now = DateTime.UtcNow;
+            DateTime now = GlobalClock.UtcNow;
 
             // host/aliases
             XUri self = Self.Uri.With("apikey", context.GetParam("apikey", null));

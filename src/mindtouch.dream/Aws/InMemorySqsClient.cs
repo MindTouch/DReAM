@@ -176,7 +176,7 @@ namespace MindTouch.Aws {
                 var msgQueue = GetQueue(queue);
                 ThrowIfQueueIsNull(msgQueue);
                 QueueEntry[] entries;
-                var now = DateTime.UtcNow;
+                var now = GlobalClock.UtcNow;
                 lock(msgQueue) {
                     entries = msgQueue
                         .Where(x => x.VisibleTime <= now)

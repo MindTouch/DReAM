@@ -83,7 +83,7 @@ namespace MindTouch.Tools {
         }
 
         static void Out(string s) {
-            Console.WriteLine(DateTime.Now.ToLongTimeString() + ": " + s);
+            Console.WriteLine(GlobalClock.UtcNow.ToLongTimeString() + ": " + s);
         }
 
         static void BenchAUri(string uri, int numRequests, int numThreads, bool htmlOutput, bool saveGnuPlotData) {
@@ -224,7 +224,7 @@ namespace MindTouch.Tools {
         }
 
         static string BuildPathWithUri(string uri, string filename) {
-            filename =  Path.GetFileNameWithoutExtension(filename) + "_" + DateTime.Now.ToString("yyyyMMdd_HHmm") + Path.GetExtension( filename);
+            filename = Path.GetFileNameWithoutExtension(filename) + "_" + GlobalClock.UtcNow.ToString("yyyyMMdd_HHmm") + Path.GetExtension(filename);
             string ret = Path.Combine(Path.Combine( PATH_TO_OUTPUT, CleanFileName(new Uri(uri).PathAndQuery.TrimStart('/'))), filename);
             Directory.CreateDirectory(Path.GetDirectoryName(ret));
             return ret;
@@ -248,7 +248,7 @@ namespace MindTouch.Tools {
 
         static string DiscoverOutputPath() {
             string basePath = Environment.CurrentDirectory;
-            //return Path.Combine(basePath, "dekibench_" + DateTime.Now.ToString("yyyyMMddHHmmss"));
+            //return Path.Combine(basePath, "dekibench_" + GlobalClock.UtcNow.ToString("yyyyMMddHHmmss"));
             return basePath;
         }
 

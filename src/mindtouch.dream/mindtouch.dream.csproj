@@ -281,7 +281,7 @@
     <Compile Include="Threading\LockFreeCounter.cs" />
     <Compile Include="Threading\RendezVousEvent.cs" />
     <Compile Include="Threading\SynchronizationDispatchQueue.cs" />
-    <Compile Include="Threading\Timer\GlobalClock.cs" />
+    <Compile Include="system\GlobalClock.cs" />
     <Compile Include="Web\HttpUtil.cs" />
     <Compile Include="Web\InvalidHttpAuthorizationHeader.cs" />
     <Compile Include="Xml\XAtom.cs" />
@@ -300,6 +300,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+    <Folder Include="Threading\Timer\" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

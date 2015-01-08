@@ -258,16 +258,16 @@ namespace MindTouch.Dream.Storage.Test {
 
             // add a file
             _storage.At(_fileUri).With("ttl", "2").Put(DreamMessage.Ok(MimeType.TEXT, TEST_CONTENTS));
-            _log.DebugFormat("File stored at: {0}", DateTime.UtcNow);
+            _log.DebugFormat("File stored at: {0}", GlobalClock.UtcNow);
 
             // get file and compare contents
             string contents = _storage.At(_fileUri).Get().ToText();
             Assert.AreEqual(TEST_CONTENTS, contents);
-            _log.DebugFormat("check file at: {0}", DateTime.UtcNow);
+            _log.DebugFormat("check file at: {0}", GlobalClock.UtcNow);
             System.Threading.Thread.Sleep(TimeSpan.FromSeconds(4));
 
             // get file and compare contents
-            _log.DebugFormat("Checking for expired file at: {0}", DateTime.UtcNow);
+            _log.DebugFormat("Checking for expired file at: {0}", GlobalClock.UtcNow);
             DreamMessage response = _storage.At(_fileUri).Get(new Result<DreamMessage>()).Wait();
             Assert.AreEqual(DreamStatus.NotFound, response.Status);
         }
@@ -444,16 +444,16 @@ namespace MindTouch.Dream.Storage.Test {
             public Yield TestCreateTtlExpire(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
                 // add a file
                 Storage.AtPath(TEST_FILE_URI).With("ttl", "2").Put(DreamMessage.Ok(MimeType.TEXT, TEST_CONTENTS));
-                _log.DebugFormat("File stored at: {0}", DateTime.UtcNow);
+                _log.DebugFormat("File stored at: {0}", GlobalClock.UtcNow);
 
                 // get file and compare contents
                 string contents = Storage.AtPath(TEST_FILE_URI).Get().ToText();
                 Assert.AreEqual(TEST_CONTENTS, contents);
-                _log.DebugFormat("check file at: {0}", DateTime.UtcNow);
+                _log.DebugFormat("check file at: {0}", GlobalClock.UtcNow);
                 System.Threading.Thread.Sleep(TimeSpan.FromSeconds(4));
 
                 // get file and compare contents
-                _log.DebugFormat("Checking for expired file at: {0}", DateTime.UtcNow);
+                _log.DebugFormat("Checking for expired file at: {0}", GlobalClock.UtcNow);
                 DreamMessage getResponse = Storage.AtPath(TEST_FILE_URI).Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.NotFound, getResponse.Status);
 

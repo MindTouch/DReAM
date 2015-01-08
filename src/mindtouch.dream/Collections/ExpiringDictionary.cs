@@ -166,7 +166,7 @@ namespace MindTouch.Collections {
         /// <param name="value">The keyed value.</param>
         /// <param name="ttl">The time-to-live from right now</param>
         public void Set(TKey key, TValue value, TimeSpan ttl) {
-            var when = ttl == TimeSpan.MaxValue ? DateTime.MaxValue : DateTime.UtcNow + ttl;
+            var when = ttl == TimeSpan.MaxValue ? DateTime.MaxValue : GlobalClock.UtcNow + ttl;
             _set.SetExpiration(key, value, when, ttl, true);
         }
 
@@ -179,7 +179,7 @@ namespace MindTouch.Collections {
         /// <param name="oldValue">Previous value stored at the key location</param>
         /// <returns><see langword="True"/> if an entry existed for the given key.</returns>
         public bool TrySet(TKey key, TValue value, TimeSpan ttl, out TValue oldValue) {
-            var when = ttl == TimeSpan.MaxValue ? DateTime.MaxValue : DateTime.UtcNow + ttl;
+            var when = ttl == TimeSpan.MaxValue ? DateTime.MaxValue : GlobalClock.UtcNow + ttl;
             return _set.SetExpiration(key, value, when, ttl, true, out oldValue);
         }
 
@@ -190,7 +190,7 @@ namespace MindTouch.Collections {
         /// <param name="value">The keyed value.</param>
         /// <param name="when">The absolute expiration time of the pair.</param>
         public void Set(TKey key, TValue value, DateTime when) {
-            var ttl = when - DateTime.UtcNow;
+            var ttl = when - GlobalClock.UtcNow;
             _set.SetExpiration(key, value, when, ttl, true);
         }
 
@@ -202,7 +202,7 @@ namespace MindTouch.Collections {
         /// <param name="oldValue">Previous value stored at the key location</param>
         /// <param name="when">The absolute expiration time of the pair.</param>
         public bool TrySet(TKey key, TValue value, DateTime when, out TValue oldValue) {
-            var ttl = when - DateTime.UtcNow;
+            var ttl = when - GlobalClock.UtcNow;
             return _set.SetExpiration(key, value, when, ttl, true, out oldValue);
         }
 
@@ -213,7 +213,7 @@ namespace MindTouch.Collections {
         /// <param name="ttl">Time-to-live for the entry.</param>
         /// <returns><see langword="True"/> if an entry existed for the given key.</returns>
         public bool SetExpiration(TKey key, TimeSpan ttl) {
-            var when = DateTime.UtcNow + ttl;
+            var when = GlobalClock.UtcNow + ttl;
             return _set.SetExpiration(key, default(TValue), when, ttl, false);
         }
 
@@ -224,7 +224,7 @@ namespace MindTouch.Collections {
         /// <param name="when">The absolute expiration time of the pair.</param>
         /// <returns><see langword="True"/> if an entry existed for the given key.</returns>
         public bool SetExpiration(TKey key, DateTime when) {
-            var ttl = when - DateTime.UtcNow;
+            var ttl = when - GlobalClock.UtcNow;
             return _set.SetExpiration(key, default(TValue), when, ttl, false);
         }
 

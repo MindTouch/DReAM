@@ -409,7 +409,7 @@ namespace MindTouch.Dream.Services {
 
         private void OnDelete(object sender, ExpirationEventArgs<string> e) {
             var filepathEntry = e.Entry;
-            if(filepathEntry.When > DateTime.UtcNow) {
+            if(filepathEntry.When > GlobalClock.UtcNow) {
                 _log.DebugFormat("Ignoring premature expiration event for '{0}' scheduled for '{1}'", filepathEntry.Value, filepathEntry.When);
                 return;
             }

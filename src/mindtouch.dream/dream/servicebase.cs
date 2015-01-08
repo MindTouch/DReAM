@@ -700,7 +700,7 @@ namespace MindTouch.Dream {
                 if(values.TryGetValue("expire", out expirationtext)) {
                     try {
                         DateTime expiration = DateTime.Parse(expirationtext);
-                        if(expiration < DateTime.UtcNow) {
+                        if(expiration < GlobalClock.UtcNow) {
                             _license = null;
                         }
                     } catch(Exception e) {
@@ -741,7 +741,7 @@ namespace MindTouch.Dream {
         protected virtual Yield Stop(Result result) {
 
             // ungrant owner and parent, otherwise they end up with thousands of grants
-            DreamCookie cookie = DreamCookie.NewSetCookie("service-key", string.Empty, Self.Uri, DateTime.UtcNow);
+            DreamCookie cookie = DreamCookie.NewSetCookie("service-key", string.Empty, Self.Uri, GlobalClock.UtcNow);
 
             // ignore if these operations fail since we're shutting down anyway
             yield return Env.At("@grants").Post(DreamMessage.Ok(cookie.AsSetCookieDocument), new Result<DreamMessage>(TimeSpan.MaxValue)).CatchAndLog(_log);

@@ -189,7 +189,7 @@ namespace MindTouch.Collections {
                 } else if(commitTimeout == TimeSpan.MaxValue) {
                     pending.Expiration = DateTime.MaxValue;
                 } else {
-                    pending.Expiration = DateTime.UtcNow.Add(commitTimeout);
+                    pending.Expiration = GlobalClock.UtcNow.Add(commitTimeout);
                 }
                 if(_nextCollect > pending.Expiration) {
                     _nextCollect = pending.Expiration;
@@ -249,7 +249,7 @@ namespace MindTouch.Collections {
 
         private void ProcessExpiredItems() {
             lock(_available) {
-                var now = DateTime.UtcNow;
+                var now = GlobalClock.UtcNow;
                 if(_pending.Count == 0 || now < _nextCollect) {
                     return;
                 }

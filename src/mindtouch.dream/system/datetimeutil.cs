@@ -42,7 +42,7 @@ namespace System {
         /// </summary>
         public static DateTime UtcToday {
             get {
-                return DateTime.UtcNow.Date;
+                return GlobalClock.UtcNow.Date;
             }
         }
 

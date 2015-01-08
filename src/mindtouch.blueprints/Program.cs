@@ -151,7 +151,7 @@ namespace MindTouch.Tools {
 
         private static void Publish(XUri uri, String login, String password, List<DreamCookie> cookies, string destination, XDoc overviewDoc, XDoc additionalInfoDoc) {
             string encodedPageName = XUri.DoubleEncodeSegment(destination);
-            string plugPath = "pages/=" + encodedPageName + "/contents?edittime=" + DateTime.Now.ToUniversalTime().ToString("yyyyMMddHHmmss");
+            string plugPath = "pages/=" + encodedPageName + "/contents?edittime=" + GlobalClock.UtcNow.ToUniversalTime().ToString("yyyyMMddHHmmss");
             XDoc pageContents = null;
 
             // attempt to retrieve the page to determine if it already exists

@@ -46,8 +46,8 @@ namespace MindTouch.Dream.AmazonS3 {
         /// <returns>New Plug instance with pre-handler.</returns>
         public static Plug WithS3Authentication(this Plug plug, string privateKey, string publicKey) {
             return plug.WithPreHandler((verb, uri, normalizedUri, message) => {
-                
-                // add amazon date header
+
+                // add amazon date header (NOTE: this must be the real wall-time)
                 var date = DateTime.UtcNow.ToString("r");
                 message.Headers[AWS_DATE] = date;
 

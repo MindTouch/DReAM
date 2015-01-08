@@ -40,7 +40,7 @@ namespace MindTouch.Dream.Test {
         [SetUp]
         public void Setup() {
             var reset = new ManualResetEvent(false);
-            var timer = TaskTimerFactory.Current.New(DateTime.UtcNow, (t) => {
+            var timer = TaskTimerFactory.Current.New(GlobalClock.UtcNow, (t) => {
                 _log.Debug("warm up");
                 reset.Set();
             }, null, TaskEnv.Current);
@@ -113,7 +113,7 @@ namespace MindTouch.Dream.Test {
             var changed = new ManualResetEvent(false);
             var k = 42;
             var v = "foo";
-            var when = DateTime.UtcNow.AddSeconds(1);
+            var when = GlobalClock.UtcNow.AddSeconds(1);
             ExpiringDictionary<int, string>.Entry entry = null;
             var set = new ExpiringDictionary<int, string>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
@@ -133,7 +133,7 @@ namespace MindTouch.Dream.Test {
             var set = new ExpiringDictionary<int, string>(TaskTimerFactory.Current);
             var k = 42;
             var v = "foo";
-            var when = DateTime.UtcNow.AddDays(1);
+            var when = GlobalClock.UtcNow.AddDays(1);
             set.Set(k, v, when);
             var entry = set[k];
             Assert.AreEqual(k, entry.Key);
@@ -297,7 +297,7 @@ namespace MindTouch.Dream.Test {
             var v = "foo";
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringDictionary<int, string>(TaskTimerFactory.Current);
-            var expireTime = DateTime.UtcNow.AddSeconds(10);
+            var expireTime = GlobalClock.UtcNow.AddSeconds(10);
             set.Set(k, v, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[k];
@@ -311,7 +311,7 @@ namespace MindTouch.Dream.Test {
             var v = "foo";
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringDictionary<int, string>(TaskTimerFactory.Current, true);
-            var expireTime = DateTime.UtcNow.AddSeconds(10);
+            var expireTime = GlobalClock.UtcNow.AddSeconds(10);
             set.Set(k, v, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[k];
@@ -351,7 +351,7 @@ namespace MindTouch.Dream.Test {
             var v = "foo";
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringDictionary<int, string>(TaskTimerFactory.Current, true);
-            var expireTime = DateTime.UtcNow.AddSeconds(10);
+            var expireTime = GlobalClock.UtcNow.AddSeconds(10);
             set.Set(k, v, expireTime);
             var when = set[k].When;
             Thread.Sleep(200);

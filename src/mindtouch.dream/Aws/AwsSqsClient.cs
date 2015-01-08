@@ -100,6 +100,8 @@ namespace MindTouch.Aws {
         }
 
         protected Result<T> HandleResponse<T>(bool post, string queue, string action, Dictionary<string, string> parameters, Result<T> result, Func<XDoc, T> responseHandler) {
+
+            // add amazon date header (NOTE: this must be the real wall-time)
             var time = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
             parameters.Add("AWSAccessKeyId", _config.PublicKey);
             parameters.Add("Action", action);

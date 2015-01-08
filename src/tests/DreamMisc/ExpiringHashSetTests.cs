@@ -99,7 +99,7 @@ namespace MindTouch.Dream.Test {
             var expired = new ManualResetEvent(false);
             var changed = new ManualResetEvent(false);
             var i = 42;
-            var when = DateTime.UtcNow.AddSeconds(1);
+            var when = GlobalClock.UtcNow.AddSeconds(1);
             ExpiringHashSet<int>.Entry entry = null;
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             set.EntryExpired += (s, e) => { entry = e.Entry; expired.Set(); };
@@ -117,7 +117,7 @@ namespace MindTouch.Dream.Test {
         public void Can_retrieve_item_checking_when() {
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
             var v = 42;
-            var when = DateTime.UtcNow.AddDays(1);
+            var when = GlobalClock.UtcNow.AddDays(1);
             set.SetOrUpdate(v, when);
             var entry = set[v];
             Assert.AreEqual(v, entry.Value);
@@ -268,7 +268,7 @@ namespace MindTouch.Dream.Test {
             var i = 42;
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current);
-            var expireTime = DateTime.UtcNow.AddSeconds(10);
+            var expireTime = GlobalClock.UtcNow.AddSeconds(10);
             set.SetOrUpdate(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
@@ -281,7 +281,7 @@ namespace MindTouch.Dream.Test {
             var i = 42;
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current, true);
-            var expireTime = DateTime.UtcNow.AddSeconds(10);
+            var expireTime = GlobalClock.UtcNow.AddSeconds(10);
             set.SetOrUpdate(i, expireTime);
             Thread.Sleep(TimeSpan.FromSeconds(2));
             var entry = set[i];
@@ -296,7 +296,7 @@ namespace MindTouch.Dream.Test {
             var k = 42;
             var ttl = TimeSpan.FromSeconds(10);
             var set = new ExpiringHashSet<int>(TaskTimerFactory.Current, true);
-            var expireTime = DateTime.UtcNow.AddSeconds(10);
+            var expireTime = GlobalClock.UtcNow.AddSeconds(10);
             set.SetOrUpdate(k, expireTime);
             var when = set[k].When;
             Thread.Sleep(200);
