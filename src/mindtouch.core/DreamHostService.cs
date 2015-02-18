@@ -326,7 +326,7 @@ namespace MindTouch.Dream {
         public DreamHostService() : this(null) { }
 
         public DreamHostService(IContainer container) {
-            _container = (container ?? new ContainerBuilder().Build(ContainerBuildOptions.Default));
+            _container = (container ?? new ContainerBuilder().Build(ContainerBuildOptions.None));
             _hostLifetimeScope = _container.BeginLifetimeScope(DreamContainerScope.Host);
         }
 
