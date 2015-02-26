@@ -31,7 +31,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Last_registration_wins() {
-            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => {
                 b.RegisterType<Foo>().As<IFoo>().ServiceScoped();
                 b.RegisterType<Fu>().As<IFoo>().ServiceScoped();
@@ -42,7 +42,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Last_registration_wins_with_module() {
-            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => {
                 b.RegisterModule(new FuModule());
                 b.RegisterType<Foo>().As<IFoo>().ServiceScoped();
@@ -53,7 +53,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Last_module_wins() {
-            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => {
                 b.RegisterModule(new FooModule());
                 b.RegisterModule(new FuModule());
@@ -64,7 +64,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Can_register_service_level_component_at_service_scope_creation_and_resolve_in_service_scope() {
-            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => b.RegisterType<Foo>().As<IFoo>().ServiceScoped());
             var foo = serviceScope.Resolve<IFoo>();
             Assert.IsNotNull(foo);
@@ -72,7 +72,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Can_register_request_level_component_at_service_scope_creation_and_resolve_in_request_scope() {
-            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => b.RegisterType<Foo>().As<IFoo>().RequestScoped());
             var requestScope = serviceScope.BeginLifetimeScope(DreamContainerScope.Request);
             var foo = requestScope.Resolve<IFoo>();
@@ -81,7 +81,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void Cannot_resolve_RequestScoped_component_registered_at_service_scope_creation_in_service_scope() {
-            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            var hostScope = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => b.RegisterType<Foo>().As<IFoo>().RequestScoped());
             try {
                 var foo = serviceScope.Resolve<IFoo>();

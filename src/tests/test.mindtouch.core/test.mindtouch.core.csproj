@@ -61,6 +61,10 @@
     <NoWarn>0618,1591,1699</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Autofac">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Autofac.2.6.3.862\lib\net40\Autofac.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -73,9 +77,6 @@
     </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Autofac">
-      <HintPath>..\..\redist\Autofac.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\..\redist\log4net.dll</HintPath>
     </Reference>
@@ -89,6 +90,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\mindtouch.core\mindtouch.core.csproj">

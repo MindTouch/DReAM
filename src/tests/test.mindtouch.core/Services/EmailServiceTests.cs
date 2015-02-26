@@ -75,7 +75,7 @@ namespace MindTouch.Core.Test.Services {
             var builder = new ContainerBuilder();
             _smtpClientFactory = new SmtpClientFactoryMock();
             builder.Register(c => _smtpClientFactory).As<ISmtpClientFactory>().ServiceScoped();
-            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build(ContainerBuildOptions.Default));
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build(ContainerBuildOptions.None));
             _emailService = DreamTestHelper.CreateService(
                 _hostInfo, 
                 "sid://mindtouch.com/2009/01/dream/email", 

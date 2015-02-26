@@ -38,7 +38,7 @@ namespace MindTouch.Dream.Test {
 
         [SetUp]
         public void Setup() {
-            _hostContainer = new ContainerBuilder().Build(ContainerBuildOptions.Default).BeginLifetimeScope(DreamContainerScope.Host);
+            _hostContainer = new ContainerBuilder().Build(ContainerBuildOptions.None).BeginLifetimeScope(DreamContainerScope.Host);
             _serviceContainer = _hostContainer.BeginLifetimeScope(DreamContainerScope.Service);
             _requestContainer = _serviceContainer.BeginLifetimeScope(DreamContainerScope.Request);
         }

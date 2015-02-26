@@ -69,7 +69,7 @@ namespace MindTouch.Dream.Storage.Test {
                 _clientProxy = new AwsS3ClientProxy();
                 return _clientProxy;
             }).As<IAwsS3Client>().ServiceScoped();
-            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build(ContainerBuildOptions.Default));
+            _hostInfo = DreamTestHelper.CreateRandomPortHost(config, builder.Build(ContainerBuildOptions.None));
         }
 
         [SetUp]
