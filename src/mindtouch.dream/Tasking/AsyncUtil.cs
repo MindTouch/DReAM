@@ -77,7 +77,11 @@ namespace MindTouch.Tasking {
         /// The globally accessible <see cref="IDispatchQueue"/> for dispatching work without queue affinity.
         /// </summary>
         public static readonly IDispatchQueue GlobalDispatchQueue;
-       
+
+        /// <summary>
+        /// The <see cref="IDispatchQueue"/> for dispatching background work without queue affinity.
+        /// </summary>
+        private static readonly IDispatchQueue BackgroundDispatchQueue;
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
         private static bool _inplaceActivation = true;
         private static readonly int _minThreads;
@@ -117,6 +121,7 @@ namespace MindTouch.Tasking {
                 _log.DebugFormat("Using ElasticThreadPool with {0}min / {1}max", _minThreads, _maxThreads);
                 var elasticThreadPool = new ElasticThreadPool(_minThreads, _maxThreads);
                 GlobalDispatchQueue = elasticThreadPool;
+                BackgroundDispatchQueue = new ElasticThreadPool(_minThreads, _maxThreads);
                 _inplaceActivation = false;
                 _availableThreadsCallback = delegate(out int threads, out int ports) {
                     int dummy2;
@@ -131,6 +136,7 @@ namespace MindTouch.Tasking {
                 ThreadPool.SetMaxThreads(_maxThreads, _maxPorts);
                 _log.Debug("Using LegacyThreadPool");
                 GlobalDispatchQueue = LegacyThreadPool.Instance;
+                BackgroundDispatchQueue = LegacyThreadPool.Instance;
                 _availableThreadsCallback = ThreadPool.GetAvailableThreads;
                 break;
             }
@@ -244,6 +250,14 @@ namespace MindTouch.Tasking {
         /// <returns>Synchronization handle for the action's execution.</returns>
         public static Result<T> Fork<T>(Func<T> handler, Result<T> result) {
             return GlobalDispatchQueue.QueueWorkItemWithClonedEnv(handler, result);
+        }
+
+        /// <summary>
+        /// Dispatch an action to be executed via the <see cref="BackgroundDispatchQueue"/>.
+        /// </summary>
+        /// <param name="handler">Action to enqueue for execution.</param>
+        public static void ForkAndForget(Action handler) {
+            BackgroundDispatchQueue.QueueWorkItemWithClonedEnv(handler, null);
         }
 
         /// <summary>
