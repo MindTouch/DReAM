@@ -107,6 +107,10 @@ namespace MindTouch.Tasking {
             if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["threadpool-max"], out _maxThreads)) {
                 _maxThreads = 200;
             }
+            int maxStackSize;
+            if(int.TryParse(System.Configuration.ConfigurationManager.AppSettings["max-stacksize"], out maxStackSize)) {
+                _maxStackSize = maxStackSize;
+            }
 
             // Background Thread Pool
             int minBackgroundThreads;
