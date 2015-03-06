@@ -99,6 +99,8 @@ namespace MindTouch.Tasking {
 
         //--- Constructors ---
         static AsyncUtil() {
+
+            // Global Thread Pool
             if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["threadpool-min"], out _minThreads)) {
                 _minThreads = 4;
             }
@@ -110,6 +112,16 @@ namespace MindTouch.Tasking {
                 _maxStackSize = maxStackSize;
             }
 
+            // Background Thread Pool
+            int minBackgroundThreads;
+            if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["background-threadpool-min"], out minBackgroundThreads)) {
+                minBackgroundThreads = 4;
+            }
+            int maxBackgroundThreads;
+            if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["background-threadpool-max"], out maxBackgroundThreads)) {
+                maxBackgroundThreads = 20;
+            }
+
             // check which global dispatch queue implementation to use
             int dummy;
             switch(System.Configuration.ConfigurationManager.AppSettings["threadpool"]) {
@@ -117,10 +129,11 @@ namespace MindTouch.Tasking {
             case "elastic":
                 ThreadPool.GetMinThreads(out dummy, out _minPorts);
                 ThreadPool.GetMaxThreads(out dummy, out _maxPorts);
-                _log.DebugFormat("Using ElasticThreadPool with {0}min / {1}max", _minThreads, _maxThreads);
+                _log.DebugFormat("Using Global ElasticThreadPool with {0}min / {1}max", _minThreads, _maxThreads);
+                _log.DebugFormat("Using Background ElasticThreadPool with {0}min / {1}max", minBackgroundThreads, maxBackgroundThreads);
                 var elasticThreadPool = new ElasticThreadPool(_minThreads, _maxThreads);
                 GlobalDispatchQueue = elasticThreadPool;
-                _backgroundDispatchQueue = new ElasticThreadPool(_minThreads, _maxThreads);
+                _backgroundDispatchQueue = new ElasticThreadPool(minBackgroundThreads, maxBackgroundThreads);
                 _inplaceActivation = false;
                 _availableThreadsCallback = delegate(out int threads, out int ports) {
                     int dummy2;
