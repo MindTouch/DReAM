@@ -193,14 +193,17 @@ namespace MindTouch.Dream {
                                     int workerThreads;
                                     int completionThreads;
                                     int dispatcherThreads;
-                                    AsyncUtil.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads);
+                                    int backgroundThreads;
+                                    AsyncUtil.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads, out backgroundThreads);
                                     int maxWorkerThreads;
                                     int maxCompletionThreads;
                                     int maxDispatcherThreads;
-                                    AsyncUtil.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads);
+                                    int maxBackgroundThreads;
+                                    AsyncUtil.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads, out maxBackgroundThreads);
                                     Console.WriteLine("Thread-pool worker threads available: {0} (max: {1})", workerThreads, maxWorkerThreads);
                                     Console.WriteLine("Thread-pool completion threads available: {0} (max: {1})", completionThreads, maxCompletionThreads);
                                     Console.WriteLine("Dispatcher threads available: {0} (max: {1})", dispatcherThreads, maxDispatcherThreads);
+                                    Console.WriteLine("Thread-pool background worker threads available: {0} (max: {1})", backgroundThreads, maxBackgroundThreads);
 
                                     // show pending/waiting timers
                                     var taskTimerStats = Tasking.TaskTimerFactory.GetStatistics();

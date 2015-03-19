@@ -63,6 +63,7 @@ namespace MindTouch.Tasking {
 
         //--- Types ---
         private delegate void AvailableThreadsDelegate(out int availableThreads, out int availablePorts);
+        private delegate void AvailableBackgroundThreadsDelegate(out int availableThreads);
 
         private class BoxedObject {
             
@@ -87,7 +88,10 @@ namespace MindTouch.Tasking {
         private static readonly int _maxThreads;
         private static readonly int _minPorts;
         private static readonly int _maxPorts;
+        private static readonly int _minBackgroundThreads;
+        private static readonly int _maxBackgroundThreads;
         private static readonly AvailableThreadsDelegate _availableThreadsCallback;
+        private static readonly AvailableBackgroundThreadsDelegate _availableBackgroundThreadsCallback;
         private static readonly int? _maxStackSize;
         private static readonly Dictionary<int, KeyValuePair<Thread, BoxedObject>> _threads = new Dictionary<int, KeyValuePair<Thread, BoxedObject>>();
 
@@ -113,13 +117,11 @@ namespace MindTouch.Tasking {
             }
 
             // Background Thread Pool
-            int minBackgroundThreads;
-            if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["background-threadpool-min"], out minBackgroundThreads)) {
-                minBackgroundThreads = 4;
+            if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["background-threadpool-min"], out _minBackgroundThreads)) {
+                _minBackgroundThreads = 4;
             }
-            int maxBackgroundThreads;
-            if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["background-threadpool-max"], out maxBackgroundThreads)) {
-                maxBackgroundThreads = 20;
+            if(!int.TryParse(System.Configuration.ConfigurationManager.AppSettings["background-threadpool-max"], out _maxBackgroundThreads)) {
+                _maxBackgroundThreads = 20;
             }
 
             // check which global dispatch queue implementation to use
@@ -130,15 +132,19 @@ namespace MindTouch.Tasking {
                 ThreadPool.GetMinThreads(out dummy, out _minPorts);
                 ThreadPool.GetMaxThreads(out dummy, out _maxPorts);
                 _log.DebugFormat("Using Global ElasticThreadPool with {0}min / {1}max", _minThreads, _maxThreads);
-                _log.DebugFormat("Using Background ElasticThreadPool with {0}min / {1}max", minBackgroundThreads, maxBackgroundThreads);
+                _log.DebugFormat("Using Background ElasticThreadPool with {0}min / {1}max", _minBackgroundThreads, _maxBackgroundThreads);
                 var elasticThreadPool = new ElasticThreadPool(_minThreads, _maxThreads);
                 GlobalDispatchQueue = elasticThreadPool;
-                _backgroundDispatchQueue = new ElasticThreadPool(minBackgroundThreads, maxBackgroundThreads);
+                var backgroundThreadPool = new ElasticThreadPool(_minBackgroundThreads, _maxBackgroundThreads);
+                _backgroundDispatchQueue = backgroundThreadPool;
                 _inplaceActivation = false;
                 _availableThreadsCallback = delegate(out int threads, out int ports) {
                     int dummy2;
                     ThreadPool.GetAvailableThreads(out dummy2, out ports);
                     threads = elasticThreadPool.MaxParallelThreads - elasticThreadPool.ThreadCount;
+                };
+                _availableBackgroundThreadsCallback = delegate(out int threads) {
+                    threads = backgroundThreadPool.MaxParallelThreads - backgroundThreadPool.ThreadCount;
                 };
                 break;
             case "legacy":
@@ -207,10 +213,12 @@ namespace MindTouch.Tasking {
         /// <param name="threads">Number of threads allowed.</param>
         /// <param name="ports">Number of completion ports allowed.</param>
         /// <param name="dispatchers">Number of dispatchers allowed.</param>
-        public static void GetMaxThreads(out int threads, out int ports, out int dispatchers) {
+        /// <param name="backgroundThreads">Number of background threads allowed.</param>
+        public static void GetMaxThreads(out int threads, out int ports, out int dispatchers, out int backgroundThreads) {
             threads = _maxThreads;
             ports = _maxPorts;
             dispatchers = DispatchThreadScheduler.MaxThreadCount;
+            backgroundThreads = _maxBackgroundThreads;
         }
 
         /// <summary>
@@ -219,9 +227,11 @@ namespace MindTouch.Tasking {
         /// <param name="threads">Minimum number of threads allocated.</param>
         /// <param name="ports">Minimum number of completion ports allocated.</param>
         /// <param name="dispatchers">Minimum number of dispatchers allocated.</param>
-        public static void GetAvailableThreads(out int threads, out int ports, out int dispatchers) {
+        /// <param name="backgroundThreads">Minimum number of background threads allocated.</param>
+        public static void GetAvailableThreads(out int threads, out int ports, out int dispatchers, out int backgroundThreads) {
             _availableThreadsCallback(out threads, out ports);
             dispatchers = DispatchThreadScheduler.AvailableThreadCount;
+            _availableBackgroundThreadsCallback(out backgroundThreads);
         }
 
         /// <summary>
