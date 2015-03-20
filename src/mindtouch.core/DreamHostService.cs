@@ -690,17 +690,21 @@ namespace MindTouch.Dream {
             int workerThreads;
             int completionThreads;
             int dispatcherThreads;
-            AsyncUtil.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads);
+            int backgroundWorkerThreads;
+            AsyncUtil.GetAvailableThreads(out workerThreads, out completionThreads, out dispatcherThreads, out backgroundWorkerThreads);
             int maxWorkerThreads;
             int maxCompletionThreads;
             int maxDispatcherThreads;
-            AsyncUtil.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads);
+            int maxBackgroundWorkerThreads;
+            AsyncUtil.GetMaxThreads(out maxWorkerThreads, out maxCompletionThreads, out maxDispatcherThreads, out maxBackgroundWorkerThreads);
             result.Elem("workerthreads.max", maxWorkerThreads);
             result.Elem("workerthreads.used", maxWorkerThreads - workerThreads);
             result.Elem("completionthreads.max", maxCompletionThreads);
             result.Elem("completionthreads.used", maxCompletionThreads - completionThreads);
             result.Elem("dispatcherthreads.max", maxDispatcherThreads);
             result.Elem("dispatcherthreads.used", maxDispatcherThreads - dispatcherThreads);
+            result.Elem("backgroundworkerthreads.max", maxBackgroundWorkerThreads);
+            result.Elem("backgroundworkerthreads.used", maxBackgroundWorkerThreads - backgroundWorkerThreads);
 
             // timer information
             var taskTimerStats = TaskTimerFactory.GetStatistics();
@@ -1067,7 +1071,8 @@ namespace MindTouch.Dream {
                     int maxThreads;
                     int maxPorts;
                     int maxDispatchers;
-                    AsyncUtil.GetMaxThreads(out maxThreads, out maxPorts, out maxDispatchers);
+                    int maxBackgroundThreads;
+                    AsyncUtil.GetMaxThreads(out maxThreads, out maxPorts, out maxDispatchers, out maxBackgroundThreads);
                     if(maxDispatchers > 0) {
                         _connectionLimit = maxDispatchers + _connectionLimit;
                     } else {
