@@ -859,7 +859,13 @@ namespace MindTouch.Dream {
                 if(_encoding == null) {
                     string charset = GetParameter(PARAM_CHARSET);
                     if(charset != null) {
-                        _encoding = Encoding.GetEncoding(charset.Trim('"'));
+                        if(charset.EqualsInvariantIgnoreCase("binary")) {
+
+                            // Mime-Type is not encoded text.
+                            _encoding = null;
+                        } else {
+                            _encoding = Encoding.GetEncoding(charset.Trim('"'));
+                        }
                     } else if(MainType.EqualsInvariant("text")) {
                         _encoding = Encoding.ASCII;
                     } else {
