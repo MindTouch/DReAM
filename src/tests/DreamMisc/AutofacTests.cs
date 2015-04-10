@@ -85,7 +85,7 @@ namespace MindTouch.Dream.Test {
             var serviceScope = hostScope.BeginLifetimeScope(DreamContainerScope.Service, b => b.RegisterType<Foo>().As<IFoo>().RequestScoped());
             try {
                 var foo = serviceScope.Resolve<IFoo>();
-            } catch(DependencyResolutionException e) {
+            } catch(DependencyResolutionException) {
                 return;
             }
             Assert.Fail("resolved component in wrong scope");

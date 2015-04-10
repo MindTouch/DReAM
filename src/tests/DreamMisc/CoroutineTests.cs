@@ -123,14 +123,14 @@ namespace MindTouch.Dream.Test {
         public void Direct_invoke_with_exception_in_startup() {
             var result = Coroutine.Invoke(Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception, "wrong exception type");
+            Assert.IsInstanceOf<IntentionalException>(result.Exception, "wrong exception type");
         }
 
         [Test]
         public void Direct_invoke_with_exception_in_continuation() {
             var result = Coroutine.Invoke(Yield_Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception, "wrong exception type");
+            Assert.IsInstanceOf<IntentionalException>(result.Exception, "wrong exception type");
         }
 
         [Test]
@@ -173,14 +173,14 @@ namespace MindTouch.Dream.Test {
         public void Nested_invoke_with_exception_in_startup() {
             var result = Coroutine.Invoke<CoroutineHandler<int, Result<int>>, int, Result<int>>(Call, Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception, "wrong exception type");
+            Assert.IsInstanceOf<IntentionalException>(result.Exception, "wrong exception type");
         }
 
         [Test]
         public void Nested_invoke_with_exception_in_continuation() {
             var result = Coroutine.Invoke<CoroutineHandler<int, Result<int>>, int, Result<int>>(Call, Yield_Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception, "wrong exception type");
+            Assert.IsInstanceOf<IntentionalException>(result.Exception, "wrong exception type");
         }
 
         [Test]
@@ -224,14 +224,14 @@ namespace MindTouch.Dream.Test {
         public void Direct_SetValue_with_exception_in_startup() {
             var result = Coroutine.Invoke<CoroutineHandler<int, Result<int>>, int, Result<int>>(Call_Set_Fail, Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception);
+            Assert.IsInstanceOf<IntentionalException>(result.Exception);
         }
 
         [Test]
         public void Direct_SetValue_with_exception_in_continuation() {
             var result = Coroutine.Invoke<CoroutineHandler<int, Result<int>>, int, Result<int>>(Call_Set_Fail, Yield_Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception);
+            Assert.IsInstanceOf<IntentionalException>(result.Exception);
         }
         #endregion
 
@@ -254,14 +254,14 @@ namespace MindTouch.Dream.Test {
         public void Direct_CatchAndLog_with_exception_in_startup() {
             var result = Coroutine.Invoke<CoroutineHandler<int, Result<int>>, int, Result<int>>(Call_CatchAndLog, Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception);
+            Assert.IsInstanceOf<IntentionalException>(result.Exception);
         }
 
         [Test]
         public void Direct_CatchAndLog_with_exception_in_continuation() {
             var result = Coroutine.Invoke<CoroutineHandler<int, Result<int>>, int, Result<int>>(Call_CatchAndLog, Yield_Throw, 11, new Result<int>()).Block();
             Assert.IsTrue(result.HasException);
-            Assert.IsInstanceOfType(typeof(IntentionalException), result.Exception);
+            Assert.IsInstanceOf<IntentionalException>(result.Exception);
         }
         #endregion
 

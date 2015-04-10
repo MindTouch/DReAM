@@ -70,7 +70,6 @@
     <OutputPath>..\bin\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>1911</NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
