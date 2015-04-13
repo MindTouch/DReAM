@@ -55,6 +55,7 @@
     <WarningLevel>4</WarningLevel>
     <NoWarn>1591,0618</NoWarn>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Signed Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -65,13 +66,14 @@
     <WarningLevel>4</WarningLevel>
     <NoWarn>1591,0618,1699</NoWarn>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Documentation|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>..\bin\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>
     </NoWarn>
     <DebugType>full</DebugType>

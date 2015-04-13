@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using log4net;
 
 namespace MindTouch.Dream {
 
@@ -311,6 +312,13 @@ namespace MindTouch.Dream {
 
         //--- Class Fields ---
 
+        /* NOTE (2015-04-13, coreyc): 
+         *  These fields must be initialized before the public static readonly fields are created. 
+         *  For more information see: http://stackoverflow.com/a/2925660/45071
+         */
+        private static readonly Dictionary<string, string> _emptyParameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ILog _log = LogUtils.CreateLog();
+
         // (bug 7232) changed ISO-8859-1 to US-ASCII as per RFC-2045/2046.
 
         /// <summary>
@@ -540,9 +548,6 @@ namespace MindTouch.Dream {
         /// </summary>
         public static readonly MimeType DefaultMimeType = BINARY;
 
-        // TODO (steveb): we need to make the collection read-only as well
-        private static readonly Dictionary<string, string> _emptyParameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
         //--- Class Methods ---
 
         /// <summary>
@@ -756,8 +761,8 @@ namespace MindTouch.Dream {
         private readonly string _mainType;
         private readonly string _subType;
         private readonly Dictionary<string, string> _parameters;
+        private readonly Encoding _encoding;
         private string _text;
-        private Encoding _encoding;
 
         //--- Constructors ---
 
@@ -769,6 +774,7 @@ namespace MindTouch.Dream {
             if(!TryParse(contentTypeWithParameters, out _mainType, out _subType, out _parameters)) {
                 throw new ArgumentNullException("contentTypeWithParameters");
             }
+            _encoding = GetEncoding();
         }
 
         /// <summary>
@@ -786,6 +792,7 @@ namespace MindTouch.Dream {
             }
             _parameters[PARAM_CHARSET] = charset.WebName;
             _parameters[PARAM_QUALITY] = quality.ToString();
+            _encoding = GetEncoding();
         }
 
         /// <summary>
@@ -801,6 +808,7 @@ namespace MindTouch.Dream {
                 _parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             }
             _parameters[PARAM_QUALITY] = quality.ToString();
+            _encoding = GetEncoding();
         }
 
         /// <summary>
@@ -816,12 +824,14 @@ namespace MindTouch.Dream {
                 _parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             }
             _parameters[PARAM_CHARSET] = charset.WebName;
+            _encoding = GetEncoding();
         }
 
         private MimeType(string type, string subtype, Dictionary<string, string> parameters) {
             _mainType = type;
             _subType = subtype;
             _parameters = parameters;
+            _encoding = GetEncoding();
         }
 
         //--- Properties ---
@@ -854,21 +864,7 @@ namespace MindTouch.Dream {
         /// <summary>
         /// Type Encoding.
         /// </summary>
-        public Encoding CharSet {
-            get {
-                if(_encoding == null) {
-                    string charset = GetParameter(PARAM_CHARSET);
-                    if(charset != null) {
-                        _encoding = Encoding.GetEncoding(charset.Trim('"'));
-                    } else if(MainType.EqualsInvariant("text")) {
-                        _encoding = Encoding.ASCII;
-                    } else {
-                        _encoding = Encoding.UTF8;                        
-                    }
-                }
-                return _encoding;
-            }
-        }
+        public Encoding CharSet { get { return _encoding; } }
 
         /// <summary>
         /// <see langword="True"/> if content represented by the mime-type is Xml.
@@ -925,6 +921,24 @@ namespace MindTouch.Dream {
                 _text = result.ToString();
             }
             return _text;
+        }
+
+        private Encoding GetEncoding() {
+            Encoding encoding;
+            var charset = GetParameter(PARAM_CHARSET);
+            if(charset != null) {
+                try {
+                    encoding = Encoding.GetEncoding(charset.Trim('"'));
+                } catch(ArgumentException ex) {
+                    _log.Debug(string.Format("Unsupported Character Set: '{0}'. Defaulting to UTF8 encoding.", charset), ex);
+                    encoding = Encoding.UTF8;
+                }
+            } else if(MainType.EqualsInvariant("text")) {
+                encoding = Encoding.ASCII;
+            } else {
+                encoding = Encoding.UTF8;
+            }
+            return encoding;
         }
     }
 }
