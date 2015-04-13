@@ -312,8 +312,10 @@ namespace MindTouch.Dream {
 
         //--- Class Fields ---
 
-        // NOTE (2015-04-13, coreyc): These fields must be initialized before the public static readonly fields are created.
-        // TODO (steveb): we need to make the collection read-only as well
+        /* NOTE (2015-04-13, coreyc): 
+         *  These fields must be initialized before the public static readonly fields are created. 
+         *  For more information see: http://stackoverflow.com/a/2925660/45071
+         */
         private static readonly Dictionary<string, string> _emptyParameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static readonly ILog _log = LogUtils.CreateLog();
 
@@ -922,13 +924,14 @@ namespace MindTouch.Dream {
         }
 
         private Encoding GetEncoding() {
-            Encoding encoding = null;
+            Encoding encoding;
             var charset = GetParameter(PARAM_CHARSET);
             if(charset != null) {
                 try {
                     encoding = Encoding.GetEncoding(charset.Trim('"'));
                 } catch(ArgumentException ex) {
-                    _log.Warn(string.Format("Unsupported Character Set: '{0}'", charset), ex);
+                    _log.Debug(string.Format("Unsupported Character Set: '{0}'. Defaulting to UTF8 encoding.", charset), ex);
+                    encoding = Encoding.UTF8;
                 }
             } else if(MainType.EqualsInvariant("text")) {
                 encoding = Encoding.ASCII;

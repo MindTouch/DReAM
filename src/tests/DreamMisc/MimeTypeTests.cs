@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System.Text;
 using NUnit.Framework;
 
 namespace MindTouch.Dream.Test {
@@ -33,9 +34,9 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        public void MSDOCX_with_binary_charset() {
+        public void Unsupported_charset_defaults_to_utf8_encoding() {
             var mimeType = new MimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document; charset=binary");
-            Assert.IsNull(mimeType.CharSet);
+            Assert.AreEqual(Encoding.UTF8, mimeType.CharSet);
         }
     }
 }
