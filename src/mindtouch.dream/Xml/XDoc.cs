@@ -697,13 +697,13 @@ namespace MindTouch.Xml {
         /// Returns the element or attribute qualified name containing the namespace URI, prefix, and name of the current XDoc instance.
         /// </summary>
         /// <exception cref="InvalidOperationException">XDoc is empty</exception>
-        public Tuplet<string, string, string> QualifiedName {
+        public Tuple<string, string, string> QualifiedName {
             get {
                 if(IsEmpty) {
                     throw new InvalidOperationException("xdoc is empty");
                 }
                 XmlNode current = CurrentNode;
-                return new Tuplet<string, string, string>(current.NamespaceURI, current.Prefix, current.LocalName);
+                return new Tuple<string, string, string>(current.NamespaceURI, current.Prefix, current.LocalName);
             }
         }
 

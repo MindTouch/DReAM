@@ -257,7 +257,7 @@ namespace MindTouch.Web {
                 // NOTE: we attempt to find the best acceptable language; format is: da, en-gb;q=0.8, en;q=0.7, *
 
                 // convert language header into sorted list of languages
-                var choices = new List<Tuplet<string, double>>();
+                var choices = new List<Tuple<string, double>>();
                 foreach(var choice in header.Split(',')) {
                     var parts = choice.Split(';');
                     var name = parts[0].Trim();
@@ -272,7 +272,7 @@ namespace MindTouch.Web {
                     }
 
                     // add language option
-                    choices.Add(new Tuplet<string, double>(name, quality));
+                    choices.Add(new Tuple<string, double>(name, quality));
                 }
 
                 // reverse order sort based on quality

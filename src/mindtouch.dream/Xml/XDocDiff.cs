@@ -107,7 +107,7 @@ namespace MindTouch.Xml {
         /// <param name="right">Right hand document.</param>
         /// <param name="maxsize">Maximum size of the difference response.</param>
         /// <returns>Array of difference tuples.</returns>
-        public static Tuplet<ArrayDiffKind, Token>[] Diff(XDoc left, XDoc right, int maxsize) {
+        public static Tuple<ArrayDiffKind, Token>[] Diff(XDoc left, XDoc right, int maxsize) {
             if(left == null) {
                 throw new ArgumentNullException("left");
             }
@@ -124,7 +124,7 @@ namespace MindTouch.Xml {
         /// <param name="right">Right hand token set.</param>
         /// <param name="maxsize">Maximum size of the difference response.</param>
         /// <returns>Array of difference tuples.</returns>
-        public static Tuplet<ArrayDiffKind, Token>[] Diff(Token[] left, Token[] right, int maxsize) {
+        public static Tuple<ArrayDiffKind, Token>[] Diff(Token[] left, Token[] right, int maxsize) {
             if(left == null) {
                 throw new ArgumentNullException("left");
             }
@@ -179,21 +179,21 @@ namespace MindTouch.Xml {
             }
 
             // create left diff
-            Tuplet<ArrayDiffKind, Token>[] leftDiff = Diff(original, left, maxsize);
+            var leftDiff = Diff(original, left, maxsize);
             if(leftDiff == null) {
                 conflict = false;
                 return null;
             }
 
             // create right diff
-            Tuplet<ArrayDiffKind, Token>[] rightDiff = Diff(original, right, maxsize);
+            var rightDiff = Diff(original, right, maxsize);
             if(rightDiff == null) {
                 conflict = false;
                 return null;
             }
 
             // merge changes
-            Tuplet<ArrayDiffKind, Token>[] mergeDiff = ArrayUtil.MergeDiff(leftDiff, rightDiff, priority, Token.Equal, x => x.Key, out conflict);
+            var mergeDiff = ArrayUtil.MergeDiff(leftDiff, rightDiff, priority, Token.Equal, x => x.Key, out conflict);
             return Detokenize(mergeDiff);
         }
 
@@ -202,9 +202,9 @@ namespace MindTouch.Xml {
         /// </summary>
         /// <param name="diff">Difference set.</param>
         /// <returns>Highlight document.</returns>
-        public static XDoc Highlight(Tuplet<ArrayDiffKind, Token>[] diff) {
+        public static XDoc Highlight(Tuple<ArrayDiffKind, Token>[] diff) {
             XDoc combined;
-            List<Tuplet<string, string, string>> invisibleChanges;
+            List<Tuple<string, string, string>> invisibleChanges;
             XDoc before;
             XDoc after;
             Highlight(diff, out combined, out invisibleChanges, out before, out after);
@@ -219,20 +219,20 @@ namespace MindTouch.Xml {
         /// <param name="combinedInvisible">Output of the combined invisible differences.</param>
         /// <param name="before">Output of before difference highlight document.</param>
         /// <param name="after">Output of after difference highlight document.</param>
-        public static void Highlight(Tuplet<ArrayDiffKind, Token>[] diff, out XDoc combined, out List<Tuplet<string, string, string>> combinedInvisible /* tuple(xpath, before, after) */, out XDoc before, out XDoc after) {
+        public static void Highlight(Tuple<ArrayDiffKind, Token>[] diff, out XDoc combined, out List<Tuple<string, string, string>> combinedInvisible /* tuple(xpath, before, after) */, out XDoc before, out XDoc after) {
             if(diff == null) {
                 throw new ArgumentNullException("diff");
             }
-            List<Tuplet<ArrayDiffKind, Token>> combinedChanges = new List<Tuplet<ArrayDiffKind, Token>>(diff.Length);
-            combinedInvisible = new List<Tuplet<string, string, string>>();
-            List<Tuplet<ArrayDiffKind, Token>> beforeChanges = new List<Tuplet<ArrayDiffKind, Token>>(diff.Length);
-            List<Tuplet<ArrayDiffKind, Token>> afterChanges = new List<Tuplet<ArrayDiffKind, Token>>(diff.Length);
+            combinedInvisible = new List<Tuple<string, string, string>>();
+            var combinedChanges = new List<Tuple<ArrayDiffKind, Token>>(diff.Length);
+            var beforeChanges = new List<Tuple<ArrayDiffKind, Token>>(diff.Length);
+            var afterChanges = new List<Tuple<ArrayDiffKind, Token>>(diff.Length);
             bool changedElement = false;
             Stack<List<string>> path = new Stack<List<string>>();
-            Dictionary<string, Tuplet<string, string, string>> invisibleChangesLookup = new Dictionary<string, Tuplet<string, string, string>>();
+            var invisibleChangesLookup = new Dictionary<string, Tuple<string, string, string>>();
             path.Push(new List<string>());
             for(int i = 0; i < diff.Length; ++i) {
-                Tuplet<ArrayDiffKind, Token> item = diff[i];
+                var item = diff[i];
                 Token token = item.Item2;
                 switch(item.Item1) {
                 case ArrayDiffKind.Added:
@@ -250,12 +250,11 @@ namespace MindTouch.Xml {
                         if(!changedElement) {
                             string[] parts = token.Value.Split(new char[] { '=' }, 2);
                             string xpath = ComputeXPath(path, "@" + parts[0]);
-                            Tuplet<string, string, string> beforeAfter;
+                            Tuple<string, string, string> beforeAfter;
                             if(invisibleChangesLookup.TryGetValue(xpath, out beforeAfter)) {
-                                beforeAfter.Item3 = parts[1];
+                                invisibleChangesLookup[xpath] = new Tuple<string, string, string>(beforeAfter.Item1, beforeAfter.Item2, parts[1]);
                             } else {
-                                beforeAfter = new Tuplet<string, string, string>(xpath, null, parts[1]);
-                                combinedInvisible.Add(beforeAfter);
+                                beforeAfter = new Tuple<string, string, string>(xpath, null, parts[1]);
                                 invisibleChangesLookup[xpath] = beforeAfter;
                             }
                         }
@@ -277,7 +276,7 @@ namespace MindTouch.Xml {
                         }
                         break;
                     }
-                    item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, token);
+                    item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, token);
                     afterChanges.Add(item);
                     combinedChanges.Add(item);
                     break;
@@ -293,19 +292,18 @@ namespace MindTouch.Xml {
                         } else {
 
                             // keep whitespace text
-                            combinedChanges.Add(new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, token));
+                            combinedChanges.Add(new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, token));
                         }
                         break;
                     case XmlNodeType.Attribute:
                         if(!changedElement) {
                             string[] parts = token.Value.Split(new char[] { '=' }, 2);
                             string xpath = ComputeXPath(path, "@" + parts[0]);
-                            Tuplet<string, string, string> beforeAfter;
+                            Tuple<string, string, string> beforeAfter;
                             if(invisibleChangesLookup.TryGetValue(xpath, out beforeAfter)) {
-                                beforeAfter.Item2 = parts[1];
+                                invisibleChangesLookup[xpath] = new Tuple<string, string, string>(beforeAfter.Item1, parts[1], beforeAfter.Item3);
                             } else {
-                                beforeAfter = new Tuplet<string, string, string>(xpath, parts[1], null);
-                                combinedInvisible.Add(beforeAfter);
+                                beforeAfter = new Tuple<string, string, string>(xpath, parts[1], null);
                                 invisibleChangesLookup[xpath] = beforeAfter;
                             }
                         }
@@ -314,13 +312,13 @@ namespace MindTouch.Xml {
                     case XmlNodeType.SignificantWhitespace:
 
                         // keep whitespace text
-                        combinedChanges.Add(new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, token));
+                        combinedChanges.Add(new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, token));
                         break;
                     case XmlNodeType.Element:
                         changedElement = true;
                         break;
                     }
-                    beforeChanges.Add(new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, token));
+                    beforeChanges.Add(new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, token));
                     break;
                 case ArrayDiffKind.Same:
                     switch(token.Type) {
@@ -357,14 +355,15 @@ namespace MindTouch.Xml {
             before = Detokenize(beforeChanges.ToArray());
             after = Detokenize(afterChanges.ToArray());
             combined = Detokenize(combinedChanges.ToArray());
+            combinedInvisible.AddRange(invisibleChangesLookup.Values);
         }
 
-        private static void Highlight_InlineTextChanges(Tuplet<ArrayDiffKind, Token>[] diff, int index, List<Tuplet<ArrayDiffKind, Token>> combinedChanges, List<Tuplet<ArrayDiffKind, Token>> beforeChanges, List<Tuplet<ArrayDiffKind, Token>> afterChanges, out int next) {
+        private static void Highlight_InlineTextChanges(Tuple<ArrayDiffKind, Token>[] diff, int index, List<Tuple<ArrayDiffKind, Token>> combinedChanges, List<Tuple<ArrayDiffKind, Token>> beforeChanges, List<Tuple<ArrayDiffKind, Token>> afterChanges, out int next) {
             int lastAdded = index;
             int lastRemoved = index;
             int firstAdded = -1;
             int firstRemoved = -1;
-            Tuplet<ArrayDiffKind, Token> item;
+            Tuple<ArrayDiffKind, Token> item;
 
             // determine how long the chain of intermingled changes is
             for(int i = index, sameCounter = 0; (i < diff.Length) && ((diff[i].Item2.Type == XmlNodeType.Text) || (diff[i].Item2.Type == XmlNodeType.Whitespace) || diff[i].Item2.Type == XmlNodeType.SignificantWhitespace) && (sameCounter <= MAX_SAME_COUNTER); ++i) {
@@ -400,7 +399,7 @@ namespace MindTouch.Xml {
                 // add all unchanged text before the first added text
                 for(int i = index; i < firstAdded; ++i) {
                     if(diff[i].Item1 == ArrayDiffKind.Same) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         combinedChanges.Add(item);                            
                         afterChanges.Add(item);
                     }
@@ -408,27 +407,27 @@ namespace MindTouch.Xml {
 
                 // add all text nodes that were added in a row
                 object key = new object();
-                item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.Element, INSERTED, key));
+                item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.Element, INSERTED, key));
                 combinedChanges.Add(item);
                 afterChanges.Add(item);
-                item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.EndElement, string.Empty, null));
+                item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.EndElement, string.Empty, null));
                 combinedChanges.Add(item);
                 afterChanges.Add(item);
                 for(int i = firstAdded; i <= lastAdded; ++i) {
                     if(diff[i].Item1 != ArrayDiffKind.Removed) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         combinedChanges.Add(item);
                         afterChanges.Add(item);
                     }
                 }
-                item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.None, INSERTED, key));
+                item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.None, INSERTED, key));
                 combinedChanges.Add(item);
                 afterChanges.Add(item);
 
                 // add all unchanged text after the last added text
                 for(int i = lastAdded + 1; i < next; ++i) {
                     if(diff[i].Item1 == ArrayDiffKind.Same) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         combinedChanges.Add(item);
                         afterChanges.Add(item);
                     }
@@ -438,7 +437,7 @@ namespace MindTouch.Xml {
                 // add all unchanged text before the first added text
                 for(int i = index; i < next; ++i) {
                     if(diff[i].Item1 == ArrayDiffKind.Same) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         combinedChanges.Add(item);
                         afterChanges.Add(item);
                     }
@@ -451,7 +450,7 @@ namespace MindTouch.Xml {
                 // add all unchanged text before the first removed text
                 for(int i = index; i < firstRemoved; ++i) {
                     if(diff[i].Item1 == ArrayDiffKind.Same) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         if((item.Item2.Value.Length > 0) && !char.IsWhiteSpace(item.Item2.Value[0])) {
                             combinedChanges.Add(item);
                         }
@@ -461,27 +460,27 @@ namespace MindTouch.Xml {
 
                 // add all text nodes that were removed in a row
                 object key = new object();
-                item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.Element, DELETED, key));
+                item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.Element, DELETED, key));
                 combinedChanges.Add(item);
                 beforeChanges.Add(item);
-                item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.EndElement, string.Empty, null));
+                item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.EndElement, string.Empty, null));
                 combinedChanges.Add(item);
                 beforeChanges.Add(item);
                 for(int i = firstRemoved; i <= lastRemoved; ++i) {
                     if(diff[i].Item1 != ArrayDiffKind.Added) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         combinedChanges.Add(item);
                         beforeChanges.Add(item);
                     }
                 }
-                item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.None, DELETED, key));
+                item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, new Token(XmlNodeType.None, DELETED, key));
                 combinedChanges.Add(item);
                 beforeChanges.Add(item);
 
                 // add all unchanged text after the last removed text
                 for(int i = lastRemoved + 1; i < next; ++i) {
                     if(diff[i].Item1 == ArrayDiffKind.Same) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         combinedChanges.Add(item);
                         beforeChanges.Add(item);
                     }
@@ -491,7 +490,7 @@ namespace MindTouch.Xml {
                 // add all unchanged text before the first removed text
                 for(int i = index; i < next; ++i) {
                     if(diff[i].Item1 == ArrayDiffKind.Same) {
-                        item = new Tuplet<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
+                        item = new Tuple<ArrayDiffKind, Token>(ArrayDiffKind.Same, diff[i].Item2);
                         if((item.Item2.Value.Length > 0) && !char.IsWhiteSpace(item.Item2.Value[0])) {
                             combinedChanges.Add(item);
                         }
@@ -506,7 +505,7 @@ namespace MindTouch.Xml {
         /// </summary>
         /// <param name="tokens">Difference set.</param>
         /// <returns>Detokenized document.</returns>
-        public static XDoc Detokenize(Tuplet<ArrayDiffKind, Token>[] tokens) {
+        public static XDoc Detokenize(Tuple<ArrayDiffKind, Token>[] tokens) {
             XmlDocument doc = XDoc.NewXmlDocument();
             Detokenize(tokens, 0, null, doc);
             return new XDoc(doc);
@@ -535,8 +534,8 @@ namespace MindTouch.Xml {
         /// </summary>
         /// <param name="diffset">Difference set.</param>
         /// <param name="writer">TextWriter to write the set to.</param>
-        public static void Write(Tuplet<ArrayDiffKind, Token>[] diffset, TextWriter writer) {
-            foreach(Tuplet<ArrayDiffKind, Token> entry in diffset) {
+        public static void Write(Tuple<ArrayDiffKind, Token>[] diffset, TextWriter writer) {
+            foreach(var entry in diffset) {
                 switch(entry.Item1) {
                 case ArrayDiffKind.Same:
                     writer.WriteLine(" " + entry.Item2);
@@ -563,9 +562,9 @@ namespace MindTouch.Xml {
             }
         }
 
-        private static int Detokenize(Tuplet<ArrayDiffKind, Token>[] tokens, int index, XmlElement current, XmlDocument doc) {
+        private static int Detokenize(Tuple<ArrayDiffKind, Token>[] tokens, int index, XmlElement current, XmlDocument doc) {
             for(; index < tokens.Length; ++index) {
-                Tuplet<ArrayDiffKind, Token> token = tokens[index];
+                var token = tokens[index];
                 switch(token.Item1) {
                 case ArrayDiffKind.Same:
                 case ArrayDiffKind.Added:

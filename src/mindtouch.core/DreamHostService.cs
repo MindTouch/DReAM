@@ -294,7 +294,7 @@ namespace MindTouch.Dream {
         private readonly Dictionary<IDreamService, ILifetimeScope> _serviceLifetimeScopes = new Dictionary<IDreamService, ILifetimeScope>();
         private readonly XUriMap<XUri> _aliases = new XUriMap<XUri>();
         private readonly Dictionary<IDreamActivityDescription, DreamActivityDescription> _activities = new Dictionary<IDreamActivityDescription, DreamActivityDescription>();
-        private readonly Dictionary<string, Tuplet<int, string>> _infos = new Dictionary<string, Tuplet<int, string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, Tuple<int, string>> _infos = new Dictionary<string, Tuple<int, string>>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Type> _registeredTypes = new Dictionary<string, Type>(StringComparer.Ordinal);
         private readonly Dictionary<string, ServiceEntry> _services = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, List<XUri>> _requests = new Dictionary<string, List<XUri>>();
@@ -665,7 +665,7 @@ namespace MindTouch.Dream {
             // infos
             lock(_infos) {
                 result.Start("infos").Attr("count", _infos.Count);
-                foreach(KeyValuePair<string, Tuplet<int, string>> entry in _infos) {
+                foreach(var entry in _infos) {
                     result.Start("info").Attr("source", entry.Key).Attr("hits", entry.Value.Item1).Attr("rate", entry.Value.Item1 / age).Value(entry.Value.Item2).End();
                 }
                 result.End();
@@ -1150,13 +1150,13 @@ namespace MindTouch.Dream {
 
         public void UpdateInfoMessage(string source, string message) {
             lock(_infos) {
-                Tuplet<int, string> info;
+                Tuple<int, string> info;
                 if(!_infos.TryGetValue(source, out info)) {
-                    info = new Tuplet<int, string>(0, null);
+                    info = new Tuple<int, string>(0, null);
                     _infos[source] = info;
+                } else {
+                    _infos[source] = new Tuple<int, string>(info.Item1 + 1, message);                    
                 }
-                ++info.Item1;
-                info.Item2 = message;
             }
         }
 

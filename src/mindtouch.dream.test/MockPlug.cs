@@ -324,8 +324,8 @@ namespace MindTouch.Dream.Test {
         public readonly string Name;
 
         private readonly AutoResetEvent _called = new AutoResetEvent(false);
-        private readonly List<Tuplet<string, Predicate<string>>> _queryMatchers = new List<Tuplet<string, Predicate<string>>>();
-        private readonly List<Tuplet<string, Predicate<string>>> _headerMatchers = new List<Tuplet<string, Predicate<string>>>();
+        private readonly List<Tuple<string, Predicate<string>>> _queryMatchers = new List<Tuple<string, Predicate<string>>>();
+        private readonly List<Tuple<string, Predicate<string>>> _headerMatchers = new List<Tuple<string, Predicate<string>>>();
         private readonly DreamHeaders _headers = new DreamHeaders();
         private readonly DreamHeaders _responseHeaders = new DreamHeaders();
         private XUri _uri;
@@ -437,7 +437,7 @@ namespace MindTouch.Dream.Test {
         }
 
         IMockPlug IMockPlug.With(string key, Predicate<string> valueCallback) {
-            _queryMatchers.Add(new Tuplet<string, Predicate<string>>(key, valueCallback));
+            _queryMatchers.Add(new Tuple<string, Predicate<string>>(key, valueCallback));
             return this;
         }
 
@@ -471,7 +471,7 @@ namespace MindTouch.Dream.Test {
         }
 
         IMockPlug IMockPlug.WithHeader(string key, Predicate<string> valueCallback) {
-            _headerMatchers.Add(new Tuplet<string, Predicate<string>>(key, valueCallback));
+            _headerMatchers.Add(new Tuple<string, Predicate<string>>(key, valueCallback));
             return this;
         }
 

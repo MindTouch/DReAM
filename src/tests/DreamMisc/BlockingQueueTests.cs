@@ -168,7 +168,7 @@ namespace MindTouch.Dream.Test {
             List<string> dequeued = new List<string>();
             BlockingQueue<string> q = new BlockingQueue<string>();
             Thread consumer = new Thread(SingleConsumerForeachLoopAndStop);
-            consumer.Start(new Tuplet<IBlockingQueue<string>, List<string>>(q, dequeued));
+            consumer.Start(new Tuple<IBlockingQueue<string>, List<string>>(q, dequeued));
             for(int i = 0; i < n; i++) {
                 string guid = Guid.NewGuid().ToString();
                 q.Enqueue(guid);
@@ -184,7 +184,7 @@ namespace MindTouch.Dream.Test {
         }
 
         private void SingleConsumerForeachLoopAndStop(object obj) {
-            Tuplet<IBlockingQueue<string>, List<string>> state = (Tuplet<IBlockingQueue<string>, List<string>>)obj;
+            Tuple<IBlockingQueue<string>, List<string>> state = (Tuple<IBlockingQueue<string>, List<string>>)obj;
             foreach(string guid in state.Item1) {
                 state.Item2.Add(guid);
             }

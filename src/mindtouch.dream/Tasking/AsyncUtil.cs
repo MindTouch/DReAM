@@ -380,7 +380,7 @@ namespace MindTouch.Tasking {
         /// <param name="input">Input stream to pipe into the application.</param>
         /// <param name="result">The Result instance to be returned by this method.</param>
         /// <returns>Synchronization handle for the process execution, providing the application's exit code, output Stream and error Stream</returns>
-        public static Result<Tuplet<int, Stream, Stream>> ExecuteProcess(string application, string cmdline, Stream input, Result<Tuplet<int, Stream, Stream>> result) {
+        public static Result<Tuple<int, Stream, Stream>> ExecuteProcess(string application, string cmdline, Stream input, Result<Tuple<int, Stream, Stream>> result) {
             Stream output = new MemoryStream();
             Stream error = new MemoryStream();
             Result<int> innerResult = new Result<int>(result.Timeout);
@@ -394,7 +394,7 @@ namespace MindTouch.Tasking {
                     error.Position = 0;
 
                     // return outcome
-                    result.Return(new Tuplet<int, Stream, Stream>(innerResult.Value, output, error));
+                    result.Return(new Tuple<int, Stream, Stream>(innerResult.Value, output, error));
                 }
             });
             return result;

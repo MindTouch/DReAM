@@ -394,7 +394,7 @@ namespace MindTouch.Xml {
         /// <summary>
         /// Entry Geo Rss Tag.
         /// </summary>
-        public Tuplet<double, double> Where {
+        public Tuple<double, double> Where {
             get {
                 XDoc where = Root["georss:where/gml:Point/gml:pos"];
                 if(where.IsEmpty) {
@@ -409,7 +409,7 @@ namespace MindTouch.Xml {
                 if(!double.TryParse(coords[0], out x) || !double.TryParse(coords[1], out y)) {
                     return null;
                 }
-                return new Tuplet<double, double>(x, y);
+                return new Tuple<double, double>(x, y);
             }
             set {
                 this["georss:where"].Remove();
