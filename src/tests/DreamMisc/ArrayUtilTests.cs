@@ -201,11 +201,11 @@ namespace MindTouch.Dream.Test {
             var b = new[] { "a", "x", "b", "d" };
             var diff = ArrayUtil.Diff(a, b, 5, (x, y) => x.Equals(y));
             var manualDiff = new[] {
-                new Tuplet<ArrayDiffKind, string>(ArrayDiffKind.Same, "a"),
-                new Tuplet<ArrayDiffKind, string>(ArrayDiffKind.Added, "x"),
-                new Tuplet<ArrayDiffKind, string>(ArrayDiffKind.Same, "b"),
-                new Tuplet<ArrayDiffKind, string>(ArrayDiffKind.Removed, "c"),
-                new Tuplet<ArrayDiffKind, string>(ArrayDiffKind.Same, "d"),
+                new Tuple<ArrayDiffKind, string>(ArrayDiffKind.Same, "a"),
+                new Tuple<ArrayDiffKind, string>(ArrayDiffKind.Added, "x"),
+                new Tuple<ArrayDiffKind, string>(ArrayDiffKind.Same, "b"),
+                new Tuple<ArrayDiffKind, string>(ArrayDiffKind.Removed, "c"),
+                new Tuple<ArrayDiffKind, string>(ArrayDiffKind.Same, "d"),
             };
             Assert.AreEqual(manualDiff.Length, diff.Length);
             for(var i = 0; i < diff.Length; i++) {

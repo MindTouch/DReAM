@@ -480,7 +480,7 @@ namespace System {
         /// <param name="maxDelta">Maximum size for a diff.  If this exceeded, the method will return null.</param>
         /// <param name="equal">Delegate for value comparison.</param>
         /// <returns>Array of difference kind and value tuples.</returns>
-        public static Tuplet<ArrayDiffKind, T>[] Diff<T>(T[] before, T[] after, int maxDelta, Equality<T> equal) where T : class {
+        public static Tuple<ArrayDiffKind, T>[] Diff<T>(T[] before, T[] after, int maxDelta, Equality<T> equal) where T : class {
             if(before == null) {
                 throw new ArgumentNullException("before");
             }
@@ -492,10 +492,8 @@ namespace System {
             }
 
             // reverse lists for procesing
-            List<Tuplet<ArrayDiffKind, T>> result = null;
-
             // run myers diff algorithm
-            result = new List<Tuplet<ArrayDiffKind, T>>(before.Length + after.Length);
+            var result = new List<Tuple<ArrayDiffKind, T>>(before.Length + after.Length);
             try {
                 MyersDiff(before, after, equal, maxDelta, result);
             } catch(ExceededDeltaException) {
@@ -515,7 +513,7 @@ namespace System {
         /// <param name="track">Tracking function for correlating related diff items, in case on of the related items is ambigious.</param>
         /// <param name="hasConflicts">Indicator whether any conflicts were found.</param>
         /// <returns>Diff result of merge.</returns>
-        public static Tuplet<ArrayDiffKind, T>[] MergeDiff<T>(Tuplet<ArrayDiffKind, T>[] left, Tuplet<ArrayDiffKind, T>[] right, ArrayMergeDiffPriority priority, Equality<T> equal, Func<T, object> track, out bool hasConflicts) where T : class {
+        public static Tuple<ArrayDiffKind, T>[] MergeDiff<T>(Tuple<ArrayDiffKind, T>[] left, Tuple<ArrayDiffKind, T>[] right, ArrayMergeDiffPriority priority, Equality<T> equal, Func<T, object> track, out bool hasConflicts) where T : class {
             if(left == null) {
                 throw new ArgumentNullException("left");
             }
@@ -529,7 +527,7 @@ namespace System {
             }
 
             // loop over all entries and mark them as conflicted when appropriate
-            List<Tuplet<ArrayDiffKind, T>> result = new List<Tuplet<ArrayDiffKind, T>>(left.Length + right.Length);
+            var result = new List<Tuple<ArrayDiffKind, T>>(left.Length + right.Length);
             int leftIndex = 0;
             int rightIndex = 0;
             bool ambiguous = false;
@@ -540,7 +538,7 @@ namespace System {
 
                         // NOTE: both sides agree to keep the current element
 
-                        result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Same, left[leftIndex].Item2));
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, left[leftIndex].Item2));
                         ++leftIndex;
                         ++rightIndex;
                         ambiguous = false;
@@ -548,7 +546,7 @@ namespace System {
 
                         // NOTE: right-side removed element; this could be conflict
 
-                        result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.RemovedRight, right[rightIndex].Item2));
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.RemovedRight, right[rightIndex].Item2));
                         ++leftIndex;
                         ++rightIndex;
                     } else if(left[leftIndex].Item1 == ArrayDiffKind.Same && right[rightIndex].Item1 == ArrayDiffKind.Added) {
@@ -556,23 +554,23 @@ namespace System {
                         // NOTE: right-side added an element; conflict depends on ambiguity of current position
 
                         if(ambiguous) {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
                         } else {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, right[rightIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, right[rightIndex].Item2));
                         }
                         ++rightIndex;
                     } else if(left[leftIndex].Item1 == ArrayDiffKind.Removed && right[rightIndex].Item1 == ArrayDiffKind.Same) {
 
                         // NOTE: left-side removed element; this could be conflict
 
-                        result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.RemovedLeft, left[leftIndex].Item2));
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.RemovedLeft, left[leftIndex].Item2));
                         ++leftIndex;
                         ++rightIndex;
                     } else if(left[leftIndex].Item1 == ArrayDiffKind.Removed && right[rightIndex].Item1 == ArrayDiffKind.Removed) {
 
                         // NOTE: both sides removed the element; subsequent operations are ambiguous
 
-                        result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Removed, left[leftIndex].Item2));
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Removed, left[leftIndex].Item2));
                         ++leftIndex;
                         ++rightIndex;
                         ambiguous = true;
@@ -580,7 +578,7 @@ namespace System {
 
                         // NOTE: right-side is attempting to add an item after an item that is deleted on the left-side
 
-                        result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
                         ++rightIndex;
                         ambiguous = true;
                     } else if(left[leftIndex].Item1 == ArrayDiffKind.Added && right[rightIndex].Item1 == ArrayDiffKind.Same) {
@@ -588,16 +586,16 @@ namespace System {
                         // NOTE: left-side added an element; conflict depends on ambiguity of current position
 
                         if(ambiguous) {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
                         } else {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, left[leftIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, left[leftIndex].Item2));
                         }
                         ++leftIndex;
                     } else if(left[leftIndex].Item1 == ArrayDiffKind.Added && right[rightIndex].Item1 == ArrayDiffKind.Removed) {
 
                         // NOTE: left-side is attempting to add an item after an item that is deleted on the right-side
 
-                        result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
+                        result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
                         ++leftIndex;
                         ambiguous = true;
                     } else if(left[leftIndex].Item1 == ArrayDiffKind.Added && right[rightIndex].Item1 == ArrayDiffKind.Added) {
@@ -605,10 +603,10 @@ namespace System {
                         // NOTE: both sides are adding element; order is ambgiguous, unless it's the same item
 
                         if(equal(left[leftIndex].Item2, right[rightIndex].Item2)) {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, left[leftIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, left[leftIndex].Item2));
                         } else {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
                         }
                         ++leftIndex;
                         ++rightIndex;
@@ -626,9 +624,9 @@ namespace System {
                         // NOTE: left-side added an element; conflict depends on ambiguity of current position
 
                         if(ambiguous) {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, left[leftIndex].Item2));
                         } else {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, left[leftIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, left[leftIndex].Item2));
                         }
                     }
                     ++leftIndex;
@@ -642,9 +640,9 @@ namespace System {
                         // NOTE: right-side added an element; conflict depends on ambiguity of current position
 
                         if(ambiguous) {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, right[rightIndex].Item2));
                         } else {
-                            result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, right[rightIndex].Item2));
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, right[rightIndex].Item2));
                         }
                     }
                     ++rightIndex;
@@ -655,45 +653,51 @@ namespace System {
 
             // convert 'RemovedLeft' and 'RemovedRight' if they aren't followed by 'AddedLeft' or 'AddedRight'
             ambiguous = false;
-            for(int i = result.Count - 1; i >= 0; --i) {
-                switch(result[i].Item1) {
+            result.Reverse();
+            var modifiedResult = new List<Tuple<ArrayDiffKind, T>>(result.Count);
+            foreach(var item in result) {
+                switch(item.Item1) {
                 case ArrayDiffKind.Same:
                 case ArrayDiffKind.Removed:
                 case ArrayDiffKind.Added:
                     ambiguous = false;
+                    modifiedResult.Add(item);
                     break;
                 case ArrayDiffKind.AddedLeft:
                 case ArrayDiffKind.AddedRight:
                     ambiguous = true;
                     hasConflicts = true;
+                    modifiedResult.Add(item);
                     break;
                 case ArrayDiffKind.RemovedLeft:
                 case ArrayDiffKind.RemovedRight:
                     if(!ambiguous) {
-                        result[i].Item1 = ArrayDiffKind.Removed;
+                        modifiedResult.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Removed, item.Item2));
                     } else {
                         hasConflicts = true;
+                        modifiedResult.Add(item);
                     }
                     break;
                 }
             }
-
+            modifiedResult.Reverse();
+            result = modifiedResult;
 
             // check if we need to track dependencies between changes
             if(track != null) {
-                Dictionary<object, List<Tuplet<ArrayDiffKind, T>>> dependencies = new Dictionary<object, List<Tuplet<ArrayDiffKind, T>>>();
-                Dictionary<object, List<Tuplet<ArrayDiffKind, T>>> conflictsLeft = new Dictionary<object, List<Tuplet<ArrayDiffKind, T>>>();
-                Dictionary<object, List<Tuplet<ArrayDiffKind, T>>> conflictsRight = new Dictionary<object, List<Tuplet<ArrayDiffKind, T>>>();
+                var dependencies = new Dictionary<object, List<Tuple<ArrayDiffKind, T>>>();
+                var conflictsLeft = new Dictionary<object, List<Tuple<ArrayDiffKind, T>>>();
+                var conflictsRight = new Dictionary<object, List<Tuple<ArrayDiffKind, T>>>();
 
                 // detect changes that are conflicting
                 for(int i = 0; i < result.Count; ++i) {
                     object key = track(result[i].Item2);
                     if(key != null) {
-                        List<Tuplet<ArrayDiffKind, T>> entry;
+                        List<Tuple<ArrayDiffKind, T>> entry;
 
                         // add change to list
                         if(!dependencies.TryGetValue(key, out entry)) {
-                            entry = new List<Tuplet<ArrayDiffKind, T>>();
+                            entry = new List<Tuple<ArrayDiffKind, T>>();
                             dependencies.Add(key, entry);
                         }
                         entry.Add(result[i]);
@@ -713,25 +717,37 @@ namespace System {
                 }
 
                 // visit all left conflicts and elevate any 'Added' or 'Removed' items to 'AddedLeft' or 'RemovedLeft'
-                foreach(List<Tuplet<ArrayDiffKind, T>> entry in conflictsLeft.Values) {
-                    foreach(Tuplet<ArrayDiffKind, T> item in entry) {
+                var conflictsLeftKeys = conflictsLeft.Keys;
+                foreach(var key in conflictsLeftKeys) {
+                    var value = conflictsLeft[key];
+                    var list = new List<Tuple<ArrayDiffKind, T>>(value.Count);
+                    foreach(var item in value) {
                         if(item.Item1 == ArrayDiffKind.Added) {
-                            item.Item1 = ArrayDiffKind.AddedLeft;
+                            list.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedLeft, item.Item2));
                         } else if(item.Item1 == ArrayDiffKind.Removed) {
-                            item.Item1 = ArrayDiffKind.RemovedLeft;
+                            list.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.RemovedLeft, item.Item2));
+                        } else {
+                            list.Add(item);
                         }
                     }
+                    conflictsLeft[key] = list;
                 }
 
                 // visit all right conflicts and elevate any 'Added' or 'Removed' items to 'AddedRight' or 'RemovedRight'
-                foreach(List<Tuplet<ArrayDiffKind, T>> entry in conflictsRight.Values) {
-                    foreach(Tuplet<ArrayDiffKind, T> item in entry) {
+                var conflictsRightKeys = conflictsRight.Keys;
+                foreach(var key in conflictsRightKeys) {
+                    var value = conflictsRight[key];
+                    var list = new List<Tuple<ArrayDiffKind, T>>(value.Count);
+                    foreach(var item in value) {
                         if(item.Item1 == ArrayDiffKind.Added) {
-                            item.Item1 = ArrayDiffKind.AddedRight;
+                            list.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.AddedRight, item.Item2));
                         } else if(item.Item1 == ArrayDiffKind.Removed) {
-                            item.Item1 = ArrayDiffKind.RemovedRight;
+                            list.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.RemovedRight, item.Item2));
+                        } else {
+                            list.Add(item);
                         }
                     }
+                    conflictsRight[key] = list;
                 }
             }
 
@@ -739,8 +755,8 @@ namespace System {
             if(priority != ArrayMergeDiffPriority.None) {
 
                 // copy only accepted changes
-                List<Tuplet<ArrayDiffKind, T>> combined = result;
-                result = new List<Tuplet<ArrayDiffKind, T>>(combined.Count);
+                List<Tuple<ArrayDiffKind, T>> combined = result;
+                result = new List<Tuple<ArrayDiffKind, T>>(combined.Count);
                 for(int i = 0; i < combined.Count; ++i) {
                     switch(combined[i].Item1) {
                     case ArrayDiffKind.Same:
@@ -750,31 +766,19 @@ namespace System {
                         break;
                     case ArrayDiffKind.AddedLeft:
                         if(priority == ArrayMergeDiffPriority.Left) {
-                            combined[i].Item1 = ArrayDiffKind.Added;
-                            result.Add(combined[i]);
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, combined[i].Item2));
                         }
                         break;
                     case ArrayDiffKind.RemovedLeft:
-                        if(priority == ArrayMergeDiffPriority.Left) {
-                            combined[i].Item1 = ArrayDiffKind.Removed;
-                        } else {
-                            combined[i].Item1 = ArrayDiffKind.Same;
-                        }
-                        result.Add(combined[i]);
+                        result.Add(new Tuple<ArrayDiffKind, T>(priority == ArrayMergeDiffPriority.Left ? ArrayDiffKind.Removed : ArrayDiffKind.Same, combined[i].Item2));
                         break;
                     case ArrayDiffKind.AddedRight:
                         if(priority == ArrayMergeDiffPriority.Right) {
-                            combined[i].Item1 = ArrayDiffKind.Added;
-                            result.Add(combined[i]);
+                            result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, combined[i].Item2));
                         }
                         break;
                     case ArrayDiffKind.RemovedRight:
-                        if(priority == ArrayMergeDiffPriority.Right) {
-                            combined[i].Item1 = ArrayDiffKind.Removed;
-                        } else {
-                            combined[i].Item1 = ArrayDiffKind.Same;
-                        }
-                        result.Add(combined[i]);
+                        result.Add(new Tuple<ArrayDiffKind, T>(priority == ArrayMergeDiffPriority.Right ? ArrayDiffKind.Removed : ArrayDiffKind.Same, combined[i].Item2));
                         break;
                     }
                 }
@@ -852,7 +856,7 @@ namespace System {
         }
 
 
-        private static void MyersDiff<T>(T[] before, T[] after, Equality<T> equal, int maxdelta, IList<Tuplet<ArrayDiffKind, T>> result) where T : class {
+        private static void MyersDiff<T>(T[] before, T[] after, Equality<T> equal, int maxdelta, IList<Tuple<ArrayDiffKind, T>> result) where T : class {
 
             // NOTE (steveb): we mark items as 'Added' when they are actually 'Removed' and vice versa; this means the initial 'before' and 'after' arrays must be passed in reversed order as well;
             //                the reason for doing so is that it will show first 'Removed' items, and then the 'Added' ones, which is what the 3-way merge algorithm requires.
@@ -866,7 +870,7 @@ namespace System {
             MyersDiffRev(after, 0, after.Length - 1, before, 0, before.Length - 1, equal, maxdelta, result, max, down_array, up_array);
         }
 
-        private static void MyersDiffRev<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, int maxdelta, IList<Tuplet<ArrayDiffKind, T>> result, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) where T : class {
+        private static void MyersDiffRev<T>(T[] before, int i_start, int i_end, T[] after, int j_start, int j_end, Equality<T> equal, int maxdelta, IList<Tuple<ArrayDiffKind, T>> result, int max, ChunkedArray<int> down_array, ChunkedArray<int> up_array) where T : class {
 
             // NOTE (steveb): we mark items as 'Added' when they are actually 'Removed' and vice versa; this means the initial 'before' and 'after' arrays must be passed in reversed order as well;
             //                the reason for doing so is that it will show first 'Removed' items, and then the 'Added' ones, which is what the 3-way merge algorithm requires.
@@ -875,7 +879,7 @@ namespace System {
             while((i_start <= i_end) && (j_start <= j_end) && equal(before[i_start], after[j_start])) {
 
                 // add skipped item
-                result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i_start]));
+                result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i_start]));
 
                 // move diagonally
                 ++i_start;
@@ -899,13 +903,13 @@ namespace System {
 
                 // add remaining items as 'removed'
                 while(i_start <= i_end) {
-                    result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Added, before[i_start++]));
+                    result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Added, before[i_start++]));
                 }
             } else if(i_start > i_end) {
 
                 // add remaining items as 'added'
                 while(j_start <= j_end) {
-                    result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Removed, after[j_start++]));
+                    result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Removed, after[j_start++]));
                 }
             } else {
 
@@ -921,7 +925,7 @@ namespace System {
 
             // add tail items
             for(int k = 1; k <= tailCopyCount; ++k) {
-                result.Add(new Tuplet<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i_end + k]));
+                result.Add(new Tuple<ArrayDiffKind, T>(ArrayDiffKind.Same, before[i_end + k]));
             }
         }
 

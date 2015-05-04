@@ -25,6 +25,7 @@ using System.Threading;
 using MindTouch.Collections;
 using NUnit.Framework;
 using System.Linq;
+using System.Text;
 
 namespace MindTouch.Dream.Test {
 
@@ -32,6 +33,23 @@ namespace MindTouch.Dream.Test {
     public class BlockingQueueTests {
 
         private static readonly log4net.ILog _log = LogUtils.CreateLog();
+
+        private class Tuplet<T1, T2, T3, T4> {
+
+            //--- Fields ---
+            public readonly T1 Item1;
+            public T2 Item2;
+            public T3 Item3;
+            public readonly T4 Item4;
+
+            //--- Constructors ---
+            public Tuplet(T1 t1, T2 t2, T3 t3, T4 t4) {
+                this.Item1 = t1;
+                this.Item2 = t2;
+                this.Item3 = t3;
+                this.Item4 = t4;
+            }
+        }
 
         [Test]
         public void Single_threaded_queue_dequeue() {
@@ -168,7 +186,7 @@ namespace MindTouch.Dream.Test {
             List<string> dequeued = new List<string>();
             BlockingQueue<string> q = new BlockingQueue<string>();
             Thread consumer = new Thread(SingleConsumerForeachLoopAndStop);
-            consumer.Start(new Tuplet<IBlockingQueue<string>, List<string>>(q, dequeued));
+            consumer.Start(new Tuple<IBlockingQueue<string>, List<string>>(q, dequeued));
             for(int i = 0; i < n; i++) {
                 string guid = Guid.NewGuid().ToString();
                 q.Enqueue(guid);
@@ -184,7 +202,7 @@ namespace MindTouch.Dream.Test {
         }
 
         private void SingleConsumerForeachLoopAndStop(object obj) {
-            Tuplet<IBlockingQueue<string>, List<string>> state = (Tuplet<IBlockingQueue<string>, List<string>>)obj;
+            Tuple<IBlockingQueue<string>, List<string>> state = (Tuple<IBlockingQueue<string>, List<string>>)obj;
             foreach(string guid in state.Item1) {
                 state.Item2.Add(guid);
             }
