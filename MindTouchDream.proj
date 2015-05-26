@@ -21,6 +21,7 @@
             mindtouch.dream.xml;
             mindtouch.dream.test.dll;
             mindtouch.dream.test.xml;
+            mindtouch.sqs.dll;
             mindtouch.host.exe;
             mindtouch.host.exe.config;
             Autofac.dll;

@@ -34,7 +34,6 @@ namespace MindTouch.Dream {
         private const int DEFAULT_PORT = 8081;
 
         //--- Class Fields ---
-        private static log4net.ILog _log = LogUtils.CreateLog();
         private static DreamHost _host;
 
         //--- Class Methods ---

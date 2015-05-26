@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -284,6 +285,24 @@ namespace MindTouch.Xml {
             return true;
         }
 
+        /// <summary>
+        /// Add children of second parameter before the first parameter.
+        /// </summary>
+        /// <param name="destination">Nodes will be appended before this node.</param>
+        /// <param name="doc">Child nodes of this node will be enumerated and added.</param>
+        public static void AddChildrenBefore(XmlNode destination, XmlNode doc) {
+
+            // add all children of the specified doc before the specified destination node
+            Debug.Assert(destination.OwnerDocument != null, "destination.OwnerDocument != null");
+            var nodeToAdd = destination.OwnerDocument.ImportNode(doc, true);
+            if(nodeToAdd.HasChildNodes) {
+                for(var child = nodeToAdd.FirstChild; child != null; child = nodeToAdd.FirstChild) {
+                    Debug.Assert(destination.ParentNode != null, "destination.ParentNode != null");
+                    destination.ParentNode.InsertBefore(child, destination);
+                }
+            }
+        }
+
         internal static XmlDocument NewXmlDocument() {
             XmlDocument result = new XmlDocument(XmlNameTable) { PreserveWhitespace = true, XmlResolver = null };
             return result;
@@ -334,6 +353,45 @@ namespace MindTouch.Xml {
                 }
                 return string.Empty;
             }, int.MaxValue);
+        }
+
+        private static void NormalizeAttributes_Helper(XmlNode node) {
+            var element = node as XmlElement;
+            if(element != null) {
+                var originalAttributes = element.Attributes;
+                if(originalAttributes.Count > 1) {
+                    var attributes = new XmlAttribute[originalAttributes.Count];
+                    originalAttributes.CopyTo(attributes, 0);
+                    Array.Sort(attributes, (left, right) => String.CompareOrdinal(left.LocalName, right.LocalName));
+                    originalAttributes.RemoveAll();
+                    foreach(var attribute in attributes) {
+                        originalAttributes.Append(attribute);
+                    }
+                }
+                foreach(XmlNode child in element.ChildNodes) {
+                    NormalizeAttributes_Helper(child);
+                }
+            }
+        }
+
+        private static bool FindCssClass(string currentCssClasses, string cssClass, int start, out int index) {
+            if(String.IsNullOrEmpty(currentCssClasses)) {
+                index = -1;
+                return false;
+            }
+            while(true) {
+                index = currentCssClasses.IndexOf(cssClass, start, StringComparison.Ordinal);
+                if(index < 0) {
+                    return false;
+                }
+                var validStart = (index == 0) || (currentCssClasses[index - 1] == ' ');
+                var end = index + cssClass.Length;
+                var validEnd = (end == currentCssClasses.Length) || (currentCssClasses[end] == ' ');
+                if(validStart && validEnd) {
+                    return true;
+                }
+                start = end;
+            }
         }
 
         //--- Fields ---
@@ -3020,6 +3078,85 @@ namespace MindTouch.Xml {
         /// <returns>A recursive enumerable for the XDoc instance.</returns>
         public IEnumerable<XDoc> VisitOnly(Predicate<XDoc> enumerateChildren, Action<XDoc> nodeExitCallback) {
             return new XDocRecursiveEnumerable(CurrentNode, _nsManager, enumerateChildren, nodeExitCallback);
+        }
+
+        /// <summary>
+        /// Normalizes the attributes by sorting them alphabetically.
+        /// </summary>
+        public void NormalizeAttributes() {
+            if(IsEmpty) {
+                return;
+            }
+            NormalizeAttributes_Helper(AsXmlNode);
+        }
+
+        /// <summary>
+        /// Determines whether element has a 'class' attribute that contains the specified CSS class.
+        /// </summary>
+        /// <returns><c>true</c> if this element has the specified CSS class; otherwise, <c>false</c>.</returns>
+        /// <param name="cssClass">CSS class.</param>
+        public bool HasCssClass(string cssClass) {
+            if(String.IsNullOrEmpty(cssClass)) {
+                return false;
+            }
+            int index;
+            return FindCssClass(this["@class"].AsText, cssClass, 0, out index);
+        }
+
+        /// <summary>
+        /// Add the CSS class to the 'class' attribute. The attribute is automatically
+        /// added if it doesn't exist yet.
+        /// </summary>
+        /// <returns>XDoc instance.</returns>
+        /// <param name="cssClass">CSS class to add.</param>
+        public XDoc AddCssClass(string cssClass) {
+            if(String.IsNullOrEmpty(cssClass)) {
+                return this;
+            }
+            var currentCssClasses = this["@class"].AsText;
+            int index;
+            if(FindCssClass(currentCssClasses, cssClass, 0, out index)) {
+                return this;
+            }
+            if(String.IsNullOrEmpty(currentCssClasses)) {
+                Attr("class", cssClass);
+            } else {
+                Attr("class", currentCssClasses + " " + cssClass);
+            }
+            return this;
+        }
+
+        /// <summary>
+        /// Removes the CSS class from the 'class' attribute if present. If the attribute
+        /// is empty afterwards, the attribute is removed as well.
+        /// </summary>
+        /// <returns>XDoc instance.</returns>
+        /// <param name="cssClass">CSS class to remove.</param>
+        public XDoc RemoveCssClass(string cssClass) {
+            if(String.IsNullOrEmpty(cssClass)) {
+                return this;
+            }
+            var currentCssClasses = this["@class"].AsText;
+            int index;
+            var start = 0;
+            if(!FindCssClass(currentCssClasses, cssClass, start, out index)) {
+                return this;
+            }
+            do {
+                if((index + cssClass.Length) == currentCssClasses.Length) {
+                    currentCssClasses = currentCssClasses.Remove(index);
+                    break;
+                }
+                currentCssClasses = currentCssClasses.Remove(index, cssClass.Length + 1);
+                start = index;
+            } while(FindCssClass(currentCssClasses, cssClass, start, out index));
+            currentCssClasses = currentCssClasses.Trim();
+            if(currentCssClasses.Length == 0) {
+                RemoveAttr("class");
+            } else {
+                Attr("class", currentCssClasses);
+            }
+            return this;
         }
 
         /// <summary>
