@@ -1350,11 +1350,11 @@ namespace MindTouch.Dream {
                     // check if any feature was found
                     if((features == null) || (features.Count == 0)) {
                         string msg = verb + " URI: " + uri.ToString(false) + " LOCAL: " + localFeatureUri.ToString(false) + " PUBLIC: " + publicUri + " TRANSPORT: " + transport;
-                        _log.WarnMethodCall("ProcessRequest: feature not found", msg);
+                        _log.InfoMethodCall("ProcessRequest: feature not found", msg);
                         result = DreamMessage.NotFound("resource not found");
                     } else {
                         string msg = verb + " " + uri.ToString(false);
-                        _log.WarnMethodCall("ProcessRequest: method not allowed", msg);
+                        _log.InfoMethodCall("ProcessRequest: method not allowed", msg);
                         List<string> methods = new List<string>();
                         foreach(DreamFeature entry in features) {
                             if(!methods.Contains(entry.Verb)) {
