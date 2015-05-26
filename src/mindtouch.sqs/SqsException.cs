@@ -22,11 +22,19 @@
 using System;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Wrapper for exceptions throw my SQS methods.
+    /// </summary>
     public class SqsException : Exception {
     
         //--- Constructors ---
-        public SqsException(string message, Exception e)
-            : base(message, e) {
-        }
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="message">Exception message.</param>
+        /// <param name="e">Inner exception.</param>
+        public SqsException(string message, Exception e) : base(message, e) { }
     }
 }

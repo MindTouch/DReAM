@@ -29,6 +29,10 @@ using Amazon.SQS.Model;
 using MindTouch.Dream;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Implementation of ISqsClient for AWS SQS.
+    /// </summary>
     public class SqsClient : ISqsClient {
 
         //--- Fields ---
@@ -43,6 +47,11 @@ namespace MindTouch.Sqs {
         private const string BATCH_DELETING_MESSAGES = "batch deleting messages";
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="sqsClientConfig">Client configuration.</param>
         public SqsClient(SqsClientConfig sqsClientConfig) {
             if(sqsClientConfig == null) {
                 throw new ArgumentNullException("sqsClientConfig");
@@ -58,6 +67,14 @@ namespace MindTouch.Sqs {
         }
 
         //--- Methods ---
+
+        /// <summary>
+        /// Receive zero or more messages from name queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="waitTimeSeconds">Max amount of time to wait until this method returns.</param>
+        /// <param name="maxNumberOfMessages">Max number of messages to request.</param>
+        /// <returns>Enumeration of received messages.</returns>
         public IEnumerable<SqsMessage> ReceiveMessages(SqsQueueName queueName, TimeSpan waitTimeSeconds, uint maxNumberOfMessages) {
 
             // Check preconditions
@@ -69,7 +86,7 @@ namespace MindTouch.Sqs {
             }
 
             // Perform request            
-            ReceiveMessageResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.ReceiveMessage(new ReceiveMessageRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
                     WaitTimeSeconds = (int)waitTimeSeconds.TotalSeconds,
@@ -82,8 +99,14 @@ namespace MindTouch.Sqs {
             return response.Messages.Select(msg => new SqsMessage(new SqsMessageId(msg.MessageId), new SqsMessageReceipt(msg.ReceiptHandle), msg.Body)).ToArray();
         }
 
+        /// <summary>
+        /// Delete single message from named queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="messageReceipt">Message receipt.</param>
+        /// <returns>True if message was deleted.</returns>
         public bool DeleteMessage(SqsQueueName queueName, SqsMessageReceipt messageReceipt) {
-            DeleteMessageResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.DeleteMessage(new DeleteMessageRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
                     ReceiptHandle = messageReceipt.Value
@@ -95,12 +118,18 @@ namespace MindTouch.Sqs {
             return response.HttpStatusCode == HttpStatusCode.OK;
         }
 
+        /// <summary>
+        /// Delete messages from named queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="messages">Enumeration of messages to delete.</param>
+        /// <returns>Enumeration of messages that failed to delete.</returns>
         public IEnumerable<SqsMessageId> DeleteMessages(SqsQueueName queueName, IEnumerable<SqsMessage> messages) {
             if(messages.Count() > SqsUtils.MAX_NUMBER_OF_BATCH_DELETE_MESSAGES) {
                 throw new ArgumentException(string.Format("messageReceipts is larger than {0}, which is the maximum", SqsUtils.MAX_NUMBER_OF_BATCH_DELETE_MESSAGES));
             }
             var deleteEntries = messages.Select(message => new DeleteMessageBatchRequestEntry { Id = message.MessageId.Value, ReceiptHandle = message.MessageReceipt.Value }).ToList();
-            DeleteMessageBatchResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.DeleteMessageBatch(new DeleteMessageBatchRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
                     Entries = deleteEntries
@@ -111,12 +140,23 @@ namespace MindTouch.Sqs {
             return response.Failed.Select(failed => new SqsMessageId(failed.Id)).ToArray();
         }
 
+        /// <summary>
+        /// Send message on named queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="messageBody">Message body.</param>
         public void SendMessage(SqsQueueName queueName, string messageBody) {
             SendMessage(queueName, messageBody, TimeSpan.Zero);
         }
 
+        /// <summary>
+        /// Send message on named queue with a visibility delay.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="messageBody">Message body.</param>
+        /// <param name="delay">Time to wait until the message becomes visible.</param>
         public void SendMessage(SqsQueueName queueName, string messageBody, TimeSpan delay) {
-            SendMessageResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.SendMessage(new SendMessageRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
                     MessageBody = messageBody,
@@ -127,13 +167,19 @@ namespace MindTouch.Sqs {
             AssertSuccessfulStatusCode(response.HttpStatusCode, queueName, SENDING_MESSAGE);
         }
 
+        /// <summary>
+        /// Send one or more message to a named queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="messageBodies">Enumeration of message bodies.</param>
+        /// <returns>Enumeration of message bodies that failed to send.</returns>
         public IEnumerable<string> SendMessages(SqsQueueName queueName, IEnumerable<string> messageBodies) {
             if(messageBodies.Count() > SqsUtils.MAX_NUMBER_OF_BATCH_SEND_MESSAGES) {
                 throw new ArgumentException(string.Format("messageBodies is larger than {0}, which is the maximum", SqsUtils.MAX_NUMBER_OF_BATCH_SEND_MESSAGES));
             }
             var msgId = 1;
             var sendEntries = (from messageBody in messageBodies select new SendMessageBatchRequestEntry { MessageBody = messageBody, Id = string.Format("msg-{0}", msgId++)}).ToList();
-            SendMessageBatchResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.SendMessageBatch(new SendMessageBatchRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
                     Entries = sendEntries
@@ -141,11 +187,20 @@ namespace MindTouch.Sqs {
                 queueName,
                 SENDING_BATCH_MESSAGES);
             AssertSuccessfulStatusCode(response.HttpStatusCode, queueName, SENDING_BATCH_MESSAGES);
-            return response.Failed.Select(failed => failed.Message).ToArray();
+            if(response.Failed.None()) {
+                return Enumerable.Empty<string>();
+            }
+            var messagesById = sendEntries.ToDictionary(entry => entry.Id, entry => entry.MessageBody);
+            return response.Failed.Select(failed => messagesById.TryGetValue(failed.Id, null)).Where(messageBody => messageBody != null).ToArray();
         }
 
+        /// <summary>
+        /// Create a new named queue and gets its URI.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <returns>URI for the newly created queue.</returns>
         public XUri CreateQueue(SqsQueueName queueName) {
-            CreateQueueResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.CreateQueue(new CreateQueueRequest {QueueName = queueName.Value}),
                 queueName,
                 CREATING_QUEUE);
@@ -153,8 +208,13 @@ namespace MindTouch.Sqs {
             return new XUri(response.QueueUrl);
         }
 
+        /// <summary>
+        /// Delete a named queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <returns>True if the named queue was deleted</returns>
         public bool DeleteQueue(SqsQueueName queueName) {
-            DeleteQueueResponse response = Invoke(() =>
+            var response = Invoke(() =>
                 _client.DeleteQueue(new DeleteQueueRequest {QueueUrl = GetQueueUrl(queueName.Value)}),
                 queueName,
                 DELETING_QUEUE);

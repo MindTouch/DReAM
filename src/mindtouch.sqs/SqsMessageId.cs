@@ -22,12 +22,47 @@
 using System;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Value type for SQS message ID.
+    /// </summary>
     public struct SqsMessageId {
+
+        //--- Operators ---
+
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
+        /// <param name="a">First SQS message ID.</param>
+        /// <param name="b">Second SQS message ID.</param>
+        /// <returns>True if equal.</returns>
+        public static bool operator ==(SqsMessageId a, SqsMessageId b) {
+            return a.Value == b.Value;
+        }
+
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
+        /// <param name="a">First SQS message ID.</param>
+        /// <param name="b">Second SQS message ID.</param>
+        /// <returns>True if not equal.</returns>
+        public static bool operator !=(SqsMessageId a, SqsMessageId b) {
+            return !(a == b);
+        }
     
         //--- Fields ---
+
+        /// <summary>
+        /// Value of the SQS message ID.
+        /// </summary>
         public readonly string Value;
 
         //--- Constructor ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="messageId">Message ID.</param>
         public SqsMessageId(string messageId) {
             if(messageId == null) {
                 throw new ArgumentNullException("messageId");
@@ -36,32 +71,43 @@ namespace MindTouch.Sqs {
         }
 
         //--- Methods ---
+
+        /// <summary>
+        /// Convert SQS message ID to string.
+        /// </summary>
+        /// <returns>String value.</returns>
         public override string ToString() {
             return Value;
         }
 
+        /// <summary>
+        /// Get hash code of SQS message ID.
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode() {
             return Value.GetHashCode();
         }
 
+        /// <summary>
+        /// Compare SQS message IDs.
+        /// </summary>
+        /// <param name="messageId">Other SQS message ID.</param>
+        /// <returns>True if equal.</returns>
         public bool Equals(SqsMessageId messageId) {
             return Value.Equals(messageId.Value);
         }
 
+        /// <summary>
+        /// Compare SQS message ID to other object.
+        /// </summary>
+        /// <param name="obj">Other object.</param>
+        /// <returns>True if equal.</returns>
         public override bool Equals(object obj) {
             if(obj == null || !(obj is SqsMessageId)) {
                 return false;
             }
             var messageId = (SqsMessageId)obj;
             return Value == messageId.Value;
-        }
-
-        public static bool operator ==(SqsMessageId a, SqsMessageId b) {
-            return a.Value == b.Value;
-        }
-
-        public static bool operator !=(SqsMessageId a, SqsMessageId b) {
-            return !(a == b);
         }
     }
 }

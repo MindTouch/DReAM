@@ -21,10 +21,18 @@
 
 using System;
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Exception thrown by InMemorySqsClient whent a queue name cannot be resolved.
+    /// </summary>
     public class InMemorySqsNullQueueException : Exception {
     
         //--- Constructors ---
-        public InMemorySqsNullQueueException(string message) : base(message) {
-        }
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="message">Exception message.</param>
+        public InMemorySqsNullQueueException(string message) : base(message) { }
     }
 }

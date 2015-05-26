@@ -19,27 +19,42 @@
  * limitations under the License.
  */
 
-using MindTouch.Dream;
-using MindTouch.Xml;
-
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// SQS wrapper.
+    /// </summary>
     public class SqsMessage {
     
         //--- Fields ---
+
+        /// <summary>
+        /// SQS message ID.
+        /// </summary>
         public readonly SqsMessageId MessageId;
+
+        /// <summary>
+        /// SQS message receipt. Used for deleting message later.
+        /// </summary>
         public readonly SqsMessageReceipt MessageReceipt;
+
+        /// <summary>
+        /// SQS message body.
+        /// </summary>
         public readonly string Body;
     
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="messageId">Message ID.</param>
+        /// <param name="messageReceipt">Message receipt.</param>
+        /// <param name="body">Message body.</param>
         public SqsMessage(SqsMessageId messageId, SqsMessageReceipt messageReceipt, string body) {
             this.MessageId = messageId;
             this.MessageReceipt = messageReceipt;
             this.Body = body;
-        }
-
-        //--- Methods ---
-        public XDoc BodyToDocument() {
-            return XDocFactory.From(Body, MimeType.XML);
         }
     }
 }

@@ -24,9 +24,19 @@ using MindTouch.Dream;
 using MindTouch.Xml;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Class for configuring the SQS client.
+    /// </summary>
     public class SqsClientConfig {
 
         //--- Class Methods ---
+
+        /// <summary>
+        /// Initialize SqsClientConfig instance from an XDoc instance.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
         public static SqsClientConfig From(XDoc config) {
             return new SqsClientConfig(
                 privateKey: config["privatekey"].AsText, 
@@ -38,12 +48,37 @@ namespace MindTouch.Sqs {
         }
         
         //--- Fields ---
+
+        /// <summary>
+        /// Private AWS key.
+        /// </summary>
         public readonly string PrivateKey;
+
+        /// <summary>
+        /// Public AWS Key.
+        /// </summary>
         public readonly string PublicKey;
+
+        /// <summary>
+        /// AWS account ID.
+        /// </summary>
         public readonly string AccountId;
+
+        /// <summary>
+        /// Region-specific endpoint.
+        /// </summary>
         public readonly XUri Endpoint;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="privateKey">Private AWS key.</param>
+        /// <param name="publicKey">Public AWS key.</param>
+        /// <param name="accountId">AWS account ID.</param>
+        /// <param name="endpoint">Region name or custom SQS endpoint to use.</param>
+        /// <param name="secure">Boolean indicating if HTTPS should be used.</param>
         public SqsClientConfig(string privateKey, string publicKey, string accountId, string endpoint, bool secure) {
             if(string.IsNullOrEmpty(accountId)) {
                 throw new ArgumentNullException("accountId");

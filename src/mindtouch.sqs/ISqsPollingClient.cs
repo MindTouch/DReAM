@@ -22,7 +22,19 @@
 using System;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Interface for a polling SQS provider.
+    /// </summary>
     public interface ISqsPollingClient {
+
+        //--- Methods ---
+
+        /// <summary>
+        /// Start listening for SQS messages with the provided settings.
+        /// </summary>
+        /// <param name="settings">Polling settings.</param>
+        /// <returns>Object to dispose listener when no longer needed.</returns>
         IDisposable Listen(SqsPollingClientSettings settings);
     }
 }

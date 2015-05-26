@@ -22,12 +22,25 @@
 using System;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Value type for SQS queue name.
+    /// </summary>
     public struct SqsQueueName {
     
         //--- Fields ---
+
+        /// <summary>
+        /// Value of the SQS message ID.
+        /// </summary>
         public readonly string Value;
 
         //--- Constructors ---
+        
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
         public SqsQueueName(string queueName) {
             if(string.IsNullOrEmpty("queueName")) {
                 throw new ArgumentNullException("queueName");
@@ -35,6 +48,10 @@ namespace MindTouch.Sqs {
             this.Value = queueName;
         }
 
+        /// <summary>
+        /// Convert SQS queue name to string.
+        /// </summary>
+        /// <returns>String value.</returns>
         public override string ToString() {
             return Value;
         }

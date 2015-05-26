@@ -22,12 +22,47 @@
 using System;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Value type for SQS message receipt.
+    /// </summary>
     public struct SqsMessageReceipt {
+
+        //--- Operators ---
+
+        /// <summary>
+        /// Equality operator.
+        /// </summary>
+        /// <param name="a">First SQS message receipt.</param>
+        /// <param name="b">Second SQS message receipt.</param>
+        /// <returns>True if equal.</returns>
+        public static bool operator ==(SqsMessageReceipt a, SqsMessageReceipt b) {
+            return a.Value == b.Value;
+        }
+
+        /// <summary>
+        /// Inequality operator.
+        /// </summary>
+        /// <param name="a">First SQS message receipt.</param>
+        /// <param name="b">Second SQS message receipt.</param>
+        /// <returns>True if not equal.</returns>
+        public static bool operator !=(SqsMessageReceipt a, SqsMessageReceipt b) {
+            return !(a == b);
+        }
     
         //--- Fields ---
+
+        /// <summary>
+        /// Value of the SQS message ID.
+        /// </summary>
         public readonly string Value;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="messageReceipt">Message receipt.</param>
         public SqsMessageReceipt(string messageReceipt) {
             if(messageReceipt == null) {
                 throw new ArgumentNullException("messageReceipt");
@@ -36,32 +71,43 @@ namespace MindTouch.Sqs {
         }
         
         //--- Methods ---
+
+        /// <summary>
+        /// Convert SQS message receipt to string.
+        /// </summary>
+        /// <returns>String value.</returns>
         public override string ToString() {
             return Value;
         }
 
+        /// <summary>
+        /// Get hash code of SQS message receipt.
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode() {
             return Value.GetHashCode();
         }
 
+        /// <summary>
+        /// Compare SQS message receipts.
+        /// </summary>
+        /// <param name="messageReceipt">Other SQS message receipt.</param>
+        /// <returns>True if equal.</returns>
         public bool Equals(SqsMessageReceipt messageReceipt) {
             return Value.Equals(messageReceipt.Value);
         }
 
+        /// <summary>
+        /// Compare SQS message receipt to other object.
+        /// </summary>
+        /// <param name="obj">Other object.</param>
+        /// <returns>True if equal.</returns>
         public override bool Equals(object obj) {
             if(obj == null || !(obj is SqsMessageReceipt)) {
                 return false;
             }
             var receipt = (SqsMessageReceipt)obj;
             return Value == receipt.Value;
-        }
-
-        public static bool operator ==(SqsMessageReceipt a, SqsMessageReceipt b) {
-            return a.Value == b.Value;
-        }
-
-        public static bool operator !=(SqsMessageReceipt a, SqsMessageReceipt b) {
-            return !(a == b);
         }
     }
 }

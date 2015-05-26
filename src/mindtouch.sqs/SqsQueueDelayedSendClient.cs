@@ -28,6 +28,10 @@ using MindTouch.Tasking;
 using log4net;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// Class for enqueuing messages asynchronously for batched delivery.
+    /// </summary>
     public sealed class SqsQueueDelayedSendClient {
 
         //--- Constants ---
@@ -37,11 +41,23 @@ namespace MindTouch.Sqs {
         private static readonly ILog _log = LogUtils.CreateLog();
 
         //--- Fields ---
+
+        /// <summary>
+        /// Queue name.
+        /// </summary>
         public readonly SqsQueueName QueueName;
+
         private readonly ISqsClient _client;
         private readonly TimedAccumulator<KeyValuePair<int, string>> _timedSendAccumulator;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="client">ISqsClient instance.</param>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="timerFactory">TimerFactory instance.</param>
         public SqsQueueDelayedSendClient(ISqsClient client, SqsQueueName queueName, TaskTimerFactory timerFactory) {
             if(client == null) {
                 throw new ArgumentNullException("client");
@@ -52,6 +68,11 @@ namespace MindTouch.Sqs {
         }
 
         //--- Methods ---
+
+        /// <summary>
+        /// Enqueue message for batched, asynchronous delivery.
+        /// </summary>
+        /// <param name="messageBody">Message body.</param>
         public void EnqueueMessage(string messageBody) {
             _timedSendAccumulator.Enqueue(new KeyValuePair<int, string>(0, messageBody));
         }

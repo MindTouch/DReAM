@@ -24,16 +24,49 @@ using System.Collections.Generic;
 using MindTouch.Extensions.Time;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// SqsPollingClient listener settings.
+    /// </summary>
     public class SqsPollingClientSettings {
        
         //--- Fields ---
+
+        /// <summary>
+        /// Queue name to listen on.
+        /// </summary>
         public readonly SqsQueueName QueueName;
+
+        /// <summary>
+        /// Callback for received SQS messages.
+        /// </summary>
         public readonly Action<IEnumerable<SqsMessage>> Callback;
+
+        /// <summary>
+        /// Max amount of time to wait for SQS message to arrive.
+        /// </summary>
         public readonly TimeSpan LongPollInterval;
+
+        /// <summary>
+        /// Max number of SQS messages to request.
+        /// </summary>
         public readonly uint MaxNumberOfMessages;
+
+        /// <summary>
+        /// Amount of time to wait until trying again to listen after an error occurred.
+        /// </summary>
         public readonly TimeSpan WaitTimeOnError;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="callback">Callback for received SQS messages.</param>
+        /// <param name="longPollInterval">Max amount of time to wait for SQS message to arrive.</param>
+        /// <param name="maxNumberOfMessages">Max number of SQS messages to request.</param>
+        /// <param name="waitTimeOnError">Amount of time to wait until trying again to listen after an error occurred.</param>
         public SqsPollingClientSettings(SqsQueueName queueName, Action<IEnumerable<SqsMessage>> callback, TimeSpan longPollInterval, uint maxNumberOfMessages, TimeSpan waitTimeOnError) {
             if(callback == null) {
                 throw new ArgumentNullException("callback");

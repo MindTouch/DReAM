@@ -24,6 +24,10 @@ using System.Collections.Generic;
 using MindTouch.Tasking;
 
 namespace MindTouch.Sqs {
+    
+    /// <summary>
+    /// Class for enqueuing messages asynchronously for batched delivery into a specific queue.
+    /// </summary>
     public sealed class SqsDelayedSendClient {
         
         //--- Fields ---
@@ -32,6 +36,12 @@ namespace MindTouch.Sqs {
         private readonly TaskTimerFactory _timerFactory;
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="client">ISqsClient instance.</param>
+        /// <param name="timerFactory">TimeFactory instance.</param>
         public SqsDelayedSendClient(ISqsClient client, TaskTimerFactory timerFactory) {
             if(client == null) {
                 throw new ArgumentNullException("client");
@@ -44,10 +54,20 @@ namespace MindTouch.Sqs {
         }
 
         //--- Methods ---
+        /// <summary>
+        /// Enqueue message for batched, asynchronous delivery.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <param name="messageBody">Message body.</param>
         public void EnqueueMessage(SqsQueueName queueName, string messageBody) {
             GetEnqueueMessageCallback(queueName)(messageBody);
         }
 
+        /// <summary>
+        /// Get delegate for enqueuing messages asynchronously to named queue.
+        /// </summary>
+        /// <param name="queueName">Queue name.</param>
+        /// <returns>Delegate for enqueuing message asynchronously.</returns>
         public Action<string> GetEnqueueMessageCallback(SqsQueueName queueName) {
         repeat:
             SqsQueueDelayedSendClient queue;

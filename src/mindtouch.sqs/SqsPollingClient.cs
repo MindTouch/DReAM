@@ -25,6 +25,10 @@ using log4net;
 using MindTouch.Tasking;
 
 namespace MindTouch.Sqs {
+
+    /// <summary>
+    /// SQS polling client for ISqsClient.
+    /// </summary>
     public class SqsPollingClient : ISqsPollingClient, IDisposable {
 
         //--- Types ---
@@ -89,11 +93,22 @@ namespace MindTouch.Sqs {
         private readonly List<Listener> _listeners = new List<Listener>();
 
         //--- Constructors ---
+
+        /// <summary>
+        /// Constructor for creating an instance.
+        /// </summary>
+        /// <param name="client">ISqsClient to use.</param>
         public SqsPollingClient(ISqsClient client) {
             _client = client;
         }
 
         //--- Methods ---
+
+        /// <summary>
+        /// Start listening for SQS messages with the provided settings.
+        /// </summary>
+        /// <param name="settings">Polling settings.</param>
+        /// <returns>Object to dispose listener when no longer needed.</returns>
         public IDisposable Listen(SqsPollingClientSettings settings) {
             if(settings == null) {
                 throw new ArgumentNullException("settings");
@@ -106,6 +121,9 @@ namespace MindTouch.Sqs {
             return listener;
         }
 
+        /// <summary>
+        /// Dispose of all listeners.
+        /// </summary>
         public void Dispose() {
             var listeners = _listeners.ToArray();
             foreach(var listener in listeners) {
