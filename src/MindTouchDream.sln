@@ -141,8 +141,8 @@ Global
 		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Documentation|Any CPU.Build.0 = Debug|Any CPU
 		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Signed Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Signed Release|Any CPU.Build.0 = Release|Any CPU
+		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Signed Release|Any CPU.ActiveCfg = Signed Release|Any CPU
+		{3B4889DF-86EC-4284-8744-98A80C3A649C}.Signed Release|Any CPU.Build.0 = Signed Release|Any CPU
 		{F4058DD8-8504-4845-A6F0-D96F62AEEB1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F4058DD8-8504-4845-A6F0-D96F62AEEB1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4058DD8-8504-4845-A6F0-D96F62AEEB1A}.Documentation|Any CPU.ActiveCfg = Debug|Any CPU
