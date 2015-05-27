@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EA5A4DF5-51DE-4568-829A-B1124037188B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>MindTouchTest.Sqs</RootNamespace>
+    <AssemblyName>MindTouchTest.Sqs</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AWSSDK, Version=2.1.6.0, Culture=neutral, PublicKeyToken=9f476d3089b52be3, processorArchitecture=MSIL" />
+    <Reference Include="log4net">
+      <HintPath>..\..\packages\log4net.1.2.10\lib\2.0\log4net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Moq, Version=4.0.10827.0, Culture=neutral, PublicKeyToken=69f491c39445e920, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Moq.4.0.10827\lib\NET40\Moq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\redist\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Helpers\MockMessage.cs" />
+    <Compile Include="Helpers\MockSqsClient.cs" />
+    <Compile Include="InMemorySqsClientTests\CreateQueue.cs" />
+    <Compile Include="InMemorySqsClientTests\DeleteMessage.cs" />
+    <Compile Include="InMemorySqsClientTests\ReceiveMessage.cs" />
+    <Compile Include="InMemorySqsClientTests\SendMessage.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SqsClientTests\CreateQueue.cs" />
+    <Compile Include="SqsClientTests\DeleteMessage.cs" />
+    <Compile Include="SqsClientTests\ReceiveMessage.cs" />
+    <Compile Include="SqsClientTests\SendMessage.cs" />
+    <Compile Include="SqsClientTests\SendMessages.cs" />
+    <Compile Include="SqsClientTests\_Init.cs" />
+    <Compile Include="SqsLongPollClientTests\Listen.cs" />
+    <Compile Include="SqsReceiptHandleTests\Equals.cs" />
+    <Compile Include="SqsReceiptHandleTests\GetHashCode.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\mindtouch.dream.test\mindtouch.dream.test.csproj">
+      <Project>{C4CC19EB-8149-4F39-A6E6-753886309CF6}</Project>
+      <Name>mindtouch.dream.test</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\mindtouch.dream\mindtouch.dream.csproj">
+      <Project>{3E706653-69D1-4522-BEE8-ECEC1A1BF7DE}</Project>
+      <Name>mindtouch.dream</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\mindtouch.sqs\mindtouch.sqs.csproj">
+      <Project>{3B4889DF-86EC-4284-8744-98A80C3A649C}</Project>
+      <Name>mindtouch.sqs</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

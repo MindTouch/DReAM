@@ -74,8 +74,6 @@
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DocumentationFile>..\bin\mindtouch.dream.xml</DocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>
-    </NoWarn>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -85,24 +83,20 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Autofac.2.6.3.862\lib\net40\Autofac.dll</HintPath>
     </Reference>
-    <Reference Include="log4net, Version=1.2.9.0, Culture=neutral, PublicKeyToken=b32731d11ce58905">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\redist\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.1.2.10\lib\2.0\log4net.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="SgmlReaderDll, Version=1.5.2235.32957, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\redist\SgmlReaderDll.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.configuration" />
-    <Reference Include="System.Core">
-      <RequiredTargetFramework>3.5</RequiredTargetFramework>
-    </Reference>
+    <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Security" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
+    <Reference Include="SgmlReaderDll">
+      <HintPath>..\redist\SgmlReaderDll.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -129,9 +123,7 @@
     <Compile Include="Data\attributes.cs" />
     <Compile Include="Data\ADataUpdater.cs" />
     <Compile Include="Data\IDataUpdater.cs" />
-    <Compile Include="Data\MysqlDataUpdater.cs">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="Data\MysqlDataUpdater.cs" />
     <Compile Include="Data\VersionInfo.cs" />
     <Compile Include="dream\AutoFacEx.cs" />
     <Compile Include="dream\DreamContainerScope.cs" />
@@ -298,9 +290,23 @@
     <Compile Include="Collections\EnumerableUtil.cs" />
     <Compile Include="Collections\DictionaryUtil.cs" />
     <Compile Include="dream\XUriParser.cs" />
+    <Compile Include="system\IDateTime.cs" />
+    <Compile Include="system\FixedDateTime.cs" />
+    <Compile Include="system\LiveDateTime.cs" />
+    <Compile Include="system\Collections\TimedAccumulator.cs" />
+    <Compile Include="system\Collections\Generic\DictionaryDuplicateKeyException.cs" />
+    <Compile Include="system\Collections\Generic\DictionaryUtil.cs" />
+    <Compile Include="system\Collections\Generic\HashSetUtil.cs" />
+    <Compile Include="system\Collections\Generic\IImmutableDictionary.cs" />
+    <Compile Include="system\Collections\Generic\ImmutableDictionary.cs" />
+    <Compile Include="dream\XDataUri.cs" />
+    <Compile Include="Xml\Html2Text.cs" />
+    <Compile Include="Xml\SimpleHtmlFormatter.cs" />
+    <Compile Include="dream\MimeTypeEx.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
+    <Folder Include="system\IO\" />
     <Folder Include="Threading\Timer\" />
   </ItemGroup>
   <ItemGroup>
