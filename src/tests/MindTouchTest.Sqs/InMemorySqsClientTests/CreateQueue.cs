@@ -35,7 +35,7 @@ namespace MindTouchTest.Sqs.InMemorySqsClientTests {
             sqs.CreateQueue(queueName);
             var queues = sqs.ListQueues(null);
             Assert.AreEqual(1, queues.Count());
-            Assert.AreEqual("local://bar", queues.First());
+            Assert.AreEqual("bar", queues.First());
             sqs.DeleteQueue(queueName);
             queues = sqs.ListQueues(null);
             Assert.IsFalse(queues.Any());

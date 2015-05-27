@@ -55,5 +55,26 @@ namespace MindTouch.Sqs {
         public override string ToString() {
             return Value;
         }
+
+        /// <summary>
+        /// Get hash code of SQS queue name.
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() {
+            return Value.GetHashCode();
+        }
+
+        /// <summary>
+        /// Compare SQS queue names to other object.
+        /// </summary>
+        /// <param name="obj">Other object.</param>
+        /// <returns>True if equal.</returns>
+        public override bool Equals(object obj) {
+            if(obj == null || !(obj is SqsQueueName)) {
+                return false;
+            }
+            var other = (SqsQueueName)obj;
+            return Value == other.Value;
+        }
     }
 }

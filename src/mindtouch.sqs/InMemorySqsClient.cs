@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MindTouch.Dream;
 using MindTouch.Extensions.Time;
 using MindTouch.Tasking;
 
@@ -73,7 +72,7 @@ namespace MindTouch.Sqs {
 
         //--- Fields ---
         private bool _isDisposed;
-        private readonly Dictionary<XUri, List<QueueEntry>> _queues = new Dictionary<XUri, List<QueueEntry>>();
+        private readonly Dictionary<SqsQueueName, List<QueueEntry>> _queues = new Dictionary<SqsQueueName, List<QueueEntry>>();
         private readonly Random _random = new Random();
 
         //--- Properties ---
@@ -99,15 +98,6 @@ namespace MindTouch.Sqs {
         }
 
         /// <summary>
-        /// Get an internal URI for named queue.
-        /// </summary>
-        /// <param name="queueName">Queue name.</param>
-        /// <returns>Internal URI for named queue.</returns>
-        public XUri GetQueueUri(SqsQueueName queueName) {
-            return new XUri("local://" + queueName.Value);
-        }
-
-        /// <summary>
         /// Receive zero or more messages from name queue.
         /// </summary>
         /// <param name="queueName">Queue name.</param>
@@ -119,9 +109,8 @@ namespace MindTouch.Sqs {
 
             // keep checking for messages until the wait-timeout kicks in
             while(true) {
-                var queueUri = GetQueueUri(queueName);
-                var msgQueue = GetQueue(queueUri);
-                AssertQueueIsNotNull(queueUri, msgQueue);
+                var msgQueue = GetQueue(queueName);
+                AssertQueueIsNotNull(queueName, msgQueue);
                 QueueEntry[] entries;
                 var now = GlobalClock.UtcNow;
                 lock(msgQueue) {
@@ -154,9 +143,8 @@ namespace MindTouch.Sqs {
         /// <param name="messageReceipt">Message receipt.</param>
         /// <returns>True if message was deleted.</returns>
         public bool DeleteMessage(SqsQueueName queueName, SqsMessageReceipt messageReceipt) {
-            var queueUrl = GetQueueUri(queueName);
-            var msgQueue = GetQueue(queueUrl);
-            AssertQueueIsNotNull(queueUrl, msgQueue);
+            var msgQueue = GetQueue(queueName);
+            AssertQueueIsNotNull(queueName, msgQueue);
             lock(msgQueue) {
                 var entry = msgQueue.FirstOrDefault(x => x.Message.MessageReceipt == messageReceipt);
                 if(entry != null) {
@@ -172,7 +160,7 @@ namespace MindTouch.Sqs {
         /// <param name="queueName">Queue name</param>
         public void ClearQueue(SqsQueueName queueName) {
             lock(_queues) {
-                var msgQueue = GetQueue(GetQueueUri(queueName));
+                var msgQueue = GetQueue(queueName);
                 if(msgQueue == null) {
                     return;
                 }
@@ -189,9 +177,8 @@ namespace MindTouch.Sqs {
         /// <param name="messageBody">Message body.</param>
         /// <param name="delay">Time to wait until the message becomes visible.</param>
         public void SendMessage(SqsQueueName queueName, string messageBody, TimeSpan delay) {
-            var queueUri = GetQueueUri(queueName);
-            var msgQueue = GetQueue(queueUri);
-            AssertQueueIsNotNull(queueUri, msgQueue);
+            var msgQueue = GetQueue(queueName);
+            AssertQueueIsNotNull(queueName, msgQueue);
             lock(msgQueue) {
                 var entry = new QueueEntry(new SqsMessage(new SqsMessageId(Guid.NewGuid().ToString()), new SqsMessageReceipt(Guid.NewGuid().ToString()), messageBody), DateTime.MinValue);
                 msgQueue.Add(entry);
@@ -227,9 +214,8 @@ namespace MindTouch.Sqs {
         /// <returns>True if the named queue was created.</returns>
         public bool CreateQueue(SqsQueueName queueName) {
             lock(_queues) {
-                var queueUri = GetQueueUri(queueName);
-                if(!_queues.ContainsKey(queueUri)) {
-                    _queues[queueUri] = new List<QueueEntry>();
+                if(!_queues.ContainsKey(queueName)) {
+                    _queues[queueName] = new List<QueueEntry>();
                 }
                 return true;
             }
@@ -242,9 +228,8 @@ namespace MindTouch.Sqs {
         /// <returns>True if the named queue was deleted</returns>
         public bool DeleteQueue(SqsQueueName queueName) {
             lock(_queues) {
-                var queueUri = GetQueueUri(queueName);
-                if(_queues.ContainsKey(queueUri)) {
-                    _queues.Remove(queueUri);
+                if(_queues.ContainsKey(queueName)) {
+                    _queues.Remove(queueName);
                 }
                 return true;
             }
@@ -257,7 +242,7 @@ namespace MindTouch.Sqs {
         /// <returns>Enumeration of messages.</returns>
         public IEnumerable<SqsMessage> InspectQueue(SqsQueueName queueName) {
             lock(_queues) {
-                var msgQueue = GetQueue(GetQueueUri(queueName));
+                var msgQueue = GetQueue(queueName);
                 if(msgQueue == null) {
                     return new SqsMessage[0];
                 }
@@ -293,17 +278,17 @@ namespace MindTouch.Sqs {
             _isDisposed = true;
         }
 
-        private List<QueueEntry> GetQueue(XUri queueUri) {
+        private List<QueueEntry> GetQueue(SqsQueueName queueName) {
             lock(_queues) {
                 List<QueueEntry> msgQueue;
-                _queues.TryGetValue(queueUri, out msgQueue);
+                _queues.TryGetValue(queueName, out msgQueue);
                 return msgQueue;
             }
         }
 
-        private void AssertQueueIsNotNull(XUri queueUrl, List<QueueEntry> queue) {
+        private void AssertQueueIsNotNull(SqsQueueName queueName, List<QueueEntry> queue) {
             if(queue == null) {
-                throw new InMemorySqsNullQueueException(string.Format("Queue '{0}' is null", queueUrl));
+                throw new InMemorySqsNullQueueException(string.Format("Queue '{0}' is null", queueName));
             }
         }
     }
