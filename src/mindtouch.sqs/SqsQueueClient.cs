@@ -105,8 +105,8 @@ namespace MindTouch.Sqs {
         /// <summary>
         /// Create the named queue and gets its URI.
         /// </summary>
-        /// <returns>URI for the newly created queue.</returns>
-        public XUri CreateQueue() {
+        /// <returns>True if the named queue was created.</returns>
+        public bool CreateQueue() {
             return _client.CreateQueue(QueueName);
         }
 

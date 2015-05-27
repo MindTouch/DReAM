@@ -109,22 +109,18 @@ namespace MindTouchTest.Sqs.SqsPollingClientTests {
 
         private class ExceptionalSqsClient : ISqsClient {
 
-            //--- Fields ---
-            private int _calls;
-            private bool _threw;
-
             //--- Properties ---
-            public int Calls { get { return _calls; } }
-            public bool Threw { get { return _threw; } }
+            public int Calls { get; private set; }
+            public bool Threw { get; private set; }
 
             //--- Methods ---
             public IEnumerable<SqsMessage> ReceiveMessages(SqsQueueName queueName, TimeSpan waitTimeSeconds, uint maxNumberOfMessages) {
-                if(_calls < 3) {
-                    _calls++;
-                    _threw = true;
+                if(Calls < 3) {
+                    Calls++;
+                    Threw = true;
                     throw new Exception();
                 }
-                _calls++;
+                Calls++;
                 return new SqsMessage[0];
             }
 
@@ -148,7 +144,7 @@ namespace MindTouchTest.Sqs.SqsPollingClientTests {
                 throw new NotImplementedException();
             }
 
-            public XUri CreateQueue(SqsQueueName queueName) {
+            public bool CreateQueue(SqsQueueName queueName) {
                 throw new NotImplementedException();
             }
 

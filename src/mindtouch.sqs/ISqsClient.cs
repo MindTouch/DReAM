@@ -84,8 +84,8 @@ namespace MindTouch.Sqs {
         /// Create a new named queue and gets its URI.
         /// </summary>
         /// <param name="queueName">Queue name.</param>
-        /// <returns>URI for the newly created queue.</returns>
-        XUri CreateQueue(SqsQueueName queueName);
+        /// <returns>True if the named queue was created.</returns>
+        bool CreateQueue(SqsQueueName queueName);
 
         /// <summary>
         /// Delete a named queue.

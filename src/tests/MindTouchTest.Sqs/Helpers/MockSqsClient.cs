@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.Linq;
 using MindTouch;
 using MindTouch.Sqs;
-using MindTouch.Dream;
 using log4net;
 
 namespace MindTouchTest.Sqs.Helpers {
@@ -79,7 +78,7 @@ namespace MindTouchTest.Sqs.Helpers {
             return new SqsMessageId[0];
         }
 
-        public XUri CreateQueue(SqsQueueName queueName) {
+        public bool CreateQueue(SqsQueueName queueName) {
             throw new NotImplementedException();
         }
 

@@ -35,12 +35,12 @@ namespace MindTouchTest.Sqs.SqsClientTests {
             var queueName = new SqsQueueName("test-queue");
             
             // Create the queue for the first time
-            var queueURI = _client.CreateQueue(queueName);
-            Assert.AreNotEqual(null, queueURI, "The queue uri is null, and must not be null #1");
+            var queue1Success = _client.CreateQueue(queueName);
+            Assert.IsTrue(queue1Success, "Creating queue first time failed");
         
             // Try to create the queue for the second time
-            var queueURI2 = _client.CreateQueue(queueName);
-            Assert.AreNotEqual(null, queueURI2, "The queue uri is null, and must not be null #2");
+            var queue2Success = _client.CreateQueue(queueName);
+            Assert.IsTrue(queue2Success, "Creating queue second time failed");
         }
     }
 }

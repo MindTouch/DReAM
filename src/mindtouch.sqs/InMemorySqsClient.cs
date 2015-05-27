@@ -224,14 +224,14 @@ namespace MindTouch.Sqs {
         /// Create a new named queue and gets its URI.
         /// </summary>
         /// <param name="queueName">Queue name.</param>
-        /// <returns>URI for the newly created queue.</returns>
-        public XUri CreateQueue(SqsQueueName queueName) {
+        /// <returns>True if the named queue was created.</returns>
+        public bool CreateQueue(SqsQueueName queueName) {
             lock(_queues) {
                 var queueUri = GetQueueUri(queueName);
                 if(!_queues.ContainsKey(queueUri)) {
                     _queues[queueUri] = new List<QueueEntry>();
                 }
-                return new XUri(queueUri);
+                return true;
             }
         }
 

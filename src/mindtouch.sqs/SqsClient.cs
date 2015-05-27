@@ -26,7 +26,6 @@ using System.Net;
 using Amazon.Runtime;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using MindTouch.Dream;
 
 namespace MindTouch.Sqs {
 
@@ -34,6 +33,23 @@ namespace MindTouch.Sqs {
     /// Implementation of ISqsClient for AWS SQS.
     /// </summary>
     public class SqsClient : ISqsClient {
+
+        //--- Class Methods ---
+        private static void AssertSuccessfulStatusCode(HttpStatusCode statusCode, SqsQueueName queueName, string sqsOperation) {
+            if(statusCode != HttpStatusCode.OK) {
+                throw new SqsException(string.Format("Got a '{0}' response while '{1}' from SQS queue '{2}'", statusCode, sqsOperation, queueName.Value), null);
+            }
+        }
+
+        private static T Invoke<T>(Func<T> function, SqsQueueName queueName, string sqsOperation) {
+            try {
+                return function();
+            } catch(AmazonSQSException e) {
+                throw new SqsException(string.Format("There was an SQS error '{0}', from the '{1}' SQS queue", sqsOperation, queueName.Value), e);
+            } catch(Exception e) {
+                throw new SqsException(string.Format("There was an error '{0}', from the '{1}' SQS queue", sqsOperation, queueName.Value), e);
+            }
+        }
 
         //--- Fields ---
         private readonly AmazonSQSClient _client;
@@ -56,7 +72,7 @@ namespace MindTouch.Sqs {
             if(sqsClientConfig == null) {
                 throw new ArgumentNullException("sqsClientConfig");
             }
-            _config = sqsClientConfig;            
+            _config = sqsClientConfig;
             if(!string.IsNullOrEmpty(_config.PublicKey) && !string.IsNullOrEmpty(_config.PrivateKey)) {
                 _client = new AmazonSQSClient(
                     new BasicAWSCredentials(_config.PublicKey, _config.PrivateKey),
@@ -178,7 +194,7 @@ namespace MindTouch.Sqs {
                 throw new ArgumentException(string.Format("messageBodies is larger than {0}, which is the maximum", SqsUtils.MAX_NUMBER_OF_BATCH_SEND_MESSAGES));
             }
             var msgId = 1;
-            var sendEntries = (from messageBody in messageBodies select new SendMessageBatchRequestEntry { MessageBody = messageBody, Id = string.Format("msg-{0}", msgId++)}).ToList();
+            var sendEntries = (from messageBody in messageBodies select new SendMessageBatchRequestEntry { MessageBody = messageBody, Id = string.Format("msg-{0}", msgId++) }).ToList();
             var response = Invoke(() =>
                 _client.SendMessageBatch(new SendMessageBatchRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
@@ -198,14 +214,14 @@ namespace MindTouch.Sqs {
         /// Create a new named queue and gets its URI.
         /// </summary>
         /// <param name="queueName">Queue name.</param>
-        /// <returns>URI for the newly created queue.</returns>
-        public XUri CreateQueue(SqsQueueName queueName) {
+        /// <returns>True if the named queue was created.</returns>
+        public bool CreateQueue(SqsQueueName queueName) {
             var response = Invoke(() =>
-                _client.CreateQueue(new CreateQueueRequest {QueueName = queueName.Value}),
+                _client.CreateQueue(new CreateQueueRequest { QueueName = queueName.Value }),
                 queueName,
-                CREATING_QUEUE);
-            AssertSuccessfulStatusCode(response.HttpStatusCode, queueName, CREATING_QUEUE);
-            return new XUri(response.QueueUrl);
+                CREATING_QUEUE
+            );
+            return response.HttpStatusCode == HttpStatusCode.OK;
         }
 
         /// <summary>
@@ -215,33 +231,15 @@ namespace MindTouch.Sqs {
         /// <returns>True if the named queue was deleted</returns>
         public bool DeleteQueue(SqsQueueName queueName) {
             var response = Invoke(() =>
-                _client.DeleteQueue(new DeleteQueueRequest {QueueUrl = GetQueueUrl(queueName.Value)}),
+                _client.DeleteQueue(new DeleteQueueRequest { QueueUrl = GetQueueUrl(queueName.Value) }),
                 queueName,
-                DELETING_QUEUE);
-            AssertSuccessfulStatusCode(response.HttpStatusCode, queueName, DELETING_QUEUE);
-            return true;
+                DELETING_QUEUE
+            );
+            return response.HttpStatusCode == HttpStatusCode.OK;
         }
 
         private string GetQueueUrl(string queueName) {
             return _config.Endpoint.At(_config.AccountId, queueName).ToString();
-        }
-
-        private void AssertSuccessfulStatusCode(HttpStatusCode statusCode, SqsQueueName queueName, string sqsOperation) {
-            if(statusCode != HttpStatusCode.OK) {
-                throw new SqsException(
-                    string.Format("Got a '{0}' response while '{1}' from SQS queue '{2}'", statusCode, sqsOperation, queueName.Value),
-                    null);
-            }
-        }
-
-        private static T Invoke<T>(Func<T> function, SqsQueueName queueName, string sqsOperation) {
-            try {
-                return function();
-            } catch(AmazonSQSException e) {
-                throw new SqsException(string.Format("There was an SQS error '{0}', from the '{1}' SQS queue",  sqsOperation, queueName.Value), e);
-            } catch(Exception e) {
-                throw new SqsException(string.Format("There was an error '{0}', from the '{1}' SQS queue", sqsOperation, queueName.Value), e);
-            }
         }
     }
 }
