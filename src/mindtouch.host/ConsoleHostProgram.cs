@@ -134,10 +134,8 @@ namespace MindTouch.Dream {
                 });
                 Console.WriteLine("-------------------- ready {0} secs", time.TotalSeconds);
 
-                // for UNIX systems, let's also listen to SIGTERM
-                if(SysUtil.IsUnix) {
-                    new Thread(SigTermHandler) { IsBackground = true }.Start();
-                }
+                // wait until we are signaled to terminate
+                WaitForTermination();
 
                 // check if we can use the console
                 if(useTty) {
@@ -269,11 +267,30 @@ namespace MindTouch.Dream {
             return 0;
         }
 
-        private static void SigTermHandler() {
-            Console.WriteLine("(initializing SIGTERM handler)");
-            UnixSignal.WaitAny(new[] { new UnixSignal(Signum.SIGTERM) });
-            TaskTimerFactory.ShutdownAll();
-            _host.Dispose();
+        private static void WaitForTermination() {
+            var stop = new ManualResetEvent(false);
+
+            // for UNIX systems, let's also listen to SIGTERM
+            if(SysUtil.IsUnix) {
+                new Thread(() => {
+                    Console.WriteLine("(initializing SIGTERM handler)");
+                    UnixSignal.WaitAny(new[] { new UnixSignal(Signum.SIGTERM) });
+                    TaskTimerFactory.ShutdownAll();
+                    _host.Dispose();
+                    stop.Set();
+                }) { IsBackground = true }.Start();
+            }
+
+            // trap the Ctrl-C event for the console
+            Console.CancelKeyPress += (sender, e) => {
+                e.Cancel = true;
+                TaskTimerFactory.ShutdownAll();
+                _host.Dispose();
+                stop.Set();
+            };
+
+            // wait until the stop event is set
+            stop.WaitOne();
         }
 
         private static void WriteError(string setting, string error) {
