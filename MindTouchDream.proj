@@ -14,16 +14,22 @@
         <DistDir>$(MSBuildProjectDirectory)/dist</DistDir>
         <Files>
             mindtouch.core.dll;
+            mindtouch.core.pdb;
             mindtouch.core.xml;
             mindtouch.db.exe;
             mindtouch.db.exe.config;
+            mindtouch.db.pdb;
             mindtouch.dream.dll;
+            mindtouch.dream.pdb;
             mindtouch.dream.xml;
             mindtouch.dream.test.dll;
+            mindtouch.dream.test.pdb;
             mindtouch.dream.test.xml;
             mindtouch.sqs.dll;
+            mindtouch.sqs.pdb;
             mindtouch.host.exe;
             mindtouch.host.exe.config;
+            mindtouch.host.pdb;
             Autofac.dll;
             log4net.dll;
             nunit.framework.dll;
