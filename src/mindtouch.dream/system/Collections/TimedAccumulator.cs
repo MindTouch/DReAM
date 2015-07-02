@@ -87,9 +87,7 @@ namespace System.Collections {
                     dispatch = ExtractItems(_items, _maxItems);
                 }
             }
-            if(dispatch != null) {
-                CallHandler(dispatch);
-            }
+            CallHandler(dispatch);
         }
 
         public void Dispose() {
@@ -110,6 +108,9 @@ namespace System.Collections {
         }
 
         private void CallHandler(IEnumerable<T> items) {
+            if(items.NullOrEmpty()) {
+                return;
+            }
             try {
                 _handler(items);
             } catch(Exception e) {
@@ -127,9 +128,7 @@ namespace System.Collections {
             lock(_items) {
                 dispatch = ExtractItems(_items, _items.Count);
             }
-            if(dispatch != null) {
-                CallHandler(dispatch);
-            }
+            CallHandler(dispatch);
         }
     }
 }
