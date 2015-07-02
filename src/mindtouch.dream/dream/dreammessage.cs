@@ -848,10 +848,6 @@ namespace MindTouch.Dream {
                     _bytes = ((MemoryStream)_stream).ToArray();
                     _stream = null;
                     _streamOpen = false;
-                } else if(_stream is MemoryStream) {
-                    _bytes = ((MemoryStream)_stream).ToArray();
-                    _stream = null;
-                    _streamOpen = false;
                 } else {
 
                     // NOTE: the content-length and body length may differ (e.g. HEAD verb)
