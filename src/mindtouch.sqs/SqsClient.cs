@@ -144,7 +144,7 @@ namespace MindTouch.Sqs {
             if(messages.Count() > SqsUtils.MAX_NUMBER_OF_BATCH_DELETE_MESSAGES) {
                 throw new ArgumentException(string.Format("messageReceipts is larger than {0}, which is the maximum", SqsUtils.MAX_NUMBER_OF_BATCH_DELETE_MESSAGES));
             }
-            var deleteEntries = messages.Select(message => new DeleteMessageBatchRequestEntry { Id = message.MessageId.Value, ReceiptHandle = message.MessageReceipt.Value }).ToList();
+            var deleteEntries = messages.Distinct(message => message.MessageId.Value).Select(message => new DeleteMessageBatchRequestEntry { Id = message.MessageId.Value, ReceiptHandle = message.MessageReceipt.Value }).ToList();
             var response = Invoke(() =>
                 _client.DeleteMessageBatch(new DeleteMessageBatchRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
