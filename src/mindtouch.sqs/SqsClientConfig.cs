@@ -65,6 +65,16 @@ namespace MindTouch.Sqs {
         public readonly string AccountId;
 
         /// <summary>
+        /// Proxy host if any.
+        /// </summary>
+        public readonly string ProxyHost;
+
+        /// <summary>
+        /// Proxy port if any.
+        /// </summary>
+        public readonly int? ProxyPort;
+
+        /// <summary>
         /// Region-specific endpoint.
         /// </summary>
         public readonly XUri Endpoint;
@@ -79,7 +89,9 @@ namespace MindTouch.Sqs {
         /// <param name="accountId">AWS account ID.</param>
         /// <param name="endpoint">Region name or custom SQS endpoint to use.</param>
         /// <param name="secure">Boolean indicating if HTTPS should be used.</param>
-        public SqsClientConfig(string privateKey, string publicKey, string accountId, string endpoint, bool secure) {
+        /// <param name="proxyHost">The proxy host if any.</param>
+        /// <param name="proxyPort">The proxy port if any.</param>
+        public SqsClientConfig(string privateKey, string publicKey, string accountId, string endpoint, bool secure, string proxyHost = null, int? proxyPort = 0) {
             if(string.IsNullOrEmpty(accountId)) {
                 throw new ArgumentNullException("accountId");
             }
@@ -89,6 +101,8 @@ namespace MindTouch.Sqs {
             this.PrivateKey = privateKey;
             this.PublicKey = publicKey;
             this.AccountId = accountId;
+            this.ProxyHost = proxyHost;
+            this.ProxyPort = proxyPort;
 
             // read end-point settings
             XUri uri;
