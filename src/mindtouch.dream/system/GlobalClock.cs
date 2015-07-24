@@ -128,7 +128,13 @@ namespace System {
             if(time < TimeSpan.Zero) {
                 throw new ArgumentException("time cannot be negative");
             }
-            Interlocked.Add(ref _timeOffset, (int)time.TotalMilliseconds);
+            var timeMilliseconds = (int)time.TotalMilliseconds;
+            while(timeMilliseconds >= _intervalMilliseconds) {
+                Interlocked.Add(ref _timeOffset, _intervalMilliseconds);
+                MasterTick(UtcNow, TimeSpan.FromMilliseconds(_intervalMilliseconds));
+                timeMilliseconds -= _intervalMilliseconds;
+            }
+            Interlocked.Add(ref _timeOffset, timeMilliseconds);
         }
 
         internal static bool Shutdown(TimeSpan timeout) {
@@ -156,22 +162,26 @@ namespace System {
                 last = now;
 
                 // execute all callbacks
-                lock(_syncRoot) {
-                    var callbacks = _callbacks;
-                    foreach(var callback in callbacks) {
-                        if(callback.Value != null) {
-                            try {
-                                callback.Value(now, elapsed);
-                            } catch(Exception e) {
-                                _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
-                            }
-                        }
-                    }
-                }
+                MasterTick(now, elapsed);
             }
 
             // indicate that this thread has exited
             _stopped.Set();
+        }
+
+        private static void MasterTick(DateTime now, TimeSpan elapsed) {
+            lock(_syncRoot) {
+                var callbacks = _callbacks;
+                foreach(var callback in callbacks) {
+                    if(callback.Value != null) {
+                        try {
+                            callback.Value(now, elapsed);
+                        } catch(Exception e) {
+                            _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
+                        }
+                    }
+                }
+            }
         }
     }
 }
