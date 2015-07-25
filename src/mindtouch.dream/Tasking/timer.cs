@@ -317,6 +317,10 @@ namespace MindTouch.Dream {
             env.Invoke(_handler, this);
         }
 
+        internal void ExecuteNow(TaskEnv env) {
+            env.InvokeNow(() => _handler(this));
+        }
+
         internal void SetStatus(TaskTimerStatus status) {
             Interlocked.Exchange(ref _status, (int)status);
         }

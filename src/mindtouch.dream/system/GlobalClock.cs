@@ -26,8 +26,8 @@ using MindTouch.Dream;
 using MindTouch.Tasking;
 
 namespace System {
-    using ClockCallback = Action<DateTime, TimeSpan>;
-    using NamedClockCallback = KeyValuePair<string, Action<DateTime, TimeSpan>>;
+    using ClockCallback = Action<DateTime /* when */, TimeSpan /* elapsed */, bool /* fastforward */>;
+    using NamedClockCallback = KeyValuePair<string /* name */, Action<DateTime /* when */, TimeSpan /* elapsed */, bool /* fastforward */>>;
 
     /// <summary>
     /// Provides a global timing mechanism that accepts registration of callback to be invoked by the clock. In most cases, a
@@ -131,7 +131,7 @@ namespace System {
             var timeMilliseconds = (int)time.TotalMilliseconds;
             while(timeMilliseconds >= _intervalMilliseconds) {
                 Interlocked.Add(ref _timeOffset, _intervalMilliseconds);
-                MasterTick(UtcNow, TimeSpan.FromMilliseconds(_intervalMilliseconds));
+                MasterTick(UtcNow, TimeSpan.FromMilliseconds(_intervalMilliseconds), true);
                 timeMilliseconds -= _intervalMilliseconds;
             }
             Interlocked.Add(ref _timeOffset, timeMilliseconds);
@@ -162,20 +162,20 @@ namespace System {
                 last = now;
 
                 // execute all callbacks
-                MasterTick(now, elapsed);
+                MasterTick(now, elapsed, false);
             }
 
             // indicate that this thread has exited
             _stopped.Set();
         }
 
-        private static void MasterTick(DateTime now, TimeSpan elapsed) {
+        private static void MasterTick(DateTime now, TimeSpan elapsed, bool fastforward) {
             lock(_syncRoot) {
                 var callbacks = _callbacks;
                 foreach(var callback in callbacks) {
                     if(callback.Value != null) {
                         try {
-                            callback.Value(now, elapsed);
+                            callback.Value(now, elapsed, fastforward);
                         } catch(Exception e) {
                             _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
                         }

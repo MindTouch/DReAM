@@ -375,18 +375,6 @@ namespace MindTouch.Dream.Test {
         }
 
         [Test]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void Invoke2arg_an_unacquired_TaskEnv_throws() {
-            TaskEnv.Current.Invoke((x, y) => _log.Debug("invoke now"), 1, 2);
-        }
-
-        [Test]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void Invoke3arg_an_unacquired_TaskEnv_throws() {
-            TaskEnv.Current.Invoke((x, y, z) => _log.Debug("invoke now"), 1, 2, 3);
-        }
-
-        [Test]
         public void Invokenow_does_not_release() {
             var state = new TaskLifeSpanState("baz");
             TaskEnv.Current.SetState(state);
