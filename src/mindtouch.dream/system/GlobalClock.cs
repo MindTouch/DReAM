@@ -129,10 +129,11 @@ namespace System {
                 throw new ArgumentException("time cannot be negative");
             }
             var timeMilliseconds = (int)time.TotalMilliseconds;
-            while(timeMilliseconds >= _intervalMilliseconds) {
-                Interlocked.Add(ref _timeOffset, _intervalMilliseconds);
-                MasterTick(UtcNow, TimeSpan.FromMilliseconds(_intervalMilliseconds), true);
-                timeMilliseconds -= _intervalMilliseconds;
+            var intervalMilliseconds = _intervalMilliseconds / 2;
+            while(timeMilliseconds >= intervalMilliseconds) {
+                Interlocked.Add(ref _timeOffset, intervalMilliseconds);
+                MasterTick(UtcNow, TimeSpan.FromMilliseconds(intervalMilliseconds), true);
+                timeMilliseconds -= intervalMilliseconds;
             }
             Interlocked.Add(ref _timeOffset, timeMilliseconds);
         }
