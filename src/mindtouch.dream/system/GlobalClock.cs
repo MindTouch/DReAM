@@ -125,21 +125,25 @@ namespace System {
         /// <param name="time">Timespan to fast-forward the global clock (cannot be negative).</param>
         /// <param name="cancelFastForward">Optional callback to prematurely cancel the fast-fwoard operation.</param>
         /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
-        public static void FastForward(TimeSpan time, Func<bool> cancelFastForward = null) {
+        public static DateTime FastForward(TimeSpan time, Func<bool> cancelFastForward = null) {
             if(time < TimeSpan.Zero) {
                 throw new ArgumentException("time cannot be negative");
             }
-            var timeMilliseconds = (int)time.TotalMilliseconds;
-            var intervalMilliseconds = _intervalMilliseconds / 2;
-            while(timeMilliseconds >= intervalMilliseconds) {
-                Interlocked.Add(ref _timeOffset, intervalMilliseconds);
-                MasterTick(UtcNow, TimeSpan.FromMilliseconds(intervalMilliseconds), true);
-                if((cancelFastForward != null) && cancelFastForward()) {
-                    return;
+            lock(_syncRoot) {
+                var timeMilliseconds = (int)time.TotalMilliseconds;
+                var intervalMilliseconds = _intervalMilliseconds / 2;
+                while(timeMilliseconds >= intervalMilliseconds) {
+                    Interlocked.Add(ref _timeOffset, intervalMilliseconds);
+                    var now = UtcNow;
+                    MasterTick(now, TimeSpan.FromMilliseconds(intervalMilliseconds), true);
+                    if((cancelFastForward != null) && cancelFastForward()) {
+                        return now;
+                    }
+                    timeMilliseconds -= intervalMilliseconds;
                 }
-                timeMilliseconds -= intervalMilliseconds;
+                Interlocked.Add(ref _timeOffset, timeMilliseconds);
+                return UtcNow;
             }
-            Interlocked.Add(ref _timeOffset, timeMilliseconds);
         }
 
         internal static bool Shutdown(TimeSpan timeout) {
@@ -167,7 +171,9 @@ namespace System {
                 last = now;
 
                 // execute all callbacks
-                MasterTick(now, elapsed, false);
+                lock(_syncRoot) {
+                    MasterTick(now, elapsed, false);
+                }
             }
 
             // indicate that this thread has exited
@@ -175,15 +181,13 @@ namespace System {
         }
 
         private static void MasterTick(DateTime now, TimeSpan elapsed, bool fastforward) {
-            lock(_syncRoot) {
-                var callbacks = _callbacks;
-                foreach(var callback in callbacks) {
-                    if(callback.Value != null) {
-                        try {
-                            callback.Value(now, elapsed, fastforward);
-                        } catch(Exception e) {
-                            _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
-                        }
+            var callbacks = _callbacks;
+            foreach(var callback in callbacks) {
+                if(callback.Value != null) {
+                    try {
+                        callback.Value(now, elapsed, fastforward);
+                    } catch(Exception e) {
+                        _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
                     }
                 }
             }
