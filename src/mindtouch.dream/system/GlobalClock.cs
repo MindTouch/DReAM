@@ -123,8 +123,9 @@ namespace System {
         /// Fast-forward time for the global clock.
         /// </summary>
         /// <param name="time">Timespan to fast-forward the global clock (cannot be negative).</param>
+        /// <param name="cancelFastForward">Optional callback to prematurely cancel the fast-fwoard operation.</param>
         /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
-        public static void FastForward(TimeSpan time) {
+        public static void FastForward(TimeSpan time, Func<bool> cancelFastForward = null) {
             if(time < TimeSpan.Zero) {
                 throw new ArgumentException("time cannot be negative");
             }
@@ -133,6 +134,9 @@ namespace System {
             while(timeMilliseconds >= intervalMilliseconds) {
                 Interlocked.Add(ref _timeOffset, intervalMilliseconds);
                 MasterTick(UtcNow, TimeSpan.FromMilliseconds(intervalMilliseconds), true);
+                if((cancelFastForward != null) && cancelFastForward()) {
+                    return;
+                }
                 timeMilliseconds -= intervalMilliseconds;
             }
             Interlocked.Add(ref _timeOffset, timeMilliseconds);
