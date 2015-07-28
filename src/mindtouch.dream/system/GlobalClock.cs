@@ -46,6 +46,7 @@ namespace System {
         private static readonly ManualResetEvent _stopped = new ManualResetEvent(false);
         private static NamedClockCallback[] _callbacks = new NamedClockCallback[INITIAL_CALLBACK_CAPACITY];
         private static readonly int _intervalMilliseconds;
+        private static object _suspendedTime;
         private static int _timeOffset;
 
         //--- Class Constructor ---
@@ -62,7 +63,7 @@ namespace System {
         }
 
         //--- Class Properties ---
-        public static DateTime UtcNow { get { return DateTime.UtcNow + TimeSpan.FromMilliseconds(_timeOffset); } }
+        public static DateTime UtcNow { get { return (((DateTime?)_suspendedTime) ?? DateTime.UtcNow) + TimeSpan.FromMilliseconds(_timeOffset); } }
 
         //--- Class Methods ---
 
@@ -144,6 +145,20 @@ namespace System {
                 Interlocked.Add(ref _timeOffset, timeMilliseconds);
                 return UtcNow;
             }
+        }
+
+        /// <summary>
+        /// Suspend the global clock from progressing.
+        /// </summary>
+        /// <returns>Object that when disposed resumes the global clock.</returns>
+        /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
+        public static IDisposable Suspend() {
+            Monitor.Enter(_syncRoot);
+            var suspendedTime = Interlocked.Exchange(ref _suspendedTime, UtcNow);
+            return new DisposeCallback(() => {
+                Interlocked.Exchange(ref _suspendedTime, suspendedTime);
+                Monitor.Exit(_syncRoot);
+            });
         }
 
         internal static bool Shutdown(TimeSpan timeout) {
