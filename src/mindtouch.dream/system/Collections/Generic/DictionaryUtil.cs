@@ -39,5 +39,34 @@ namespace System.Collections.Generic {
             }
             return result;
         }
+
+        public static IEnumerable<TValue> CollectAllValues<TKey, TValue>(this IDictionary<TKey, ICollection<TValue>> dictionary, IEnumerable<TKey> keys, out IEnumerable<TKey> missing) {
+            var result = new List<TValue>();
+            var missingResult = new List<TKey>();
+            foreach(var key in keys) {
+                ICollection<TValue> value;
+                if(dictionary.TryGetValue(key, out value)) {
+                    result.AddRange(value);
+                } else {
+                    missingResult.Add(key);
+                }
+            }
+            missing = missingResult;
+            return result;
+        }
+
+        public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<KeyValuePair<TKey, TValue>> source, bool overwriteDuplicates = false) {
+            var result = new Dictionary<TKey, TValue>();
+            if(overwriteDuplicates) {
+                foreach(var pair in source) {
+                    result[pair.Key] = pair.Value;
+                }
+            } else {
+                foreach(var pair in source) {
+                    result.Add(pair.Key, pair.Value);
+                }
+            }
+            return result;
+        } 
     }
 }
