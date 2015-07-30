@@ -306,11 +306,11 @@ namespace MindTouch.Tasking {
             //               (or maybe this should just be part of the thread clean-up)
             lock(_queue) {
                 while(_queue.Count > 0) {
-                    TaskTimer timer = _queue.Dequeue();
+                    var timer = _queue.Dequeue();
                     if(timer.TryLockPending()) {
 
                         // retrieve the associated behavior and reset the timer
-                        TaskEnv env = timer.Env;
+                        var env = timer.Env;
                         timer.Env = null;
                         timer.SetStatus(TaskTimerStatus.Done);
 
@@ -325,15 +325,14 @@ namespace MindTouch.Tasking {
             // an indefinite time.
             // check if any timers were gathered for immediate execution
             if(timers != null) {
-                foreach(KeyValuePair<TaskTimer, TaskEnv> entry in timers) {
+                foreach(var entry in timers) {
                     entry.Key.Execute(entry.Value);
                 }
             }
-
             _running = false;
         }
 
-        private void Tick(DateTime now, TimeSpan elapsed) {
+        private void Tick(DateTime now, TimeSpan elapsed, bool fastforward) {
 
             // ignore ticks that come in after we've initialized a shutdown
             if(_shutdown) {
@@ -348,13 +347,13 @@ namespace MindTouch.Tasking {
 
                 // dequeue all timers that are ready to go
                 while((_queue.Count > 0) && (_queue.Peek().When <= now)) {
-                    TaskTimer timer = _queue.Dequeue();
+                    var timer = _queue.Dequeue();
 
                     // check if timer can be transitioned
                     if(timer.TryLockQueued()) {
 
                         // retrieve the associated behavior and reset the timer
-                        TaskEnv env = timer.Env;
+                        var env = timer.Env;
                         timer.Env = null;
                         timer.SetStatus(TaskTimerStatus.Done);
 
@@ -367,15 +366,15 @@ namespace MindTouch.Tasking {
                 // check if a maintance run is due
                 if(_maintenance <= now) {
                     _maintenance = now.AddSeconds(TaskTimer.QUEUE_RESCAN);
-                    DateTime horizon = now.AddSeconds(TaskTimer.QUEUE_CUTOFF);
+                    var horizon = now.AddSeconds(TaskTimer.QUEUE_CUTOFF);
                     lock(_pending) {
-                        List<TaskTimer> activate = new List<TaskTimer>();
-                        foreach(TaskTimer timer in _pending.Keys) {
+                        var activate = new List<TaskTimer>();
+                        foreach(var timer in _pending.Keys) {
                             if(timer.When <= horizon) {
                                 activate.Add(timer);
                             }
                         }
-                        foreach(TaskTimer timer in activate) {
+                        foreach(var timer in activate) {
                             _pending.Remove(timer);
                             if(timer.TryQueuePending()) {
                                 _queue.Enqueue(timer);
@@ -387,8 +386,14 @@ namespace MindTouch.Tasking {
 
             // run schedule on its own thread to avoid re-entrancy issues
             if(timers != null) {
-                foreach(KeyValuePair<TaskTimer, TaskEnv> entry in timers) {
-                    entry.Key.Execute(entry.Value);
+                if(fastforward) {
+                    foreach(var entry in timers) {
+                        entry.Key.ExecuteNow(entry.Value);
+                    }
+                } else {
+                    foreach(var entry in timers) {
+                        entry.Key.Execute(entry.Value);
+                    }
                 }
             }
         }

@@ -188,7 +188,10 @@ namespace MindTouch.Threading {
             }
         }
 
-        private static void Tick(DateTime now, TimeSpan elapsed) {
+        private static void Tick(DateTime now, TimeSpan elapsed, bool fastforward) {
+
+            // NOTE (2015-07-25, steveb): 'fastforward' is not used by the DispatchThreadScheduler
+
             lock(_syncRoot) {
 
                 // check if resource manager has been idle for a while

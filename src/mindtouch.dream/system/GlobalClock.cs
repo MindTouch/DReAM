@@ -26,8 +26,8 @@ using MindTouch.Dream;
 using MindTouch.Tasking;
 
 namespace System {
-    using ClockCallback = Action<DateTime, TimeSpan>;
-    using NamedClockCallback = KeyValuePair<string, Action<DateTime, TimeSpan>>;
+    using ClockCallback = Action<DateTime /* when */, TimeSpan /* elapsed */, bool /* fastforward */>;
+    using NamedClockCallback = KeyValuePair<string /* name */, Action<DateTime /* when */, TimeSpan /* elapsed */, bool /* fastforward */>>;
 
     /// <summary>
     /// Provides a global timing mechanism that accepts registration of callback to be invoked by the clock. In most cases, a
@@ -46,6 +46,7 @@ namespace System {
         private static readonly ManualResetEvent _stopped = new ManualResetEvent(false);
         private static NamedClockCallback[] _callbacks = new NamedClockCallback[INITIAL_CALLBACK_CAPACITY];
         private static readonly int _intervalMilliseconds;
+        private static object _suspendedTime;
         private static int _timeOffset;
 
         //--- Class Constructor ---
@@ -62,7 +63,7 @@ namespace System {
         }
 
         //--- Class Properties ---
-        public static DateTime UtcNow { get { return DateTime.UtcNow + TimeSpan.FromMilliseconds(_timeOffset); } }
+        public static DateTime UtcNow { get { return ((DateTime?)_suspendedTime) ?? (DateTime.UtcNow + TimeSpan.FromMilliseconds(_timeOffset)); } }
 
         //--- Class Methods ---
 
@@ -123,12 +124,47 @@ namespace System {
         /// Fast-forward time for the global clock.
         /// </summary>
         /// <param name="time">Timespan to fast-forward the global clock (cannot be negative).</param>
+        /// <param name="cancelFastForward">Optional callback to prematurely cancel the fast-fwoard operation.</param>
         /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
-        public static void FastForward(TimeSpan time) {
-            if(time < TimeSpan.Zero) {
-                throw new ArgumentException("time cannot be negative");
+        public static DateTime FastForward(TimeSpan time, Func<bool> cancelFastForward = null) {
+
+            // TODO (2015-07-30, steveb): add flag to detect if this code is running in production and throw an exception if it is!
+
+            if(time <= TimeSpan.Zero) {
+                throw new ArgumentException("time must be positive");
             }
-            Interlocked.Add(ref _timeOffset, (int)time.TotalMilliseconds);
+            lock(_syncRoot) {
+                var timeMilliseconds = (int)time.TotalMilliseconds;
+                var intervalMilliseconds = _intervalMilliseconds;
+                do {
+                    var elapsed = Math.Min(timeMilliseconds, intervalMilliseconds);
+                    Interlocked.Add(ref _timeOffset, elapsed);
+                    var now = UtcNow;
+                    MasterTick(now, TimeSpan.FromMilliseconds(elapsed), true);
+                    if((cancelFastForward != null) && cancelFastForward()) {
+                        return now;
+                    }
+                    timeMilliseconds -= elapsed;
+                } while(timeMilliseconds > 0);
+                return UtcNow;
+            }
+        }
+
+        /// <summary>
+        /// Suspend the global clock from progressing.
+        /// </summary>
+        /// <returns>Object that when disposed resumes the global clock.</returns>
+        /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
+        public static IDisposable Suspend() {
+
+            // TODO (2015-07-30, steveb): add flag to detect if this code is running in production and throw an exception if it is!
+
+            Monitor.Enter(_syncRoot);
+            var suspendedTime = Interlocked.Exchange(ref _suspendedTime, (DateTime?)UtcNow);
+            return new DisposeCallback(() => {
+                Interlocked.Exchange(ref _suspendedTime, suspendedTime);
+                Monitor.Exit(_syncRoot);
+            });
         }
 
         internal static bool Shutdown(TimeSpan timeout) {
@@ -157,21 +193,25 @@ namespace System {
 
                 // execute all callbacks
                 lock(_syncRoot) {
-                    var callbacks = _callbacks;
-                    foreach(var callback in callbacks) {
-                        if(callback.Value != null) {
-                            try {
-                                callback.Value(now, elapsed);
-                            } catch(Exception e) {
-                                _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
-                            }
-                        }
-                    }
+                    MasterTick(now, elapsed, false);
                 }
             }
 
             // indicate that this thread has exited
             _stopped.Set();
+        }
+
+        private static void MasterTick(DateTime now, TimeSpan elapsed, bool fastforward) {
+            var callbacks = _callbacks;
+            foreach(var callback in callbacks) {
+                if(callback.Value != null) {
+                    try {
+                        callback.Value(now, elapsed, fastforward);
+                    } catch(Exception e) {
+                        _log.ErrorExceptionMethodCall(e, "GlobalClock callback failed", callback.Key);
+                    }
+                }
+            }
         }
     }
 }
