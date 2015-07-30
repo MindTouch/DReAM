@@ -63,7 +63,7 @@ namespace System {
         }
 
         //--- Class Properties ---
-        public static DateTime UtcNow { get { return (((DateTime?)_suspendedTime) ?? DateTime.UtcNow) + TimeSpan.FromMilliseconds(_timeOffset); } }
+        public static DateTime UtcNow { get { return ((DateTime?)_suspendedTime) ?? (DateTime.UtcNow + TimeSpan.FromMilliseconds(_timeOffset)); } }
 
         //--- Class Methods ---
 
@@ -127,22 +127,25 @@ namespace System {
         /// <param name="cancelFastForward">Optional callback to prematurely cancel the fast-fwoard operation.</param>
         /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
         public static DateTime FastForward(TimeSpan time, Func<bool> cancelFastForward = null) {
-            if(time < TimeSpan.Zero) {
-                throw new ArgumentException("time cannot be negative");
+
+            // TODO (2015-07-30, steveb): add flag to detect if this code is running in production and throw an exception if it is!
+
+            if(time <= TimeSpan.Zero) {
+                throw new ArgumentException("time must be positive");
             }
             lock(_syncRoot) {
                 var timeMilliseconds = (int)time.TotalMilliseconds;
-                var intervalMilliseconds = _intervalMilliseconds / 2;
-                while(timeMilliseconds >= intervalMilliseconds) {
-                    Interlocked.Add(ref _timeOffset, intervalMilliseconds);
+                var intervalMilliseconds = _intervalMilliseconds;
+                do {
+                    var elapsed = Math.Min(timeMilliseconds, intervalMilliseconds);
+                    Interlocked.Add(ref _timeOffset, elapsed);
                     var now = UtcNow;
-                    MasterTick(now, TimeSpan.FromMilliseconds(intervalMilliseconds), true);
+                    MasterTick(now, TimeSpan.FromMilliseconds(elapsed), true);
                     if((cancelFastForward != null) && cancelFastForward()) {
                         return now;
                     }
-                    timeMilliseconds -= intervalMilliseconds;
-                }
-                Interlocked.Add(ref _timeOffset, timeMilliseconds);
+                    timeMilliseconds -= elapsed;
+                } while(timeMilliseconds > 0);
                 return UtcNow;
             }
         }
@@ -153,8 +156,11 @@ namespace System {
         /// <returns>Object that when disposed resumes the global clock.</returns>
         /// <remarks>DO NOT USE FOR PRODUCTION CODE!!!</remarks>
         public static IDisposable Suspend() {
+
+            // TODO (2015-07-30, steveb): add flag to detect if this code is running in production and throw an exception if it is!
+
             Monitor.Enter(_syncRoot);
-            var suspendedTime = Interlocked.Exchange(ref _suspendedTime, UtcNow);
+            var suspendedTime = Interlocked.Exchange(ref _suspendedTime, (DateTime?)UtcNow);
             return new DisposeCallback(() => {
                 Interlocked.Exchange(ref _suspendedTime, suspendedTime);
                 Monitor.Exit(_syncRoot);

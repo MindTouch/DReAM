@@ -321,10 +321,12 @@ namespace MindTouch.Tasking {
                 }
             }
 
+            // BUGBUGBUG (arnec): we don't actually do anything with timeout, but let every timer take
+            // an indefinite time.
             // check if any timers were gathered for immediate execution
             if(timers != null) {
                 foreach(var entry in timers) {
-                    entry.Key.ExecuteNow(entry.Value);
+                    entry.Key.Execute(entry.Value);
                 }
             }
             _running = false;
