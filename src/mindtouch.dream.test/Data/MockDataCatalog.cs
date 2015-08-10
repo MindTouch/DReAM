@@ -337,6 +337,10 @@ namespace MindTouch.Dream.Test.Data {
                 throw new NotImplementedException();
             }
 
+            DataSet IDataCommand.ReadAsDataSet() {
+                throw new NotImplementedException();
+            }
+
             List<T> IDataCommand.ReadAsObjects<T>() {
                 throw new NotImplementedException();
             }

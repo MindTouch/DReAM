@@ -186,5 +186,11 @@ namespace MindTouch.Data {
         /// <typeparam name="T">Object type to create</typeparam>
         /// <returns>List of created objects</returns>
         List<T> ReadAsObjects<T>() where T : new();
+
+        /// <summary>
+        /// Execute command and read result into a DataSet.
+        /// </summary>
+        /// <returns>Read DataSet object</returns>
+        DataSet ReadAsDataSet();
     }
 }
