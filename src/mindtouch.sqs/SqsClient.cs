@@ -74,9 +74,16 @@ namespace MindTouch.Sqs {
             }
             _config = sqsClientConfig;
             if(!string.IsNullOrEmpty(_config.PublicKey) && !string.IsNullOrEmpty(_config.PrivateKey)) {
+                var config = new AmazonSQSConfig { ServiceURL = _config.Endpoint.ToString() };
+                if(_config.ProxyHost != null) {
+                    config.ProxyHost = _config.ProxyHost;
+                    if(_config.ProxyPort.HasValue) {
+                        config.ProxyPort = _config.ProxyPort.Value;
+                    }
+                }
                 _client = new AmazonSQSClient(
                     new BasicAWSCredentials(_config.PublicKey, _config.PrivateKey),
-                    new AmazonSQSConfig { ServiceURL = _config.Endpoint.ToString() });
+                    config);
             } else {
                 _client = new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = _config.Endpoint.ToString() });
             }
