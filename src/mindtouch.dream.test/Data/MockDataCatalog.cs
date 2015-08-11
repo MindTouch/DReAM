@@ -555,8 +555,21 @@ namespace MindTouch.Dream.Test.Data {
             return cmd;
         }
 
+        //--- Events ---
+
         /// <summary>
-        /// Verify that the setup expectations occured.
+        /// Notification of execution completion of an <see cref="DataCommand"/> created by this instance.
+        /// </summary>
+        public event Action<IDataCommand> OnQueryFinished;
+
+        internal void FireQueryFinished(IDataCommand cmd) {
+            if(OnQueryFinished != null) {
+                OnQueryFinished(cmd);
+            }
+        }
+
+        /// <summary>
+        /// Verify that the setup expectations occurred.
         /// </summary>
         /// <returns></returns>
         public bool Verify() {

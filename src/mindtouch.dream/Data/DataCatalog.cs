@@ -63,6 +63,11 @@ namespace MindTouch.Data {
         /// </summary>
         /// <param name="readonly"></param>
         void TestConnection(bool @readonly);
+
+        /// <summary>
+        /// Notification of execution completion of an <see cref="DataCommand"/> created by this instance.
+        /// </summary>
+        event Action<IDataCommand> OnQueryFinished;
     }
 
     /// <summary>
