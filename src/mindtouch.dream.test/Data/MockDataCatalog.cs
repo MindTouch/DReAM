@@ -503,6 +503,16 @@ namespace MindTouch.Dream.Test.Data {
 
         private readonly Dictionary<string, List<MockDataCommand>> _expectations = new Dictionary<string, List<MockDataCommand>>();
 
+        public event Action<IDataCommand> OnQueryFinished;
+
+        // NOTE (Manuel) We need this method to avoid a warning as error about OnQueryFinished 
+        // not being used.
+        internal void FireQueryFinished(IDataCommand cmd) {
+            if(OnQueryFinished != null) {
+                OnQueryFinished(cmd);
+            }
+        }
+
         IDataCommand IDataCatalog.NewQuery(string query) {
             return ((IDataCatalog)this).NewQuery(query, false);
         }
@@ -553,19 +563,6 @@ namespace MindTouch.Dream.Test.Data {
         public MockDataCommand ExpectNewQuery(string query, bool @readonly, int expectedCalls) {
             var cmd = new MockDataCommand(this, expectedCalls, @readonly ? "READONLY-" : "" + query);
             return cmd;
-        }
-
-        //--- Events ---
-
-        /// <summary>
-        /// Notification of execution completion of an <see cref="DataCommand"/> created by this instance.
-        /// </summary>
-        public event Action<IDataCommand> OnQueryFinished;
-
-        internal void FireQueryFinished(IDataCommand cmd) {
-            if(OnQueryFinished != null) {
-                OnQueryFinished(cmd);
-            }
         }
 
         /// <summary>
