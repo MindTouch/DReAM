@@ -89,7 +89,7 @@ namespace MindTouch.Sqs {
                 _client = new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = _config.Endpoint.ToString() });
             }
             var queueName = _config.Endpoint.LastSegment;
-            _defaultAttributes = new Dictionary<string, MessageAttributeValue> { { "sourceQueueName", new MessageAttributeValue { StringValue = queueName } } };
+            _defaultAttributes = new Dictionary<string, MessageAttributeValue> { { "QueueName", new MessageAttributeValue { StringValue = queueName } } };
         }
 
         //--- Methods ---
