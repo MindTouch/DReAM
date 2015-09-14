@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System;
 using System.IO;
 using System.Text;
 using log4net;
@@ -227,6 +228,9 @@ namespace MindTouch.Dream.Test.Text {
 
         [Test]
         public void Detect_encoding_for_XML_file_with_LE_JP() {
+            if(SysUtil.IsMono) {
+                return;
+            }
             const string resource = "xml-little-endian-jp.txt";
             using(var stream = GetResourceStream(resource)) {
                 var detector = new CharacterEncodingDetector();
