@@ -54,7 +54,6 @@ namespace MindTouch.Sqs {
         //--- Fields ---
         private readonly AmazonSQSClient _client;
         private readonly SqsClientConfig _config;
-        private readonly Dictionary<string, MessageAttributeValue> _defaultAttributes; 
         private const string RECEIVING_MESSAGE = "receiving message";
         private const string DELETING_MESSAGE = "deleting message";
         private const string SENDING_MESSAGE = "sending message";
@@ -88,8 +87,6 @@ namespace MindTouch.Sqs {
             } else {
                 _client = new AmazonSQSClient(new AmazonSQSConfig { ServiceURL = _config.Endpoint.ToString() });
             }
-            var queueName = _config.Endpoint.LastSegment;
-            _defaultAttributes = new Dictionary<string, MessageAttributeValue> { { "QueueName", new MessageAttributeValue { DataType = "String", StringValue = queueName } } };
         }
 
         //--- Methods ---
@@ -187,7 +184,7 @@ namespace MindTouch.Sqs {
                     QueueUrl = GetQueueUrl(queueName.Value),
                     MessageBody = messageBody,
                     DelaySeconds = (int)delay.TotalSeconds,
-                    MessageAttributes = _defaultAttributes
+                    MessageAttributes = GetQueueNameAttribute(queueName.Value)
                 }),
                 queueName,
                 SENDING_MESSAGE);
@@ -205,7 +202,8 @@ namespace MindTouch.Sqs {
                 throw new ArgumentException(string.Format("messageBodies is larger than {0}, which is the maximum", SqsUtils.MAX_NUMBER_OF_BATCH_SEND_MESSAGES));
             }
             var msgId = 1;
-            var sendEntries = (from messageBody in messageBodies select new SendMessageBatchRequestEntry { MessageBody = messageBody, Id = string.Format("msg-{0}", msgId++), MessageAttributes = _defaultAttributes }).ToList();
+            var attributes = GetQueueNameAttribute(queueName.Value);
+            var sendEntries = (from messageBody in messageBodies select new SendMessageBatchRequestEntry { MessageBody = messageBody, Id = string.Format("msg-{0}", msgId++), MessageAttributes = attributes }).ToList();
             var response = Invoke(() =>
                 _client.SendMessageBatch(new SendMessageBatchRequest {
                     QueueUrl = GetQueueUrl(queueName.Value),
@@ -251,6 +249,13 @@ namespace MindTouch.Sqs {
 
         private string GetQueueUrl(string queueName) {
             return _config.Endpoint.At(_config.AccountId, queueName).ToString();
+        }
+
+        private Dictionary<string, MessageAttributeValue> GetQueueNameAttribute(string queueName) {
+            if(queueName == null) {
+                throw new ArgumentNullException("queueName");
+            }
+            return new  Dictionary<string, MessageAttributeValue> { { "QueueName", new MessageAttributeValue { DataType = "String", StringValue = queueName } } };
         }
     }
 }
