@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using Autofac;
@@ -112,17 +113,6 @@ namespace MindTouch.Dream {
                 _log.Debug("Host is configured in dream.in param authorizing mode");
             }
 
-            // read ip-addresses
-            var addresses = new List<string>();
-            foreach(XDoc ip in config["host|ip"]) {
-                addresses.Add(ip.AsText);
-            }
-            if(addresses.Count == 0) {
-
-                // if no addresses were supplied listen to all
-                addresses.Add("*:" + httpPort);
-            }
-
             // use default servername
             XUri publicUri = config["uri.public"].AsUri;
             if(publicUri == null) {
@@ -189,11 +179,17 @@ namespace MindTouch.Dream {
                     }
                 }
 
-                // add acccess-points
-                AddListener(new XUri(String.Format("http://{0}:{1}/", "localhost", httpPort)), authenticationScheme);
+                // read ip-addresses
+                var addresses = new List<string>();
+                foreach(XDoc ip in config["host|ip"]) {
+                    addresses.Add(ip.AsText);
+                }
 
                 // check if user prescribed a set of IP addresses to use
-                if(addresses != null) {
+                if(addresses.Any()) {
+
+                    // add access-points
+                    AddListener(new XUri(String.Format("http://{0}:{1}/", "localhost", httpPort)), authenticationScheme);
 
                     // listen to custom addresses (don't use the supplied port info, we expect that to be part of the address)
                     foreach(string address in addresses) {
@@ -202,19 +198,7 @@ namespace MindTouch.Dream {
                         }
                     }
                 } else {
-
-                    // add listeners for all known IP addresses
-                    foreach(IPAddress address in Dns.GetHostAddresses(Dns.GetHostName())) {
-                        XUri uri = MakeUri(address, httpPort);
-                        if(uri != null) {
-                            AddListener(uri, authenticationScheme);
-                            try {
-                                foreach(string alias in Dns.GetHostEntry(address).Aliases) {
-                                    AddListener(new XUri(String.Format("http://{0}:{1}/", alias, httpPort)), authenticationScheme);
-                                }
-                            } catch { }
-                        }
-                    }
+                    AddListener(new XUri(String.Format("http://*:{0}/", httpPort)), authenticationScheme);
                 }
             } catch(Exception e) {
                 if((e is HttpListenerException) && e.Message.EqualsInvariant("Access is denied")) {
