@@ -566,7 +566,12 @@ namespace MindTouch.Tasking {
                         }
                     }
                 } catch(Exception e) {
-                    _log.ErrorExceptionMethodCall(e, "Execution failed for state wrapped action", stacktrace, action.Method.Name);
+
+                    // NOTE (2015-11-02, steveb): not sure how this is possible, but we recorded an error where the call to _log 
+                    //                            caused an NRE; the only suspect is `action.Method.Name`; so I split up the calls.
+                    var method = action.Method;
+                    var name = (method != null) ? method.Name : null;
+                    _log.ErrorExceptionMethodCall(e, "Execution failed for state wrapped action", stacktrace, name);
                 }
             };
         }
