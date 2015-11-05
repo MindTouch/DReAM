@@ -181,7 +181,7 @@ namespace MindTouch.Dream {
 
         private static void Serialize(long arg, Stream stream, Encoding encoding) {
             stream.Write(encoding, "i:");
-            stream.Write(encoding, arg.ToString());
+            stream.Write(encoding, arg.ToInvariantString());
         }
 
         private static void Serialize(bool arg, Stream stream, Encoding encoding) {
@@ -191,7 +191,7 @@ namespace MindTouch.Dream {
 
         private static void Serialize(double arg, Stream stream, Encoding encoding) {
             stream.Write(encoding, "d:");
-            stream.Write(encoding, arg.ToString());
+            stream.Write(encoding, arg.ToInvariantString());
         }
 
         private static void Serialize(System.Collections.IList list, Stream stream, Encoding encoding) {

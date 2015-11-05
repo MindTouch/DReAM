@@ -70,7 +70,7 @@ namespace MindTouch.Xml.Test {
 
         [Test]
         public void ElementCount() {
-            Test("element count", _doc["bold"].ListLength.ToString(), "2");
+            Test("element count", _doc["bold"].ListLength.ToInvariantString(), "2");
         }
 
         [Test]

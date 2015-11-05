@@ -43,7 +43,7 @@ namespace MindTouch.Dream {
                 case "pipe":
                     return ExecutePipe(env, headers, cmd);
                 default:
-                    throw new DreamException(string.Format("unregonized script command: " + cmd.Name.ToString()));
+                    throw new DreamException(string.Format("unregonized script command: " + cmd.Name));
                 }
             } catch(Exception e) {
                 return new XException(e);

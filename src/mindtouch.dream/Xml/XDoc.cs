@@ -1177,7 +1177,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, int value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1187,7 +1187,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, uint value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1197,7 +1197,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, long value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1207,7 +1207,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, ulong value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1523,6 +1523,9 @@ namespace MindTouch.Xml {
         /// <param name="value">Value to add</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Value(object value) {
+            if(value == null) {
+                return this;
+            }
             if(value is DateTime) {
                 return Value((DateTime)value);
             }
@@ -1538,10 +1541,40 @@ namespace MindTouch.Xml {
             if(value is bool) {
                 return Value((bool)value);
             }
-            if(value != null) {
-                return Value(value.ToString());
+            if(value is sbyte) {
+                return Value(((sbyte)value).ToInvariantString());
             }
-            return this;
+            if(value is byte) {
+                return Value(((byte)value).ToInvariantString());
+            }
+            if(value is short) {
+                return Value(((short)value).ToInvariantString());
+            }
+            if(value is ushort) {
+                return Value(((ushort)value).ToInvariantString());
+            }
+            if(value is int) {
+                return Value(((int)value).ToInvariantString());
+            }
+            if(value is uint) {
+                return Value(((uint)value).ToInvariantString());
+            }
+            if(value is long) {
+                return Value(((long)value).ToInvariantString());
+            }
+            if(value is ulong) {
+                return Value(((ulong)value).ToInvariantString());
+            }
+            if(value is float) {
+                return Value(((float)value).ToInvariantString());
+            }
+            if(value is double) {
+                return Value(((double)value).ToInvariantString());
+            }
+            if(value is decimal) {
+                return Value(((decimal)value).ToInvariantString());
+            }
+            return Value(value.ToString());
         }
 
         /// <summary>

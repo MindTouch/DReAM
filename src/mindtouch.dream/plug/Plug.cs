@@ -439,7 +439,7 @@ namespace MindTouch.Dream {
         /// <param name="value">Query value.</param>
         /// <returns>New instance.</returns>
         public Plug With(string key, int value) {
-            return new Plug(Uri.With(key, value.ToString()), Timeout, _headers, _preHandlers, _postHandlers, Credentials, _cookieJarOverride, MaxAutoRedirects);
+            return new Plug(Uri.With(key, value.ToInvariantString()), Timeout, _headers, _preHandlers, _postHandlers, Credentials, _cookieJarOverride, MaxAutoRedirects);
         }
 
         /// <summary>
@@ -449,7 +449,7 @@ namespace MindTouch.Dream {
         /// <param name="value">Query value.</param>
         /// <returns>New instance.</returns>
         public Plug With(string key, long value) {
-            return new Plug(Uri.With(key, value.ToString()), Timeout, _headers, _preHandlers, _postHandlers, Credentials, _cookieJarOverride, MaxAutoRedirects);
+            return new Plug(Uri.With(key, value.ToInvariantString()), Timeout, _headers, _preHandlers, _postHandlers, Credentials, _cookieJarOverride, MaxAutoRedirects);
         }
 
         /// <summary>

@@ -65,7 +65,7 @@ namespace MindTouch.Dream.Test.Aws {
             MockPlug.Setup(AwsTestHelpers.AWS.S3Uri)
                 .Verb("PUT")
                 .At(_config.RootedPath("foo", "bar"))
-                .WithHeader("x-amz-meta-ttl", 1.ToString())
+                .WithHeader("x-amz-meta-ttl", 1.ToInvariantString())
                 .WithBody(data)
                 .Returns(DreamMessage.Ok())
                 .ExpectAtLeastOneCall();
@@ -158,7 +158,7 @@ namespace MindTouch.Dream.Test.Aws {
                 .At(_config.RootedPath("foo", "bar"))
                 .Returns(invocation => {
                     var msg = DreamMessage.Ok(data);
-                    msg.Headers["x-amz-meta-expire"] = DateTime.UtcNow.Subtract(10.Minutes()).ToEpoch().ToString();
+                    msg.Headers["x-amz-meta-expire"] = DateTime.UtcNow.Subtract(10.Minutes()).ToEpoch().ToInvariantString();
                     msg.Headers["x-amz-meta-ttl"] = "10";
                     return msg;
                 })

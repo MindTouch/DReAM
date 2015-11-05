@@ -98,8 +98,8 @@ namespace MindTouch.Aws {
             var p = _rootPlug.AtPath(path);
             if(fileHandle.TimeToLive.HasValue) {
                 var expiration = fileHandle.Expiration ?? DateTime.UtcNow.Add(fileHandle.TimeToLive.Value);
-                p = p.WithHeader(EXPIRE, expiration.ToEpoch().ToString())
-                    .WithHeader(TTL, fileHandle.TimeToLive.Value.TotalSeconds.ToString());
+                p = p.WithHeader(EXPIRE, expiration.ToEpoch().ToInvariantString())
+                    .WithHeader(TTL, fileHandle.TimeToLive.Value.TotalSeconds.ToInvariantString());
                 _expirationEntries.SetOrUpdate(path, expiration, fileHandle.TimeToLive.Value);
             }
             if(!string.IsNullOrEmpty(fileHandle.CacheControl)) {

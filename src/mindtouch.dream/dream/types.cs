@@ -451,7 +451,7 @@ namespace MindTouch.Dream {
                                 throw new ArgumentException("invalid feature signature", signature);
                             }
                             segments.Add(SysUtil.NameTable.Add(part));
-                            names.Add(new KeyValuePair<int, string>(baseUri.Segments.Length + i, SysUtil.NameTable.Add(i.ToString())));
+                            names.Add(new KeyValuePair<int, string>(baseUri.Segments.Length + i, SysUtil.NameTable.Add(i.ToInvariantString())));
                         } else if(part == "?") {
 
                             // we have an optional path (e.g. /?/)
