@@ -791,7 +791,7 @@ namespace MindTouch.Dream {
                 _parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             }
             _parameters[PARAM_CHARSET] = charset.WebName;
-            _parameters[PARAM_QUALITY] = quality.ToString();
+            _parameters[PARAM_QUALITY] = quality.ToInvariantString();
             _encoding = GetEncoding();
         }
 
@@ -807,7 +807,7 @@ namespace MindTouch.Dream {
             if(_parameters == null) {
                 _parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             }
-            _parameters[PARAM_QUALITY] = quality.ToString();
+            _parameters[PARAM_QUALITY] = quality.ToInvariantString();
             _encoding = GetEncoding();
         }
 

@@ -107,6 +107,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -261,14 +262,14 @@ namespace MindTouch.Data {
                             break;
                         }
                         // is it a bundled option?
-                        if(f == "-" && this.options.TryGetValue(n[0].ToString(), out p2)) {
+                        if(f == "-" && this.options.TryGetValue(n[0].ToString(CultureInfo.InvariantCulture), out p2)) {
                             int i = 0;
                             do {
                                 if(p2.OptionValue != OptionValue.None)
                                     throw new InvalidOperationException(
                                         string.Format("Unsupported using bundled option '{0}' that requires a value", n[i]));
                                 p2.Action(n);
-                            } while(++i < n.Length && this.options.TryGetValue(n[i].ToString(), out p2));
+                            } while(++i < n.Length && this.options.TryGetValue(n[i].ToString(CultureInfo.InvariantCulture), out p2));
                         }
 
                         // not a know option; either a value for a previous option

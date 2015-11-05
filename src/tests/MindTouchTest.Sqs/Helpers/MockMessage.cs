@@ -11,14 +11,14 @@ namespace MindTouchTest.Sqs.Helpers {
         //--- Constructors ---
         public static SqsMessage NewMockMessage() {
             var messageId = Guid.NewGuid().ToString();
-            var messageReceipt = (++NEXT).ToString();
+            var messageReceipt = (++NEXT).ToInvariantString();
             return new SqsMessage(new SqsMessageId(messageId), new SqsMessageReceipt(messageReceipt),
                 new XDoc("doc").Elem("id", messageId).Elem("receipt-handle", messageReceipt).ToCompactString());
         }
 
         //--- Methods ---
         public SqsMessage NewMockMessage(int id) {
-            var messageId = id.ToString();
+            var messageId = id.ToInvariantString();
             var MessageReceipt = Guid.NewGuid().ToString();
             var body = new XDoc("doc").Elem("id", messageId).Elem("receipt-handle", MessageReceipt).ToCompactString();
             return new SqsMessage(new SqsMessageId(messageId), new SqsMessageReceipt(MessageReceipt), body);

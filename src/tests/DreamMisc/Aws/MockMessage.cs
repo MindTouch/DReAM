@@ -27,12 +27,12 @@ namespace MindTouch.Dream.Test.Aws {
     public class MockMessage : AwsSqsMessage {
         private static int NEXT;
         public MockMessage() {
-            MessageId = (++NEXT).ToString();
+            MessageId = (++NEXT).ToInvariantString();
             ReceiptHandle = Guid.NewGuid().ToString();
             Body = new XDoc("doc").Elem("id", MessageId).Elem("receipt-handle", ReceiptHandle).ToCompactString();
         }
         public MockMessage(int id) {
-            MessageId = id.ToString();
+            MessageId = id.ToInvariantString();
             ReceiptHandle = Guid.NewGuid().ToString();
             Body = new XDoc("doc").Elem("id", MessageId).Elem("receipt-handle", ReceiptHandle).ToCompactString();
         }

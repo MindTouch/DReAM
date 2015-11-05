@@ -524,7 +524,7 @@ namespace MindTouch.Dream.Test {
                 mock.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> response) {
                     totalCalls++;
                     _log.DebugFormat("call {0} to redirect", totalCalls);
-                    response.Return(DreamMessage.Redirect(context.Uri.WithoutQuery().With("c", totalCalls.ToString())));
+                    response.Return(DreamMessage.Redirect(context.Uri.WithoutQuery().With("c", totalCalls.ToInvariantString())));
                 };
                 var uri = mock.AtLocalMachine.At("redirect");
                 var redirects = 10;
@@ -532,7 +532,7 @@ namespace MindTouch.Dream.Test {
                 var r = Plug.New(uri).WithAutoRedirects(10).Get(new Result<DreamMessage>()).Wait();
                 Assert.AreEqual(DreamStatus.Found, r.Status);
                 Assert.AreEqual(expectedCalls, totalCalls, "redirect without forward called incorrectly");
-                Assert.AreEqual(uri.With("c", expectedCalls.ToString()).ToString(), r.Headers.Location.ToString());
+                Assert.AreEqual(uri.With("c", expectedCalls.ToInvariantString()).ToString(), r.Headers.Location.ToString());
             }
         }
 

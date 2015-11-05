@@ -1177,7 +1177,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, int value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1187,7 +1187,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, uint value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1197,7 +1197,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, long value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1207,7 +1207,7 @@ namespace MindTouch.Xml {
         /// <param name="value">Value of the attribute</param>
         /// <returns>Current XDoc instance</returns>
         public XDoc Attr(string tag, ulong value) {
-            return Attr(tag, value.ToString());
+            return Attr(tag, value.ToInvariantString());
         }
 
         /// <summary>
@@ -1522,7 +1522,109 @@ namespace MindTouch.Xml {
         /// </summary>
         /// <param name="value">Value to add</param>
         /// <returns>Current XDoc instance</returns>
+        public XDoc Value(sbyte value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(byte value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(short value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(ushort value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(int value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(uint value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(long value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(ulong value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(float value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(double value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
+        public XDoc Value(decimal value) {
+            return Value(value.ToInvariantString());
+        }
+
+        /// <summary>
+        /// Adds a text node.
+        /// </summary>
+        /// <param name="value">Value to add</param>
+        /// <returns>Current XDoc instance</returns>
         public XDoc Value(object value) {
+            if(value == null) {
+                return this;
+            }
             if(value is DateTime) {
                 return Value((DateTime)value);
             }
@@ -1538,10 +1640,40 @@ namespace MindTouch.Xml {
             if(value is bool) {
                 return Value((bool)value);
             }
-            if(value != null) {
-                return Value(value.ToString());
+            if(value is sbyte) {
+                return Value((sbyte)value);
             }
-            return this;
+            if(value is byte) {
+                return Value((byte)value);
+            }
+            if(value is short) {
+                return Value((short)value);
+            }
+            if(value is ushort) {
+                return Value((ushort)value);
+            }
+            if(value is int) {
+                return Value((int)value);
+            }
+            if(value is uint) {
+                return Value((uint)value);
+            }
+            if(value is long) {
+                return Value((long)value);
+            }
+            if(value is ulong) {
+                return Value((ulong)value);
+            }
+            if(value is float) {
+                return Value((float)value);
+            }
+            if(value is double) {
+                return Value((double)value);
+            }
+            if(value is decimal) {
+                return Value((decimal)value);
+            }
+            return Value(value.ToString());
         }
 
         /// <summary>

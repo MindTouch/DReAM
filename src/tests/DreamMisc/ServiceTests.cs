@@ -169,7 +169,7 @@ namespace MindTouch.Dream.Test {
             List<string> ids = new List<string>();
             for(int i = 0; i < n; i++) {
                 p = p.With("id", i);
-                ids.Add(i.ToString());
+                ids.Add(i.ToInvariantString());
             }
             DreamMessage result = p.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(result.IsSuccessful);

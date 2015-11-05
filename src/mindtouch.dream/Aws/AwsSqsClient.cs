@@ -52,10 +52,10 @@ namespace MindTouch.Aws {
             // CLEANUP: punting on attributes right now
             var parameters = new Dictionary<string, string>();
             if(maxMessages != AwsSqsDefaults.DEFAULT_MESSAGES) {
-                parameters.Add("MaxNumberOfMessages", maxMessages.ToString());
+                parameters.Add("MaxNumberOfMessages", maxMessages.ToInvariantString());
             }
             if(visibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
-                parameters.Add("VisibilityTimeout", Math.Floor(visibilityTimeout.TotalSeconds).ToString());
+                parameters.Add("VisibilityTimeout", Math.Floor(visibilityTimeout.TotalSeconds).ToInvariantString());
             }
             return HandleResponse(false, queue, "ReceiveMessage", parameters, result,
                 m => AwsSqsMessage.FromSqsResponse(queue, m)
@@ -76,7 +76,7 @@ namespace MindTouch.Aws {
                 {"QueueName", queue},
             };
             if(defaultVisibilityTimeout != AwsSqsDefaults.DEFAULT_VISIBILITY) {
-                parameters.Add("DefaultVisibilityTimeout", Math.Floor(defaultVisibilityTimeout.TotalSeconds).ToString());
+                parameters.Add("DefaultVisibilityTimeout", Math.Floor(defaultVisibilityTimeout.TotalSeconds).ToInvariantString());
             }
             return HandleResponse(true, null, "CreateQueue", parameters, result,
                 m => new AwsSqsResponse(m)

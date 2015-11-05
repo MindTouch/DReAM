@@ -313,10 +313,10 @@ namespace System {
                 if(v[0] == '#') {
                     if(char.ToLowerInvariant(v[1]) == 'x') {
                         string value = v.Substring(2);
-                        return ((char)int.Parse(value, NumberStyles.HexNumber)).ToString();
+                        return ((char)int.Parse(value, NumberStyles.HexNumber)).ToString(CultureInfo.InvariantCulture);
                     } else {
                         string value = v.Substring(1);
-                        return ((char)int.Parse(value)).ToString();
+                        return ((char)int.Parse(value)).ToString(CultureInfo.InvariantCulture);
                     }
                 } else {
                     string value;
@@ -1141,6 +1141,51 @@ namespace System {
         /// <returns>A String that represents the float value.</returns>
         /// <param name="obj">float value</param>
         public static string ToInvariantString(this float obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the sbyte value.</returns>
+        /// <param name="obj">float value</param>
+        public static string ToInvariantString(this sbyte obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the byte value.</returns>
+        /// <param name="obj">float value</param>
+        public static string ToInvariantString(this byte obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the short value.</returns>
+        /// <param name="obj">float value</param>
+        public static string ToInvariantString(this short obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the ushort value.</returns>
+        /// <param name="obj">float value</param>
+        public static string ToInvariantString(this ushort obj) {
+            return obj.ToString(CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>
+        /// Call ToString() using InvariantCulture.
+        /// </summary>
+        /// <returns>A String that represents the decimal value.</returns>
+        /// <param name="obj">float value</param>
+        public static string ToInvariantString(this decimal obj) {
             return obj.ToString(CultureInfo.InvariantCulture);
         }
     }
