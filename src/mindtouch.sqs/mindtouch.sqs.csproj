@@ -81,6 +81,9 @@
     <Compile Include="SqsMessageReceipt.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="mindtouch.sqs.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>MindTouch.DReAM.Test</id>
+    <version>$version$</version>
+    <title>MindTouch DReAM Test Helpers</title>
+    <authors>MindTouch, Inc.</authors>
+    <owners>MindTouch, Inc.</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/MindTouch/DReAM</projectUrl>
+    <iconUrl>http://mindtouch.com/wp-content/uploads/2015/04/nugeticon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Testing Helpers for MindTouch DReAM services</description>
+    <copyright>Copyright (c) 2006-2015 MindTouch, Inc.</copyright>
+    <tags>MindTouch DReAM NUnit</tags>
+    <dependencies>
+      <dependency id="Autofac" version="[2.6.3.862,3)" />
+      <dependency id="log4net" version="[1.2.10,2)" />
+      <dependency id="MindTouch.Core" version="$version$" />
+      <dependency id="MindTouch.DReAM" version="$version$" />
+      <dependency id="NUnit" version="[2.6.3,3)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="dist\mindtouch.dream.test.dll" target="lib\net40" />
+    <file src="dist\mindtouch.dream.test.pdb" target="lib\net40" />
+    <file src="dist\mindtouch.dream.test.xml" target="lib\net40" />
+  </files>
+</package>

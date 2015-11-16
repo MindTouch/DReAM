@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -19,18 +19,19 @@
  * limitations under the License.
  */
 
+using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MindTouch Blueprints")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("MindTouch DReAM Blueprints")]
+[assembly: AssemblyDescription("MindTouch DReAM Blueprints")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MindTouch, Inc.")]
-[assembly: AssemblyProduct("MindTouch Dream")]
-[assembly: AssemblyCopyright("Copyright (c) 2007, 2008 MindTouch, Inc.")]
+[assembly: AssemblyProduct("MindTouch DReAM")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2015 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -49,5 +50,8 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.6.0.*")]
-[assembly: AssemblyFileVersion("1.6.0.0")]
+[assembly: AssemblyVersion("2.5.0.*")]
+[assembly: AssemblyFileVersion("2.5.0.0")]
+[assembly: GitBranch("")]
+[assembly: GitRevision("")]
+[assembly: GitUri("https://github.com/MindTouch/DReAM")]

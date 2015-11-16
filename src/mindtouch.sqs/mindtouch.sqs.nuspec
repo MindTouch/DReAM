@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>MindTouch.Sqs</id>
+    <version>$version$</version>
+    <title>MindTouch SQS</title>
+    <authors>MindTouch, Inc.</authors>
+    <owners>MindTouch, Inc.</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/MindTouch/DReAM</projectUrl>
+    <iconUrl>http://mindtouch.com/wp-content/uploads/2015/04/nugeticon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>MindTouch Helpers for AWS SQS</description>
+    <copyright>Copyright (c) 2006-2015 MindTouch, Inc.</copyright>
+    <tags>MindTouch DReAM SQS</tags>
+    <dependencies>
+      <dependency id="AWSSDK" version="[2.3.52.0,3)" />
+      <dependency id="log4net" version="[1.2.10,2)" />
+      <dependency id="MindTouch.DReAM" version="$version$" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="dist\mindtouch.sqs.dll" target="lib\net40" />
+    <file src="dist\mindtouch.sqs.pdb" target="lib\net40" />
+  </files>
+</package>
