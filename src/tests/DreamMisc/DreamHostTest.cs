@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+using System;
 using MindTouch.Tasking;
 using MindTouch.Web;
 using MindTouch.Xml;
@@ -282,6 +283,7 @@ namespace MindTouch.Dream.Test {
 
         [Test]
         public void RequestMessage_via_http_is_closed_at_end_of_request() {
+            Wait.For(() => true, TimeSpan.FromSeconds(5));
             var recipient = _hostinfo.CreateMockService();
             DreamMessage captured = null;
             recipient.Service.CatchAllCallback = (context, request, response) => {
