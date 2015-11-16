@@ -396,13 +396,11 @@ namespace MindTouch.Dream.Test {
 
         [TearDown]
         public void DeinitTest() {
-            System.GC.Collect();
             _hostinfo.Dispose();
         }
 
         [Test]
         public void RequestMessage_via_http_is_closed_at_end_of_request() {
-            Wait.For(() => true, TimeSpan.FromSeconds(5));
             var recipient = _hostinfo.CreateMockService();
             DreamMessage captured = null;
             recipient.Service.CatchAllCallback = (context, request, response) => {
