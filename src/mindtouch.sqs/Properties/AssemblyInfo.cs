@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -27,10 +27,10 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("MindTouch SQS")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("MindTouch Helpers for AWS SQS")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MindTouch, Inc.")]
-[assembly: AssemblyProduct("MindTouch Dream")]
+[assembly: AssemblyProduct("MindTouch DReAM")]
 [assembly: AssemblyCopyright("Copyright (c) 2006-2015 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -52,11 +52,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.5.0.0")]
+[assembly: AssemblyVersion("2.5.0.*")]
 [assembly: AssemblyFileVersion("2.5.0.0")]
-[assembly: GitBranch("2.5")]
-[assembly: GitRevision("HEAD")]
+[assembly: GitBranch("")]
+[assembly: GitRevision("")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 //

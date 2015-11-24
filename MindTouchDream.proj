@@ -13,27 +13,27 @@
         <BinDir>$(SolutionDir)/bin</BinDir>
         <DistDir>$(MSBuildProjectDirectory)/dist</DistDir>
         <Files>
-            mindtouch.core.dll;
-            mindtouch.core.pdb;
-            mindtouch.core.xml;
-            mindtouch.db.exe;
-            mindtouch.db.exe.config;
-            mindtouch.db.pdb;
-            mindtouch.dream.dll;
-            mindtouch.dream.pdb;
-            mindtouch.dream.xml;
-            mindtouch.dream.test.dll;
-            mindtouch.dream.test.pdb;
-            mindtouch.dream.test.xml;
-            mindtouch.sqs.dll;
-            mindtouch.sqs.pdb;
-            mindtouch.host.exe;
-            mindtouch.host.exe.config;
-            mindtouch.host.pdb;
-            Autofac.dll;
-            log4net.dll;
-            nunit.framework.dll;
-            SgmlReaderDll.dll
+          mindtouch.blueprints.exe;
+          mindtouch.blueprints.exe.config;
+          mindtouch.blueprints.pdb;
+          mindtouch.core.dll;
+          mindtouch.core.pdb;
+          mindtouch.core.xml;
+          mindtouch.db.exe;
+          mindtouch.db.exe.config;
+          mindtouch.db.pdb;
+          mindtouch.dream.dll;
+          mindtouch.dream.pdb;
+          mindtouch.dream.xml;
+          mindtouch.dream.test.dll;
+          mindtouch.dream.test.pdb;
+          mindtouch.dream.test.xml;
+          mindtouch.sqs.dll;
+          mindtouch.sqs.pdb;
+          mindtouch.host.exe;
+          mindtouch.host.exe.config;
+          mindtouch.host.pdb;
+          SgmlReaderDll.dll;
         </Files>
     </PropertyGroup>
     <UsingTask TaskName="MindTouch.Build.Tasks.PreBuild"
@@ -46,10 +46,19 @@
         <CallTarget Targets="PreBuild"/>
         <CallTarget Targets="Dream"/>
         <CallTarget Targets="PostBuild"/>
+        <CallTarget Targets="CreateNuGetPackages"/>
+    </Target>
+    <ItemGroup>
+      <NuSpec Include="src/mindtouch.dream/mindtouch.dream.nuspec;src/mindtouch.db/mindtouch.db.nuspec;src/mindtouch.sqs/mindtouch.sqs.nuspec;src/mindtouch.core/mindtouch.core.nuspec;src/mindtouch.dream.test/mindtouch.dream.test.nuspec;src/mindtouch.host/mindtouch.host.nuspec;src/mindtouch.blueprints/mindtouch.blueprints.nuspec" />
+    </ItemGroup>
+    <Target Name="CreateNuGetPackages" DependsOnTargets="PostBuild" Inputs="@(NuSpec)" Outputs="NuGet Packages created.">
+      <Exec Command='"src/.nuget/nuget.exe" pack %(NuSpec.Identity) -MinClientVersion 2.8 -OutputDirectory "$(DistDir)" -BasePath "$(MSBuildProjectDirectory)" -Version $(Version)' WorkingDirectory="$(MSBuildProjectDirectory)" />
     </Target>
     <Target Name="PostBuild">
         <Message Text="Post Build" />
-        <PostBuild SolutionDir="$(SolutionDir)" ConfigurationFilename="$(ConfigurationFilename)" IgnoreModified="$(IgnoreModified)"/>
+        <PostBuild SolutionDir="$(SolutionDir)" ConfigurationFilename="$(ConfigurationFilename)" IgnoreModified="$(IgnoreModified)">
+          <Output TaskParameter="Version" PropertyName="Version" />
+        </PostBuild>
         <MakeDir Directories="$(DistDir)"/>
         <CombinePath BasePath="$(BinDir)" Paths="$(Files)">
             <Output TaskParameter="CombinedPaths" PropertyName="SourceFiles"/>

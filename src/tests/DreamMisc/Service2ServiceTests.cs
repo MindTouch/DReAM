@@ -34,8 +34,8 @@ namespace MindTouch.Dream.Test {
         [TestFixtureSetUp]
         public void FixtureSetup() {
             _hostInfo = DreamTestHelper.CreateRandomPortHost(new XDoc("config")
-                .Elem("ip", "foo")
-                .Elem("ip", "bar"));
+                .Elem("ip", "foo:11709")
+                .Elem("ip", "bar:47583"));
             _service1 = MockService.CreateMockService(_hostInfo);
             _service2 = MockService.CreateMockService(_hostInfo);
         }
@@ -55,10 +55,10 @@ namespace MindTouch.Dream.Test {
             var response = _service1.AtLocalHost.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(1, hitCounter);
-            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
+            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(11709)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(2, hitCounter);
-            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("bar").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
+            response = Plug.New(_service1.AtLocalHost.Uri.WithHost("bar").WithPort(47583)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
             Assert.AreEqual(3, hitCounter);
             response = Plug.New(_service1.AtLocalHost.Uri.WithHost("baz").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
@@ -73,9 +73,9 @@ namespace MindTouch.Dream.Test {
                 receivedHost = request.Headers.Host;
                 r.Return(DreamMessage.Ok());
             };
-            var response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(80)).Get(new Result<DreamMessage>()).Wait();
+            var response = Plug.New(_service1.AtLocalHost.Uri.WithHost("foo").WithPort(11709)).Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
-            Assert.AreEqual("foo:80", receivedHost);
+            Assert.AreEqual("foo:11709", receivedHost);
         }
 
         [Test]
@@ -94,7 +94,7 @@ namespace MindTouch.Dream.Test {
         public void Calling_service_to_service_with_public_uri_sets_host_header() {
             string receivedHost = null;
             _service1.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> r) {
-                var r2 = Plug.New(_service2.AtLocalHost.Uri.WithHost("foo").WithPort(80)).Get();
+                var r2 = Plug.New(_service2.AtLocalHost.Uri.WithHost("foo").WithPort(11709)).Get();
                 r.Return(DreamMessage.Ok());
             };
             _service2.Service.CatchAllCallback = delegate(DreamContext context, DreamMessage request, Result<DreamMessage> r) {
@@ -103,7 +103,7 @@ namespace MindTouch.Dream.Test {
             };
             var response = _service1.AtLocalHost.Get(new Result<DreamMessage>()).Wait();
             Assert.IsTrue(response.IsSuccessful);
-            Assert.AreEqual("foo:80", receivedHost);
+            Assert.AreEqual("foo:11709", receivedHost);
         }
     }
 }

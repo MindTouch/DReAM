@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>MindTouch.DB</id>
+    <version>$version$</version>
+    <title>MindTouch Database Tool</title>
+    <authors>MindTouch, Inc.</authors>
+    <owners>MindTouch, Inc.</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/MindTouch/DReAM</projectUrl>
+    <iconUrl>http://mindtouch.com/wp-content/uploads/2015/04/nugeticon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>MindTouch Database Tool</description>
+    <copyright>Copyright (c) 2006-2015 MindTouch, Inc.</copyright>
+    <tags>MindTouch</tags>
+    <dependencies>
+      <dependency id="MindTouch.DReAM" version="$version$" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="dist\mindtouch.db.exe" target="lib\net40" />
+    <file src="dist\mindtouch.db.exe.config" target="lib\net40" />
+    <file src="dist\mindtouch.db.pdb" target="lib\net40" />
+  </files>
+</package>

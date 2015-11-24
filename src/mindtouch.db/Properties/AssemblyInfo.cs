@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MindTouch Dream - a distributed REST framework 
  * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
@@ -25,12 +25,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("updateDb")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("MindTouch DReAM Database Tool")]
+[assembly: AssemblyDescription("MindTouch DReAM DB Tool.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("updateDb")]
-[assembly: AssemblyCopyright("Copyright ©  2011")]
+[assembly: AssemblyCompany("MindTouch, Inc.")]
+[assembly: AssemblyProduct("MindTouch DReAM")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2015 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,11 +51,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
-[assembly: GitBranch("2.2")]
-[assembly: GitRevision("HEAD")]
+[assembly: AssemblyVersion("2.5.0.*")]
+[assembly: AssemblyFileVersion("2.5.0.0")]
+[assembly: GitBranch("")]
+[assembly: GitRevision("")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]
 #if SIGNED
 [assembly: AssemblyDelaySign(false)]

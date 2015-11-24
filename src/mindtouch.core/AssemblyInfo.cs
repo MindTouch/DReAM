@@ -26,12 +26,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MindTouch Dream Core")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("MindTouch DReAM Core")]
+[assembly: AssemblyDescription("MindTouch DReAM Core")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("MindTouch, Inc.")]
-[assembly: AssemblyProduct("MindTouch Dream Core")]
-[assembly: AssemblyCopyright("Copyright (c) 2006-2014 MindTouch, Inc.")]
+[assembly: AssemblyProduct("MindTouch DReAM")]
+[assembly: AssemblyCopyright("Copyright (c) 2006-2015 MindTouch, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -52,10 +52,10 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
-[assembly: AssemblyVersion("2.5.0.0")]
+[assembly: AssemblyVersion("2.5.0.*")]
 [assembly: AssemblyFileVersion("2.5.0.0")]
-[assembly: GitBranch("2.5")]
-[assembly: GitRevision("HEAD")]
+[assembly: GitBranch("")]
+[assembly: GitRevision("")]
 [assembly: GitUri("https://github.com/MindTouch/DReAM")]
 
 //
