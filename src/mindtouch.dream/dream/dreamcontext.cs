@@ -572,7 +572,7 @@ namespace MindTouch.Dream {
         /// <param name="key"><see cref="DreamFeatureParamAttribute"/> name.</param>
         /// <param name="def">Default value to return in case parameter is not defined.</param>
         /// <returns>Parameter value converted to requested type.</returns>
-        public T GetParam<T>(string key, T def) where T : struct {
+        public T GetParam<T>(string key, T def) {
             string result = GetParam(key, null);
             if(result != null) {
                 try {
