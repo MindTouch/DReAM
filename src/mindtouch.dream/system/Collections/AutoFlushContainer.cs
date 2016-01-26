@@ -62,7 +62,7 @@ namespace System.Collections {
         }
 
         //--- Methods ---
-        public void Do(Action<T> callback) {
+        public void Update(Action<T> callback) {
             lock(_syncRoot) {
                 if(_disposed) {
                     throw new ObjectDisposedException("instance has been disposed");

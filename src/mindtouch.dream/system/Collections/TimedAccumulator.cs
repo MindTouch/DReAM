@@ -53,7 +53,7 @@ namespace System.Collections {
         public int Count { get { return _accumulator.Get(list => list.Count); } }
 
         //--- Methods ---
-        public void Enqueue(T item) { _accumulator.Do(list => list.Add(item)); }
+        public void Enqueue(T item) { _accumulator.Update(list => list.Add(item)); }
         public void Dispose() { _accumulator.Dispose(); }
     }
 }
