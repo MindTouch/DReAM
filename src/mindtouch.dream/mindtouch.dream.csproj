@@ -135,6 +135,7 @@
     <Compile Include="dream\RegistrationInspector.cs" />
     <Compile Include="Extensions\ReflectionEx.cs" />
     <Compile Include="Numeric.cs" />
+    <Compile Include="system\Collections\AutoFlushContainer.cs" />
     <Compile Include="system\DisposeCallback.cs" />
     <Compile Include="system\GitBranchAttribute.cs" />
     <Compile Include="system\GitRevisionAttribute.cs" />
