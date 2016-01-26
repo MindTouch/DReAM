@@ -1,44 +1,53 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <assemblies
-  	commit-versioned="true"
+    commit-versioned="true"
     major="2"
-    minor="5"
+    minor="6"
     release="0"
     revision="0">
     <assembly
       name="mindtouch.dream"
       publicKeyToken="b17e0197b56911d2"
       assemblyinfo-path="src/mindtouch.dream/AssemblyInfo.cs"
-      remap="true" />
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       name="mindtouch.dream.test"
       publicKeyToken="b17e0197b56911d2"
       assemblyinfo-path="src/mindtouch.dream.test/Properties/AssemblyInfo.cs"
-      remap="true" />
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       name="mindtouch.core"
       publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.core/AssemblyInfo.cs" />
+      assemblyinfo-path="src/mindtouch.core/AssemblyInfo.cs"
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       name="mindtouch.host"
       publicKeyToken="b17e0197b56911d2"
-      assemblyinfo-path="src/mindtouch.host/AssemblyInfo.cs" />
+      assemblyinfo-path="src/mindtouch.host/AssemblyInfo.cs"
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       name="mindtouch.sqs"
       publicKeyToken="b17e0197b56911d2"
       assemblyinfo-path="src/mindtouch.sqs/Properties/AssemblyInfo.cs"
-      remap="true" />
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       name="mindtouch.blueprints"
       publicKeyToken="b17e0197b56911d2"
       assemblyinfo-path="src/mindtouch.blueprints/AssemblyInfo.cs"
-      remap="true" />
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       name="mindtouch.db"
       publicKeyToken="b17e0197b56911d2"
       assemblyinfo-path="src/mindtouch.db/Properties/AssemblyInfo.cs"
-      remap="true" />
+      remap="true"
+      compatible-with="2.5.0.0" />
     <assembly
       file="SgmlReaderDll.dll" />
   </assemblies>
