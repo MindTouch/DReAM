@@ -184,9 +184,10 @@ namespace MindTouch.Data {
         private readonly string _connection;
         private readonly Stopwatch _stopWatch = new Stopwatch();
         private readonly DataCatalog _catalog;
+        private readonly bool _slowSqlWarningEnabled;
 
         //--- Constructors ---
-        internal DataCommand(DataFactory factory, DataCatalog catalog, string connection, IDbCommand command) {
+        internal DataCommand(DataFactory factory, DataCatalog catalog, string connection, IDbCommand command, bool slowSqlWarningEnabled) {
             if(factory == null) {
                 throw new ArgumentNullException("factory");
             }
@@ -203,6 +204,7 @@ namespace MindTouch.Data {
             _connection = connection;
             _command = command;
             _catalog = catalog;
+            _slowSqlWarningEnabled = slowSqlWarningEnabled;
         }
 
         //--- Properties ---
@@ -617,7 +619,7 @@ namespace MindTouch.Data {
 
         private void QueryFinished(IDbCommand command) {
             _stopWatch.Stop();
-            if(_stopWatch.Elapsed > SLOW_SQL) {
+            if(_slowSqlWarningEnabled && _stopWatch.Elapsed > SLOW_SQL) {
                 _log.WarnFormat("SLOW SQL ({0:0.000}s, database: {2}): {1}", _stopWatch.Elapsed.TotalSeconds, command.CommandText, command.Connection.Database);
             }
             _catalog.FireQueryFinished(this);

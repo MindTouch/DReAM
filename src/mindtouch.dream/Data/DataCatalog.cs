@@ -79,6 +79,7 @@ namespace MindTouch.Data {
         private readonly DataFactory _factory;
         private readonly string _connection;
         private readonly string _readonlyconnection;
+        private readonly bool _slowSqlWarningEnabled;
 
         //--- Constructors ---
 
@@ -87,7 +88,8 @@ namespace MindTouch.Data {
         /// </summary>
         /// <param name="factory">Factory to use for command construction and query execution.</param>
         /// <param name="connectionString">Database connection string.</param>
-        public DataCatalog(DataFactory factory, string connectionString) {
+        /// <param name="slowSqlWarningEnabled">A value indicating whether the slow SQL warning is enabled.</param>
+        public DataCatalog(DataFactory factory, string connectionString, bool slowSqlWarningEnabled = true) {
             if(factory == null) {
                 throw new ArgumentNullException("factory");
             }
@@ -96,6 +98,7 @@ namespace MindTouch.Data {
             }
             this._factory = factory;
             _connection = connectionString;
+            _slowSqlWarningEnabled = slowSqlWarningEnabled;
         }
 
         /// <summary>
@@ -125,6 +128,7 @@ namespace MindTouch.Data {
                 throw new ArgumentNullException("config/user");
             }
             _connection = string.Format("Server={0};Port={1};Database={2};Uid={3};Pwd={4};{5}", server, port, catalog, user, password, options);
+            _slowSqlWarningEnabled = config["db-slow-sql-warning-enabled"].AsBool ?? true;
 
             // compose read-only connection string
             string readonly_server = config["db-readonly-server"].AsText ?? server;
@@ -189,39 +193,11 @@ namespace MindTouch.Data {
             if(@readonly && string.IsNullOrEmpty(_readonlyconnection)) {
                 throw new DreamException("No read-only connection string has been defined.");
             }
-            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateQuery(query));
+            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateQuery(query), _slowSqlWarningEnabled);
         }
 
         IDataCommand IDataCatalog.NewQuery(string query, bool @readonly) {
             return NewQuery(query, @readonly);
-        }
-
-        /// <summary>
-        /// Create a new stored procedure command.
-        /// </summary>
-        /// <param name="name">Name of the stored procedure.</param>
-        /// <returns>Stored procedure command.</returns>
-        public DataCommand NewProcedure(string name) {
-            return NewProcedure(name, false);
-        }
-
-        /// <summary>
-        /// Create a new read-only stored procedure command.
-        /// </summary>
-        /// <param name="name">Name of the stored procedure.</param>
-        /// <returns>Stored procedure command.</returns>
-        public DataCommand NewReadOnlyProcedure(string name) {
-            return NewProcedure(name, true);
-        }
-
-        /// <summary>
-        /// Create a new stored procedure command.
-        /// </summary>
-        /// <param name="name">Name of the stored procedure.</param>
-        /// <param name="readonly"><see langword="True"/> if the query is read-only.</param>
-        /// <returns>Stored procedure command.</returns>
-        public DataCommand NewProcedure(string name, bool @readonly) {
-            return new DataCommand(_factory, this, @readonly ? _readonlyconnection : _connection, _factory.CreateProcedure(name));
         }
 
         /// <summary>

@@ -20,115 +20,40 @@
  */
 
 using System.Collections.Generic;
-using MindTouch;
-using MindTouch.Dream;
+using System.Linq;
 using MindTouch.Tasking;
-using log4net;
 
 namespace System.Collections {
     public class TimedAccumulator<T> : IDisposable {
 
-        //--- Class Fields ---
-        private readonly ILog _log = LogUtils.CreateLog();
-
-        //--- Class Methods ---
-        private static List<T> ExtractItems(List<T> items, int count) {
-            if(count > 0) {
-                var result = items.GetRange(0, count);
-                items.RemoveRange(0, count);
-                return result;
-            }
-            return null;
-        }
-
         //--- Fields ---
-        private readonly List<T> _items = new List<T>();
-        private readonly Action<IEnumerable<T>> _handler;
-        private readonly int _maxItems;
-        private readonly TimeSpan _autoFlushDelay;
-        private readonly TaskTimer _autoFlushTimer;
-        private volatile bool _disposed;
+        private readonly AutoFlushContainer<List<T>> _accumulator;
 
         //--- Constructors ---
         public TimedAccumulator(Action<IEnumerable<T>> handler, int maxItems, TimeSpan autoFlushDelay, TaskTimerFactory timerFactory) {
             if(handler == null) {
                 throw new ArgumentNullException("handler");
             }
-            if(maxItems <= 0) {
-                throw new ArgumentException("maxItems must be positive", "maxItems");
-            }
-            if(autoFlushDelay <= TimeSpan.Zero) {
-                throw new ArgumentException("maxDelay must be positive", "autoFlushDelay");
-            }
-            _handler = handler;
-            _maxItems = maxItems;
-            _autoFlushDelay = autoFlushDelay;
-
-            // kick off timer
-            _autoFlushTimer = timerFactory.New(DateTime.MaxValue, AutoFlushCallback, null, TaskEnv.None);
+            _accumulator = new AutoFlushContainer<List<T>>(
+                initialState: new List<T>(),
+                flush: (list, disposing) => {
+                    if(list.Any()) {
+                        var items = list.GetRange(0, Math.Min(list.Count, maxItems));
+                        list.RemoveRange(0, items.Count);
+                        handler(items);
+                    }
+                },
+                maxUpdates: maxItems,
+                autoFlushDelay: autoFlushDelay,
+                timerFactory: timerFactory
+            );
         }
+
+        //--- Properties ---
+        public int Count { get { return _accumulator.Get(list => list.Count); } }
 
         //--- Methods ---
-        public void Enqueue(T item) {
-            if(_disposed) {
-                throw new ObjectDisposedException("The TimedAccumulator has been disposed");
-            }
-
-            // add item to queue
-            List<T> dispatch = null;
-            lock(_items) {
-                if((_items.Count == 0) && (_maxItems > 1)) {
-                    _autoFlushTimer.Change(_autoFlushDelay, TaskEnv.None);
-                }
-                _items.Add(item);
-
-                // check if we have enough items to dispatch some
-                if(_items.Count >= _maxItems) {
-                    dispatch = ExtractItems(_items, _maxItems);
-                }
-            }
-            CallHandler(dispatch);
-        }
-
-        public void Dispose() {
-            if(_disposed) {
-                return;
-            }
-            _disposed = true;
-
-            // first we cancel the timer
-            _autoFlushTimer.Cancel();
-
-            // extract all items from the queue and dispatch them
-            List<T> dispatch;
-            lock(_items) {
-                dispatch = ExtractItems(_items, _items.Count);
-            }
-            CallHandler(dispatch);
-        }
-
-        private void CallHandler(IEnumerable<T> items) {
-            if(items.NullOrEmpty()) {
-                return;
-            }
-            try {
-                _handler(items);
-            } catch(Exception e) {
-                _log.Error("TimedAccumulator handler failed", e);
-            }
-        }
-
-        private void AutoFlushCallback(TaskTimer timer) {
-            if(_disposed) {
-                return;
-            }
-
-            // check if we have enough items to dispatch some
-            List<T> dispatch;
-            lock(_items) {
-                dispatch = ExtractItems(_items, _items.Count);
-            }
-            CallHandler(dispatch);
-        }
+        public void Enqueue(T item) { _accumulator.Update(list => list.Add(item)); }
+        public void Dispose() { _accumulator.Dispose(); }
     }
 }
