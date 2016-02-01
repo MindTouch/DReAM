@@ -168,5 +168,15 @@ namespace MindTouch.Xml.Test {
             Assert.AreEqual(a.ToString(), before.ToString());
             Assert.AreEqual(b.ToString(), after.ToString());
         }
+
+        [Test]
+        public void MergeConflicting() {
+            XDoc org = XDocFactory.From("<p>the <span>brown</span> box</p>", MimeType.XML);
+            XDoc left = XDocFactory.From("<p>the <em>brown</em> box</p>", MimeType.XML);
+            XDoc right = XDocFactory.From("<p>the <b>brown</b> fox</p>", MimeType.XML);
+            var conflict = false;
+            var result = XDocDiff.Merge(org, left, right, 10000, ArrayMergeDiffPriority.Left, out conflict);
+            Assert.AreEqual("<p>the <em>brown</em> fox</p>", result.ToString());
+        }
     }
 }
