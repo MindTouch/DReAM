@@ -49,13 +49,21 @@ built on the premise that everything is remote.
 ----------------------
 * To run
 	* Microsoft Visual Studio 2008 with .Net 3.5 or later
-	* Novell Mono v2.4 or later
+	* Mono v2.4 or later
 * To build
 	* Microsoft Visual Studio 2008 with .Net 3.5 or later
-	* Novell Mono v2.8 or later
+	* Mono v2.8 or later
 
+3. License
+----------
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-3. Additional Resources
------------------------
-* [Documentation](http://developer.mindtouch.com/DReAM)
-* [Forums](http://forums.developer.mindtouch.com/forumdisplay.php?f=13)
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
