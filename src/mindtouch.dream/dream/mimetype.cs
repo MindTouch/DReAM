@@ -358,6 +358,12 @@ namespace MindTouch.Dream {
         public static readonly MimeType CSS = new MimeType("text/css", Encoding.ASCII);
 
         /// <summary>
+        /// Creates a <see cref="MimeType"/> instance for CSV.
+        /// </summary>
+        /// <remarks>Signature: <b>text/csv; UTF-8</b></remarks>
+        public static readonly MimeType CSV = new MimeType("text/csv", Encoding.UTF8);
+
+        /// <summary>
         /// Creates a <see cref="MimeType"/> instance for dream exception xml.
         /// </summary>
         /// <remarks>Signature: <b>application/x-dream-exception+xml; UTF-8</b></remarks>
