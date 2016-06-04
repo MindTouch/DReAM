@@ -226,7 +226,7 @@ namespace MindTouch.Data.Db {
                 try {
                     site.ExecuteMethod(method);
                 } catch(Exception ex) {
-                    Console.WriteLine("\n --- Error occured in method {0}: \n\n{1}", method, ex.StackTrace);
+                    Console.WriteLine("\n --- Error occured in method {0}: \n\n{1}\n\n{2}", method, ex.Message, ex.StackTrace);
                     if(!checkdb) {
                         break;
                     }
