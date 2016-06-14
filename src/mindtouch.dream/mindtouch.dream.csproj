@@ -124,6 +124,7 @@
     <Compile Include="Data\attributes.cs" />
     <Compile Include="Data\ADataUpdater.cs" />
     <Compile Include="Data\IDataUpdater.cs" />
+    <Compile Include="Data\RedshiftDataUpdater.cs" />
     <Compile Include="Data\MysqlDataUpdater.cs" />
     <Compile Include="Data\VersionInfo.cs" />
     <Compile Include="dream\AutoFacEx.cs" />

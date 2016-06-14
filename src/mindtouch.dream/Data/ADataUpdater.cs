@@ -26,7 +26,10 @@ using System.Reflection;
 
 namespace MindTouch.Data {
 
+    //--- Types ---
     public enum MethodType { Update, DataIntegrity };
+
+    public enum DatabaseType { Mysql, Redshift };
 
     public class DbMethod : IComparable<DbMethod> {
 
@@ -81,6 +84,21 @@ namespace MindTouch.Data {
     /// </summary>
     public abstract class ADataUpdater : IDataUpdater {
        
+        //--- Class Methods ---
+        public static KeyValuePair<Type, DataUpgradeAttribute> GetUpdateClassWithUpgradeAttribte(Assembly updateAssembly) {
+
+            // get all the members of the Assembly
+            var types = updateAssembly.GetTypes();
+
+            // Find the class with attribute "DataUpgrade"
+            var classTypes = from type in types where type.IsClass select type;
+            var dataUpgradeClass = (from type in classTypes from attribute in (from a in Attribute.GetCustomAttributes(type) where a is DataUpgradeAttribute select a) select new KeyValuePair<Type, DataUpgradeAttribute>(type, attribute as DataUpgradeAttribute)).FirstOrDefault();
+            if(dataUpgradeClass.Equals(default(KeyValuePair<Type, DataUpgradeAttribute>))) {
+                throw new NoUpgradeAttributesFound();
+            }
+            return dataUpgradeClass;
+        }
+
         //--- Fields ---
         protected VersionInfo _targetVersion = null;
         protected VersionInfo _sourceVersion = null;
@@ -255,19 +273,7 @@ namespace MindTouch.Data {
         /// <param name="param">Parameter array to pass to custom method</param>
         public void ExecuteCustomMethod(string name, Assembly updateAssembly, params object[] param) {
             if(_dataUpgradeClass == null) {
-                // get all the members of the Assembly
-                var types = updateAssembly.GetTypes();
-
-                // Find the class with attribute "DataUpgrade"
-                var classTypes = from type in types where type.IsClass select type;
-                foreach(var type in from type in classTypes from attribute in (from a in System.Attribute.GetCustomAttributes(type) where a is DataUpgradeAttribute select a) select type) {
-                    _dataUpgradeClass = type;
-                }
-
-                // if no class was found exit 
-                if(_dataUpgradeClass == null) {
-                    throw new NoUpgradeAttributesFound();
-                }
+                _dataUpgradeClass = GetUpdateClassWithUpgradeAttribte(updateAssembly).Key;
             }
             if(_dataUpgradeClassInstance == null) {
                 _dataUpgradeClassInstance = CreateActivatorInstance(_dataUpgradeClass);
