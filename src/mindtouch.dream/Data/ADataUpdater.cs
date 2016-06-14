@@ -85,7 +85,7 @@ namespace MindTouch.Data {
     public abstract class ADataUpdater : IDataUpdater {
        
         //--- Class Methods ---
-        public static KeyValuePair<Type, DataUpgradeAttribute> GetUpdateClassWithUpgradeAttribte(Assembly updateAssembly) {
+        public static KeyValuePair<Type, DataUpgradeAttribute> GetUpdateClassWithUpgradeAttribute(Assembly updateAssembly) {
 
             // get all the members of the Assembly
             var types = updateAssembly.GetTypes();
@@ -273,7 +273,7 @@ namespace MindTouch.Data {
         /// <param name="param">Parameter array to pass to custom method</param>
         public void ExecuteCustomMethod(string name, Assembly updateAssembly, params object[] param) {
             if(_dataUpgradeClass == null) {
-                _dataUpgradeClass = GetUpdateClassWithUpgradeAttribte(updateAssembly).Key;
+                _dataUpgradeClass = GetUpdateClassWithUpgradeAttribute(updateAssembly).Key;
             }
             if(_dataUpgradeClassInstance == null) {
                 _dataUpgradeClassInstance = CreateActivatorInstance(_dataUpgradeClass);

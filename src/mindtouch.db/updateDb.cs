@@ -132,7 +132,7 @@ namespace MindTouch.Data.Db {
 
             // Begin Parsing DLL
             var dllAssembly = Assembly.LoadFile(updateDLL);
-            var upgradeAttribute = ADataUpdater.GetUpdateClassWithUpgradeAttribte(dllAssembly).Value;
+            var upgradeAttribute = ADataUpdater.GetUpdateClassWithUpgradeAttribute(dllAssembly).Value;
             ADataUpdater schemaUpdater = null;
             if(listDatabases) {
 

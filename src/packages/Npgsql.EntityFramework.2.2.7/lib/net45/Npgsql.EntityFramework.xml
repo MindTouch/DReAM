@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Npgsql.EntityFramework</name>
+    </assembly>
+    <members>
+        <member name="T:Npgsql.NpgsqlConnectionFactory">
+            <summary>
+            Instances of this class are used to create DbConnection objects for Postgresql
+            </summary>
+        </member>
+        <member name="M:Npgsql.NpgsqlConnectionFactory.CreateConnection(System.String)">
+            <summary>
+            Creates a connection for Postgresql for the given connection string.
+            </summary>
+            <param name="nameOrConnectionString">The connection string.</param>
+            <returns>An initialized DbConnection.</returns>
+        </member>
+        <member name="M:Npgsql.NpgsqlMigrationSqlGenerator.GetTableNameFromFullTableName(System.String)">
+            <summary>
+            Removes schema prefix e.g. "dto.Blogs" returns "Blogs" and "Posts" returns "Posts"
+            </summary>
+            <param name="tableName"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Npgsql.SqlGenerators.NameAndInputExpression">
+            <summary>
+            Represents an InputExpression and what alias it will have when used in a FROM clause
+            </summary>
+        </member>
+        <member name="T:Npgsql.SqlGenerators.PendingProjectsNode">
+            <summary>
+            A tree of subqueries, used when evaluating SQL text for DbPropertyExpressions in SqlSelectGenerator.
+            See SqlSelectGenerator.Visit(DbPropertyExpression) for more information.
+            </summary>
+        </member>
+        <member name="M:Npgsql.SqlGenerators.SqlBaseGenerator.DateAdd(System.String,System.Collections.Generic.IList{System.Data.Entity.Core.Common.CommandTrees.DbExpression})">
+            <summary>
+            PostgreSQL has no direct functions to implements DateTime canonical functions
+            http://msdn.microsoft.com/en-us/library/bb738626.aspx
+            http://msdn.microsoft.com/en-us/library/bb738626.aspx
+            but we can use workaround:
+            expression + number * INTERVAL '1 number_type'
+            where number_type is the number type (days, years and etc)
+            </summary>
+            <param name="functionName"></param>
+            <param name="args"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Npgsql.SqlGenerators.StringPair">
+            <summary>
+            Used for lookup in a Dictionary, since Tuple is not available in .NET 3.5
+            </summary>
+        </member>
+        <member name="M:Npgsql.SqlGenerators.OperatorExpression.Negate(Npgsql.SqlGenerators.VisitedExpression)">
+            <summary>
+            Negates an expression.
+            If possible, replaces the operator of exp if exp is a negatable OperatorExpression,
+            else return a new OperatorExpression of type Not that wraps exp.
+            </summary>
+        </member>
+    </members>
+</doc>
