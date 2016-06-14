@@ -57,6 +57,14 @@ namespace MindTouch.Data {
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class DataUpgradeAttribute : Attribute {
+
+        //--- Fields ---
+        public DatabaseType DatabaseType;
+
+        //--- Constructors ---
+        public DataUpgradeAttribute(DatabaseType databaseType = DatabaseType.Mysql) {
+            this.DatabaseType = databaseType;
+        }
     }
 
     /// <summary>

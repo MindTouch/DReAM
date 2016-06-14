@@ -26,7 +26,7 @@ using System.Linq;
 using System.Reflection;
 
 namespace MindTouch.Data.Db {
-    class UpdateDb {
+    internal class UpdateDb {
 
         /// <summary>
         /// Class to store database connection information
@@ -54,8 +54,7 @@ namespace MindTouch.Data.Db {
                     return null;
                 }
                 var items = configString.Split(';');
-                var con = new DBConnection();
-                con.dbName = items[0];
+                var con = new DBConnection { dbName = items[0] };
                 if(items.Length < 4) {
                     con.dbServer = defaultServer;
                     con.dbUsername = defaultUser;
@@ -75,7 +74,7 @@ namespace MindTouch.Data.Db {
                    targetVersion = null, sourceVersion = null, customMethod = null;
             string[] param = null;
             int dbport = 3306, exitCode = 0, errors = 0;
-            uint timeout = UInt32.MaxValue;
+            var timeout = uint.MaxValue;
             bool showHelp = false, dryrun = false, verbose = false, listDatabases = false, checkDb = false;
             var errorStrings = new List<string>();
 
@@ -87,8 +86,8 @@ namespace MindTouch.Data.Db {
                 { "u=|dbusername=", "Database user name (default: root)", u => dbusername = u },
                 { "d=|dbname=", "Database name (default: wikidb)", p => dbname = p },
                 { "s=|dbserver=", "Database server (default: localhost)", s => dbserver = s },
-                { "n=|port=", "Database port (default: 3306)", n => {dbport = Int32.Parse(n);}},
-                { "o=|timeout=", "Sets the database's Default Command Timeout", o => { timeout = UInt32.Parse(o); }},
+                { "n=|port=", "Database port (default: 3306)", n => {dbport = int.Parse(n);}},
+                { "o=|timeout=", "Sets the database's Default Command Timeout", o => { timeout = uint.Parse(o); }},
                 { "c=|custom", "Custom method to invoke", c => { customMethod = c; }},
                 { "i|info", "Display verbose information (default: false)", i => { verbose = true; }},
                 { "noop|dryrun", "Just display the methods that will be called, do not execute any of them. (default: false)", f => { dryrun = verbose = true; }},
@@ -133,7 +132,8 @@ namespace MindTouch.Data.Db {
 
             // Begin Parsing DLL
             var dllAssembly = Assembly.LoadFile(updateDLL);
-            MysqlDataUpdater mysqlSchemaUpdater = null;
+            var upgradeAttribute = ADataUpdater.GetUpdateClassWithUpgradeAttribute(dllAssembly).Value;
+            ADataUpdater schemaUpdater = null;
             if(listDatabases) {
 
                 // Read list of databases if listDatabases is true
@@ -150,9 +150,18 @@ namespace MindTouch.Data.Db {
                 }
                 foreach(var db in databaseList) {
                     try {
-                        mysqlSchemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
+                        switch(upgradeAttribute.DatabaseType) {
+                        case DatabaseType.Mysql:
+                            schemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
+                            break;
+                        case DatabaseType.Redshift:
+                            schemaUpdater = new RedshiftDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion);
+                            break;
+                        default:
+                            throw new ShouldNeverHappenException("Unsupported database type");
+                        }
                         if(sourceVersion != null) {
-                            mysqlSchemaUpdater.SourceVersion = sourceVersion;
+                            schemaUpdater.SourceVersion = sourceVersion;
                         }
                     } catch(VersionInfoException) {
                         PrintErrorAndExit("You entered an incorrect version numbner.");
@@ -168,20 +177,29 @@ namespace MindTouch.Data.Db {
                     }
 
                     // Run methods on database
-                    RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
+                    RunUpdate(schemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
                 }
             } else {
                 try {
-                    mysqlSchemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
+                    switch(upgradeAttribute.DatabaseType) {
+                    case DatabaseType.Mysql:
+                        schemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
+                        break;
+                    case DatabaseType.Redshift:
+                        schemaUpdater = new RedshiftDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion);
+                        break;
+                    default:
+                        throw new ShouldNeverHappenException("Unsupported database type");
+                    }
                     if(sourceVersion != null) {
-                        mysqlSchemaUpdater.SourceVersion = sourceVersion;
+                        schemaUpdater.SourceVersion = sourceVersion;
                     }
                 } catch(VersionInfoException) {
                     PrintErrorAndExit("You entered an incorrect version numner.");
                 }
 
                 // Run update
-                RunUpdate(mysqlSchemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
+                RunUpdate(schemaUpdater, dllAssembly, customMethod, param, verbose, dryrun, checkDb);
             }
             if(errors > 0) {
                 Console.WriteLine("\nThere were {0} errors:", errors);
@@ -192,7 +210,7 @@ namespace MindTouch.Data.Db {
             return exitCode;
         }
 
-        private static void RunUpdate(MysqlDataUpdater site, Assembly dllAssembly, string customMethod, string[] param, bool verbose, bool dryrun, bool checkdb) {
+        private static void RunUpdate(ADataUpdater site, Assembly dllAssembly, string customMethod, string[] param, bool verbose, bool dryrun, bool checkdb) {
             
             // Execute custom methods
             if(customMethod != null) {
