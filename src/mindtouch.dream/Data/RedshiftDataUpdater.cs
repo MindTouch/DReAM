@@ -26,8 +26,8 @@ namespace MindTouch.Data {
     public class RedshiftDataUpdater : ADataUpdater {
 
         //--- Class Methods ---
-        private static string BuildConnectionString(string server, int port, string dbname, string dbuser, string dbpassword) {
-            return string.Format("Server={0}; Port={1}; Database={2}; Uid={3}; Pwd={4};", server, port, dbname, dbuser, dbpassword);
+        private static string BuildConnectionString(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
+            return string.Format("Server={0}; Port={1}; Database={2}; Uid={3}; Pwd={4}; SSL=true;Sslmode=Require;CommandTimeout={5};Timeout=30;", server, port, dbname, dbuser, dbpassword, timeout);
         }
         
         //--- Fields ---
@@ -35,7 +35,7 @@ namespace MindTouch.Data {
         private readonly string _dbName;
         
         //--- Constructors ---
-        public RedshiftDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version) {
+        public RedshiftDataUpdater(string server, int port, string dbname, string dbuser, string dbpassword, string version, uint timeout) {
             if(string.IsNullOrEmpty(version)) {
                 _targetVersion = null;
             } else {
@@ -48,7 +48,7 @@ namespace MindTouch.Data {
             // initialize the data catalog
             var dataFactory = new DataFactory(DbProviderFactories.GetFactory("Npgsql"), "?");
             _dbName = dbname;
-            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword);
+            var connectionString = BuildConnectionString(server, port, dbname, dbuser, dbpassword, timeout);
             _dataCatalog = new DataCatalog(dataFactory, connectionString);
             _dataCatalog.TestConnection();
         }

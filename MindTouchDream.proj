@@ -34,8 +34,8 @@
           mindtouch.host.exe.config;
           mindtouch.host.pdb;
           SgmlReaderDll.dll;
-	  Npgsql.dll;
-	  Npgsql.EntityFramework.dll;
+          Npgsql.dll;
+          Npgsql.EntityFramework.dll;
         </Files>
     </PropertyGroup>
     <UsingTask TaskName="MindTouch.Build.Tasks.PreBuild"
