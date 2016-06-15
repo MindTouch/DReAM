@@ -55,5 +55,6 @@
     <path>src/bin/mindtouch.blueprints.exe.config</path>
     <path>src/bin/mindtouch.db.exe.config</path>
     <path>src/bin/mindtouch.host.exe.config</path>
+    <path>src/bin/mindtouch.db.exe.config</path>
   </configfiles>
 </configuration>
