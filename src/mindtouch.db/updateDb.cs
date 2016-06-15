@@ -155,7 +155,7 @@ namespace MindTouch.Data.Db {
                             schemaUpdater = new MysqlDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
                             break;
                         case DatabaseType.Redshift:
-                            schemaUpdater = new RedshiftDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion);
+                            schemaUpdater = new RedshiftDataUpdater(db.dbServer, dbport, db.dbName, db.dbUsername, db.dbPassword, targetVersion, timeout);
                             break;
                         default:
                             throw new ShouldNeverHappenException("Unsupported database type");
@@ -186,7 +186,7 @@ namespace MindTouch.Data.Db {
                         schemaUpdater = new MysqlDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
                         break;
                     case DatabaseType.Redshift:
-                        schemaUpdater = new RedshiftDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion);
+                        schemaUpdater = new RedshiftDataUpdater(dbserver, dbport, dbname, dbusername, dbpassword, targetVersion, timeout);
                         break;
                     default:
                         throw new ShouldNeverHappenException("Unsupported database type");
