@@ -27,7 +27,11 @@ namespace MindTouch.Data {
 
         //--- Class Methods ---
         private static string BuildConnectionString(string server, int port, string dbname, string dbuser, string dbpassword, uint timeout) {
-            return string.Format("Server={0}; Port={1}; Database={2}; Uid={3}; Pwd={4}; SSL=true;Sslmode=Require;CommandTimeout={5};Timeout=30;", server, port, dbname, dbuser, dbpassword, timeout);
+            var optionString = "SSL=true;Sslmode=Require;Timeout=30;";
+            if(timeout != uint.MaxValue) {
+                optionString += string.Format("CommandTimeout={0};", timeout);
+            }
+            return string.Format("Server={0}; Port={1}; Database={2}; Uid={3}; Pwd={4};{5}", server, port, dbname, dbuser, dbpassword, optionString);
         }
         
         //--- Fields ---
