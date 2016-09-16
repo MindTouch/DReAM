@@ -20,6 +20,7 @@
  */
 
 using System;
+using System.Threading;
 
 namespace MindTouch.Collections {
 
@@ -205,7 +206,7 @@ namespace MindTouch.Collections {
                     }
                 } else {
 
-                    // tail reference was not properly updated in an earlier attempt, update it now (see note above) 
+                    // tail reference was not properly updated in an earlier attempt, update it now (see note above)
                     SysUtil.CAS(ref _tail, curTail, curTailNext);
                 }
             }
@@ -240,7 +241,7 @@ namespace MindTouch.Collections {
                     }
                 } else {
 
-                    // tail reference was not properly updated in an earlier attempt, update it now (see note above) 
+                    // tail reference was not properly updated in an earlier attempt, update it now (see note above)
                     SysUtil.CAS(ref _tail, curTail, curTailNext);
                 }
             }
@@ -269,7 +270,7 @@ namespace MindTouch.Collections {
                         return false;
                     }
 
-                    // tail reference was not properly updated in an earlier attempt, update it now (see note above) 
+                    // tail reference was not properly updated in an earlier attempt, update it now (see note above)
                     SysUtil.CAS(ref _tail, curTail, curHeadNext);
                 } else if(curHeadNext == null) {
 
@@ -300,15 +301,13 @@ namespace MindTouch.Collections {
 
         private bool TryDequeueConsumer(out Action<T> callback) {
 
-            // TODO (arnec): should convert return to enum to indicate contention vs. empty queue
+            // capture the current state of the queue
+            SingleLinkNode<object> curHead = _head;
+            SingleLinkNode<object> curTail = _tail;
 
             // loop until we successfully dequeue a node or the queue is empty
             while(true) {
-
-                // capture the current state of the queue
-                SingleLinkNode<object> curHead = _head;
                 SingleLinkNode<object> curHeadNext = curHead.Next;
-                SingleLinkNode<object> curTail = _tail;
 
                 // check if the current head and tail are equal
                 if(ReferenceEquals(curHead, curTail)) {
@@ -321,8 +320,8 @@ namespace MindTouch.Collections {
                         return false;
                     }
 
-                    // tail reference was not properly updated in an earlier attempt, update it now (see note above) 
-                    SysUtil.CAS(ref _tail, curTail, curHeadNext);
+                    // tail reference was not properly updated in an earlier attempt, update it now
+                    curTail = Interlocked.CompareExchange(ref _tail, curHeadNext, curTail);
                 } else if(curHeadNext == null) {
 
                     // head and tail differ, but we have no next, i.e. contention changed the queue before we
@@ -330,9 +329,11 @@ namespace MindTouch.Collections {
                     callback = null;
                     return false;
                 } else if(curHeadNext.Item is Action<T>) {
+                    var prevCurHead = curHead;
 
                     // try to replace the current head with the current head's Next reference
-                    if(SysUtil.CAS(ref _head, curHead, curHeadNext)) {
+                    curHead = Interlocked.CompareExchange(ref _head, curHeadNext, curHead);
+                    if(ReferenceEquals(prevCurHead, curHead)) {
 
                         // we have successfully retrieved the head of the queue
                         callback = (Action<T>)curHeadNext.Item;
