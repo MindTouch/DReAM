@@ -1,5 +1,5 @@
 ﻿/*
- * MindTouch Dream - a distributed REST framework 
+ * MindTouch Dream - a distributed REST framework
  * Copyright (C) 2006-2014 MindTouch, Inc.
  * www.mindtouch.com  oss@mindtouch.com
  *
@@ -9,9 +9,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -179,85 +179,87 @@ namespace MindTouch.Collections {
 
         private bool TryEnqueueItem(SingleLinkNode<object> newTail) {
 
-            // loop until we successful enqueue the new tail node
+            // capture the current tail reference and its current Next reference
+            SingleLinkNode<object> curTail = Interlocked.CompareExchange(ref _tail, null, null);
+            SingleLinkNode<object> curTailNext = curTail.Next;
+
+            // loop until we successfully enqueue the new tail node
             while(true) {
 
-                // capture the current tail reference and its current Next reference
-                SingleLinkNode<object> curHead = _head;
-                SingleLinkNode<object> curTail = _tail;
-                SingleLinkNode<object> curTailNext = curTail.Next;
-
                 // check if the current tail is indeed the last node
-                if(curTailNext == null) {
-
-                    // ensure if the queue is not empty, that it contains items of the expected type
-                    if(!ReferenceEquals(curHead, curTail) && (curTail.Item is Action<T>)) {
-                        return false;
-                    }
-
-                    // update the tail's Next reference to point to the new entry
-                    if(SysUtil.CAS(ref _tail.Next, null, newTail)) {
-
-                        // NOTE (steveb): there is a race-condition here where we may update the tail to point a non-terminal node; that's ok
-
-                        // update the tail reference to the new entry (may fail)
-                        SysUtil.CAS(ref _tail, curTail, newTail);
-                        return true;
-                    }
-                } else {
+                if(!ReferenceEquals(curTailNext, null)) {
 
                     // tail reference was not properly updated in an earlier attempt, update it now (see note above)
-                    SysUtil.CAS(ref _tail, curTail, curTailNext);
+                    curTail = Interlocked.CompareExchange(ref _tail, curTailNext, curTail);
+                    curTailNext = curTail.Next;
+                    continue;
+                }
+                SingleLinkNode<object> curHead = Interlocked.CompareExchange(ref _head, null, null);
+
+                // ensure if the queue is not empty, that it contains items of the expected type
+                if(!ReferenceEquals(curHead, curTail) && (curTail.Item is Action<T>)) {
+                    return false;
+                }
+
+                // update the tail's Next reference to point to the new entry
+                curTailNext = Interlocked.CompareExchange(ref curTail.Next, newTail, null);
+                if(ReferenceEquals(curTailNext, null)) {
+
+                    // NOTE (steveb): there is a race-condition here where we may update the tail to point a non-terminal node; that's ok
+
+                    // update the tail reference to the new entry (may fail)
+                    Interlocked.CompareExchange(ref _tail, newTail, curTail);
+                    return true;
                 }
             }
         }
 
         private bool TryEnqueueConsumer(SingleLinkNode<object> newTail) {
 
-            // loop until we successful enqueue the new tail node
+            // capture the current tail reference and its current Next reference
+            SingleLinkNode<object> curTail = Interlocked.CompareExchange(ref _tail, null, null);
+            SingleLinkNode<object> curTailNext = curTail.Next;
+
+            // loop until we successfully enqueue the new tail node
             while(true) {
 
-                // capture the current tail reference and its current Next reference
-                SingleLinkNode<object> curHead = _head;
-                SingleLinkNode<object> curTail = _tail;
-                SingleLinkNode<object> curTailNext = curTail.Next;
-
                 // check if the current tail is indeed the last node
-                if(curTailNext == null) {
-
-                    // ensure if the queue is not empty, that it contains items of the expected type
-                    if(!ReferenceEquals(curHead, curTail) && !(curTail.Item is Action<T>)) {
-                        return false;
-                    }
-
-                    // update the tail's Next reference to point to the new entry
-                    if(SysUtil.CAS(ref _tail.Next, null, newTail)) {
-
-                        // NOTE (steveb): there is a race-condition here where we may update the tail to point a non-terminal node; that's ok
-
-                        // update the tail reference to the new entry (may fail)
-                        SysUtil.CAS(ref _tail, curTail, newTail);
-                        return true;
-                    }
-                } else {
+                if(!ReferenceEquals(curTailNext, null)) {
 
                     // tail reference was not properly updated in an earlier attempt, update it now (see note above)
-                    SysUtil.CAS(ref _tail, curTail, curTailNext);
+                    curTail = Interlocked.CompareExchange(ref _tail, curTailNext, curTail);
+                    curTailNext = curTail.Next;
+                    continue;
+                }
+                SingleLinkNode<object> curHead = Interlocked.CompareExchange(ref _head, null, null);
+
+                // ensure if the queue is not empty, that it contains items of the expected type
+                if(!ReferenceEquals(curHead, curTail) && !(curTail.Item is Action<T>)) {
+                    return false;
+                }
+
+                // update the tail's Next reference to point to the new entry
+                curTailNext = Interlocked.CompareExchange(ref curTail.Next, newTail, null);
+                if(ReferenceEquals(curTailNext, null)) {
+
+                    // NOTE (steveb): there is a race-condition here where we may update the tail to point a non-terminal node; that's ok
+
+                    // update the tail reference to the new entry (may fail)
+                    Interlocked.CompareExchange(ref _tail, newTail, curTail);
+                    return true;
                 }
             }
         }
 
         private bool TryDequeueItem(out T item) {
 
-            // TODO (arnec): should convert return to enum to indicate contention vs. empty queue
+            // capture the current state of the queue
+            SingleLinkNode<object> curHead = Interlocked.CompareExchange(ref _head, null, null);
+            SingleLinkNode<object> curTail = Interlocked.CompareExchange(ref _tail, null, null);
 
             // loop until we successfully dequeue a node or the queue is empty
             while(true) {
-
-                // capture the current state of the queue
-                SingleLinkNode<object> curHead = _head;
                 SingleLinkNode<object> curHeadNext = curHead.Next;
-                SingleLinkNode<object> curTail = _tail;
 
                 // check if the current head and tail are equal
                 if(ReferenceEquals(curHead, curTail)) {
@@ -271,7 +273,7 @@ namespace MindTouch.Collections {
                     }
 
                     // tail reference was not properly updated in an earlier attempt, update it now (see note above)
-                    SysUtil.CAS(ref _tail, curTail, curHeadNext);
+                    curTail = Interlocked.CompareExchange(ref _tail, curHeadNext, curTail);
                 } else if(curHeadNext == null) {
 
                     // head and tail differ, but we have no next, i.e. contention changed the queue before we
@@ -279,9 +281,11 @@ namespace MindTouch.Collections {
                     item = default(T);
                     return false;
                 } else if(!(curHeadNext.Item is Action<T>)) {
+                    var prevCurHead = curHead;
 
                     // try to replace the current head with the current head's Next reference
-                    if(SysUtil.CAS(ref _head, curHead, curHeadNext)) {
+                    curHead = Interlocked.CompareExchange(ref _head, curHeadNext, curHead);
+                    if(ReferenceEquals(prevCurHead, curHead)) {
 
                         // we have successfully retrieved the head of the queue
                         item = (T)curHeadNext.Item;
@@ -302,8 +306,8 @@ namespace MindTouch.Collections {
         private bool TryDequeueConsumer(out Action<T> callback) {
 
             // capture the current state of the queue
-            SingleLinkNode<object> curHead = _head;
-            SingleLinkNode<object> curTail = _tail;
+            SingleLinkNode<object> curHead = Interlocked.CompareExchange(ref _head, null, null);
+            SingleLinkNode<object> curTail = Interlocked.CompareExchange(ref _tail, null, null);
 
             // loop until we successfully dequeue a node or the queue is empty
             while(true) {
