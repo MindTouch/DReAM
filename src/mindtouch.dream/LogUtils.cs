@@ -21,13 +21,14 @@
 
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
 using log4net;
 using log4net.Core;
 using log4net.ObjectRenderer;
-
+using log4net.Util;
 using MindTouch.Tasking;
 
 namespace MindTouch {
@@ -59,7 +60,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void TraceMethodCall(this ILog log, string method, params object[] args) {
             if(log.IsTraceEnabled()) {
-                log.Logger.Log(_type, Level.Trace, string.Format("{0}{1}", method, Render(args)), null);
+                log.Logger.Log(_type, Level.Trace, new SystemStringFormat(CultureInfo.InvariantCulture, method + "{0}", Render(args)), null);
             }
         }
 
@@ -72,7 +73,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void TraceExceptionMethodCall(this ILog log, Exception exception, string method, params object[] args) {
             if(log.IsTraceEnabled()) {
-                log.Logger.Log(_type, Level.Trace, string.Format("{0}{1}", method, Render(args)), exception);
+                log.Logger.Log(_type, Level.Trace, new SystemStringFormat(CultureInfo.InvariantCulture, method + "{0}", Render(args)), exception);
             }
         }
 
@@ -84,7 +85,7 @@ namespace MindTouch {
         /// <param name="args">Format string parameters.</param>
         public static void TraceFormat(this ILog log, string format, params object[] args) {
             if(log.IsTraceEnabled()) {
-                log.Logger.Log(_type, Level.Trace, string.Format(format, args), null);
+                log.Logger.Log(_type, Level.Trace, new SystemStringFormat(CultureInfo.InvariantCulture, format, args), null);
             }
         }
 
@@ -96,7 +97,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void DebugMethodCall(this ILog log, string method, params object[] args) {
             if(log.IsDebugEnabled) {
-                log.DebugFormat("{0}{1}", method, Render(args));
+                log.DebugFormat(method + "{0}", Render(args));
             }
         }
 
@@ -109,7 +110,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void DebugExceptionMethodCall(this ILog log, Exception exception, string method, params object[] args) {
             if(log.IsDebugEnabled) {
-                log.Debug(string.Format("{0}{1}", method, Render(args)), exception);
+                log.Logger.Log(_type, Level.Debug, new SystemStringFormat(CultureInfo.InvariantCulture, method + "{0}", Render(args)), exception);
             }
         }
 
@@ -122,7 +123,7 @@ namespace MindTouch {
         /// <param name="args">Format arguments.</param>
         public static void DebugFormat(this ILog log, Exception exception, string message, params object[] args) {
             if(log.IsDebugEnabled) {
-                log.Debug(string.Format(message,args),exception);
+                log.Logger.Log(_type, Level.Debug, new SystemStringFormat(CultureInfo.InvariantCulture, message, args), exception);
             }
         }
 
@@ -134,7 +135,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void InfoMethodCall(this ILog log, string method, params object[] args) {
             if(log.IsInfoEnabled) {
-                log.InfoFormat("{0}{1}", method, Render(args));
+                log.InfoFormat(method + "{0}", Render(args));
             }
         }
 
@@ -146,7 +147,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void WarnMethodCall(this ILog log, string method, params object[] args) {
             if(log.IsWarnEnabled) {
-                log.WarnFormat("{0}{1}", method, Render(args));
+                log.WarnFormat(method + "{0}", Render(args));
             }
         }
 
@@ -159,7 +160,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void WarnExceptionMethodCall(this ILog log, Exception exception, string method, params object[] args) {
             if(log.IsWarnEnabled) {
-                log.Warn(string.Format("{0}{1}", method, Render(args)), exception);
+                log.Logger.Log(_type, Level.Warn, new SystemStringFormat(CultureInfo.InvariantCulture, method + "{0}", Render(args)), exception);
             }
         }
 
@@ -172,7 +173,7 @@ namespace MindTouch {
         /// <param name="args">Format string parameters.</param>
         public static void WarnExceptionFormat(this ILog log, Exception exception, string format, params object[] args) {
             if(log.IsWarnEnabled) {
-                log.Warn(string.Format(format, args), exception);
+                log.Logger.Log(_type, Level.Warn, new SystemStringFormat(CultureInfo.InvariantCulture, format, args), exception);
             }
         }
 
@@ -185,7 +186,7 @@ namespace MindTouch {
         /// <param name="args">Method arguments.</param>
         public static void ErrorExceptionMethodCall(this ILog log, Exception exception, string method, params object[] args) {
             if(log.IsErrorEnabled) {
-                log.Error(string.Format("{0}{1}", method, Render(args)), exception);
+                log.Logger.Log(_type, Level.Error, new SystemStringFormat(CultureInfo.InvariantCulture, method + "{0}", Render(args)), exception);
             }
         }
 
@@ -198,7 +199,7 @@ namespace MindTouch {
         /// <param name="args">Format string parameters.</param>
         public static void ErrorExceptionFormat(this ILog log, Exception exception, string format, params object[] args) {
             if(log.IsErrorEnabled) {
-                log.Error(string.Format(format, args), exception);
+                log.Logger.Log(_type, Level.Error, new SystemStringFormat(CultureInfo.InvariantCulture, format, args), exception);
             }
         }
 
