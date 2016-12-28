@@ -15,7 +15,7 @@
     <tags>MindTouch DReAM</tags>
     <dependencies>
       <dependency id="Autofac" version="[2.6.3.862,3)" />
-      <dependency id="log4net" version="[1.2.10,2)" />
+      <dependency id="log4net" version="2.0.6" />
       <dependency id="MindTouch.DReAM" version="$version$" />
     </dependencies>
   </metadata>
